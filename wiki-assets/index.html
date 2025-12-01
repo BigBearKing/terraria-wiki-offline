@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="vector.css" />
+    <link rel="stylesheet" href="common.css" />
+    <link rel="stylesheet" href="Nunito.css" />
+    <link rel="stylesheet" href="main.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terraria Wiki</title>
+
+    <script type="module" src="main.js" defer></script>
+    <script type="module" src="search.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <div id="main-header">
+            <button title="上一页" class="header-button" onclick="back()">
+                <img src="./src/icons/ArrowLeft.svg" width="21px">
+            </button>
+            <button title="主页" class="header-button" onclick="tohome()">
+                <img alt="" src="./src/icons/Home.svg" width="24px">
+            </button>
+            <button title="返回顶部" class="header-button" onclick="totop()">
+                <img alt="" src="./src/icons/ChevronUp.svg" width="27px">
+            </button>
+
+            <span id="title-span">官方中文泰拉瑞亚百科</span>
+            <div id="search">
+                <input id="search-input" type="text" placeholder="搜索" maxlength="18">
+
+                <button title="搜索" id="search-button" type="submit" class="header-button"
+                    >
+                    <img alt="" src="./src/icons/Search.svg" width="24px">
+                </button>
+                <div id="search-results">
+
+                </div>
+
+            </div>
+
+
+            <button title="所有页面" class="header-button" onclick="allpages()">
+                <img alt="" src="./src/icons/List.svg" width="26px">
+            </button>
+            <button title="更多" class="header-button" id="more-button" style="margin-left: 3px;">
+                <img alt="" src="./src/icons/MoreHorizontal.svg" width="27px">
+            </button>
+
+        </div>
+    </header>
+    <div class="popup">
+
+        <h2>提示</h2>
+
+        <p>
+            您的操作已成功完成！请点击下方按钮继续下一步操作。
+        </p>
+
+        <button class="primary">确认</button>
+    </div>
+
+        <!-- 内容 -->
+        <div class="content-wrapper">
+            <div id="p-logo" role="banner">
+                <a class="mw-wiki-logo"></a>
+            </div>
+            <div id="mw-head-base" class="noprint"></div>
+
+            <div id="mw-panel">
+                <!-- LOGO -->
+
+
+                <!-- 标题 -->
+                <div>
+                    <h3 id="heading-title">
+                        <span>官方中文泰拉瑞亚百科 - The Official Chinese Terraria Wiki</span>
+                    </h3>
+
+                </div>
+
+
+            </div>
+            <div id="mw-head"></div>
+            <!-- 内容 -->
+            <div id="content" class="mw-body box-row-m" role="main">
+                <div class="content-body">
+                    <main id="main-content">
+                        <!-- 这里是内容 -->
+                    </main>
+                </div>
+            </div>
+
+            <!-- 尾部 -->
+
+            <footer id="footer" class="mw-footer" lang="zh-Hans-CN" dir="ltr">
+                <ul id="footer-info">
+                    <li id="footer-info-lastmod"></li>
+                    <li id="footer-info-copyright">
+                        <div class="wikigg-copyright-box">2022 年 03 月 14 日之前创建的页面改编自Fandom Terraria
+                            Wiki。<br>除非另有说明，页面内容受<a class="external" rel="nofollow">知识共享署名-非商业性使用-相同方式共享 4.0
+                                许可协议</a>约束。</div>
+                    </li>
+                </ul>
+
+                <ul id="footer-icons" class="noprint">
+                    <li id="footer-copyrightico"><a
+                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                                src="src/main/CC-BY-NC-SA.svg" alt="知识共享署名-非商业性使用-相同方式共享 4.0 许可协议" height="31"
+                                width="88" loading="lazy" data-theme="light"></a>
+                    </li>
+                    <li id="footer-poweredbyico"><a
+                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                                src="src/main/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31"
+                                loading="lazy" data-theme="light"></a>
+                    </li>
+                    <li id="footer-partofico"><a
+                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                                src="src/main/Network_footer.svg" alt="Part of wiki.gg" height="31" width="88"
+                                loading="lazy" data-theme="light"></a></li>
+                </ul>
+
+            </footer>
+        </div>
+
+
+</body>
+
+</html>

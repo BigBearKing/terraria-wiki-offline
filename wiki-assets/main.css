@@ -1,0 +1,415 @@
+/* 1. 设置整个滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 8px; /* 垂直滚动条的宽度 */
+  height: 8px; /* 水平滚动条的高度 */
+}
+
+/* 2. 设置滚动条轨道的样式 */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 轨道背景色 */
+  border-radius: 10px; /* 轨道圆角 */
+}
+
+/* 3. 设置滚动滑块的样式 */
+::-webkit-scrollbar-thumb {
+  background: #888; /* 滑块颜色 */
+  border-radius: 10px; /* 滑块圆角 */
+}
+
+/* 4. 鼠标悬停在滑块上的样式 (可选) */
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* 悬停时的颜色 */
+}
+
+#heading-title {
+  height: 40px;
+  position: relative;
+  font-size: 22px;
+  font-weight: 400;
+  text-align: center;
+  color: #fff;
+  top: 10px;
+  white-space: nowrap;
+  /*强制span不换行*/
+  overflow: hidden;
+  /*超出宽度部分隐藏*/
+  text-overflow: ellipsis;
+}
+
+@media screen and (max-width: 580px) {
+  #heading-title {
+    font-size: 20px;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  #heading-title {
+    font-size: 17px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  #heading-title {
+    font-size: 15px;
+  }
+}
+
+/* 
+声音图标 */
+.mw-parser-output .sound audio:not([controls]) {
+  /* 彻底隐藏 audio 元素，因为它只是一个声音源，不应占据页面空间 */
+  display: none;
+}
+
+.mw-parser-output .sound {
+  cursor: pointer;
+}
+
+
+/* 搜索框 */
+
+#search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+#search-input {
+  width: 200px;
+  height: 26px;
+  color: #3b3b3b;
+  caret-color: #72777d;
+  text-indent: 4px;
+  letter-spacing: 1px;
+  border-top: 1px;
+  border-left: 1px;
+  border-right: 0;
+  border-bottom: 1px;
+  border-color: #72777d;
+  border-style: solid;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  background-color: #F3F3F3;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+
+
+
+}
+
+#search-button {
+  width: 30px;
+  margin-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  border-top: 1px;
+  border-right: 1px;
+  border-bottom: 1px;
+  border-color: #72777d;
+  border-style: solid;
+  padding-right: 6px;
+}
+
+#search-results {
+  position: absolute;
+  /* 绝对定位，实现“弹出”效果 */
+  top: 100%;
+  /* 在输入框正下方 */
+  width: 320px;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 5px;
+  display: none;
+  /* 默认隐藏 */
+}
+
+/* 结果项样式 */
+.result-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-item a {
+
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  display: block;
+}
+
+.result-item .value-p {
+  margin: 5px 0 0;
+  font-size: 0.9em;
+  color: #666;
+  /* 1. 必须设置溢出隐藏 */
+  overflow: hidden;
+  /* 2. 限制显示的行数 */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  /* 限制为 3 行 */
+  -webkit-box-orient: vertical;
+  /* 3. 字体和行高设置必须合理，否则截断效果可能不精确 */
+  line-height: 1.5em;
+  max-height: 4.5em;
+  /* 1.5em * 3行 */
+}
+
+.title-redirect {
+  display: flex;
+  align-items: end;
+}
+
+.redirect-p {
+  white-space: nowrap;
+  overflow: hidden;
+  /*超出宽度部分隐藏*/
+  text-overflow: ellipsis;
+  height: min-content;
+  margin: 0 0 0 10px;
+  color: #666;
+  font-size: 0.8em;
+}
+
+/* 高亮匹配文字的样式 (Pagefind 会自动添加 <mark> 标签) */
+mark {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.loading,
+.no-results {
+  padding: 10px;
+  color: #666;
+  text-align: center;
+}
+
+/* 弹窗 */
+
+.popup {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  text-align: center;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  user-select: none;
+  pointer-events: auto;
+  display: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.popup.is-visible {
+  /* 动画的终点 */
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  /* 恢复正常大小 */
+}
+
+/* 3. 弹窗内部元素样式 */
+.popup h2 {
+  color: #333;
+  margin-top: 0;
+  font-size: 1.5em;
+}
+
+.popup p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+
+/* 5. 示例按钮（可选） */
+.popup button.primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.popup button.primary:hover {
+  background-color: #0056b3;
+}
+
+
+/* 表格滚动 */
+.table-box {
+  overflow-x: auto;
+}
+
+.handy-scroll {
+  bottom: 0;
+  min-height: 17px;
+  overflow: auto;
+  position: fixed
+}
+
+.handy-scroll div {
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none
+}
+
+.handy-scroll div::before {
+  content: "\A0"
+}
+
+.handy-scroll,
+.handy-scroll div {
+  font-size: 1px;
+  line-height: 0;
+  margin: 0;
+  padding: 0
+}
+
+.handy-scroll-hidden {
+  bottom: 9999px
+}
+
+.handy-scroll-hidden div::before {
+  content: "\A0\A0"
+}
+
+.handy-scroll-viewport {
+  position: relative
+}
+
+.handy-scroll-body {
+  overflow: auto
+}
+
+.handy-scroll-viewport .handy-scroll {
+  left: 0;
+  position: absolute
+}
+
+.handy-scroll-hoverable .handy-scroll {
+  opacity: 0;
+  transition: opacity .5s .3s
+}
+
+.handy-scroll-hoverable:hover .handy-scroll {
+  opacity: 1
+}
+
+
+
+
+/* 头部样式 */
+header {
+  width: 100%;
+  height: var(--wikigg-header-height);
+  grid-row: 1 / 2;
+  z-index: 9999;
+  position: fixed;
+  top: 0;
+  background-color: #F3F3F3;
+  border-color: #e0e5eb;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+
+}
+
+header div#main-header {
+  padding-left: 5px;
+  padding-right: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.header-button {
+
+  height: 30px;
+  width: 40px;
+  margin: 2px 3px;
+  border-radius: 6px;
+  border-width: 0px;
+  border-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.15s;
+  user-select: none;
+
+}
+.header-button img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.header-button:hover {
+  background-color: #DEDEDE;
+}
+
+.header-button:active {
+  background-color: #B4B4B4;
+}
+
+header div#main-header #title-span {
+  text-align: left;
+  color: #3b3b3b;
+  font-size: 16px;
+  margin-left: 10px;
+  margin-top: 2px;
+  white-space: nowrap;
+  /*强制span不换行*/
+  display: inline-block;
+  /*将span当做块级元素对待*/
+  overflow: hidden;
+  /*超出宽度部分隐藏*/
+  text-overflow: ellipsis;
+  /*超出部分以点号代替*/
+  user-select: none;
+}
+
+/* 所有页面 */
+.grid-list {
+  list-style: disc;
+  padding: 0;
+  margin: 0;
+
+  /* 1. 启用 Grid */
+  display: grid;
+
+  /* 2. 关键：自动适应列数 */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+
+  /* 解释： */
+  /* repeat(auto-fit, ...)：自动计算能容纳多少列 */
+  /* minmax(150px, 1fr)：每列最小 150px 宽，最大占满可用空间 (1fr) */
+
+  /* 可选：控制列表项之间的间距 */
+  gap: 10px;
+  list-style-position: inside;
+}
+
+.grid-list li {
+  padding: 6px;
+
+  /* 在 Grid 中，li 元素本身通常不需要设置宽度 */
+}
