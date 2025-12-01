@@ -18,9 +18,9 @@
 
 ## 📸 预览图
 
-![image-20251201145526397](Screenshot\image-20251201145526397.png)
+![image-20251201145526397](Screenshot/image-20251201145526397.png)
 
-![image-20251201145747776](Screenshot\image-20251201145747776.png)
+![image-20251201145747776](Screenshot/image-20251201145747776.png)
 
 
 
