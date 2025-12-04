@@ -1,18 +1,24 @@
-# Offline Terraria Wiki/离线泰拉瑞亚百科
+# Offline Terraria Wiki / 离线泰拉瑞亚百科
 
 
 
-一个使用 Tauri 构建的桌面应用，提供快速、离线的泰拉瑞亚百科查阅体验。数据来源于原泰拉瑞亚百科，并使用 Pagefind 构建高性能全文搜索。
+一个使用 Tauri 构建的桌面应用，提供快速、离线的泰拉瑞亚百科查阅体验。页面数据来源于[原泰拉瑞亚百科](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki)并重写了部分CSS和全部JavaScript代码。
+
+特别感谢[**Google Gemini**](https://gemini.google.com/)。
 
 
 
 ## ✨ 主要特性 
 
-- **完全离线：** 一旦安装，无需网络连接即可浏览所有百科内容和图片。
+- **完全离线：**一旦安装，无需网络连接即可浏览所有百科内容和图片。
 
-- **极速搜索：** 由 **Pagefind** 驱动的零配置、高性能客户端搜索。
+- **完整内容：**提供了与官方网站1:1的使用体验。
 
-- **跨平台(即将支持)：** 基于 **Tauri** 打包，支持 Windows, macOS ,  Linux, iOS和Android。
+- **极速搜索：**由 **Pagefind** 驱动的零配置、高性能客户端搜索。
+
+- **跨平台(即将支持)：**基于 **Tauri** 打包，目前支持 Windows，未来将支持 macOS ,  Linux, iOS和Android。
+
+- **更多功能正在更新中。**
 
 
 
@@ -56,7 +62,7 @@
 
 ## ⚖️ 许可证 (License) 
 
-本项目中的**代码**部分（如构建脚本、CSS样式等）可能适用于 [您可以选择一个代码许可，如 MIT]。 但本项目中的**所有内容和数据（泰拉瑞亚百科离线数据）**是基于原网站的授权要求，必须使用以下协议进行发布：
+本项目中的**代码**部分（如构建脚本、CSS样式等）可能适用于 [您可以选择一个代码许可，如 MIT]。 但本项目中的**所有页面内容和数据（泰拉瑞亚百科离线数据）**是基于原网站的授权要求，必须使用以下协议进行发布：
 
  **[内容许可证] Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** 
 
