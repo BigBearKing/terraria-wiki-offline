@@ -53,11 +53,5 @@ public class RawPage
 public class TempHistory
 {
     public string Title { get; set; }
-    public float Position { get; set; }
+    public int Position { get; set; }
 }
-public class TitleWithAnchor
-{
-    public string Title { get; set; }
-    public string Anchor { get; set; }
-}
-public class JsMsg { public string Type { get; set; } public string Id { get; set; } public string Method { get; set; } public string Data { get; set; } }

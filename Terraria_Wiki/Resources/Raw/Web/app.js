@@ -1,25 +1,11 @@
-window.pageTitle = null; // 当前页面标题，初始为空
+window.pageTitle = "Terraria Wiki";
+
+
 const handlers = {}; // 存 JS 方法
 const pending = {};  // 存等待 C# 的 Promise
 
-
-handlers["GotoHistory"] = async (msg) => {
-    gotoHistory(msg);
-
-    return null;
-}
-handlers["BackToPage"] = async (msg) => {
-    const args = JSON.parse(msg);
-    backToPage(args.title, args.position);
-    return null;
-}
-handlers["BackHome"] = async () => {
-    redirect("Terraria Wiki")
-    return null;
-}
-
-
-
+// A. 注册 JS 方法供 C# 调
+function register(name, func) { handlers[name] = func; }
 
 // B. 调用 C# 方法
 function callCSharpAsync(method, data) {
@@ -64,7 +50,7 @@ document.addEventListener('click', function (e) {
         }
         // 如果是站内链接（有 title 属性且没有 target="_blank"）
         if (title && !href) {
-            gotoPage(title);
+            redirect(title, anchor);
         }
     }
 });
@@ -73,38 +59,9 @@ redirect("Terraria Wiki");
 
 
 
-async function gotoPage(title) {
-    const args = {
-        title: window.pageTitle,
-        position: document.querySelector('html').scrollTop
-    }
-    const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
-    if (await redirect(titleWithAnchor.title) == null) return;
-    document.querySelector('html').scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    if (titleWithAnchor.anchor) {
-        const element = document.getElementById(titleWithAnchor.anchor);
-        if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-        }
-    }
-    callCSharpAsync("SaveToTempHistory", JSON.stringify(args))
-
-
-}
-async function backToPage(title, position) {
-    if (await redirect(title) == null) return;
-    document.querySelector('html').scrollTo({ top: position, left: 0, behavior: 'instant' });
-
-}
-async function gotoHistory(title) {
-    if (await redirect(title) == null) return;
-}
-
-
-
-async function redirect(title) {
+async function redirect(title, anchor) {
     const result = JSON.parse(await callCSharpAsync("PageRedirectAsync", title));
-    if (result == null) return null;
+    if (result == null) return;
     window.pageTitle = result.title;
     document.getElementById("firstHeading").textContent = result.title;
     document.getElementById("mw-content-text").innerHTML = result.content;
@@ -116,8 +73,22 @@ async function redirect(title) {
         document.querySelector('body').classList.remove("rootpage-Terraria_Wiki");
         document.getElementById("firstHeading").removeAttribute("style");
     }
-    //refresh();
-    return true;
+    if (anchor) {
+        const element = document.getElementById(anchor.replace('#', ''));
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth" });
+        }
+    } else {
+        window.scrollTo({ top: 0 });
+    }
+    refresh();
+}
+
+
+handlers["GetCurrentPosition"] = async (msg) => {
+    const position = document.querySelector('html').scrollTop;
+    console.log("GetCurrentPosition:", position);
+    //return position;
 }
 
 
@@ -127,10 +98,8 @@ async function redirect(title) {
 
 
 
-
-
-
 document.addEventListener('DOMContentLoaded', function () {
+    console.log("Terraria Wiki Scripts Loaded (Native Mode)");
 
     // ============================================================
     // 1 & 2. Handle Wide Tables (宽表格处理 + 滚动条)

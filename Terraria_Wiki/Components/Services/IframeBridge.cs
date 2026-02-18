@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
 public static class IframeBridge
@@ -29,12 +28,6 @@ public static class IframeBridge
 
         if (obj == null) return string.Empty;
         return JsonSerializer.Serialize(obj, Options);
-    }
-    public static T JsonToObj<T>(string json) where T : class
-    {
-
-        if (json == null||json=="") return null;
-            return JsonSerializer.Deserialize<T>(json, Options);
     }
     // 2. C# 调用 Iframe：发送请求并等待结果
     public static async Task<string> CallJsAsync(string methodName, string argsJson)
@@ -72,4 +65,5 @@ public static class IframeBridge
         }
     }
 
+    private class JsMsg { public string Type { get; set; } public string Id { get; set; } public string Method { get; set; } public string Data { get; set; } }
 }

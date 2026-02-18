@@ -16,7 +16,7 @@ namespace Terraria_Wiki.Services
     {
         // ================= 配置与常量 =================
         private const string UserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
-        private const string JunkXPath = "//div[@class='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()";
+        private const string JunkXPath = "//div[@class='marker-for-new-portlet-link']|//div[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()";
         private const string BaseApiUrl = "https://terraria.wiki.gg/zh/api.php";
         private const string BaseGuideApiUrl = "https://terraria.wiki.gg/zh/api.php?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace=10000&gapfilterredir=nonredirects&gaplimit=max";
         private const string BaseUrl = "https://terraria.wiki.gg";
@@ -43,19 +43,19 @@ namespace Terraria_Wiki.Services
             await GetWikiPagesListAsync();
             if (isAll)
             {
-                await StartDownloadPagesAsync(maxConcurrency: 3);
+                await StartDownloadPagesAsync(maxConcurrency: 2);
                 await StartDownloadResAsync(maxConcurrency: 10);
             }
             else
             {
-                await StartDownloadPagesAsync(maxConcurrency: 3);
+                await StartDownloadPagesAsync(maxConcurrency: 2);
             }
             var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
             book.DownloadedTime = DateTime.Now;
             book.IsPageDownloaded = true;
             book.IsResourceDownloaded = true;
             await App.ManagerDb.SaveItemAsync(book);
-            await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+            await AppService.RefreshWikiBook(App.ManagerDb, App.ContentDb);
             CleanUpTempFile();
             App.AppStateManager.IsDownloading = false;
 
@@ -68,7 +68,7 @@ namespace Terraria_Wiki.Services
 
             book.IsResourceDownloaded = true;
             await App.ManagerDb.SaveItemAsync(book);
-            await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+            await AppService.RefreshWikiBook(App.ManagerDb, App.ContentDb);
             CleanUpTempFile();
             App.AppStateManager.IsDownloading = false;
         }
@@ -396,7 +396,7 @@ namespace Terraria_Wiki.Services
                 int hashIndex = href.IndexOf('#');
                 if (hashIndex >= 0)
                 {
-                    n.SetAttributeValue("title", n.GetAttributeValue("title","") + href.Substring(hashIndex));
+                    n.SetAttributeValue("anchor", href.Substring(hashIndex));
                 }
                 n.Attributes.Remove("href");
             });

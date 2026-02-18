@@ -16,7 +16,7 @@ public class AppState
     private bool _sidebarIsExpanded = false;
     private bool _isDarkTheme = false;
     private bool _isDownloading = false;
-    private string _currentWikiPage;
+    private string _currentWikiPage = "Terraria Wiki";
 
 
     public AppState()
