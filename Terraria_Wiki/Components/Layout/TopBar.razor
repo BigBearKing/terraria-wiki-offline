@@ -1,0 +1,91 @@
+﻿@using Terraria_Wiki.Services
+<header class="top-bar">
+
+	<div class="actions-wrapper" style="display:@(ShouldShowActionButtons() ? "" : "none")">
+		<button class="action-btn button" title="后退" @onclick="GetCurrentPosition">
+			<Icon Name="arrow-left" Size="20"></Icon>
+		</button>
+		<button class="action-btn button" title="主页">
+			<Icon Name="home" Size="20"></Icon>
+		</button>
+		<button class="action-btn button" title="收藏">
+			<Icon Name="star" Size="20"></Icon>
+		</button>
+	</div>
+	<div class="page-title" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
+
+	<div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
+		<Icon class="search-icon" Name="search"></Icon>
+		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() />
+	</div>
+
+</header>
+
+
+@code {
+	//刷新机制
+	protected override void OnInitialized()
+	{
+		AppState.OnChange += RefreshUI;
+	}
+
+	public void Dispose()
+	{
+		AppState.OnChange -= RefreshUI;
+	}
+
+	private void RefreshUI()
+	{
+
+		InvokeAsync(StateHasChanged);
+	}
+	//
+	private string GetPageTitle()
+	{
+		return AppState.CurrentPage switch
+		{
+			"home" => GetWikiTitle(),
+			"favorites" => "收藏",
+			"history" => "历史",
+			"all-pages" => "页面",
+			var p when p == "data" || p.StartsWith("data/") => "数据",
+			"settings" => "设置",
+			_ => ""
+		};
+	}
+	private string GetSearchPlaceholder()
+	{
+		return AppState.CurrentPage switch
+		{
+			"home" => "输入关键词搜索...",
+			_ => "匹配结果"
+		};
+	}
+	private bool ShouldShowActionButtons()
+	{
+		return AppState.CurrentPage switch
+		{
+			"home" => true,
+			_ => false
+		};
+	}
+	private bool ShouldShowSearch()
+	{
+		return AppState.CurrentPage switch
+		{
+			"home" or "favorites" or "history" or "all-pages"=> true,
+			_ => false
+		};
+	}
+	private string GetWikiTitle()
+	{
+		return AppState.CurrentWikiPage;
+	}
+
+	private async Task GetCurrentPosition()
+	{
+		var position=await IframeBridge.CallJsAsync("GetCurrentPosition","");
+		System.Diagnostics.Debug.WriteLine(position);
+	}
+
+}

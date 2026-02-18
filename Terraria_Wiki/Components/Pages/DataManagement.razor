@@ -1,0 +1,152 @@
+﻿@page "/data"
+@inject NavigationManager NavManager
+@using Terraria_Wiki
+@using Terraria_Wiki.Components.Icons
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
+
+<div class="page-anim page-content">
+
+	<header class="page-header">
+		<span class="page-title">Wiki数据管理</span>
+	</header>
+
+	<div class="list-container">
+		@* === 视图 1：Wiki 列表选择 === *@
+		<div class="wiki-card-grid">
+			@if (_wikiBookList != null)
+			{
+				@foreach (var wiki in _wikiBookList)
+				{
+					<div class="manage-card button" @onclick="() => NavigateTo(wiki)">
+						<div class="manage-card-icon">
+							@* 这里可以用不同的图标或图片，暂用首字母代替 *@
+							<span>@wiki.Title.Substring(0, 1)</span>
+						</div>
+						<div class="manage-card-info">
+							<div class="manage-card-title">@wiki.Title</div>
+							<div class="manage-card-desc">@wiki.Description</div>
+							<div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
+								@(wiki.IsPageDownloaded ? "已安装" : "未安装")
+							</div>
+						</div>
+						<Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
+					</div>
+				}
+			}
+		</div>
+	</div>
+</div>
+
+@code {
+
+
+	private List<WikiBook> _wikiBookList;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+
+		_wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
+	}
+
+	private void NavigateTo(WikiBook item)
+	{
+		if (item.Id != 1)
+		{
+			Application.Current.MainPage.DisplayAlert("提示", "尚未实现其他 Wiki 的数据管理页面。", "确定");
+			System.Diagnostics.Debug.WriteLine("尚未实现其他 Wiki 的数据管理页面。");
+		}
+		else
+		{
+			AppState.CurrentPage = "data/" + item.Id;
+			NavManager.NavigateTo(AppState.CurrentPage);
+		}
+
+	}
+
+
+
+
+
+}
+
+<style>
+	/* 布局微调 */
+
+
+
+
+
+	/* === 卡片列表样式 === */
+	.wiki-card-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 16px 12px;
+	}
+
+	.manage-card {
+		background-color: var(--bg-color-secondary);
+		border-radius: 16px;
+		padding: 16px;
+		display: flex;
+		align-items: center;
+		cursor: pointer;
+	}
+
+	.manage-card-icon {
+		width: 48px;
+		height: 48px;
+		background-color: var(--blue-primary);
+		color: white;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.5rem;
+		font-weight: bold;
+		margin-right: 16px;
+	}
+
+	.manage-card-info {
+		flex: 1;
+	}
+
+	.manage-card-title {
+		font-weight: 600;
+		font-size: 1.05rem;
+		color: var(--text-primary);
+		margin-bottom: 4px;
+	}
+
+	.manage-card-desc {
+		font-size: 0.85rem;
+		color: var(--text-secondary);
+		margin-bottom: 6px;
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.manage-card-status {
+		font-size: 0.75rem;
+		display: inline-block;
+		padding: 2px 8px;
+		border-radius: 99px;
+		font-weight: 500;
+	}
+
+	.status-ok {
+		background-color: var(--green-tertiary);
+		color: var(--green-primary);
+	}
+
+	.status-none {
+		background-color: var(--bg-color);
+		color: var(--text-secondary);
+	}
+
+</style>

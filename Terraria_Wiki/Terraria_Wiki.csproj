@@ -1,0 +1,107 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
+
+		<!-- Note for MacCatalyst:
+            The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
+            When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
+            The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
+            either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
+		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
+
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Terraria_Wiki</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDefaultCssItems>false</EnableDefaultCssItems>
+		<Nullable>enable</Nullable>
+
+		<!-- Display name -->
+		<ApplicationTitle>Terraria Wiki</ApplicationTitle>
+
+		<!-- App Identifier -->
+		<ApplicationId>com.bigbearking.terrariawiki</ApplicationId>
+
+		<!-- Versions -->
+		<ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
+		<ApplicationVersion>2</ApplicationVersion>
+		<Company>BigBearKingdom</Company>
+		<Authors>BigBearKing</Authors>
+		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
+		<WindowsPackageType>None</WindowsPackageType>
+
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">12.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
+		<DebugType>portable</DebugType>
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
+		<DebugType>portable</DebugType>
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-windows10.0.19041.0|AnyCPU'">
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
+		<DebugType>portable</DebugType>
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
+		<DebugType>portable</DebugType>
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-windows10.0.19041.0|AnyCPU'">
+		<ApplicationVersion>2</ApplicationVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
+	</PropertyGroup>
+	<PropertyGroup>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- App Icon -->
+		<MauiIcon Condition="!$(TargetFramework.Contains('-windows'))" Include="Resources\AppIcon\appicon.png" Color="#FFFFFF" ForegroundScale="1" />
+
+		<!-- Splash Screen -->
+		<MauiSplashScreen Include="Resources\AppIcon\appicon.png" Color="#FFFFFF" BaseSize="128,128" />
+
+		<!-- Images -->
+		<MauiImage Include="Resources\Images\*" />
+
+		<!-- Custom Fonts -->
+		<MauiFont Include="Resources\Fonts\*" />
+
+		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Components\Layout\MainLayout.razor.css" />
+		<None Remove="Components\Layout\NavMenu.razor.css" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+	</ItemGroup>
+
+</Project>

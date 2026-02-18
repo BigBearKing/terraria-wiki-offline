@@ -1,0 +1,57 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+namespace Terraria_Wiki.Models;
+
+public class WikiPageSummary
+{
+    public string Title { get; set; }
+    public DateTime LastModified { get; set; }
+}
+public class WikiPageStringTime
+{
+    public string Title { get; set; }
+    public string Content { get; set; }
+    public string LastModified { get; set; }
+}
+
+
+// DataService Models 定义
+public class PageInfo
+{
+    public string Title { get; set; }
+    public DateTime LastModified { get; set; }
+}
+
+public class RawResponse
+{
+    public RawContinue Continue { get; set; }
+    public RawQuery Query { get; set; }
+}
+public class RawContinue
+{
+    [JsonPropertyName("gapcontinue")] public string GapContinue { get; set; }
+}
+
+public class RawQuery
+{
+    public Dictionary<string, RawPage> Pages { get; set; }
+}
+
+public class RawPage
+{
+    public string Title { get; set; }
+    public string Touched { get; set; }
+    public string FullUrl { get; set; }
+}
+
+// AppState Models 定义
+
+public class TempHistory
+{
+    public string Title { get; set; }
+    public int Position { get; set; }
+}

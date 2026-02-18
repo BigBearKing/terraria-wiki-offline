@@ -1,0 +1,179 @@
+﻿@page "/history"
+@using Terraria_Wiki.Components.Icons
+
+<div class="page-anim page-content">
+
+    <header class="page-header">
+        <span class="page-title">浏览历史</span>
+        <span class="clear-btn sub-text" @onclick="ClearHistory">清空历史</span>
+    </header>
+
+    <div class="list-container timeline">
+        <Virtualize Items="@_flatHistory" Context="entry" ItemSize="48" OverscanCount="2">
+            @if (entry.IsHeader)
+            {
+                // 渲染日期标题
+                <div class="timeline-row header-row">
+                    <span class="group-title">@entry.HeaderText</span>
+                </div>
+            }
+            else
+            {
+                // 渲染历史条目
+                <div class="timeline-row item-row" >
+					<div class="history-item button" @onclick="() => OpenPage(entry.Item.Title)">
+                        <div class="time-stamp">@entry.Item.TimeStr</div>
+                        <div class="item-info">
+                            <span class="item-name">@entry.Item.Title</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </Virtualize>
+
+    </div>
+</div>
+
+@code {
+    // 1. 定义一个扁平的混合列表
+    private List<TimelineEntry> _flatHistory = new();
+
+    protected override void OnInitialized()
+    {
+        // 模拟原始数据
+        var rawHistory = GenerateMockData();
+
+        // 2. 数据预处理：将分组数据“拍平”成一条直线
+        // 先按时间倒序排序
+        var sorted = rawHistory.OrderByDescending(x => x.VisitTime).ToList();
+
+        // 遍历并插入标题行
+        string lastDateLabel = "";
+        _flatHistory = new List<TimelineEntry>(sorted.Count * 2); // 预分配容量
+
+        foreach (var item in sorted)
+        {
+            var dateLabel = GetDateLabel(item.VisitTime);
+            // 如果日期变了，先插一行标题
+            if (dateLabel != lastDateLabel)
+            {
+                _flatHistory.Add(new TimelineEntry { IsHeader = true, HeaderText = dateLabel });
+                lastDateLabel = dateLabel;
+            }
+            // 再插一行数据
+            _flatHistory.Add(new TimelineEntry { IsHeader = false, Item = item });
+        }
+    }
+
+    private string GetDateLabel(DateTime dt)
+    {
+        if (dt.Date == DateTime.Today) return "今天";
+        if (dt.Date == DateTime.Today.AddDays(-1)) return "昨天";
+        return dt.ToString("M月d日");
+    }
+
+    private void ClearHistory()
+    {
+        _flatHistory.Clear();
+    }
+
+    private void OpenPage(string title)
+    {
+        // 跳转逻辑
+    }
+
+    // 辅助类：既能装标题，也能装数据
+    class TimelineEntry
+    {
+        public bool IsHeader { get; set; }
+        public string HeaderText { get; set; } = "";
+        public HistoryItem Item { get; set; } = new();
+    }
+
+    class HistoryItem
+    {
+        public string Title { get; set; } = "";
+        public DateTime VisitTime { get; set; }
+        public string TimeStr => VisitTime.ToString("HH:mm");
+    }
+
+    // 仅用于生成模拟数据
+    private List<HistoryItem> GenerateMockData()
+    {
+        var list = new List<HistoryItem>();
+        // ... 此处保留你原有的模拟数据生成逻辑 ...
+        // 为了演示，我简单写几个
+        for (int i = 0; i < 500; i++)
+            list.Add(new HistoryItem { Title = $"Item {i}", VisitTime = DateTime.Now.AddHours(-i) });
+        return list;
+    }
+}
+
+<style>
+    .clear-btn {
+        background: transparent;
+        border: none;
+        color: var(--accent-color);
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+        .clear-btn:hover {
+            text-decoration: underline;
+        }
+
+    /* 关键：统一样式行高 */
+    .timeline-row {
+        height: 48px; /* 必须匹配 ItemSize="48" */
+        display: flex;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* 标题行样式 */
+    .header-row {
+        /* 不需要 margin-bottom，用高度撑开 */
+        padding-top: 8px; /* 稍微调整文字位置 */
+    }
+
+    .group-title {
+        padding-right: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        /* 确保它在最左边遮住线条 */
+        display: inline-block;
+    }
+
+    /* 内容行样式 */
+    .item-row {
+        padding-left: 24px; /* 缩进 */
+        width: 100%;
+    }
+
+    .history-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 4px 12px; /* 减小 padding 以适应 48px 高度 */
+        border-radius: 8px;
+        cursor: pointer;
+        height: 40px; /* 内部高度 */
+    }
+
+
+    .time-stamp {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        width: 60px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .item-name {
+        font-size: 1rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+</style>

@@ -1,0 +1,73 @@
+﻿@page "/all-pages"
+@using Terraria_Wiki.Models
+@using Terraria_Wiki.Services
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+
+<div class="page-anim page-content">
+
+	<header class="page-header">
+		<span class="page-title">所有页面索引</span>
+
+		<span class="sub-text">共找到 @totalPageCount 个页面</span>
+	</header>
+
+	<div class="list-container">
+		<Virtualize ItemsProvider="@LoadPages" Context="wikipage">
+			<div class="list-item button">
+				<span class="page-name">@wikipage.Title</span>
+				<span class="page-time">@AppService.GetFormattedDate(wikipage.LastModified, 1)</span>
+			</div>
+		</Virtualize>
+	</div>
+</div>
+
+@code {
+	private int totalPageCount = 0;
+	protected override async Task OnInitializedAsync()
+	{
+		// 调用服务获取数量
+		totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
+
+	}
+	private async ValueTask<ItemsProviderResult<WikiPageSummary>> LoadPages(ItemsProviderRequest request)
+	{
+		// 1. 获取总数 (用于计算滚动条长度)
+		var totalCount = await App.ContentDb.GetCountAsync<WikiPage>();
+
+		var items = await App.ContentDb.GetPageSummariesPagedAsync(request.StartIndex, request.Count);
+
+		return new ItemsProviderResult<WikiPageSummary>(items, totalCount);
+	}
+
+
+
+}
+
+<style>
+	/* 列表项样式 */
+	.list-item {
+		height: 48px;
+		padding: 4px 12px;
+		border-radius: 12px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		cursor: pointer;
+	}
+
+
+	.page-name {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-weight: 500;
+	}
+
+	.page-time {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		color: var(--text-secondary);
+		font-size: 0.8rem;
+	}
+</style>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Terraria Wiki</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="Terraria_Wiki.styles.css" />
+    <link rel="icon" href="data:,">
+</head>
+
+<body>
+    <div class="status-bar-safe-area"></div>
+    <div id="app">
+        <div class="loading-wrapper">
+            <div class="spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+    <!--<div id="blazor-error-ui" class="loading-text">
+        发生了一些错误
+        <a href="" class="reload loading-text">重试</a>
+        <a class="dismiss loading-text">关闭</a>
+    </div>-->
+
+    <script src="_framework/blazor.webview.js"></script>
+    <script>
+        const pendingCsharpCalls = {};
+        window.toggleTheme = () => {
+            document.body.classList.add('is-switching-theme');
+
+            // 2. 真正的切换黑/白逻辑
+            const isDark = document.body.classList.toggle('dark-theme');
+
+            setTimeout(() => {
+                document.body.classList.remove('is-switching-theme');
+            }, 350);
+
+            // 4. 最后再返回结果给 C#
+            return isDark;
+        };
+        window.scrollToBottom = (elementId) => {
+            var element = document.getElementById(elementId);
+            if (!element) return;
+
+            // 1. 计算当前距离底部的像素值
+            // 公式：总高度 - (卷去的高度 + 可视窗口高度)
+            var distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+
+            var threshold = 80;
+
+            // 3. 只有当用户“就在底部附近”时，才自动滚动
+            if (distanceToBottom < threshold) {
+
+                // 立即滚动
+                element.scrollTop = element.scrollHeight;
+
+                // 针对 Virtualize 的延迟再次滚动 (防止 DOM 还没画完)
+                window.requestAnimationFrame(() => {
+                    element.scrollTop = element.scrollHeight;
+                    setTimeout(() => {
+                        element.scrollTop = element.scrollHeight;
+                    }, 50);
+                });
+            }
+        }
+        window.hostBridge = {
+            iframeWin: null,
+
+            // C# 调用此方法发送给 Iframe
+            sendToIframe: function (msg) {
+                var iframe = document.getElementById("wiki-frame");
+                if (iframe) iframe.contentWindow.postMessage(msg, '*');
+            }
+        };
+
+        // 监听 Iframe 发来的消息 -> 转发给 C#
+        window.addEventListener('message', function (e) {
+
+            // 调用 C# 的静态方法 ReceiveMessage
+            // 注意：把 'YourProjectName' 换成你的项目名！！！
+            DotNet.invokeMethodAsync('Terraria_Wiki', 'ReceiveMessage', JSON.stringify(e.data));
+        });
+    </script>
+
+    <style>
+        /* 1. 容器：居中显示 */
+        .loading-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* 占满全屏高度 */
+            width: 100vw;
+            background-color: #ffffff; /* 默认背景色 */
+            color: #6b7280; /* 文字颜色 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s;
+        }
+
+        /* 2. 圆圈动画本体 */
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb; /* 浅灰色底环 */
+            border-top: 4px solid #2563eb; /* 蓝色动环 (你的 accent-color) */
+            border-radius: 50%; /* 变成圆形 */
+            animation: spin 1s linear infinite; /* 无限旋转动画 */
+            margin-bottom: 16px;
+        }
+
+        /* 3. 文字样式 */
+        .loading-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            opacity: 0.8;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* 4. 定义旋转动画 */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 5. 定义文字呼吸动画 */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* --- 进阶：适配暗色模式 --- */
+        /* 如果用户的系统设置是深色，加载页也自动变黑 */
+        @media (prefers-color-scheme: dark) {
+            .loading-wrapper {
+                background-color: #111827; /* 深灰背景 */
+                color: #9ca3af;
+            }
+
+            .spinner {
+                border-color: #374151;
+                border-top-color: #60a5fa; /* 亮蓝色 */
+            }
+        }
+    </style>
+</body>
+</html>

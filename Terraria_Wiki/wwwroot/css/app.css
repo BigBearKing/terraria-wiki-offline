@@ -1,0 +1,198 @@
+﻿
+:root {
+    /* --- 默认：白色极简 (Light) --- */
+    --sidebar-width-collapsed: 72px;
+    --sidebar-width-expanded: 200px;
+    --header-height: 48px;
+    --bg-color: #ffffff;
+    --bg-color-secondary: #f6f6f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --hover-bg: #eeeeee;
+    --pressed-bg: #e3e3e3;
+
+    --red-primary: rgba(255, 56, 60, 1);
+    --red-secondary: rgba(255, 56, 60, 0.6);
+    --red-tertiary: rgba(255, 56, 60, 0.16);
+    --yellow-primary: rgba(255, 204, 0, 1);
+    --yellow-secondary: rgba(255, 204, 0, 0.6);
+    --yellow-tertiary: rgba(255, 204, 0, 0.16);
+    --green-primary: rgba(52, 199, 89, 1);
+    --green-secondary: rgba(52, 199, 89, 0.6);
+    --green-tertiary: rgba(52, 199, 89, 0.16);
+    --blue-primary: rgba(0, 136, 255, 1);
+    --blue-secondary: rgba(0, 136, 255, 0.6);
+    --blue-tertiary: rgba(0, 136, 255, 0.16);
+}
+/* --- 暗色模式 (Dark) --- */
+body.dark-theme {
+    --bg-color: #131313;
+    --bg-color-secondary: #1E1F21;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --hover-bg: #1f2937;
+    --pressed-bg: #374151;
+    --red-primary: rgba(255, 66, 69, 1);
+    --red-secondary: rgba(255, 66, 69, 0.6);
+    --red-tertiary: rgba(255, 66, 69, 0.16);
+    --yellow-primary: rgba(255, 214, 0, 1);
+    --yellow-secondary: rgba(255, 214, 0, 0.6);
+    --yellow-tertiary: rgba(255, 214, 0, 0.16);
+    --green-primary: rgba(48, 209, 88, 1);
+    --green-secondary: rgba(48, 209, 88, 0.6);
+    --green-tertiary: rgba(48, 209, 88, 0.16);
+    --blue-primary: rgba(0, 145, 255, 1);
+    --blue-secondary: rgba(0, 145, 255, 0.6);
+    --blue-tertiary: rgba(0, 145, 255, 0.16);
+}
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+html {
+    background-color: var(--bg-color);
+    transition: background-color 0.35s;
+}
+body.is-switching-theme,
+/* 2. Body 里的所有后代元素 */
+body.is-switching-theme *,
+/* 3. 所有后代的伪元素 (before/after) */
+body.is-switching-theme *::before,
+body.is-switching-theme *::after {
+    /* 强制所有属性使用 0.3s 过渡 */
+    pointer-events: none;
+    transition: background-color 0.35s,color 0.35s !important;
+}
+
+
+/* 全局基础样式 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+    overflow: hidden;
+     /* 主题切换时的渐变动画 */
+}
+
+/*滚动条*/
+::-webkit-scrollbar {
+    width: 7px; /* 纵向滚动条宽度 */
+    height: 7px; /* 横向滚动条高度 */
+}
+
+/* 2. 滚动条轨道 (Track) - 设为透明，让背景透出来 */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* 3. 滚动条滑块 (Thumb) - 核心样式 */
+::-webkit-scrollbar-thumb {
+    background-color: var(--hover-bg); /* 半透明灰，适应任何背景 */
+    border-radius: 9999px; /* 胶囊圆角 */
+    /* 增加一个白色边框，可以制造出“悬浮”在轨道上的错觉 */
+    background-clip: content-box; /* 关键：让背景只渲染在内容区，配合边框实现留白 */
+}
+
+    /* 4. 鼠标悬停时变深 */
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--pressed-bg);
+    }
+
+
+/* 核心骨架布局 */
+.app-layout {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.content-container {
+    flex: 1;
+    width: 100%;
+    min-height:0;
+}
+
+.iframe-container {
+    width: 100%;
+    flex: 1;
+}
+
+.wiki-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+
+
+/* 页面进入动画：淡入 + 轻微上浮 */
+.page-anim {
+    animation: slideUpFade 0.3s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/*其他页面统一效果*/
+.page-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px 12px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding:0 0 12px;
+
+}
+.page-title{
+    font-size:1.4rem;
+    font-weight:700;
+}
+.sub-text {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+.list-container {
+    flex: 1;
+    overflow-y: auto;
+}
+.button {
+    border: none;
+    padding: 0;
+    display: block;
+    transition: color 0.2s,background-color 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+}
+    .button:hover {
+        background-color: var(--hover-bg);
+    }
+    .button:active {
+        background-color: var(--pressed-bg);
+        transition: none
+    }
+    .button > * {
+        transition: inherit;
+    }

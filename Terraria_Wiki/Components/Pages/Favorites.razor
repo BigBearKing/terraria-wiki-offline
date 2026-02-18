@@ -1,0 +1,164 @@
+﻿@page "/favorites"
+@using Terraria_Wiki.Components.Icons
+
+<div class="page-anim page-content">
+
+	<header class="page-header">
+		<span class="page-title">收藏内容</span>
+		<span class="sub-text">@_favorites.Count 个已收藏词条</span>
+	</header>
+	<div class="list-container">
+		@if (_favorites.Count == 0)
+		{
+			<div class="empty-state">
+				<p>还没有收藏任何内容</p>
+			</div>
+		}
+		else
+		{
+
+			<Virtualize Items="@_favorites" Context="item" ItemSize="64" OverscanCount="2">
+				<div class="wiki-card button" @onclick="() => OpenPage(item.Url)">
+					<div class="card-icon">
+						<Icon Name="star-filled" Size="24" />
+					</div>
+					<div class="card-content">
+						<div class="card-title">@item.Title</div>
+						<div class="card-meta">收藏于 @item.DateAdded.ToString("yyyy/MM/dd")</div>
+					</div>
+					<button class="remove-btn" @onclick:stopPropagation="true" @onclick="() => Remove(item)">
+						取消
+					</button>
+				</div>
+			</Virtualize>
+
+		}
+
+	</div>
+	
+</div>
+
+@code {
+	private List<FavoriteItem> _favorites = new();
+
+	protected override void OnInitialized()
+	{
+		// 模拟数据
+		_favorites = new List<FavoriteItem>
+		{
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
+			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
+			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
+			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
+		};
+	}
+	private void Remove(FavoriteItem item)
+	{
+		_favorites.Remove(item);
+	}
+
+	private void OpenPage(string url)
+	{
+		// 这里放置跳转逻辑，例如 NavManager.NavigateTo(...)
+		Console.WriteLine($"Opening {url}");
+	}
+
+	class FavoriteItem
+	{
+		public string Title { get; set; } = "";
+		public string Url { get; set; } = "";
+		public DateTime DateAdded { get; set; }
+	}
+}
+
+<style>
+
+	.wiki-card {
+		height: 64px; /* 强制匹配 ItemSize */
+		display: flex;
+		align-items: center;
+		padding: 4px 12px;
+		border-radius: 12px;
+		cursor: pointer;
+	}
+
+
+	.card-icon {
+		margin-right: 16px;
+		color: var(--blue-primary);
+		display: flex;
+		align-items: center;
+	}
+
+	.card-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.card-title {
+		font-weight: 600;
+		font-size: 1rem;
+		color: var(--text-primary);
+		margin-bottom: 4px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.card-meta {
+		font-size: 0.8rem;
+		color: var(--text-secondary);
+	}
+
+	.remove-btn {
+		background: transparent;
+		border: 1px solid var(--text-secondary);
+		color: var(--text-secondary);
+		padding: 4px 12px;
+		border-radius: 99px;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+
+		.remove-btn:hover {
+			border-color: var(--red-primary);
+			color: var(--red-primary);
+			background-color: var(--red-tertiary);
+		}
+</style>

@@ -1,0 +1,96 @@
+﻿
+.top-bar {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 8px; /* 两侧留点空隙 */
+    gap: 16px; /* 元素之间的最小间距 */
+    background-color: var(--bg-color);
+    border-bottom: 0px; /* 建议加上边框 */
+    flex-shrink: 0;
+}
+
+/* --- 1. 左侧按钮组 --- */
+.actions-wrapper {
+    display: flex;
+    gap: 8px; /* 按钮之间紧凑一点 */
+    flex-shrink: 0; /* 防止屏幕变窄时按钮被挤扁 */
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 0px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+
+
+    .action-btn:hover {
+        background-color: var(--hover-bg);
+        color: var(--text-primary);
+    }
+
+    .action-btn:active {
+        background-color: var(--pressed-bg);
+    }
+
+/* --- 2. 中间标题 (核心改动) --- */
+.page-title {
+    flex: 1; /* ★ 关键：占据所有剩余空间 */
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-bottom: 2px;
+    white-space: nowrap; /* 防止标题换行 */
+    overflow: hidden; /* 超出省略 */
+    text-overflow: ellipsis;
+    -webkit-user-select: none;
+    user-select: none;
+    min-width: 0; /* 修复 Flex 布局下省略号失效的 Bug */
+}
+
+/* --- 3. 右侧搜索框 (核心改动) --- */
+.search-wrapper {
+    width: 260px; /* ★ 给定一个合适的宽度 */
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* 别让搜索框被压扁 */
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 16px 8px 36px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    background-color: var(--hover-bg);
+    outline: none;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    transition: all 0.2s;
+}
+
+    /* 搜索框聚焦效果 */
+    .search-input:focus {
+        background-color: var(--bg-color);
+        border-color: var(--blue-primary);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+/* 图标定位 */
+.search-wrapper ::deep .search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-secondary);
+    width: 16px;
+    height: 16px;
+    pointer-events: none; /* 让点击穿透图标直接激活输入框 */
+}

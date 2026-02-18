@@ -1,0 +1,45 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@using Terraria_Wiki.Services
+
+<div class="app-layout">
+
+	<NavMenu />
+
+	<main class="main-area">
+
+		<TopBar />
+		<div class="iframe-container page-anim"
+			 style="display: @(IsHomePage() ? "block" : "none")">
+
+			<iframe src="http://localhost:55000"
+					class="wiki-frame" id="wiki-frame">
+			</iframe>
+		</div>
+		<div class="content-container" style="display: @(IsHomePage() ? "none" : "block")">
+			@Body
+		</div>
+	</main>
+</div>
+
+@code {
+	
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+
+			IframeBridge.Init(JS);
+
+		}
+		await base.OnAfterRenderAsync(firstRender);
+	}
+
+	private bool IsHomePage()
+	{
+
+
+		return (AppState.CurrentPage == "home");
+
+	}
+}
