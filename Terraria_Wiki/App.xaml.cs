@@ -29,7 +29,7 @@ namespace Terraria_Wiki
             _webServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();
-            await AppService.RefreshWikiBook(ManagerDb, ContentDb);
+            await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
             DataManager.OnLog += (msg) => LogManager.AppendLog(msg);
             Debug.WriteLine($"[App] 启动完成！数据库路径：{ManagerDb.DatabasePath}，{ContentDb.DatabasePath}");
 
