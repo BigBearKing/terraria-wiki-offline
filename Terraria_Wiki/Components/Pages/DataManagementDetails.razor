@@ -19,12 +19,12 @@
 			@if (_selectedWiki != null)
 			{
 
-					@* --- 状态 A：已下载 (显示数据大小、更新按钮、页面列表) --- *@
-					<div class="title-placeholder">
-						<div class="placeholder-icon">📦</div>
-						<h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title: "尚未获取数据")</h3>
-						<p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki。")</p>
-					</div>
+				@* --- 状态 A：已下载 (显示数据大小、更新按钮、页面列表) --- *@
+				<div class="title-placeholder">
+					<div class="placeholder-icon">📦</div>
+					<h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title: "尚未获取数据")</h3>
+					<p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki。")</p>
+				</div>
 				@if (_selectedWiki.IsPageDownloaded)
 				{
 					@* 1. 数据概览卡片 *@
@@ -209,6 +209,7 @@
 	}
 	private async Task CleanUpRes()
 	{
+
 
 	}
 	private async Task DeleteRes()

@@ -27,14 +27,20 @@ namespace Terraria_Wiki.Services
                     return null;
 
                 }
-                WikiPageStringTime result = new WikiPageStringTime();
+
                 if (page != null)
                 {
+
+
+                    WikiPageStringTime result = new WikiPageStringTime();
                     result.Title = page.Title;
                     result.Content = page.Content;
                     result.LastModified = GetFormattedDate(page.LastModified, 2);
                     App.AppStateManager.CurrentWikiPage = page.Title;
-                    Task.Run(async () => await SaveToHistory(page.Title));
+                    if (page.Title != "Terraria Wiki")
+                        Task.Run(async () => await SaveToHistoryAsync(page.Title));
+
+
                     return IframeBridge.ObjToJson(result);
                 }
                 else
@@ -43,17 +49,43 @@ namespace Terraria_Wiki.Services
                 }
 
             };
+
+            IframeBridge.Actions["GetRedirectedTitleAndAnchorAsync"] = async (input) =>
+            {
+                // 1. 如果没有锚点，先检查是否需要重定向，如果需要则替换 input
+                if (input.IndexOf('#') == -1 && await App.ContentDb.ItemExistsAsync<WikiRedirect>(input))
+                {
+                    var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(input);
+                    input = redirect.ToTarget; // 此时 input 变成了目标字符串（可能带#，也可能不带）
+                }
+
+                // 2. 统一处理分割逻辑 (Split只需写一次)
+                // 限制只分割成2部分，确保只取第一个#之后的内容作为锚点
+                var parts = input.Split(new[] { '#' }, 2);
+
+                var result = new TitleWithAnchor
+                {
+                    Title = parts[0],
+                    Anchor = parts.Length > 1 ? parts[1] : null
+                };
+
+                return IframeBridge.ObjToJson(result);
+            };
+
+            IframeBridge.Actions["SaveToTempHistory"] = async (args) =>
+            {
+
+                TempHistory tempHistory = IframeBridge.JsonToObj<TempHistory>(args);
+                App.AppStateManager.TempHistory.Add(tempHistory);
+
+                return null;
+            };
+
         }
 
 
 
-        public static void SaveToTempHistory(string title,int position)
-        {
-            var tempHistory = new TempHistory { Title = title, Position = position };
-            App.AppStateManager.TempHistory.Add(tempHistory);
-        }
-
-        public static async Task SaveToHistory(string title)
+        private static async Task SaveToHistoryAsync(string title)
         {
             var history = new WikiHistory
             {
@@ -65,6 +97,36 @@ namespace Terraria_Wiki.Services
 
         }
 
+        public static async Task WikiBackAsync()
+        {
+            var list = App.AppStateManager.TempHistory;
+            var listcount = list.Count;
+            if (listcount != 0)
+            {
+                await IframeBridge.CallJsAsync("BackToPage", IframeBridge.ObjToJson(list[listcount - 1]));
+                list.RemoveAt(listcount - 1);
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert("提示", "这已经是首页。", "确定");
+            }
+
+        }
+        public static async Task WikiBackHomeAsync()
+        {
+            var list = App.AppStateManager.TempHistory;
+            var listcount = list.Count;
+            if (listcount != 0)
+            {
+                await IframeBridge.CallJsAsync("BackHome", "");
+                list.Clear();
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert("提示", "这已经是首页。", "确定");
+            }
+
+        }
 
 
 
@@ -72,7 +134,7 @@ namespace Terraria_Wiki.Services
 
 
 
-        public static async Task RefreshWikiBook(DatabaseService wikiBook, DatabaseService wikiContent)
+        public static async Task RefreshWikiBookAsync(DatabaseService wikiBook, DatabaseService wikiContent)
         {
             var book = await wikiBook.GetItemAsync<WikiBook>(1);
             book.PageCount = await wikiContent.GetCountAsync<WikiPage>();
@@ -123,11 +185,13 @@ namespace Terraria_Wiki.Services
             {
                 formattedDate = time.ToString("yyyy-MM-dd HH:mm:ss");
             }
-            else if (type == 1) {
-            
+            else if (type == 1)
+            {
+
                 formattedDate = time.ToString("yy-MM-dd HH:mm");
             }
-            else { 
+            else
+            {
                 formattedDate = time.ToString("yyyy年MM月dd日 HH:mm");
             }
 

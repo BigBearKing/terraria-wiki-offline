@@ -2,10 +2,10 @@
 <header class="top-bar">
 
 	<div class="actions-wrapper" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-		<button class="action-btn button" title="后退" @onclick="GetCurrentPosition">
+		<button class="action-btn button" title="后退" @onclick="WikiBackAsync">
 			<Icon Name="arrow-left" Size="20"></Icon>
 		</button>
-		<button class="action-btn button" title="主页">
+		<button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync">
 			<Icon Name="home" Size="20"></Icon>
 		</button>
 		<button class="action-btn button" title="收藏">
@@ -73,7 +73,7 @@
 	{
 		return AppState.CurrentPage switch
 		{
-			"home" or "favorites" or "history" or "all-pages"=> true,
+			"home" or "favorites" or "history" or "all-pages" => true,
 			_ => false
 		};
 	}
@@ -81,11 +81,14 @@
 	{
 		return AppState.CurrentWikiPage;
 	}
-
-	private async Task GetCurrentPosition()
+	private void WikiBackAsync()
 	{
-		var position=await IframeBridge.CallJsAsync("GetCurrentPosition","");
-		System.Diagnostics.Debug.WriteLine(position);
+		AppService.WikiBackAsync();
 	}
+	private void WikiBackHomeAsync()
+	{
+		AppService.WikiBackHomeAsync();
+	}
+
 
 }
