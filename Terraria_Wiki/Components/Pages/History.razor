@@ -5,159 +5,155 @@
 
 <div class="page-anim page-content">
 
-    <header class="page-header">
-        <span class="page-title">浏览历史</span>
-        <span class="clear-btn sub-text">清空历史</span>
-    </header>
+	<header class="page-header">
+		<span class="page-title">浏览历史</span>
+		<span class="clear-btn sub-text">清空历史</span>
+	</header>
 
-    <div class="list-container timeline">
+	<div class="list-container timeline">
 
-        <Virtualize ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
-            <ItemContent>
+		<Virtualize ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
+			<ItemContent>
 
-                @if (entry.ShowDateHeader)
-                {
-                    <div class="timeline-row header-row">
-                        <span class="group-title">@entry.DateLabel</span>
-                    </div>
-                }
-                <div class="timeline-row item-row">
-                    <div class="history-item button" @onclick="() => OpenPageAsync(entry.Data.WikiTitle)">
-                        <div class="time-stamp">@entry.Data.ReadAt.ToString("HH:mm")</div>
-                        <div class="item-info">
-                            <span class="item-name">@entry.Data.WikiTitle</span>
-                        </div>
-                    </div>
-                </div>
+				@if (entry.ShowDateHeader)
+				{
+					<div class="timeline-row header-row">
+						<span class="group-title">@entry.DateLabel</span>
+					</div>
+				}
+				<div class="timeline-row item-row">
+					<div class="history-item button" @onclick="() => AppService.OpenPageAsync(entry.Data.WikiTitle)">
+						<div class="time-stamp">@entry.Data.ReadAt.ToString("HH:mm")</div>
+						<div class="item-info">
+							<span class="item-name">@entry.Data.WikiTitle</span>
+						</div>
+					</div>
+				</div>
 
-            </ItemContent>
-        </Virtualize>
+			</ItemContent>
+		</Virtualize>
 
-    </div>
+	</div>
 </div>
 
 @code {
 
-    private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
-    {
-        // 1. 获取数据库总记录数 (告诉 Virtualize 滚动条该多长)
-        var totalCount = await App.ContentDb.GetCountAsync<WikiHistory>();
+	private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
+	{
+		// 1. 获取数据库总记录数 (告诉 Virtualize 滚动条该多长)
+		var totalCount = await App.ContentDb.GetCountAsync<WikiHistory>();
 
-        // 2. 获取当前请求的分页数据
-        var rawItems = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex, request.Count);
+		// 2. 获取当前请求的分页数据
+		var rawItems = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex, request.Count);
 
-        // 3. 关键点：获取当前块的前一条数据，用于跨块比对日期
-        WikiHistory? previousItem = null;
-        if (request.StartIndex > 0)
-        {
-            // 往前查 1 条数据
-            var prevList = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex - 1, 1);
-            previousItem = prevList.FirstOrDefault();
-        }
+		// 3. 关键点：获取当前块的前一条数据，用于跨块比对日期
+		WikiHistory? previousItem = null;
+		if (request.StartIndex > 0)
+		{
+			// 往前查 1 条数据
+			var prevList = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex - 1, 1);
+			previousItem = prevList.FirstOrDefault();
+		}
 
-        var resultItems = new List<HistoryTimelineItem>();
+		var resultItems = new List<HistoryTimelineItem>();
 
-        // 初始化比对基准：如果是第一页的第一条，基准为空；否则以上一条数据的日期为基准
-        string lastDateKey = previousItem != null ? GetDateLabel(previousItem.ReadAt) : "";
+		// 初始化比对基准：如果是第一页的第一条，基准为空；否则以上一条数据的日期为基准
+		string lastDateKey = previousItem != null ? GetDateLabel(previousItem.ReadAt) : "";
 
-        // 4. 遍历当前块，判断谁需要顶着“日期标题”
-        foreach (var item in rawItems)
-        {
-            var currentLabel = GetDateLabel(item.ReadAt);
-            bool needsHeader = currentLabel != lastDateKey;
+		// 4. 遍历当前块，判断谁需要顶着“日期标题”
+		foreach (var item in rawItems)
+		{
+			var currentLabel = GetDateLabel(item.ReadAt);
+			bool needsHeader = currentLabel != lastDateKey;
 
-            resultItems.Add(new HistoryTimelineItem
-            {
-                Data = item,
-                ShowDateHeader = needsHeader,
-                DateLabel = needsHeader ? currentLabel : ""
-            });
+			resultItems.Add(new HistoryTimelineItem
+			{
+				Data = item,
+				ShowDateHeader = needsHeader,
+				DateLabel = needsHeader ? currentLabel : ""
+			});
 
-            lastDateKey = currentLabel;
-        }
+			lastDateKey = currentLabel;
+		}
 
-        // 返回包装好的数据
-        return new ItemsProviderResult<HistoryTimelineItem>(resultItems, totalCount);
-    }
+		// 返回包装好的数据
+		return new ItemsProviderResult<HistoryTimelineItem>(resultItems, totalCount);
+	}
 
-    private string GetDateLabel(DateTime dt)
-    {
-        if (dt.Date == DateTime.Today) return "今天";
-        if (dt.Date == DateTime.Today.AddDays(-1)) return "昨天";
-        return dt.ToString("M月d日");
-    }
-    private async Task OpenPageAsync(string title)
-    {
-        await IframeBridge.CallJsAsync("GotoPage", title);
-        AppService.NavigateTo("home");
-    }
+	private string GetDateLabel(DateTime dt)
+	{
+		if (dt.Date == DateTime.Today) return "今天";
+		if (dt.Date == DateTime.Today.AddDays(-1)) return "昨天";
+		return dt.ToString("M月d日");
+	}
+
 }
 
 <style>
-    .clear-btn {
-        background: transparent;
-        border: none;
-        color: var(--accent-color);
-        cursor: pointer;
-        font-weight: 500;
-    }
+	.clear-btn {
+		background: transparent;
+		border: none;
+		color: var(--accent-color);
+		cursor: pointer;
+		font-weight: 500;
+	}
 
-        .clear-btn:hover {
-            text-decoration: underline;
-        }
+		.clear-btn:hover {
+			text-decoration: underline;
+		}
 
-    /* 关键：统一样式行高 */
-    .timeline-row {
-        height: 48px; /* 必须匹配 ItemSize="48" */
-        display: flex;
-        align-items: center;
-        position: relative;
-        z-index: 1;
-    }
+	/* 关键：统一样式行高 */
+	.timeline-row {
+		height: 48px; /* 必须匹配 ItemSize="48" */
+		display: flex;
+		align-items: center;
+		position: relative;
+		z-index: 1;
+	}
 
-    /* 标题行样式 */
-    .header-row {
-        /* 不需要 margin-bottom，用高度撑开 */
-        padding-top: 8px; /* 稍微调整文字位置 */
-    }
+	/* 标题行样式 */
+	.header-row {
+		/* 不需要 margin-bottom，用高度撑开 */
+		padding-top: 8px; /* 稍微调整文字位置 */
+	}
 
-    .group-title {
-        padding-right: 12px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        /* 确保它在最左边遮住线条 */
-        display: inline-block;
-    }
+	.group-title {
+		padding-right: 12px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		/* 确保它在最左边遮住线条 */
+		display: inline-block;
+	}
 
-    /* 内容行样式 */
-    .item-row {
-        padding-left: 24px; /* 缩进 */
-        width: 100%;
-    }
+	/* 内容行样式 */
+	.item-row {
+		padding-left: 24px; /* 缩进 */
+		width: 100%;
+	}
 
-    .history-item {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 4px 12px; /* 减小 padding 以适应 48px 高度 */
-        border-radius: 8px;
-        cursor: pointer;
-        height: 40px; /* 内部高度 */
-    }
+	.history-item {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		padding: 4px 12px; /* 减小 padding 以适应 48px 高度 */
+		border-radius: 8px;
+		cursor: pointer;
+		height: 40px; /* 内部高度 */
+	}
 
 
-    .time-stamp {
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        width: 60px;
-        font-variant-numeric: tabular-nums;
-    }
+	.time-stamp {
+		font-size: 0.8rem;
+		color: var(--text-secondary);
+		width: 60px;
+		font-variant-numeric: tabular-nums;
+	}
 
-    .item-name {
-        font-size: 1rem;
-        color: var(--text-primary);
-        font-weight: 500;
-    }
+	.item-name {
+		font-size: 1rem;
+		color: var(--text-primary);
+		font-weight: 500;
+	}
 </style>

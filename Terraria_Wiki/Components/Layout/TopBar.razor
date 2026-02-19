@@ -1,4 +1,5 @@
 ﻿@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
 <header class="top-bar">
 
 	<div class="actions-wrapper" style="display:@(ShouldShowActionButtons() ? "" : "none")">
@@ -8,8 +9,8 @@
 		<button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync">
 			<Icon Name="home" Size="20"></Icon>
 		</button>
-		<button class="action-btn button" title="收藏">
-			<Icon Name="star" Size="20"></Icon>
+		<button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "")" @onclick="ToggleFavoriteAsync">
+			<Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
 		</button>
 	</div>
 	<div class="page-title" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
@@ -23,10 +24,17 @@
 
 
 @code {
+	private bool _isFavorite = false;
+	private bool _isProcessing = false;
+	protected override async Task OnParametersSetAsync()
+	{
+		_isFavorite = await IsFavoritePageAsync();
+	}
 	//刷新机制
 	protected override void OnInitialized()
 	{
 		AppState.OnChange += RefreshUI;
+
 	}
 
 	public void Dispose()
@@ -34,9 +42,9 @@
 		AppState.OnChange -= RefreshUI;
 	}
 
-	private void RefreshUI()
+	private async void RefreshUI()
 	{
-
+		_isFavorite = await IsFavoritePageAsync();
 		InvokeAsync(StateHasChanged);
 	}
 	//
@@ -89,6 +97,47 @@
 	{
 		AppService.WikiBackHomeAsync();
 	}
+	private async Task<bool> IsFavoritePageAsync()
+	{
+		return await App.ContentDb.ItemExistsAsync<WikiFavorite>(AppState.CurrentWikiPage);
+	}
+	// 新增一个处理状态标志
 
 
+	private async Task ToggleFavoriteAsync()
+	{
+		// 1. 如果当前正在处理中，直接拦截忽略（防止连击的核心）
+		if (_isProcessing) return;
+
+		try
+		{
+			// 2. 上锁
+			_isProcessing = true;
+
+			if (_isFavorite)
+			{
+				await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
+				_isFavorite = false;
+			}
+			else
+			{
+				var newFav = new WikiFavorite
+				{
+					WikiTitle = AppState.CurrentWikiPage,
+					FavoritedAt = DateTime.Now
+				};
+				await App.ContentDb.SaveItemAsync(newFav);
+				_isFavorite = true;
+			}
+
+			// 3. (可选体验优化) 如果本地数据库太快，瞬间就处理完了，
+			// 用户可能还会凭手速连击。人为加 300 毫秒的“冷却时间”能极大提升稳定性和手感。
+			await Task.Delay(300);
+		}
+		finally
+		{
+			// 4. 解锁：无论上面是成功、失败还是报错，finally 都会绝对执行，确保按钮恢复可用
+			_isProcessing = false;
+		}
+	}
 }

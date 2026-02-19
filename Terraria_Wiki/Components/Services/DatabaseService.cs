@@ -106,9 +106,11 @@ public class DatabaseService
         return await _db.Table<T>().CountAsync();
     }
     // 2.2 通用功能：删除
-    public async Task DeleteItemAsync<T>(T item) where T : new()
+    public async Task DeleteItemAsync<T>(object primaryKey) where T : new()
     {
+
         await Init();
+        T item = await _db.FindAsync<T>(primaryKey);
         await _db.DeleteAsync(item);
     }
 
@@ -181,6 +183,13 @@ public class DatabaseService
         // 使用 DESC 按时间倒序，确保最新看的在最前面
         string sql = "SELECT * FROM WikiHistory ORDER BY ReadAt DESC LIMIT ? OFFSET ?";
         return await _db.QueryAsync<WikiHistory>(sql, count, startIndex);
+    }
+    public async Task<List<WikiFavorite>> GetWikiFavoritePagedAsync(int startIndex, int count)
+    {
+        await Init();
+        // 使用 DESC 按时间倒序，确保最新看的在最前面
+        string sql = "SELECT * FROM WikiFavorite ORDER BY FavoritedAt DESC LIMIT ? OFFSET ?";
+        return await _db.QueryAsync<WikiFavorite>(sql, count, startIndex);
     }
 
 }

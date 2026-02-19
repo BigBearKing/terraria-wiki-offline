@@ -1,14 +1,16 @@
 ﻿@page "/favorites"
 @using Terraria_Wiki.Components.Icons
+@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
 
 <div class="page-anim page-content">
 
 	<header class="page-header">
 		<span class="page-title">收藏内容</span>
-		<span class="sub-text">@_favorites.Count 个已收藏词条</span>
+		<span class="sub-text">@favoriteCount 个已收藏词条</span>
 	</header>
 	<div class="list-container">
-		@if (_favorites.Count == 0)
+		@if (favoriteCount == 0)
 		{
 			<div class="empty-state">
 				<p>还没有收藏任何内容</p>
@@ -17,16 +19,16 @@
 		else
 		{
 
-			<Virtualize Items="@_favorites" Context="item" ItemSize="64" OverscanCount="2">
-				<div class="wiki-card button" @onclick="() => OpenPage(item.Url)">
+			<Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="item" OverscanCount="5">
+				<div class="wiki-card button" @onclick="() => AppService.OpenPageAsync(item.WikiTitle)">
 					<div class="card-icon">
 						<Icon Name="star-filled" Size="24" />
 					</div>
 					<div class="card-content">
-						<div class="card-title">@item.Title</div>
-						<div class="card-meta">收藏于 @item.DateAdded.ToString("yyyy/MM/dd")</div>
+						<div class="card-title">@item.WikiTitle</div>
+						<div class="card-meta">收藏于 @item.FavoritedAt.ToString("yyyy/MM/dd")</div>
 					</div>
-					<button class="remove-btn" @onclick:stopPropagation="true" @onclick="() => Remove(item)">
+					<button class="remove-btn" @onclick:stopPropagation="true" @onclick="() => RemoveAsync(item.WikiTitle)">
 						取消
 					</button>
 				</div>
@@ -35,76 +37,41 @@
 		}
 
 	</div>
-	
+
 </div>
 
 @code {
-	private List<FavoriteItem> _favorites = new();
-
-	protected override void OnInitialized()
+	private Virtualize<WikiFavorite> _virtualizeComponent;
+	private int favoriteCount = 0;
+	protected override async Task OnInitializedAsync()
 	{
-		// 模拟数据
-		_favorites = new List<FavoriteItem>
+		// 调用服务获取数量
+		favoriteCount = await App.ContentDb.GetCountAsync<WikiFavorite>();
+
+	}
+
+	private async ValueTask<ItemsProviderResult<WikiFavorite>> LoadPages(ItemsProviderRequest request)
+	{
+		// 1. 获取总数 (用于计算滚动条长度)
+		var totalCount = await App.ContentDb.GetCountAsync<WikiFavorite>();
+
+		var items = await App.ContentDb.GetWikiFavoritePagedAsync(request.StartIndex, request.Count);
+
+		return new ItemsProviderResult<WikiFavorite>(items, totalCount);
+	}
+
+
+	private async Task RemoveAsync(string title)
+	{
+		await App.ContentDb.DeleteItemAsync<WikiFavorite>(title);
+		if (_virtualizeComponent != null)
 		{
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-			new() { Title = "泰拉刃 (Terra Blade)", DateAdded = DateTime.Now, Url = "Terra_Blade" },
-			new() { Title = "月亮领主 (Moon Lord)", DateAdded = DateTime.Now.AddDays(-1), Url = "Moon_Lord" },
-			new() { Title = "史莱姆王 (King Slime)", DateAdded = DateTime.Now.AddDays(-5), Url = "King_Slime" },
-			new() { Title = "天顶剑 (Zenith)", DateAdded = DateTime.Now.AddDays(-10), Url = "Zenith" },
-		};
-	}
-	private void Remove(FavoriteItem item)
-	{
-		_favorites.Remove(item);
+			await _virtualizeComponent.RefreshDataAsync();
+			favoriteCount = await App.ContentDb.GetCountAsync<WikiFavorite>();
+		}
 	}
 
-	private void OpenPage(string url)
-	{
-		// 这里放置跳转逻辑，例如 NavManager.NavigateTo(...)
-		Console.WriteLine($"Opening {url}");
-	}
 
-	class FavoriteItem
-	{
-		public string Title { get; set; } = "";
-		public string Url { get; set; } = "";
-		public DateTime DateAdded { get; set; }
-	}
 }
 
 <style>
@@ -132,10 +99,10 @@
 	}
 
 	.card-title {
-		font-weight: 600;
+		font-weight: 500;
 		font-size: 1rem;
 		color: var(--text-primary);
-		margin-bottom: 4px;
+		margin-bottom: 2px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

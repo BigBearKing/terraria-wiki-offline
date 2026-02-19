@@ -13,7 +13,7 @@ namespace Terraria_Wiki.Services
     {
         // ================= 配置与常量 =================
         private const string UserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
-        private const string JunkXPath = "//div[@class='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()";
+        private const string JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()";
         private const string BaseApiUrl = "https://terraria.wiki.gg/zh/api.php";
         private const string BaseGuideApiUrl = "https://terraria.wiki.gg/zh/api.php?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace=10000&gapfilterredir=nonredirects&gaplimit=max";
         private const string BaseUrl = "https://terraria.wiki.gg";

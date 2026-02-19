@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using Terraria_Wiki.Models;
-using Windows.Services.Maps;
 
 namespace Terraria_Wiki.Services
 {
     public class AppService
     {
         private static NavigationManager _navManager;
-        
+
 
         public AppService()
         {
@@ -130,7 +128,11 @@ namespace Terraria_Wiki.Services
             }
 
         }
-
+        public static async Task OpenPageAsync(string title)
+        {
+            await IframeBridge.CallJsAsync("GotoPage", title);
+            AppService.NavigateTo("home");
+        }
         // 手动跳转
         public static void NavigateTo(string pageName)
         {
