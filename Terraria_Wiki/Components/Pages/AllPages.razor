@@ -15,7 +15,7 @@
 		<Virtualize ItemsProvider="@LoadPages" Context="wikipage">
 			<div class="list-item button">
 				<span class="page-name">@wikipage.Title</span>
-				<span class="page-time">@AppService.GetFormattedDate(wikipage.LastModified, 1)</span>
+				<span class="page-time">@wikipage.LastModified.ToString("yy-MM-dd HH:mm")</span>
 			</div>
 		</Virtualize>
 	</div>

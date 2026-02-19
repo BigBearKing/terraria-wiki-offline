@@ -1,68 +1,83 @@
 ﻿@page "/history"
 @using Terraria_Wiki.Components.Icons
+@using Terraria_Wiki.Models
+@using Terraria_Wiki.Services
 
 <div class="page-anim page-content">
 
     <header class="page-header">
         <span class="page-title">浏览历史</span>
-        <span class="clear-btn sub-text" @onclick="ClearHistory">清空历史</span>
+        <span class="clear-btn sub-text">清空历史</span>
     </header>
 
     <div class="list-container timeline">
-        <Virtualize Items="@_flatHistory" Context="entry" ItemSize="48" OverscanCount="2">
-            @if (entry.IsHeader)
-            {
-                // 渲染日期标题
-                <div class="timeline-row header-row">
-                    <span class="group-title">@entry.HeaderText</span>
-                </div>
-            }
-            else
-            {
-                // 渲染历史条目
-                <div class="timeline-row item-row" >
-					<div class="history-item button" @onclick="() => OpenPage(entry.Item.Title)">
-                        <div class="time-stamp">@entry.Item.TimeStr</div>
+
+        <Virtualize ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
+            <ItemContent>
+
+                @if (entry.ShowDateHeader)
+                {
+                    <div class="timeline-row header-row">
+                        <span class="group-title">@entry.DateLabel</span>
+                    </div>
+                }
+                <div class="timeline-row item-row">
+                    <div class="history-item button" @onclick="() => OpenPageAsync(entry.Data.WikiTitle)">
+                        <div class="time-stamp">@entry.Data.ReadAt.ToString("HH:mm")</div>
                         <div class="item-info">
-                            <span class="item-name">@entry.Item.Title</span>
+                            <span class="item-name">@entry.Data.WikiTitle</span>
                         </div>
                     </div>
                 </div>
-            }
+
+            </ItemContent>
         </Virtualize>
 
     </div>
 </div>
 
 @code {
-    // 1. 定义一个扁平的混合列表
-    private List<TimelineEntry> _flatHistory = new();
 
-    protected override void OnInitialized()
+    private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
     {
-        // 模拟原始数据
-        var rawHistory = GenerateMockData();
+        // 1. 获取数据库总记录数 (告诉 Virtualize 滚动条该多长)
+        var totalCount = await App.ContentDb.GetCountAsync<WikiHistory>();
 
-        // 2. 数据预处理：将分组数据“拍平”成一条直线
-        // 先按时间倒序排序
-        var sorted = rawHistory.OrderByDescending(x => x.VisitTime).ToList();
+        // 2. 获取当前请求的分页数据
+        var rawItems = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex, request.Count);
 
-        // 遍历并插入标题行
-        string lastDateLabel = "";
-        _flatHistory = new List<TimelineEntry>(sorted.Count * 2); // 预分配容量
-
-        foreach (var item in sorted)
+        // 3. 关键点：获取当前块的前一条数据，用于跨块比对日期
+        WikiHistory? previousItem = null;
+        if (request.StartIndex > 0)
         {
-            var dateLabel = GetDateLabel(item.VisitTime);
-            // 如果日期变了，先插一行标题
-            if (dateLabel != lastDateLabel)
-            {
-                _flatHistory.Add(new TimelineEntry { IsHeader = true, HeaderText = dateLabel });
-                lastDateLabel = dateLabel;
-            }
-            // 再插一行数据
-            _flatHistory.Add(new TimelineEntry { IsHeader = false, Item = item });
+            // 往前查 1 条数据
+            var prevList = await App.ContentDb.GetWikiHistoryPagedAsync(request.StartIndex - 1, 1);
+            previousItem = prevList.FirstOrDefault();
         }
+
+        var resultItems = new List<HistoryTimelineItem>();
+
+        // 初始化比对基准：如果是第一页的第一条，基准为空；否则以上一条数据的日期为基准
+        string lastDateKey = previousItem != null ? GetDateLabel(previousItem.ReadAt) : "";
+
+        // 4. 遍历当前块，判断谁需要顶着“日期标题”
+        foreach (var item in rawItems)
+        {
+            var currentLabel = GetDateLabel(item.ReadAt);
+            bool needsHeader = currentLabel != lastDateKey;
+
+            resultItems.Add(new HistoryTimelineItem
+            {
+                Data = item,
+                ShowDateHeader = needsHeader,
+                DateLabel = needsHeader ? currentLabel : ""
+            });
+
+            lastDateKey = currentLabel;
+        }
+
+        // 返回包装好的数据
+        return new ItemsProviderResult<HistoryTimelineItem>(resultItems, totalCount);
     }
 
     private string GetDateLabel(DateTime dt)
@@ -71,41 +86,10 @@
         if (dt.Date == DateTime.Today.AddDays(-1)) return "昨天";
         return dt.ToString("M月d日");
     }
-
-    private void ClearHistory()
+    private async Task OpenPageAsync(string title)
     {
-        _flatHistory.Clear();
-    }
-
-    private void OpenPage(string title)
-    {
-        // 跳转逻辑
-    }
-
-    // 辅助类：既能装标题，也能装数据
-    class TimelineEntry
-    {
-        public bool IsHeader { get; set; }
-        public string HeaderText { get; set; } = "";
-        public HistoryItem Item { get; set; } = new();
-    }
-
-    class HistoryItem
-    {
-        public string Title { get; set; } = "";
-        public DateTime VisitTime { get; set; }
-        public string TimeStr => VisitTime.ToString("HH:mm");
-    }
-
-    // 仅用于生成模拟数据
-    private List<HistoryItem> GenerateMockData()
-    {
-        var list = new List<HistoryItem>();
-        // ... 此处保留你原有的模拟数据生成逻辑 ...
-        // 为了演示，我简单写几个
-        for (int i = 0; i < 500; i++)
-            list.Add(new HistoryItem { Title = $"Item {i}", VisitTime = DateTime.Now.AddHours(-i) });
-        return list;
+        AppState.CurrentPage = "home";
+        await IframeBridge.CallJsAsync("BackToPage", title);
     }
 }
 

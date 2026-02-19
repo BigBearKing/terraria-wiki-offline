@@ -48,7 +48,7 @@
 						</div>
 						<div class="stat-item">
 							<span class="stat-label">上次更新时间</span>
-							<span class="stat-value">@AppService.GetFormattedDate(_selectedWiki.DownloadedTime).Replace(" ", "\n")</span>
+							<span class="stat-value">@_selectedWiki.DownloadedTime.ToString("yyyy-MM-dd\nHH:mm")</span>
 						</div>
 					</div>
 

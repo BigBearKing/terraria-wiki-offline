@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
@@ -12,8 +11,6 @@
             The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
             either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
 		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
-
-		<OutputType>Exe</OutputType>
 		<RootNamespace>Terraria_Wiki</RootNamespace>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
@@ -72,8 +69,9 @@
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
 	</PropertyGroup>
 	<PropertyGroup>
-		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<OutputType>WinExe</OutputType>
 	</PropertyGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Condition="!$(TargetFramework.Contains('-windows'))" Include="Resources\AppIcon\appicon.png" Color="#FFFFFF" ForegroundScale="1" />

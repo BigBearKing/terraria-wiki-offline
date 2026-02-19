@@ -1,11 +1,8 @@
 ﻿using HtmlAgilityPack;
-using Microsoft.AspNetCore.Components.Forms;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Terraria_Wiki.Models;
@@ -396,7 +393,7 @@ namespace Terraria_Wiki.Services
                 int hashIndex = href.IndexOf('#');
                 if (hashIndex >= 0)
                 {
-                    n.SetAttributeValue("title", n.GetAttributeValue("title","") + href.Substring(hashIndex));
+                    n.SetAttributeValue("title", n.GetAttributeValue("title", "") + href.Substring(hashIndex));
                 }
                 n.Attributes.Remove("href");
             });

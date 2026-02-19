@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 namespace Terraria_Wiki.Models;
 
 public class WikiPageSummary
@@ -18,6 +13,16 @@ public class WikiPageStringTime
     public string LastModified { get; set; }
 }
 
+class HistoryTimelineItem
+{
+    public WikiHistory Data { get; set; } = new();
+
+    // 决定这个条目上方要不要显示日期标题
+    public bool ShowDateHeader { get; set; }
+
+    // 具体的标题文本（如 "今天", "10月5日"）
+    public string DateLabel { get; set; } = "";
+}
 
 // DataService Models 定义
 public class PageInfo

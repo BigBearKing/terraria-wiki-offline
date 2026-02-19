@@ -172,8 +172,15 @@ public class DatabaseService
     {
         await Init();
         string sql = "SELECT Title, LastModified FROM WikiPage ORDER BY Title LIMIT ? OFFSET ?";
-        // limit = count, offset = startIndex
         return await _db.QueryAsync<WikiPageSummary>(sql, count, startIndex);
+    }
+    // 分页获取历史记录（按阅读时间倒序排）
+    public async Task<List<WikiHistory>> GetWikiHistoryPagedAsync(int startIndex, int count)
+    {
+        await Init();
+        // 使用 DESC 按时间倒序，确保最新看的在最前面
+        string sql = "SELECT * FROM WikiHistory ORDER BY ReadAt DESC LIMIT ? OFFSET ?";
+        return await _db.QueryAsync<WikiHistory>(sql, count, startIndex);
     }
 
 }

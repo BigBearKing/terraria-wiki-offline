@@ -11,7 +11,7 @@ namespace Terraria_Wiki
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
         public App(LocalWebServer webServer, ManagerDbService managerDb,   // 注入管理库
-        ContentDbService contentDb, DataService dataService, LogService logService,AppState appState,AppService appService)
+        ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService)
         {
             InitializeComponent();
             _webServer = webServer;

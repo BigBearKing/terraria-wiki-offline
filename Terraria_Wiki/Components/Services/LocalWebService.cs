@@ -1,7 +1,5 @@
-using System.Net;
-using System.Text;
 using System.Diagnostics;
-using Terraria_Wiki.Services;
+using System.Net;
 using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services

@@ -1,6 +1,4 @@
-﻿using System.Text.Encodings.Web;
-using System.Text.Json;
-using Terraria_Wiki.Models;
+﻿using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services
 {
@@ -35,7 +33,7 @@ namespace Terraria_Wiki.Services
                     WikiPageStringTime result = new WikiPageStringTime();
                     result.Title = page.Title;
                     result.Content = page.Content;
-                    result.LastModified = GetFormattedDate(page.LastModified, 2);
+                    result.LastModified = page.LastModified.ToString("yyyy年MM月dd日 HH:mm");
                     App.AppStateManager.CurrentWikiPage = page.Title;
                     if (page.Title != "Terraria Wiki")
                         Task.Run(async () => await SaveToHistoryAsync(page.Title));
@@ -177,26 +175,7 @@ namespace Terraria_Wiki.Services
             //保留2位小数
             return string.Format("{0:n2} {1}", number, suffixes[counter]);
         }
-        public static string GetFormattedDate(DateTime time, int type = 0)
-        {
-            string formattedDate;
 
-            if (type == 0)
-            {
-                formattedDate = time.ToString("yyyy-MM-dd HH:mm:ss");
-            }
-            else if (type == 1)
-            {
-
-                formattedDate = time.ToString("yy-MM-dd HH:mm");
-            }
-            else
-            {
-                formattedDate = time.ToString("yyyy年MM月dd日 HH:mm");
-            }
-
-            return formattedDate;
-        }
         //文本去重
         public static int RemoveDuplicatesOptimized(string inputPath, string outputPath)
         {

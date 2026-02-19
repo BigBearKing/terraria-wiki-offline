@@ -33,8 +33,8 @@ public static class IframeBridge
     public static T JsonToObj<T>(string json) where T : class
     {
 
-        if (json == null||json=="") return null;
-            return JsonSerializer.Deserialize<T>(json, Options);
+        if (json == null || json == "") return null;
+        return JsonSerializer.Deserialize<T>(json, Options);
     }
     // 2. C# 调用 Iframe：发送请求并等待结果
     public static async Task<string> CallJsAsync(string methodName, string argsJson)

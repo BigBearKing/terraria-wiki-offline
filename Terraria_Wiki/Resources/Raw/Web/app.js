@@ -3,8 +3,8 @@ const handlers = {}; // 存 JS 方法
 const pending = {};  // 存等待 C# 的 Promise
 
 
-handlers["GotoHistory"] = async (msg) => {
-    gotoHistory(msg);
+handlers["GotoPage"] = async (msg) => {
+    gotoPage(msg);
 
     return null;
 }
@@ -14,7 +14,8 @@ handlers["BackToPage"] = async (msg) => {
     return null;
 }
 handlers["BackHome"] = async () => {
-    redirect("Terraria Wiki")
+    await redirect("Terraria Wiki")
+    document.querySelector('html').scrollTo({ top: 0, left: 0, behavior: 'instant' });
     return null;
 }
 
