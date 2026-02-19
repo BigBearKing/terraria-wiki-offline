@@ -5,7 +5,6 @@ const pending = {};  // 存等待 C# 的 Promise
 
 handlers["GotoPage"] = async (msg) => {
     gotoPage(msg);
-
     return null;
 }
 handlers["BackToPage"] = async (msg) => {
@@ -54,16 +53,17 @@ document.addEventListener('click', function (e) {
 
     // 2. 判断是否找到了 a 标签
     if (targetLink) {
-        // (可选) 阻止链接跳转，方便在控制台查看结果
+        if (targetLink.closest("div.thumb")) {
+            openThumb(targetLink);
+            return;
+        }
         const title = targetLink.getAttribute('title');
-        const anchor = targetLink.getAttribute('anchor') || '';
         const href = targetLink.getAttribute('href') || '';
         if (href.startsWith('http')) {
             e.preventDefault();
 
             return;
         }
-        // 如果是站内链接（有 title 属性且没有 target="_blank"）
         if (title && !href) {
             gotoPage(title);
         }
@@ -121,7 +121,27 @@ async function redirect(title) {
     return true;
 }
 
+function openThumb(thumb) {
+    const modal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-full-image');
+    if (thumb.querySelector('img') == null) return;
+    modalImg.src = thumb.querySelector('img').src;
+    document.documentElement.classList.add('modal-open');
+    modal.classList.add('show');
+    if (modal.dataset.closeBound !== 'true') {
+        modal.dataset.closeBound = 'true';
 
+        modal.addEventListener('click', function () {
+            // 隐藏模态框
+            modal.classList.remove('show');
+            document.documentElement.classList.remove('modal-open');
+            // 延迟一点清空 src，防止出现“图片突然消失”的闪烁感，同时释放大图内存
+            setTimeout(() => {
+                modalImg.src = '';
+            }, 200);
+        });
+    }
+}
 
 
 

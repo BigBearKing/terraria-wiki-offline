@@ -1,9 +1,14 @@
-﻿using Terraria_Wiki.Models;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using Terraria_Wiki.Models;
+using Windows.Services.Maps;
 
 namespace Terraria_Wiki.Services
 {
     public class AppService
     {
+        private static NavigationManager _navManager;
+        
 
         public AppService()
         {
@@ -80,7 +85,7 @@ namespace Terraria_Wiki.Services
             };
 
         }
-
+        public static void Init(NavigationManager navManager) => _navManager = navManager;
 
 
         private static async Task SaveToHistoryAsync(string title)
@@ -126,7 +131,20 @@ namespace Terraria_Wiki.Services
 
         }
 
+        // 手动跳转
+        public static void NavigateTo(string pageName)
+        {
+            if (App.AppStateManager.CurrentPage == pageName)
+                return;
+            if (App.AppStateManager.IsDownloading)
+            {
+                Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理下载任务。", "确定");
+                return;
+            }
 
+            App.AppStateManager.CurrentPage = pageName;
+            _navManager.NavigateTo(App.AppStateManager.CurrentPage);
+        }
 
 
 

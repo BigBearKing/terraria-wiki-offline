@@ -1,246 +1,231 @@
 ﻿@using Microsoft.JSInterop
-@inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
+@using Terraria_Wiki.Services
 <div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
 
-    <div class="sidebar-header" @onclick="ToggleSidebar">
-        <div class="icon-container">
-            <img src="images/logo.svg" alt="App Logo" class="app-icon" />
-        </div>
-        <div class="text-container">
-            <span class="app-title">@AppState.AppName</span>
-        </div>
-    </div>
+	<div class="sidebar-header" @onclick="ToggleSidebar">
+		<div class="icon-container">
+			<img src="images/logo.svg" alt="App Logo" class="app-icon" />
+		</div>
+		<div class="text-container">
+			<span class="app-title">@AppState.AppName</span>
+		</div>
+	</div>
 
-    <nav class="nav-items">
+	<nav class="nav-items">
 
-        <button class="nav-item button @GetActiveClass("home")" @onclick='() => NavigateTo("home")'>
-            <div class="icon-container">
-                <Icon Name="main"></Icon>
-            </div>
-            <span class="text-container">主页</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("home")" @onclick='() => AppService.NavigateTo("home")'>
+			<div class="icon-container">
+				<Icon Name="main"></Icon>
+			</div>
+			<span class="text-container">主页</span>
+		</button>
 
-        <button class="nav-item button @GetActiveClass("favorites")" @onclick='() => NavigateTo("favorites")'>
-            <div class="icon-container">
-                <Icon Name="favorites"></Icon>
-            </div>
-            <span class="text-container">收藏</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("favorites")" @onclick='() => AppService.NavigateTo("favorites")'>
+			<div class="icon-container">
+				<Icon Name="favorites"></Icon>
+			</div>
+			<span class="text-container">收藏</span>
+		</button>
 
-        <button class="nav-item button @GetActiveClass("history")" @onclick='() => NavigateTo("history")'>
-            <div class="icon-container">
-                <Icon Name="history"></Icon>
-            </div>
-            <span class="text-container">历史</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("history")" @onclick='() => AppService.NavigateTo("history")'>
+			<div class="icon-container">
+				<Icon Name="history"></Icon>
+			</div>
+			<span class="text-container">历史</span>
+		</button>
 
-        <button class="nav-item button @GetActiveClass("all-pages")" @onclick='() => NavigateTo("all-pages")'>
-            <div class="icon-container">
-                <Icon Name="all-pages"></Icon>
-            </div>
-            <span class="text-container">页面</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("all-pages")" @onclick='() => AppService.NavigateTo("all-pages")'>
+			<div class="icon-container">
+				<Icon Name="all-pages"></Icon>
+			</div>
+			<span class="text-container">页面</span>
+		</button>
 
-        <button class="nav-item button @GetActiveClass("data")" @onclick='() => NavigateTo("data")'>
-            <div class="icon-container">
-                <Icon Name="data"></Icon>
-            </div>
-            <span class="text-container">数据</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("data")" @onclick='() => AppService.NavigateTo("data")'>
+			<div class="icon-container">
+				<Icon Name="data"></Icon>
+			</div>
+			<span class="text-container">数据</span>
+		</button>
 
-        <button class="nav-item button @GetActiveClass("settings")" @onclick='() => NavigateTo("settings")'>
-            <div class="icon-container">
-                <Icon Name="settings"></Icon>
-            </div>
-            <span class="text-container">设置</span>
-        </button>
+		<button class="nav-item button @GetActiveClass("settings")" @onclick='() => AppService.NavigateTo("settings")'>
+			<div class="icon-container">
+				<Icon Name="settings"></Icon>
+			</div>
+			<span class="text-container">设置</span>
+		</button>
 
-    </nav>
+	</nav>
 
-    <div class="sidebar-footer">
-        <button class="nav-item button">
-            <div class="icon-container" style=@(AppState.IsDownloading ? "color:var(--blue-primary)" : "")>
-                <Icon Name="download"> </Icon>
-            </div>
-            <span class="text-container">
-                @(AppState.IsDownloading ? "有下载任务" : "无下载任务")
-            </span>
-        </button>
-        <button class="nav-item theme-toggle button" @onclick="ToggleTheme">
-            <div class="icon-container">
-                <Icon Name=@(AppState.IsDarkTheme ? "sun" : "moon")> </Icon>
-            </div>
-            <span class="text-container">
-                @(AppState.IsDarkTheme ? "切换亮色" : "切换暗色")
-            </span>
-        </button>
-    </div>
+	<div class="sidebar-footer">
+		<button class="nav-item button">
+			<div class="icon-container" style=@(AppState.IsDownloading ? "color:var(--blue-primary)" : "")>
+				<Icon Name="download"> </Icon>
+			</div>
+			<span class="text-container">
+				@(AppState.IsDownloading ? "有下载任务" : "无下载任务")
+			</span>
+		</button>
+		<button class="nav-item theme-toggle button" @onclick="ToggleTheme">
+			<div class="icon-container">
+				<Icon Name=@(AppState.IsDarkTheme ? "sun" : "moon")> </Icon>
+			</div>
+			<span class="text-container">
+				@(AppState.IsDarkTheme ? "切换亮色" : "切换暗色")
+			</span>
+		</button>
+	</div>
 
 </div>
 
 @code {
-    protected override void OnInitialized()
-    {
-        AppState.OnChange += RefreshUI;
-    }
+	protected override void OnInitialized()
+	{
+		AppState.OnChange += RefreshUI;
+	}
 
-    public void Dispose()
-    {
-        AppState.OnChange -= RefreshUI;
-    }
+	public void Dispose()
+	{
+		AppState.OnChange -= RefreshUI;
+	}
 
-    private void RefreshUI()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-    // 核心逻辑：判断当前按钮是否应该高亮
-    private string GetActiveClass(string pageName)
-    {
-        return AppState.CurrentPage.Contains(pageName) ? "actived" : "";
-    }
+	private void RefreshUI()
+	{
+		InvokeAsync(StateHasChanged);
+	}
+	// 核心逻辑：判断当前按钮是否应该高亮
+	private string GetActiveClass(string pageName)
+	{
+		return AppState.CurrentPage.Contains(pageName) ? "actived" : "";
+	}
 
-    // 手动跳转
-    private void NavigateTo(string pageName)
-    {
-        if (AppState.CurrentPage == pageName)
-            return;
-        if (AppState.IsDownloading)
-        {
-            Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理下载任务。", "确定");
-            return;
-        }
 
-            
 
-        AppState.CurrentPage = pageName;
-        NavManager.NavigateTo(AppState.CurrentPage);
-    }
-
-    private void ToggleSidebar()
-    {
+	private void ToggleSidebar()
+	{
 		AppState.SidebarIsExpanded = !AppState.SidebarIsExpanded;
-    }
+	}
 
-    private async Task ToggleTheme()
-    {
-        AppState.IsDarkTheme = await JSRuntime.InvokeAsync<bool>("toggleTheme");
-    }
+	private async Task ToggleTheme()
+	{
+		AppState.IsDarkTheme = await JSRuntime.InvokeAsync<bool>("toggleTheme");
+	}
 }
 <style>
-    /* 1. 侧边栏容器：基础与动画 */
-    .sidebar {
-        height: 100vh;
-        background-color: var(--bg-color-secondary);
-        display: flex;
-        flex-direction: column;
-        /* 关键动画属性 */
-        transition:width 0.3s;
-        overflow: hidden; /* 隐藏溢出的文字 */
-        white-space: nowrap; /* 强制文字一行显示 */
-        -webkit-user-select: none;
-        user-select: none;
-    }
+	/* 1. 侧边栏容器：基础与动画 */
+	.sidebar {
+		height: 100vh;
+		background-color: var(--bg-color-secondary);
+		display: flex;
+		flex-direction: column;
+		/* 关键动画属性 */
+		transition: width 0.3s;
+		overflow: hidden; /* 隐藏溢出的文字 */
+		white-space: nowrap; /* 强制文字一行显示 */
+		-webkit-user-select: none;
+		user-select: none;
+	}
 
-        .sidebar.collapsed {
-            width: var(--sidebar-width-collapsed);
-        }
+		.sidebar.collapsed {
+			width: var(--sidebar-width-collapsed);
+		}
 
-        .sidebar.expanded {
-            width: var(--sidebar-width-expanded);
-        }
-
-
-    /* 2. 头部区域 */
-    .sidebar-header {
-        height: 50px; /* 和宽度保持一致，形成正方形感 */
-        margin: 4px 12px;
-        display: flex;
-        align-items: center;
-        padding: 0;
-        cursor: pointer;
-    }
-
-    .nav-items{
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 12px;
-    }
-    /* 3. 通用导航项样式 (Header 和 NavItem 共用结构) */
-    .nav-item {
-        display: flex;
-        align-items: center;
-        justify-content:flex-start;
-        height: 48px;
-        border-radius: 8px;
-        cursor: pointer;
-        background-color:transparent;
-        color: var(--text-secondary);
-    }
-
-        .nav-item:hover {
-            color: var(--text-primary);
-        }
+		.sidebar.expanded {
+			width: var(--sidebar-width-expanded);
+		}
 
 
-        .nav-item.actived {
-            background-color: var(--blue-tertiary); /* 极淡的蓝 */
-            color: var(--blue-primary);
-        }
+	/* 2. 头部区域 */
+	.sidebar-header {
+		height: 50px; /* 和宽度保持一致，形成正方形感 */
+		margin: 4px 12px;
+		display: flex;
+		align-items: center;
+		padding: 0;
+		cursor: pointer;
+	}
+
+	.nav-items {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 12px;
+	}
+	/* 3. 通用导航项样式 (Header 和 NavItem 共用结构) */
+	.nav-item {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		height: 48px;
+		border-radius: 8px;
+		cursor: pointer;
+		background-color: transparent;
+		color: var(--text-secondary);
+	}
+
+		.nav-item:hover {
+			color: var(--text-primary);
+		}
 
 
-    /* 4. 核心：图标与文字的分离控制 */
-
-    /* 图标容器：始终固定宽度，保证在折叠和展开时位置不动 */
-    .icon-container {
-        width: 48px; /* 72px 宽度减去两边 margin(12px*2) = 48px */
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .app-icon {
-        width: 42px; /* 根据你的侧边栏宽度调整大小 */
-        height: 42px;
-        object-fit: contain; /* 确保图片不被拉伸 */
-    }
+		.nav-item.actived {
+			background-color: var(--blue-tertiary); /* 极淡的蓝 */
+			color: var(--blue-primary);
+		}
 
 
-    /* 文字容器：动画控制 */
-    .text-container {
-        font-size: 0.95rem;
-        font-weight: 500;
-        margin-left: 4px;
-        opacity: 1;
-        transition:opacity 0.25s ease-in-out;
-    }
+	/* 4. 核心：图标与文字的分离控制 */
 
-    .app-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: var(--text-primary);
-    }
+	/* 图标容器：始终固定宽度，保证在折叠和展开时位置不动 */
+	.icon-container {
+		width: 48px; /* 72px 宽度减去两边 margin(12px*2) = 48px */
+		height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
 
-
-    /* 5. 折叠时的特殊处理 (Hide Text) */
-    .sidebar.collapsed .text-container {
-        opacity: 0;
-        width: 0;
-        pointer-events: none;
-    }
+	.app-icon {
+		width: 42px; /* 根据你的侧边栏宽度调整大小 */
+		height: 42px;
+		object-fit: contain; /* 确保图片不被拉伸 */
+	}
 
 
+	/* 文字容器：动画控制 */
+	.text-container {
+		font-size: 0.95rem;
+		font-weight: 500;
+		margin-left: 4px;
+		opacity: 1;
+		transition: opacity 0.25s ease-in-out;
+	}
 
-    /* 6. 底部区域 */
-    .sidebar-footer {
-        margin-top: auto; /* 挤到底部 */
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 12px;
-    }
+	.app-title {
+		font-weight: 700;
+		font-size: 1.1rem;
+		color: var(--text-primary);
+	}
+
+
+	/* 5. 折叠时的特殊处理 (Hide Text) */
+	.sidebar.collapsed .text-container {
+		opacity: 0;
+		width: 0;
+		pointer-events: none;
+	}
+
+
+
+	/* 6. 底部区域 */
+	.sidebar-footer {
+		margin-top: auto; /* 挤到底部 */
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 12px;
+	}
 
 </style>

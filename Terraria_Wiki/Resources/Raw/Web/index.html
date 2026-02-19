@@ -12,65 +12,114 @@
     <script type="module" src="app.js" defer></script>
 </head>
 
+
 <body class="content-size-expanded">
 
+    <!-- 内容 -->
+    <div class="content-wrapper">
+        <div id="p-logo" role="banner">
+            <a class="mw-wiki-logo"></a>
+        </div>
+        <div id="mw-head-base" class="noprint"></div>
+
+        <div id="mw-head"></div>
         <!-- 内容 -->
-        <div class="content-wrapper">
-            <div id="p-logo" role="banner">
-                <a class="mw-wiki-logo"></a>
-            </div>
-            <div id="mw-head-base" class="noprint"></div>
-
-            <div id="mw-head"></div>
-            <!-- 内容 -->
-            <div id="content" class="mw-body box-row-m" role="main">
-                <div class="content-body">
-                    <main id="main-content">
-                        <a id="top"></a>
-                        <h1 id="firstHeading" class="firstHeading mw-first-heading" style="display: none;" lang="zh-Hans-CN" dir="ltr"></h1>
-                        <div id="bodyContent" class="vector-body">
-                            <div id="contentSub" lang="zh-Hans-CN" dir="ltr"></div>
-                            <div id="mw-content-text" class="mw-body-content">
-                                <!-- xxx -->
-                            </div>
+        <div id="content" class="mw-body box-row-m" role="main">
+            <div class="content-body">
+                <main id="main-content">
+                    <a id="top"></a>
+                    <h1 id="firstHeading" class="firstHeading mw-first-heading" style="display: none;" lang="zh-Hans-CN"
+                        dir="ltr"></h1>
+                    <div id="bodyContent" class="vector-body">
+                        <div id="contentSub" lang="zh-Hans-CN" dir="ltr"></div>
+                        <div id="mw-content-text" class="mw-body-content">
+                            <!-- xxx -->
                         </div>
-                    </main>
-                </div>
+                    </div>
+                </main>
             </div>
-
-            <!-- 尾部 -->
-
-            <footer id="footer" class="mw-footer" lang="zh-Hans-CN" dir="ltr">
-                <ul id="footer-info">
-                    <li id="footer-info-lastmod"></li>
-                    <li id="footer-info-copyright">
-                        <div class="wikigg-copyright-box">2022 年 03 月 14 日之前创建的页面改编自Fandom Terraria
-                            Wiki。<br>除非另有说明，页面内容受<a class="external" rel="nofollow">知识共享署名-非商业性使用-相同方式共享 4.0
-                                许可协议</a>约束。</div>
-                    </li>
-                </ul>
-
-                <ul id="footer-icons" class="noprint">
-                    <li id="footer-copyrightico"><a
-                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
-                                src="./images/main/CC-BY-NC-SA.svg" alt="知识共享署名-非商业性使用-相同方式共享 4.0 许可协议" height="31"
-                                width="88" loading="lazy" data-theme="light"></a>
-                    </li>
-                    <li id="footer-poweredbyico"><a
-                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
-                                src="./images/main/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31"
-                                loading="lazy" data-theme="light"></a>
-                    </li>
-                    <li id="footer-partofico"><a
-                            class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
-                                src="./images/main/Network_footer.svg" alt="Part of wiki.gg" height="31" width="88"
-                                loading="lazy" data-theme="light"></a></li>
-                </ul>
-
-            </footer>
         </div>
 
+        <!-- 尾部 -->
+
+        <footer id="footer" class="mw-footer" lang="zh-Hans-CN" dir="ltr">
+            <ul id="footer-info">
+                <li id="footer-info-lastmod"></li>
+                <li id="footer-info-copyright">
+                    <div class="wikigg-copyright-box">2022 年 03 月 14 日之前创建的页面改编自Fandom Terraria
+                        Wiki。<br>除非另有说明，页面内容受<a class="external" rel="nofollow">知识共享署名-非商业性使用-相同方式共享 4.0
+                            许可协议</a>约束。</div>
+                </li>
+            </ul>
+
+            <ul id="footer-icons" class="noprint">
+                <li id="footer-copyrightico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/CC-BY-NC-SA.svg" alt="知识共享署名-非商业性使用-相同方式共享 4.0 许可协议" height="31"
+                            width="88" loading="lazy" data-theme="light"></a>
+                </li>
+                <li id="footer-poweredbyico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88"
+                            height="31" loading="lazy" data-theme="light"></a>
+                </li>
+                <li id="footer-partofico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/Network_footer.svg" alt="Part of wiki.gg" height="31" width="88"
+                            loading="lazy" data-theme="light"></a></li>
+            </ul>
+
+        </footer>
+    </div>
+    <div id="image-modal" class="hidden">
+
+        <img id="modal-full-image" src="" alt="原图" />
+    </div>
 
 </body>
+<style>
+    /* 模态框背景层 */
+    #image-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.9);
+        /* 半透明纯黑背景 */
+        z-index: 9999;
+        /* 确保它盖住所有 UI，包括应用的顶栏/底栏 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        /* 隐藏时不可点击 */
+        transition: opacity 0.2s ease-in-out;
+        /* 简单的淡入淡出动画 */
+    }
+
+    /* 显示模态框的状态类 */
+    #image-modal.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* 内部的大图 */
+    #image-modal img {
+        max-width: 95%;
+        max-height: 90%;
+        object-fit: contain;
+        /* 保持比例缩放，绝不拉伸变形 */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+
+    html.modal-open {
+        overflow: hidden !important;
+        touch-action: none !important;
+    }
+</style>
 
 </html>

@@ -88,8 +88,8 @@
     }
     private async Task OpenPageAsync(string title)
     {
-        AppState.CurrentPage = "home";
-        await IframeBridge.CallJsAsync("BackToPage", title);
+        await IframeBridge.CallJsAsync("GotoPage", title);
+        AppService.NavigateTo("home");
     }
 }
 

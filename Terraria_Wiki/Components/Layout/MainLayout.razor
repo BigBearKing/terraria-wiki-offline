@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
+@inject NavigationManager NavManager
 @using Terraria_Wiki.Services
 
 <div class="app-layout">
@@ -39,13 +40,14 @@
 
 		InvokeAsync(StateHasChanged);
 	}
-	
+
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
 
 			IframeBridge.Init(JS);
+			AppService.Init(NavManager);
 
 		}
 		await base.OnAfterRenderAsync(firstRender);
