@@ -1,12 +1,15 @@
+using Microsoft.JSInterop;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
 public class AppState
 {
+    private static IJSRuntime? _js;
+    
     // 1. 必须有的事件
     public event Action? OnChange;
     private void NotifyStateChanged() => OnChange?.Invoke();
-
+    public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
     // ==========================================
     //  这里是核心技巧：把变量“包装”一下
     // ==========================================
@@ -22,8 +25,13 @@ public class AppState
     public AppState()
     {
         TempHistory = new List<TempHistory>();
+
     }
 
+    public async Task InitializeThemeAsync()
+    {
+        IsDarkTheme = await _js.InvokeAsync<bool>("checkTheme");
+    }
 
 
     // 第二步：定义公开的“柜台”

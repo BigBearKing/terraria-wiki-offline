@@ -45,9 +45,11 @@
 	{
 		if (firstRender)
 		{
-
+			AppState.Init(JS);
+			await AppState.InitializeThemeAsync();
 			IframeBridge.Init(JS);
 			AppService.Init(NavManager);
+
 
 		}
 		await base.OnAfterRenderAsync(firstRender);

@@ -1,5 +1,5 @@
 ﻿@page "/settings"
-
+@inject IJSRuntime JSRuntime
 <div class="page-anim page-content">
     <header class="page-header">
         <span class="page-title">应用偏好设置</span>
@@ -14,7 +14,7 @@
                 <div class="setting-info">
                     <span class="setting-name">颜色主题</span>
                 </div>
-                <select class="modern-select">
+                <select class="modern-select" @bind="AppTheme">
                     <option value="auto">跟随系统</option>
                     <option value="light">浅色模式</option>
                     <option value="dark">深色模式</option>
@@ -95,10 +95,23 @@
 
     </div>
 </div>
+
 @code {
+    private string AppTheme
+    {
+        get => Preferences.Default.Get("AppTheme", "auto");
+        set
+        {
+
+            // 1. 存入 C# 存储（供原生 MAUI 代码使用）
+            Preferences.Default.Set("AppTheme", value);
+            // 2. 存入前端 localStorage（供 index.html 下次刚打开时瞬间读取）
+            JSRuntime.InvokeVoidAsync("localStorage.setItem", "app-theme", value);
+        }
+    }
     private bool IsSideButtonBack
     {
-        // 页面一加载，就会执行 get，从存储中读取状态。如果之前没存过，默认返回 false（关）
+        // 页面一加载，就会执行 get，从存储中读取状态。如果之前没存过，默认返回 false（关）吗
         get => Preferences.Default.Get("IsSideButtonBack", true);
 
         // 当用户点击开关时，会自动执行 set，把新的状态存入手机存储
