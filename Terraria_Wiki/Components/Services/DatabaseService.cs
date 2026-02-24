@@ -66,7 +66,7 @@ public class DatabaseService
                 {
                     Id=1,
                     Title = "Terraria Wiki",
-                    Description = "官方泰拉瑞亚百科，包含所有原版内容。",
+                    Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
                     IsPageDownloaded = false,
                     IsResourceDownloaded = false,
                 },
@@ -74,7 +74,7 @@ public class DatabaseService
                 {
                     Id=2,
                     Title = "Calamity Wiki",
-                    Description = "最热门的大型模组灾厄 (Calamity) 的详细资料。",
+                    Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
                     IsPageDownloaded = false,
                     IsResourceDownloaded = false,
                 }

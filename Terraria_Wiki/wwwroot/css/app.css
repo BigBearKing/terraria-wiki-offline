@@ -187,6 +187,7 @@ body {
     transition: color 0.2s,background-color 0.2s;
     -webkit-user-select: none;
     user-select: none;
+    cursor: pointer;
 }
     .button:hover {
         background-color: var(--hover-bg);

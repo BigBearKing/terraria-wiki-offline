@@ -17,7 +17,7 @@ public class AppState
     // 第一步：定义一个私有的“小金库”存数据
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
-    private bool _isDarkTheme = false;
+    private bool _isDarkTheme;
     private bool _isDownloading = false;
     private string _currentWikiPage;
 

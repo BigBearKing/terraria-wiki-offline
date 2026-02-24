@@ -125,8 +125,10 @@
 	private WikiBook _selectedWiki;
 	protected override async Task OnInitializedAsync()
 	{
-		await base.OnInitializedAsync();
+		base.OnInitializedAsync();
 		_selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+		App.DataManager.CheckFailList();
+
 
 	}
 	protected override void OnInitialized()
@@ -206,7 +208,6 @@
 	}
 	private async Task CleanUpRes()
 	{
-		AppService.RestartApp();
 
 	}
 	private async Task DeleteRes()
@@ -221,7 +222,6 @@
 }
 <style>
 	.icon-btn {
-		cursor: pointer;
 		padding: 4px;
 		border-radius: 50%;
 		display: flex;

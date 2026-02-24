@@ -12,7 +12,7 @@
 
             <div class="setting-item">
                 <div class="setting-info">
-                    <span class="setting-name">颜色主题</span>
+                    <span class="setting-name">默认颜色主题</span>
                 </div>
                 <select class="modern-select" @bind="AppTheme">
                     <option value="auto">跟随系统</option>
@@ -43,7 +43,7 @@
                 <div class="setting-info">
                     <span class="setting-name">页面下载线程数</span>
                 </div>
-                <select class="modern-select">
+                <select class="modern-select" @bind="PageConcurrency">
                     <option value="1">1</option>
                     <option value="2">2（默认）</option>
                     <option value="3">3</option>
@@ -56,7 +56,7 @@
                 <div class="setting-info">
                     <span class="setting-name">资源下载线程数</span>
                 </div>
-                <select class="modern-select">
+                <select class="modern-select" @bind="ResConcurrency">
                     <option value="1">1</option>
                     <option value="5">5</option>
                     <option value="10">10（默认）</option>
@@ -68,7 +68,7 @@
                 <div class="setting-info">
                     <span class="setting-name">错误重试次数</span>
                 </div>
-                <select class="modern-select">
+                <select class="modern-select" @bind="MaxRetryAttempts">
                     <option value="0">不重试</option>
                     <option value="1">1</option>
 					<option value="5">5（默认）</option>
@@ -118,6 +118,33 @@
         set
         {
             Preferences.Default.Set("IsSideButtonBack", value);
+        }
+    }
+    private int PageConcurrency
+    {
+        get => Preferences.Default.Get("PageConcurrency", 2);
+        set
+        {
+
+            Preferences.Default.Set("PageConcurrency", value);
+        }
+    }
+    private int ResConcurrency
+    {
+        get => Preferences.Default.Get("ResConcurrency", 10);
+        set
+        {
+
+            Preferences.Default.Set("ResConcurrency", value);
+        }
+    }
+    private int MaxRetryAttempts
+    {
+        get => Preferences.Default.Get("MaxRetryAttempts", 5);
+        set
+        {
+
+            Preferences.Default.Set("MaxRetryAttempts", value);
         }
     }
     private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
