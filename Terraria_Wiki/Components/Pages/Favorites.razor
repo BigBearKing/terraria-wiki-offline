@@ -9,7 +9,7 @@
 		<span class="page-title">收藏内容</span>
 		<span class="sub-text">@favoriteCount 个已收藏词条</span>
 	</header>
-	<div class="list-container">
+	<div class="list-container favorite-list">
 		@if (favoriteCount == 0)
 		{
 			<div class="empty-state">
@@ -76,8 +76,10 @@
 
 <style>
 
+	.favorite-list{
+		gap:8px;
+	}
 	.wiki-card {
-		height: 64px; /* 强制匹配 ItemSize */
 		display: flex;
 		align-items: center;
 		padding: 4px 12px;

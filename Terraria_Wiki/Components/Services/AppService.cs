@@ -82,6 +82,12 @@ namespace Terraria_Wiki.Services
                 return null;
             };
 
+            IframeBridge.Actions["WikiBackAsync"] = async (args) =>
+            {
+                if (Preferences.Default.Get("IsSideButtonBack", true))
+                    await WikiBackAsync();
+                return null;
+            };
         }
         public static void Init(NavigationManager navManager) => _navManager = navManager;
 
@@ -97,6 +103,7 @@ namespace Terraria_Wiki.Services
             await App.ContentDb.SaveHistoryAsync(history);
 
         }
+
 
         public static async Task WikiBackAsync()
         {
@@ -133,7 +140,9 @@ namespace Terraria_Wiki.Services
             await IframeBridge.CallJsAsync("GotoPage", title);
             AppService.NavigateTo("home");
         }
-        // 手动跳转
+
+
+        // 跳转页面
         public static void NavigateTo(string pageName)
         {
             if (App.AppStateManager.CurrentPage == pageName)
@@ -148,10 +157,38 @@ namespace Terraria_Wiki.Services
             _navManager.NavigateTo(App.AppStateManager.CurrentPage);
         }
 
+        //重启软件
+        public static void RestartApp()
+        {
 
+            string exePath = Environment.ProcessPath;
+            System.Diagnostics.Process.Start(exePath);
+            Application.Current.Quit();
 
+        }
 
+        //判断文件有效性
+        public static bool IsFileValid(string filePath)
+        {
+            try
+            {
 
+                //文件是否存在
+                if (!File.Exists(filePath)) return false;
+                //文件大小是否大于 0 字节
+                FileInfo fileInfo = new FileInfo(filePath);
+                if (fileInfo.Length == 0) return false;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // 捕获权限异常或路径非法异常
+                System.Diagnostics.Debug.WriteLine($"文件有效性检查失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        //刷新数据库
         public static async Task RefreshWikiBookAsync(DatabaseService wikiBook, DatabaseService wikiContent)
         {
             var book = await wikiBook.GetItemAsync<WikiBook>(1);
@@ -161,7 +198,7 @@ namespace Terraria_Wiki.Services
             book.DataSize = GetSizeBytes(wikiContent.DatabasePath);
             await wikiBook.SaveItemAsync(book);
         }
-        // 1. 获取文件大小（字节），用于逻辑判断
+        //获取文件大小（字节），用于逻辑判断
         public static long GetSizeBytes(string filePath)
         {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))

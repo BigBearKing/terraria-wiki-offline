@@ -18,6 +18,8 @@ namespace Terraria_Wiki.Services
         private const string BaseGuideApiUrl = "https://terraria.wiki.gg/zh/api.php?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace=10000&gapfilterredir=nonredirects&gaplimit=max";
         private const string BaseUrl = "https://terraria.wiki.gg";
         private const string RedirectStartUrl = "/zh/wiki/Special:ListRedirects?limit=5000";
+        private const int MaxRetryAttempts = 5;
+
         private static readonly string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
         private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
         private static readonly string _resListPath = Path.Combine(_baseDir, "res.txt");
@@ -40,12 +42,12 @@ namespace Terraria_Wiki.Services
             await GetWikiPagesListAsync();
             if (isAll)
             {
-                await StartDownloadPagesAsync(maxConcurrency: 3);
-                await StartDownloadResAsync(maxConcurrency: 10);
+                await StartDownloadPagesAsync(3);
+                await StartDownloadResAsync(10);
             }
             else
             {
-                await StartDownloadPagesAsync(maxConcurrency: 3);
+                await StartDownloadPagesAsync(3);
             }
             var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
             book.DownloadedTime = DateTime.Now;
@@ -55,12 +57,19 @@ namespace Terraria_Wiki.Services
             await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
             CleanUpTempFile();
             App.AppStateManager.IsDownloading = false;
+            AppService.RestartApp();
 
         }
         public async Task DownloadResAsync()
         {
             App.AppStateManager.IsDownloading = true;
-            await StartDownloadResAsync(maxConcurrency: 10);
+            if (!AppService.IsFileValid(_resListPath))
+            {
+                Application.Current.MainPage.DisplayAlert("提示", "文件不存在或损坏。", "确定");
+                App.AppStateManager.IsDownloading = false;
+                return;
+            }
+            await StartDownloadResAsync(10);
             var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
 
             book.IsResourceDownloaded = true;
@@ -68,6 +77,7 @@ namespace Terraria_Wiki.Services
             await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
             CleanUpTempFile();
             App.AppStateManager.IsDownloading = false;
+            AppService.RestartApp();
         }
         public async Task UpdateDataAsync(bool isAll)
         {
@@ -255,6 +265,12 @@ namespace Terraria_Wiki.Services
                             await processAction(workerId, line);
                             break;
                         }
+                        catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            // 如果遇到 404 (NotFound)，直接抛出异常，不进入下面的常规 Exception 重试
+                            OnLog?.Invoke($"[Worker {workerId}] 资源不存在，放弃重试，不计入失败列表: {line}");
+                            break;
+                        }
                         catch (Exception)
                         {
                             if (++retry > 5) throw;
@@ -272,7 +288,7 @@ namespace Terraria_Wiki.Services
         }
 
         // ================= 业务入口: 下载页面 =================
-        private async Task StartDownloadPagesAsync(int maxConcurrency = 5)
+        private async Task StartDownloadPagesAsync(int maxConcurrency)
         {
             var logger = new BatchLogWriter(_resListPath, 100);
             int totalCount = 0;
@@ -291,7 +307,6 @@ namespace Terraria_Wiki.Services
                 if (parts.Length < 2) return;
 
                 var page = new PageInfo { Title = parts[0], LastModified = DateTime.Parse(parts[1]) };
-
                 await DownloadAndSavePageToDbAsync(page, logger);
                 int c = Interlocked.Increment(ref currentCount);
                 OnLog?.Invoke($"[Worker {workerId}] {c}/{totalCount} 完成页面: {page.Title}");
@@ -314,7 +329,7 @@ namespace Terraria_Wiki.Services
         }
 
         // ================= 业务入口: 下载资源 =================
-        private async Task StartDownloadResAsync(int maxConcurrency = 10)
+        private async Task StartDownloadResAsync(int maxConcurrency)
         {
             int totalCount = 0;
             int currentCount = 0;
@@ -327,18 +342,9 @@ namespace Terraria_Wiki.Services
             {
 
                 string fileName = GetFileNameFromUrl(url);
+                await DownloadAndSaveResToDbAsync(url, fileName);
                 int c = Interlocked.Increment(ref currentCount);
-                if (await App.ContentDb.ItemExistsAsync<WikiAsset>(fileName))
-                {
-                    OnLog?.Invoke($"[Worker {workerId}] 跳过资源: {fileName}  {c}/{totalCount}");
-
-                }
-                else
-                {
-                    await DownloadAndSaveResToDbAsync(url, fileName);
-                    OnLog?.Invoke($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
-                }
-
+                OnLog?.Invoke($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
 
             }
             File.Copy(_resListPath, _tempResListPath, true);
@@ -347,7 +353,7 @@ namespace Terraria_Wiki.Services
             OnLog.Invoke("资源文件下载完毕");
         }
 
-        // ================= 具体的处理逻辑 (重构过) =================
+        // ================= 具体的处理逻辑 =================
 
         private async Task DownloadAndSavePageToDbAsync(PageInfo pageInfo, BatchLogWriter logger)
         {
@@ -462,6 +468,8 @@ namespace Terraria_Wiki.Services
         }
 
         // ================= 辅助工具方法 =================
+
+        //清理临时文件
         private void CleanUpTempFile()
         {
             OnLog?.Invoke("正在清理临时文件");
@@ -476,11 +484,15 @@ namespace Terraria_Wiki.Services
             }
             OnLog?.Invoke("临时文件清理完毕");
         }
+
+        //清理 URL 中的查询参数，获取干净的文件名
         private string CleanUpUrl(string url)
         {
             int qIdx = url.IndexOf('?');
             return (qIdx > 0) ? url.Substring(0, qIdx) : url;
         }
+
+        // 从 URL 中提取文件名，并进行 URL 解码
         private string GetFileNameFromUrl(string url)
         {
             string cleanUrl = CleanUpUrl(url);
@@ -489,48 +501,10 @@ namespace Terraria_Wiki.Services
             return decodedName;
         }
 
+        // 追加失败的 URL 到文件，使用异步方法并捕获异常以防止崩溃
         private async Task AppendFailedUrlAsync(string path, string url)
         {
             try { await File.AppendAllLinesAsync(path, new[] { url }); } catch { }
-        }
-        public async Task TestLogStormAsync()
-        {
-            App.AppStateManager.IsDownloading = true;
-            OnLog?.Invoke("🚀 === 开始多线程延迟测试：10个线程，每条延迟100-200ms ===");
-            // 创建一个任务列表
-            var tasks = new List<Task>();
-
-            // 启动 10 个并发线程
-            for (int i = 0; i < 10; i++)
-            {
-                int threadIndex = i; // 捕获局部变量以供 Task 使用
-
-                // 每个线程是一个独立的 Task
-                tasks.Add(Task.Run(async () =>
-                {
-                    for (int j = 0; j < 100; j++)
-                    {
-                        // 1. 随机延迟 100 到 200 毫秒
-                        // Random.Shared 是 .NET 6+ 线程安全的写法
-                        int delay = Random.Shared.Next(400, 901);
-                        await Task.Delay(delay);
-
-                        // 2. 准备日志内容
-                        // 获取当前底层受管线程ID，证明是不同线程在跑
-                        int threadId = Environment.CurrentManagedThreadId;
-                        string msg = $"[Thread-{threadId:00} / Worker-{threadIndex}] 正在处理任务... 进度 {j + 1}/100 (延迟 {delay}ms)";
-
-                        // 3. 触发事件 (LogService 会捕获并加锁写入文件)
-                        OnLog?.Invoke(msg);
-                    }
-                }));
-            }
-
-            // 等待所有 10 个线程全部完成
-            await Task.WhenAll(tasks);
-
-            OnLog?.Invoke("所有线程任务完成");
-            App.AppStateManager.IsDownloading = false;
         }
     }
 

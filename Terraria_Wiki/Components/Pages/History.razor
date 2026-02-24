@@ -10,7 +10,7 @@
 		<span class="clear-btn sub-text">清空历史</span>
 	</header>
 
-	<div class="list-container timeline">
+	<div class="list-container timeline history-list">
 
 		<Virtualize ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
 			<ItemContent>
@@ -90,6 +90,9 @@
 }
 
 <style>
+	.history-list{
+		gap:4px;
+	}
 	.clear-btn {
 		background: transparent;
 		border: none;
@@ -102,9 +105,7 @@
 			text-decoration: underline;
 		}
 
-	/* 关键：统一样式行高 */
 	.timeline-row {
-		height: 48px; /* 必须匹配 ItemSize="48" */
 		display: flex;
 		align-items: center;
 		position: relative;
@@ -137,10 +138,10 @@
 		display: flex;
 		align-items: center;
 		width: 100%;
-		padding: 4px 12px; /* 减小 padding 以适应 48px 高度 */
+		padding: 10px 12px; /* 减小 padding 以适应 48px 高度 */
 		border-radius: 8px;
 		cursor: pointer;
-		height: 40px; /* 内部高度 */
+
 	}
 
 

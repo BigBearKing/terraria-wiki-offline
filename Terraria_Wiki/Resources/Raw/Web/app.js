@@ -45,7 +45,7 @@ window.addEventListener('message', async e => {
         window.parent.postMessage({ type: 'res', id: msg.id, data: result }, '*');
     }
 });
-
+//点击事件
 document.addEventListener('click', function (e) {
     // 1. 使用 closest('a') 查找最近的 a 标签祖先
     // 这样做是为了防止用户点击了 a 标签内部的 span 或 img，导致 e.target 不是 a 标签
@@ -69,7 +69,14 @@ document.addEventListener('click', function (e) {
         }
     }
 });
-
+//鼠标侧键
+document.addEventListener('mouseup', function (e) {
+    // e.button === 3 是侧键后退，e.button === 4 是侧键前进
+    if (e.button === 3 || e.button === 4) {
+        e.preventDefault();
+        callCSharpAsync("WikiBackAsync","");
+    }
+});
 redirect("Terraria Wiki");
 
 

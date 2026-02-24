@@ -40,6 +40,13 @@
             // 4. 最后再返回结果给 C#
             return isDark;
         };
+        // 拦截按下事件，阻止 WebView 的默认导航行为
+        document.addEventListener('mouseup', function (e) {
+            // e.button === 3 是侧键后退，e.button === 4 是侧键前进
+            if (e.button === 3 || e.button === 4) {
+                e.preventDefault();
+            }
+        });
         window.scrollToBottom = (elementId) => {
             var element = document.getElementById(elementId);
             if (!element) return;

@@ -66,7 +66,7 @@
 
 						<div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteRes)">
 							<Icon Name="delete" Size="16" />
-							删除资源数据
+							删除图片数据
 						</div>
 
 						<div class="primary-btn btn-red" @onclick="() => RunSafe(Delete)">
@@ -202,14 +202,11 @@
 	}
 	private async Task Update()
 	{
-		_ = Task.Run(async () =>
-		{
-			await App.DataManager.TestLogStormAsync();
-		});
+
 	}
 	private async Task CleanUpRes()
 	{
-
+		AppService.RestartApp();
 
 	}
 	private async Task DeleteRes()

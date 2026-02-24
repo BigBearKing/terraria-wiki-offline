@@ -116,7 +116,8 @@ body {
 .content-container {
     flex: 1;
     width: 100%;
-    min-height:0;
+    min-height: 0;
+
 }
 
 .iframe-container {
@@ -177,10 +178,11 @@ body {
 .list-container {
     flex: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 .button {
     border: none;
-    padding: 0;
     display: block;
     transition: color 0.2s,background-color 0.2s;
     -webkit-user-select: none;

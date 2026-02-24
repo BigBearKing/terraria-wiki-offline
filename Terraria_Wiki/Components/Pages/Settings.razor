@@ -1,7 +1,246 @@
 ﻿@page "/settings"
 
 <div class="page-anim page-content">
-        <header class="page-header">
+    <header class="page-header">
         <span class="page-title">应用偏好设置</span>
     </header>
+
+    <div class="list-container setting-list">
+
+        <div class="category-card">
+            <span class="category-title">个性化</span>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">颜色主题</span>
+                </div>
+                <select class="modern-select">
+                    <option value="auto">跟随系统</option>
+                    <option value="light">浅色模式</option>
+                    <option value="dark">深色模式</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <span class="category-title">快捷键</span>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">侧键返回</span>
+                    <span class="setting-desc">按鼠标侧键返回上一页</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" @bind="IsSideButtonBack">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <span class="category-title">下载</span>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">页面下载线程数</span>
+                </div>
+                <select class="modern-select">
+                    <option value="1">1</option>
+                    <option value="2">2（默认）</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">资源下载线程数</span>
+                </div>
+                <select class="modern-select">
+                    <option value="1">1</option>
+                    <option value="5">5</option>
+                    <option value="10">10（默认）</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">错误重试次数</span>
+                </div>
+                <select class="modern-select">
+                    <option value="0">不重试</option>
+                    <option value="1">1</option>
+					<option value="5">5（默认）</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <span class="category-title">关于</span>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">当前版本</span>
+                    <span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
+                </div>
+                <button class="button setting-btn">
+                    检查更新
+                </button>
+            </div>
+        </div>
+
+    </div>
 </div>
+@code {
+    private bool IsSideButtonBack
+    {
+        // 页面一加载，就会执行 get，从存储中读取状态。如果之前没存过，默认返回 false（关）
+        get => Preferences.Default.Get("IsSideButtonBack", true);
+
+        // 当用户点击开关时，会自动执行 set，把新的状态存入手机存储
+        set
+        {
+            Preferences.Default.Set("IsSideButtonBack", value);
+        }
+    }
+    private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
+    private string BuildNumber => AppInfo.Current.BuildString;
+}
+<style>
+
+    .setting-list{
+        padding:12px 0;
+        gap: 12px;
+    }
+    /* --- 设置面板专属样式 --- */
+    .category-card {
+        background-color: var(--bg-color-secondary);
+        border-radius: 16px;
+        padding: 16px 20px;
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+    }
+
+    .category-title {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+        margin-left: 4px;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+
+    /* 文本信息区 */
+    .setting-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .setting-name {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .setting-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    /* --- 现代化开关 (Toggle Switch) --- */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--text-secondary);
+        transition: 0.3s;
+        border-radius: 26px;
+    }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #ffffff;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    /* 选中状态使用你的主色调变量 */
+    input:checked + .slider {
+        background-color: var(--blue-primary);
+    }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+    /* --- 现代化下拉选择框 (Select) --- */
+    .modern-select {
+        width:125px;
+        appearance: none;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        border: 1px solid var(--hover-bg);
+        padding: 8px 32px 8px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 16px;
+    }
+
+        .modern-select:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .modern-select:focus {
+            border-color: var(--blue-primary);
+            box-shadow: 0 0 0 3px var(--blue-tertiary);
+        }
+
+    .setting-btn{
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: var(--hover-bg);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+</style>

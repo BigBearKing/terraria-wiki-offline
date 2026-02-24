@@ -11,7 +11,7 @@
 		<span class="sub-text">共找到 @totalPageCount 个页面</span>
 	</header>
 
-	<div class="list-container">
+	<div class="list-container all-pages-list">
 		<Virtualize ItemsProvider="@LoadPages" Context="wikipage">
 			<div class="list-item button" @onclick="()=>AppService.OpenPageAsync(wikipage.Title)">
 				<span class="page-name">@wikipage.Title</span>
@@ -44,10 +44,13 @@
 }
 
 <style>
+
+	.all-pages-list{
+		gap:2px;
+	}
 	/* 列表项样式 */
 	.list-item {
-		height: 48px;
-		padding: 4px 12px;
+		padding: 12px 12px;
 		border-radius: 12px;
 		display: flex;
 		justify-content: space-between;
