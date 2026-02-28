@@ -49,8 +49,7 @@
 			AppState.InitializeThemeAsync();
 			IframeBridge.Init(JS);
 			AppService.Init(NavManager);
-			App.DataManager.CheckFileIntegrity();
-
+			await DataService.CheckFileIntegrity();
 
 		}
 		await base.OnAfterRenderAsync(firstRender);

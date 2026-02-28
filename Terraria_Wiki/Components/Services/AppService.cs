@@ -261,6 +261,24 @@ namespace Terraria_Wiki.Services
             }
         }
 
+        //追加文件
+        public static async Task AppendFileAsync(string sourcePath, string destPath)
+        {
+            if (!File.Exists(sourcePath)) return;
 
+            // 打开源文件（只读流）
+            using var sourceStream = File.OpenRead(sourcePath);
+
+            // 打开目标文件（追加模式，如果不存在会自动创建）
+            using var destStream = new FileStream(destPath, FileMode.Append, FileAccess.Write, FileShare.None);
+
+            // 【关键】如果是纯文本文件，并且你希望源文件另起一行追加，
+            // 可以先在这里手动写入一个换行符：
+            // byte[] newline = System.Text.Encoding.UTF8.GetBytes(Environment.NewLine);
+            // await destStream.WriteAsync(newline, 0, newline.Length);
+
+            // 将源流的内容异步复制并追加到目标流的尾部
+            await sourceStream.CopyToAsync(destStream);
+        }
     }
 }

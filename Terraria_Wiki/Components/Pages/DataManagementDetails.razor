@@ -202,9 +202,15 @@
 			await App.DataManager.DownloadDataAsync(false);
 		});
 	}
+
 	private async Task Update()
 	{
-
+		bool isAll = _selectedWiki.IsResourceDownloaded;
+		
+		_ = Task.Run(async () =>
+		{
+			await App.DataManager.UpdateDataAsync(isAll);
+		});
 	}
 	private async Task CleanUpRes()
 	{
