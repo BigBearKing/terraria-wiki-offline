@@ -114,6 +114,13 @@ public class DatabaseService
         await _db.DeleteAsync(item);
     }
 
+    public async Task DeleteItemsAsync<T>() where T : new()
+    {
+
+        await Init();
+        await _db.DeleteAllAsync<T>();
+    }
+
     // 3. 通用功能：取整张表的数据
     public async Task<List<T>> GetItemsAsync<T>() where T : new()
     {
@@ -140,6 +147,7 @@ public class DatabaseService
         var count = await _db.ExecuteScalarAsync<int>(query, primaryKey);
         return count > 0;
     }
+
     //验证历史
     public async Task SaveHistoryAsync(WikiHistory wikiHistory)
     {

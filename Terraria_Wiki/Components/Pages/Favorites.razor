@@ -19,7 +19,7 @@
 		else
 		{
 
-			<Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="item" OverscanCount="5">
+			<Virtualize @ref="_virtualizeComponent" ItemsProvider="LoadPages" Context="item" OverscanCount="5">
 				<div class="wiki-card button" @onclick="() => AppService.OpenPageAsync(item.WikiTitle)">
 					<div class="card-icon">
 						<Icon Name="star-filled" Size="24" />

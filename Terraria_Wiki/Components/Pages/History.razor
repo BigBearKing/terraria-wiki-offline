@@ -7,12 +7,12 @@
 
 	<header class="page-header">
 		<span class="page-title">浏览历史</span>
-		<span class="clear-btn sub-text">清空历史</span>
+		<span class="clear-btn sub-text" @onclick="ClearHistory">清空历史</span>
 	</header>
 
 	<div class="list-container timeline history-list">
 
-		<Virtualize ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
+		<Virtualize @ref="_virtualizeComponent" ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
 			<ItemContent>
 
 				@if (entry.ShowDateHeader)
@@ -37,6 +37,7 @@
 </div>
 
 @code {
+	private Virtualize<HistoryTimelineItem> _virtualizeComponent;
 
 	private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
 	{
@@ -87,6 +88,14 @@
 		return dt.ToString("M月d日");
 	}
 
+	//清空历史
+	private async void ClearHistory()
+	{
+		bool isConfirmed = await Application.Current.MainPage?.DisplayAlert("提示", "确认清空历史记录吗？", "确定","取消");
+		await App.ContentDb.DeleteItemsAsync<WikiHistory>();
+		await _virtualizeComponent?.RefreshDataAsync();
+		StateHasChanged();
+	}
 }
 
 <style>
