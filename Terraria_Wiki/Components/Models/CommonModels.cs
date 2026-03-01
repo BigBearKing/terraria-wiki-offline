@@ -66,3 +66,27 @@ public class TitleWithAnchor
     public string Anchor { get; set; }
 }
 public class JsMsg { public string Type { get; set; } public string Id { get; set; } public string Method { get; set; } public string Data { get; set; } }
+
+public class GitHubReleaseInfo
+{
+    // GitHub API 返回的 JSON 字段映射
+    [JsonPropertyName("tag_name")]
+    public string TagName { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("body")]
+    public string ReleaseNotes { get; set; } = string.Empty;
+
+    [JsonPropertyName("html_url")]
+    public string ReleaseUrl { get; set; } = string.Empty;
+}
+
+public class UpdateCheckResult
+{
+    public bool IsUpdateAvailable { get; set; }
+    public string LatestVersion { get; set; } = string.Empty;
+    public string ReleaseNotes { get; set; } = string.Empty;
+    public string DownloadUrl { get; set; } = string.Empty;
+}
