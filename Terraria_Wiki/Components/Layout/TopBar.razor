@@ -1,4 +1,5 @@
-﻿@using Terraria_Wiki.Services
+﻿@using Terraria_Wiki.Components.Pages
+@using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 <header class="top-bar">
 
@@ -17,8 +18,10 @@
 
 	<div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
 		<Icon class="search-icon" Name="search"></Icon>
-		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() />
+		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="searchText" @bind:event="oninput" />
+		<SearchResultPanel Query="@searchText" OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
 	</div>
+	
 
 </header>
 
@@ -26,6 +29,7 @@
 @code {
 	private bool _isFavorite = false;
 	private bool _isProcessing = false;
+	private string searchText = "";
 	protected override async Task OnParametersSetAsync()
 	{
 		_isFavorite = await IsFavoritePageAsync();
@@ -101,9 +105,8 @@
 	{
 		return await App.ContentDb.ItemExistsAsync<WikiFavorite>(AppState.CurrentWikiPage);
 	}
+	
 	// 新增一个处理状态标志
-
-
 	private async Task ToggleFavoriteAsync()
 	{
 		// 1. 如果当前正在处理中，直接拦截忽略（防止连击的核心）
@@ -139,5 +142,20 @@
 			// 4. 解锁：无论上面是成功、失败还是报错，finally 都会绝对执行，确保按钮恢复可用
 			_isProcessing = false;
 		}
+	}
+	// 当用户在弹出面板里点击了某一条结果
+	private void HandleResultClick(string title)
+	{
+		// 1. 清空搜索框（这会自动导致面板隐藏，因为 Query 变成了空）
+		searchText = "";
+
+		// 2. 跳转到对应的页面
+		// NavigationManager.NavigateTo($"/wiki/{Uri.EscapeDataString(title)}");
+	}
+
+	// 当用户点击了面板外面的空白处
+	private void ClearSearch()
+	{
+		searchText = "";
 	}
 }

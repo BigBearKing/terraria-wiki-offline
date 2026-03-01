@@ -1,0 +1,80 @@
+﻿/* 遮罩层：铺满整个屏幕，拦截点击事件 */
+.search-overlay {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 900;
+    cursor: default;
+}
+
+/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
+.search-popup-panel {
+    position: absolute;
+    top: calc(100% + 4px); /* 位于输入框底部，留 4px 缝隙 */
+    left: 0;
+    width: 120%; /* 可以比输入框稍微宽一点 */
+    max-height: 50vh; /* 最高占据屏幕一半高度 */
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-radius: 8px;
+    z-index: 901; /* 必须比遮罩层高 */
+}
+
+/* --- 下面是内部元素的排版 --- */
+.search-status {
+    padding: 16px;
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.result-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.result-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+    .result-item:last-child {
+        border-bottom: none;
+    }
+
+    .result-item:hover {
+        background-color: #f8f9fa;
+    }
+
+.result-title {
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+.result-snippet {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 限制摘要最多显示两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 高亮标签样式，因为是注入的 HTML，可能需要 ::deep 穿透 */
+::deep mark.search-highlight {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: bold;
+}

@@ -1,0 +1,111 @@
+﻿@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
+
+@if (!string.IsNullOrWhiteSpace(Query))
+{
+    <div class="search-overlay" @onclick="ClosePanel"></div>
+
+    <div class="search-popup-panel">
+        @if (isSearching)
+        {
+            <div class="search-status">正在搜索...</div>
+        }
+        else if (results != null && results.Count == 0)
+        {
+            <div class="search-status">未找到关于 "@Query" 的内容</div>
+        }
+        else if (results != null)
+        {
+            <ul class="result-list">
+                @foreach (var item in results)
+                {
+                    <li class="result-item" @onclick="() => SelectResult(string.IsNullOrEmpty(item.RedirectTo) ? item.Title : item.RedirectTo)">
+                        <div class="result-title">
+                            @item.Title
+                            @if (!string.IsNullOrEmpty(item.RedirectTo))
+                            {
+                                <span style="color: #888; font-size: 0.8em; margin-left: 8px;">
+                                    ➔ 跳转至: @item.RedirectTo
+                                </span>
+                            }
+                        </div>
+
+                        <div class="result-snippet">
+                            @((MarkupString)item.Snippet)
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    // 接收从 Topbar 传来的搜索词
+    [Parameter]
+    public string Query { get; set; } = "";
+
+    // 当用户点击某一个搜索结果时，向 Topbar 触发事件
+    [Parameter]
+    public EventCallback<string> OnResultSelected { get; set; }
+
+    // 当用户点击遮罩层（空白处）时，通知 Topbar 清空搜索词或关闭面板
+    [Parameter]
+    public EventCallback OnCloseRequested { get; set; }
+
+    private bool isSearching = false;
+    private List<SearchResultItem>? results;
+    private CancellationTokenSource? debounceCts;
+
+    // 核心逻辑：监听 Query 参数的变化
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Query))
+        {
+            results = null;
+            return;
+        }
+
+        // 防抖逻辑：用户连续打字时，延迟 300 毫秒再查数据库
+        debounceCts?.Cancel();
+        debounceCts = new CancellationTokenSource();
+        var token = debounceCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            await ExecuteSearchAsync(Query);
+        }
+        catch (TaskCanceledException)
+        {
+            // 防抖取消，忽略
+        }
+    }
+
+    private async Task ExecuteSearchAsync(string searchTerm)
+    {
+        isSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            results = await App.ContentDb.SearchAsync(searchTerm);
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SelectResult(string title)
+    {
+        // 触发事件，把被点击的标题传给 Topbar
+        await OnResultSelected.InvokeAsync(title);
+    }
+
+    private async Task ClosePanel()
+    {
+        await OnCloseRequested.InvokeAsync();
+    }
+}

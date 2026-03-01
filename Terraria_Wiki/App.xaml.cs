@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Terraria_Wiki.Services;
+using Terraria_Wiki.Models;
 using Microsoft.UI.Windowing;
 namespace Terraria_Wiki
 {

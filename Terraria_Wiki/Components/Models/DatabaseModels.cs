@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using Terraria_Wiki.Services;
 namespace Terraria_Wiki.Models;
 
 public class WikiBook
@@ -77,3 +78,18 @@ public class WikiAsset
     public string MimeType { get; set; } // 文件类型 (如 "image/png")
 }
 
+public class ManagerDbService : DatabaseService
+{
+    public ManagerDbService(string dbPath) : base(dbPath, DbMode.Manager)
+    {
+    }
+}
+
+// 2. 专门用于内容库的类型
+public class ContentDbService : DatabaseService
+{
+    // 注意：这里默认连接 Terraria，后面可以通过方法切换
+    public ContentDbService(string dbPath) : base(dbPath, DbMode.Content)
+    {
+    }
+}

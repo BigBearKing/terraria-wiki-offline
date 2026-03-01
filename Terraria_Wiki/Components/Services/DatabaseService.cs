@@ -68,15 +68,7 @@ public class DatabaseService
         await _db.ExecuteAsync(createSql);
     }
 
-    public async Task SaveSearchIndexAsync(string title, string plainContent)
-    {
-        string sql = @"
-        INSERT INTO WikiSearchIndex (Title, PlainContent) 
-        VALUES (?, ?)";
 
-        await _db.ExecuteAsync(sql, title, plainContent);
-
-    }
 
     private async Task SeedWikiBooksAsync()
     {
@@ -231,20 +223,108 @@ public class DatabaseService
         return await _db.QueryAsync<WikiFavorite>(sql, count, startIndex);
     }
 
+    public async Task SaveSearchIndexAsync(string title, string plainContent)
+    {
+        // 1. 防空保护
+        if (string.IsNullOrWhiteSpace(plainContent))
+        {
+            return;
+        }
+
+        // 开启事务保证原子性（要么都成功，要么都失败）
+        await _db.RunInTransactionAsync(tran =>
+        {
+            // 2. 先根据 Title 删除旧的索引（如果不存在，这句也不会报错）
+            tran.Execute("DELETE FROM WikiSearchIndex WHERE Title = ?", title);
+
+            // 3. 再插入新的索引
+            tran.Execute(@"
+            INSERT INTO WikiSearchIndex (Title, PlainContent) 
+            VALUES (?, ?)",
+                title, plainContent);
+        });
+    }
+
+    public async Task<List<SearchResultItem>> SearchAsync(string keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return new List<SearchResultItem>();
+        }
+
+        // 1. 关键词清洗与预处理
+        string cleanKeyword = keyword.Replace("\"", "").Replace("'", "").Trim();
+        string likeTerm = $"%{cleanKeyword}%";
+
+        var terms = cleanKeyword.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var ftsTerms = terms.Select(t => $"\"{t}\"*");
+        string matchTerm = string.Join(" AND ", ftsTerms);
+
+        // 2. 终极融合 SQL
+        string sql = @"
+        SELECT 
+            Title, 
+            RedirectTo, 
+            Snippet,
+            MIN(Priority) AS MinPriority -- 极其重要：触发 SQLite 的特性，保证提取到优先级最高的行的数据
+        FROM (
+            -- 【第一梯队 A】: WikiPage 标题匹配
+            SELECT 
+                Title, 
+                '' AS RedirectTo, 
+                -- 子查询：去 FTS5 表里找这个标题对应的纯文本，截取前 60 个字符作为开头摘要
+                COALESCE((SELECT SUBSTR(PlainContent, 1, 60) || '...' FROM WikiSearchIndex WHERE Title = WikiPage.Title LIMIT 1), '') AS Snippet, 
+                1 AS Priority,
+                0 AS RankScore
+            FROM WikiPage 
+            WHERE Title LIKE ?
+
+            UNION ALL
+
+            -- 【第一梯队 B】: WikiRedirect 别名/重定向匹配
+            SELECT 
+                FromName AS Title, 
+                ToTarget AS RedirectTo, 
+                -- 子查询：去 FTS5 表里找【目标词条(ToTarget)】的纯文本，截取开头
+                COALESCE((SELECT SUBSTR(PlainContent, 1, 60) || '...' FROM WikiSearchIndex WHERE Title = WikiRedirect.ToTarget LIMIT 1), '') AS Snippet, 
+                1 AS Priority,
+                0 AS RankScore
+            FROM WikiRedirect 
+            WHERE FromName LIKE ?
+
+            UNION ALL
+
+            -- 【第二梯队】: WikiSearchIndex 正文 FTS5 全文搜索
+            SELECT 
+                Title, 
+                '' AS RedirectTo, 
+                snippet(WikiSearchIndex, 1, '<mark class=""search-highlight"">', '</mark>', '...', 15) AS Snippet, 
+                2 AS Priority,
+                rank AS RankScore
+            FROM WikiSearchIndex 
+            WHERE WikiSearchIndex MATCH ?
+        )
+        GROUP BY Title
+        ORDER BY 
+            -- 1. 先按梯队排：梯队 1（标题/别名）排在前面
+            MinPriority ASC, 
+            
+            -- 2. 梯队内排序：梯队 1 按标题/别名长度排，梯队 2 按相关度排
+            CASE MinPriority
+                WHEN 1 THEN LENGTH(Title)
+                ELSE MIN(RankScore)
+            END ASC,
+            
+            Title ASC
+        LIMIT 50;
+    ";
+
+        // 传入参数 (对应 WikiPage, WikiRedirect, WikiSearchIndex 的三个问号)
+        return await _db.QueryAsync<SearchResultItem>(sql, likeTerm, likeTerm, matchTerm);
+    }
+
+
+
 }
 
-public class ManagerDbService : DatabaseService
-{
-    public ManagerDbService(string dbPath) : base(dbPath, DbMode.Manager)
-    {
-    }
-}
 
-// 2. 专门用于内容库的类型
-public class ContentDbService : DatabaseService
-{
-    // 注意：这里默认连接 Terraria，后面可以通过方法切换
-    public ContentDbService(string dbPath) : base(dbPath, DbMode.Content)
-    {
-    }
-}

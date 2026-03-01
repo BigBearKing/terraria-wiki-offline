@@ -83,10 +83,25 @@ public class GitHubReleaseInfo
     public string ReleaseUrl { get; set; } = string.Empty;
 }
 
+// 更新检查结果模型
 public class UpdateCheckResult
 {
     public bool IsUpdateAvailable { get; set; }
     public string LatestVersion { get; set; } = string.Empty;
     public string ReleaseNotes { get; set; } = string.Empty;
     public string DownloadUrl { get; set; } = string.Empty;
+}
+
+//搜索结果
+public class SearchResultItem
+{
+    public string Title { get; set; }
+    public string RedirectTo { get; set; }
+    public string Snippet { get; set; }
+}
+// 辅助类：用于接收 LIKE 查询出的完整文本
+public class RawSearchResult
+{
+    public string Title { get; set; }
+    public string PlainContent { get; set; }
 }

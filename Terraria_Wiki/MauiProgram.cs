@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Terraria_Wiki.Services;
+using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki
 {
