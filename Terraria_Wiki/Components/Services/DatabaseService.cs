@@ -1,4 +1,7 @@
-﻿using SQLite;
+﻿using HtmlAgilityPack;
+using SQLite;
+using System.Net;
+using System.Text.RegularExpressions;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
@@ -47,10 +50,34 @@ public class DatabaseService
             await _db.CreateTableAsync<WikiHistory>();
             await _db.CreateTableAsync<WikiFavorite>();
             await _db.CreateTableAsync<WikiAsset>();
+            await InitFtsTableAsync();
         }
 
         _initialized = true;
     }
+    public async Task InitFtsTableAsync()
+    {
+        string createSql = @"
+    CREATE VIRTUAL TABLE IF NOT EXISTS WikiSearchIndex USING fts5(
+        Title UNINDEXED,          -- 加上 UNINDEXED，现在标题也不参与搜索了
+        PlainContent,             -- 只有纯文本内容参与搜索
+        tokenize='trigram'        -- 开启支持中文的分词器
+    );";
+
+        // 直接执行建表语句
+        await _db.ExecuteAsync(createSql);
+    }
+
+    public async Task SaveSearchIndexAsync(string title, string plainContent)
+    {
+        string sql = @"
+        INSERT INTO WikiSearchIndex (Title, PlainContent) 
+        VALUES (?, ?)";
+
+        await _db.ExecuteAsync(sql, title, plainContent);
+
+    }
+
     private async Task SeedWikiBooksAsync()
     {
         // 第一步：先数数表里有几条数据
@@ -92,6 +119,7 @@ public class DatabaseService
         await Init();
         await _db.InsertOrReplaceAsync(item);
     }
+
     public async Task SaveItemsAsync<T>(IEnumerable<T> items) where T : new()
     {
         await Init();
@@ -100,11 +128,13 @@ public class DatabaseService
             await _db.InsertOrReplaceAsync(item);
         }
     }
+
     public async Task<int> GetCountAsync<T>() where T : new()
     {
         await Init();
         return await _db.Table<T>().CountAsync();
     }
+
     // 2.2 通用功能：删除
     public async Task DeleteItemAsync<T>(object primaryKey) where T : new()
     {
@@ -176,7 +206,6 @@ public class DatabaseService
         }
     }
 
-
     //获取页面标题和时间
     public async Task<List<WikiPageSummary>> GetPageSummariesPagedAsync(int startIndex, int count)
     {
@@ -184,6 +213,7 @@ public class DatabaseService
         string sql = "SELECT Title, LastModified FROM WikiPage ORDER BY Title LIMIT ? OFFSET ?";
         return await _db.QueryAsync<WikiPageSummary>(sql, count, startIndex);
     }
+
     // 分页获取历史记录（按阅读时间倒序排）
     public async Task<List<WikiHistory>> GetWikiHistoryPagedAsync(int startIndex, int count)
     {
@@ -192,6 +222,7 @@ public class DatabaseService
         string sql = "SELECT * FROM WikiHistory ORDER BY ReadAt DESC LIMIT ? OFFSET ?";
         return await _db.QueryAsync<WikiHistory>(sql, count, startIndex);
     }
+
     public async Task<List<WikiFavorite>> GetWikiFavoritePagedAsync(int startIndex, int count)
     {
         await Init();

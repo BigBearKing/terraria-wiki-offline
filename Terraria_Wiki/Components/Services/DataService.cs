@@ -622,6 +622,9 @@ namespace Terraria_Wiki.Services
                 LastModified = pageInfo.LastModified
             };
             await App.ContentDb.SaveItemAsync(wikiPage);
+            var plainContent = ExtractSearchableText(contentNode);
+            await App.ContentDb.SaveSearchIndexAsync(pageInfo.Title, plainContent);
+
         }
 
         private void CleanJunkElements(HtmlNode node)
@@ -687,6 +690,33 @@ namespace Terraria_Wiki.Services
                 // 替换为本地路径
                 n.SetAttributeValue("src", "/src/" + htmlSrc);
             });
+        }
+
+        //处理搜索索引
+        public static string ExtractSearchableText(HtmlNode contentNode)
+        {
+
+
+            var notNeedNodes = contentNode.SelectNodes("//div[contains(concat(' ', @class, ' '), ' message-box ') or contains(concat(' ', @class, ' '), ' infobox ') or contains(concat(' ', @role, ' '), ' navigation ')]");
+
+            if (notNeedNodes != null)
+            {
+                foreach (var node in notNeedNodes)
+                {
+                    node.Remove();
+                }
+            }
+
+            var targetNodes = contentNode.SelectNodes("//p | //h1 | //h2 | //h3 | //h4 | //h5 | //h6 | //li");
+            string plainText = string.Empty;
+
+            if (targetNodes != null)
+            {
+                plainText = string.Join(" ", targetNodes.Select(n => n.InnerText));
+            }
+
+            plainText = WebUtility.HtmlDecode(plainText);
+            return Regex.Replace(plainText, @"\s+", " ").Trim();
         }
 
         private async Task DownloadAndSaveResToDbAsync(string url, string fileName)

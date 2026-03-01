@@ -206,7 +206,7 @@
 	private async Task Update()
 	{
 		bool isAll = _selectedWiki.IsResourceDownloaded;
-		
+
 		_ = Task.Run(async () =>
 		{
 			await App.DataManager.UpdateDataAsync(isAll);
