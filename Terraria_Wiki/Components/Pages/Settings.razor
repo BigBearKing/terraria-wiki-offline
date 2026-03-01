@@ -92,6 +92,15 @@
 					@_checkUpdateMessage
 				</button>
 			</div>
+			<div class="setting-item">
+				<div class="setting-info">
+					<span class="setting-name">作者</span>
+					<span class="setting-desc">@Author</span>
+				</div>
+				<button class="button setting-btn" @onclick="GotoGithub">
+					<Icon Name="github"/>
+				</button>
+			</div>
 		</div>
 
 	</div>
@@ -150,6 +159,7 @@
 	}
 	private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
 	private string BuildNumber => AppInfo.Current.BuildString;
+	private string Author => "BigBearKing";
 	private bool _isProcessing = false;
 	private string _checkUpdateMessage = "检查更新";
 
@@ -196,6 +206,10 @@
 
 
 
+	}
+	private async Task GotoGithub()
+	{
+		await Browser.Default.OpenAsync("https://github.com/BigBearKing/terraria-wiki-offline", BrowserLaunchMode.SystemPreferred);
 	}
 }
 <style>
@@ -325,6 +339,9 @@
 		}
 
 	.setting-btn {
+		display: flex;
+		justify-content: center; /* 水平居中 */
+		align-items: center;
 		padding: 6px 12px;
 		border-radius: 6px;
 		background-color: var(--hover-bg);
