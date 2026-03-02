@@ -18,10 +18,10 @@
 
 	<div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
 		<Icon class="search-icon" Name="search"></Icon>
-		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="searchText" @bind:event="oninput" />
+		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
 		@if (AppState.CurrentPage == "home")
 		{
-			<SearchResultPanel Query="@searchText" OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+			<SearchResultPanel Query="@SearchText" OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
 		}
 		
 	</div>
@@ -33,11 +33,30 @@
 @code {
 	private bool _isFavorite = false;
 	private bool _isProcessing = false;
-	private string searchText = "";
+	private string _searchText = "";
+	public string SearchText
+	{
+		get => _searchText;
+		set
+		{
+			if (_searchText != value)
+			{
+				_searchText = value;
+
+				if (AppState.CurrentPage != "home")
+				{
+
+					AppState.SearchQuery = _searchText;
+				}
+			}
+		}
+	}
+
 	protected override async Task OnParametersSetAsync()
 	{
 		_isFavorite = await IsFavoritePageAsync();
 	}
+
 	//刷新机制
 	protected override void OnInitialized()
 	{
@@ -61,7 +80,7 @@
 	private void HandlePageChanged()
 	{
 		// 当页面切换时，自动清空搜索框
-		searchText = "";
+		ClearSearch();
 	}
 	//
 	private string GetPageTitle()
@@ -77,7 +96,7 @@
 			_ => ""
 		};
 	}
-	
+
 	private string GetSearchPlaceholder()
 	{
 		return AppState.CurrentPage switch
@@ -86,7 +105,7 @@
 			_ => "匹配结果"
 		};
 	}
-	
+
 	private bool ShouldShowActionButtons()
 	{
 		return AppState.CurrentPage switch
@@ -95,7 +114,7 @@
 			_ => false
 		};
 	}
-	
+
 	private bool ShouldShowSearch()
 	{
 		return AppState.CurrentPage switch
@@ -104,27 +123,27 @@
 			_ => false
 		};
 	}
-	
+
 	private string GetWikiTitle()
 	{
 		return AppState.CurrentWikiPage;
 	}
-	
+
 	private void WikiBackAsync()
 	{
 		AppService.WikiBackAsync();
 	}
-	
+
 	private void WikiBackHomeAsync()
 	{
 		AppService.WikiBackHomeAsync();
 	}
-	
+
 	private async Task<bool> IsFavoritePageAsync()
 	{
 		return await App.ContentDb.ItemExistsAsync<WikiFavorite>(AppState.CurrentWikiPage);
 	}
-	
+
 	// 新增一个处理状态标志
 	private async Task ToggleFavoriteAsync()
 	{
@@ -165,8 +184,7 @@
 	// 当用户在弹出面板里点击了某一条结果
 	private void HandleResultClick(string title)
 	{
-		// 1. 清空搜索框（这会自动导致面板隐藏，因为 Query 变成了空）
-		searchText = "";
+		ClearSearch();
 
 		// 2. 跳转到对应的页面
 		// NavigationManager.NavigateTo($"/wiki/{Uri.EscapeDataString(title)}");
@@ -175,6 +193,7 @@
 	// 当用户点击了面板外面的空白处
 	private void ClearSearch()
 	{
-		searchText = "";
+		SearchText = "";
+		AppState.SearchQuery = "";
 	}
 }

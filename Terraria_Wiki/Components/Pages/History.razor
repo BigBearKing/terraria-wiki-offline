@@ -37,7 +37,7 @@
 </div>
 
 @code {
-	private Virtualize<HistoryTimelineItem> _virtualizeComponent;
+	private Virtualize<HistoryTimelineItem>? _virtualizeComponent;
 
 	private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
 	{

@@ -223,6 +223,7 @@ public class DatabaseService
         return await _db.QueryAsync<WikiFavorite>(sql, count, startIndex);
     }
 
+    //储存搜索索引
     public async Task SaveSearchIndexAsync(string title, string plainContent)
     {
         // 1. 防空保护
@@ -245,6 +246,7 @@ public class DatabaseService
         });
     }
 
+    //搜索功能
     public async Task<List<SearchResultItem>> SearchAsync(string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
@@ -362,7 +364,70 @@ public class DatabaseService
         return await _db.QueryAsync<SearchResultItem>(sql, likeTerm, likeTerm, matchTerm);
     }
 
+    // 1. 获取过滤后的总数
+    public async Task<int> GetFilteredCountAsync(string tableName, string searchColumn, string keyword)
+    {
+        string likeTerm = $"%{keyword}%";
+        string sql = $"SELECT COUNT(*) FROM {tableName} WHERE {searchColumn} LIKE ?";
+        return await _db.ExecuteScalarAsync<int>(sql, likeTerm);
+    }
 
+    // 简易重载版：自动推断表名 (适用于直接查原表的情况)
+    public async Task<int> GetFilteredCountAsync<T>(string searchColumn, string keyword) where T : new()
+    {
+        var tableName = typeof(T).Name;
+        return await GetFilteredCountAsync(tableName, searchColumn, keyword);
+    }
+
+    // 2. 获取过滤后的分页摘要数据
+    public async Task<List<T>> GetFilteredPagedAsync<T>(
+        string tableName,
+        string selectColumns,
+        string searchColumn,
+        string keyword,
+        string orderByColumn,
+        int startIndex,
+        int count,
+        bool isDesc = true) where T : new()
+    {
+        string likeTerm = $"%{keyword}%";
+        string orderDir = isDesc ? "DESC" : "ASC";
+
+        string sql = $@"
+        SELECT {selectColumns} 
+        FROM {tableName} 
+        WHERE {searchColumn} LIKE ? 
+        ORDER BY {orderByColumn} {orderDir} 
+        LIMIT ? OFFSET ?";
+
+        return await _db.QueryAsync<T>(sql, likeTerm, count, startIndex);
+    }
+
+    // ==========================================
+    // 3. 通用：分页 & 过滤查询 (简化版：直接 SELECT * 全表映射)
+    // 适用于像 WikiHistory 这种没有巨大文本列的表
+    // ==========================================
+    public async Task<List<T>> GetFilteredPagedAsync<T>(
+        string searchColumn,
+        string keyword,
+        string orderByColumn,
+        int startIndex,
+        int count,
+        bool isDesc = true) where T : new()
+    {
+        var tableName = typeof(T).Name;
+
+        // 底层调用高级版方法
+        return await GetFilteredPagedAsync<T>(
+            tableName: tableName,
+            selectColumns: "*",
+            searchColumn: searchColumn,
+            keyword: keyword,
+            orderByColumn: orderByColumn,
+            startIndex: startIndex,
+            count: count,
+            isDesc: isDesc);
+    }
 
 }
 

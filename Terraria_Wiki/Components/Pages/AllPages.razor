@@ -12,7 +12,7 @@
 	</header>
 
 	<div class="list-container all-pages-list">
-		<Virtualize ItemsProvider="@LoadPages" Context="wikipage">
+		<Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="wikipage">
 			<div class="list-item button" @onclick="()=>AppService.OpenPageAsync(wikipage.Title)">
 				<span class="page-name">@wikipage.Title</span>
 				<span class="page-time">@wikipage.LastModified.ToString("yy-MM-dd HH:mm")</span>
@@ -22,23 +22,80 @@
 </div>
 
 @code {
+	private Virtualize<WikiPageSummary>? _virtualizeComponent;
+
 	private int totalPageCount = 0;
+	
+	protected override void OnInitialized()
+	{
+		// 3. 订阅 Topbar 传来的搜索事件
+		AppState.OnSearchQueryChanged += HandleSearchChanged;
+	}
+
+	public void Dispose()
+	{
+		AppState.OnSearchQueryChanged -= HandleSearchChanged;
+	}
+
+	
 	protected override async Task OnInitializedAsync()
 	{
 		// 调用服务获取数量
 		totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
 
 	}
+
 	private async ValueTask<ItemsProviderResult<WikiPageSummary>> LoadPages(ItemsProviderRequest request)
 	{
-		// 1. 获取总数 (用于计算滚动条长度)
-		var totalCount = await App.ContentDb.GetCountAsync<WikiPage>();
+		var query = AppState.SearchQuery?.Trim();
 
-		var items = await App.ContentDb.GetPageSummariesPagedAsync(request.StartIndex, request.Count);
+		if (string.IsNullOrEmpty(query))
+		{
+			// ================== 无搜索词：正常加载 ==================
+			totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
+			var items = await App.ContentDb.GetPageSummariesPagedAsync(request.StartIndex, request.Count);
 
-		return new ItemsProviderResult<WikiPageSummary>(items, totalCount);
+			StateHasChanged(); // 通知 UI 刷新标题处的数量
+			return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
+		}
+		else
+		{
+			// ================== 有搜索词：使用通用过滤加载 ==================
+
+			// 1. 获取过滤后的总数
+			totalPageCount = await App.ContentDb.GetFilteredCountAsync(
+				tableName: "WikiPage",
+				searchColumn: "Title",
+				keyword: query);
+
+			// 2. 获取过滤后的分页数据 (只拿必要的列，避开庞大的 Content 列)
+			var items = await App.ContentDb.GetFilteredPagedAsync<WikiPageSummary>(
+				tableName: "WikiPage",              // 真实的表名
+				selectColumns: "Title, LastModified",// 只查询这两列，极大地降低内存开销！
+				searchColumn: "Title",               // 在 Title 里面模糊搜索
+				keyword: query,                      // 用户的输入
+				orderByColumn: "Title",       // 按修改时间排序
+				startIndex: request.StartIndex,
+				count: request.Count,
+				isDesc: false                        // 降序
+			);
+
+			StateHasChanged();
+			return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
+		}
 	}
 
+	private async void HandleSearchChanged()
+	{
+		// 4. 当搜索词改变时，强制 Virtualize 丢弃当前数据，重新触发 LoadPages
+		await InvokeAsync(async () =>
+		{
+			if (_virtualizeComponent != null)
+			{
+				await _virtualizeComponent.RefreshDataAsync();
+			}
+		});
+	}
 
 
 }

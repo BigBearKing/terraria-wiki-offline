@@ -9,6 +9,7 @@ public class AppState
 
     public event Action? OnChange;
     public event Action? OnCurrentPageChanged;
+    public event Action? OnSearchQueryChanged;
     private void NotifyStateChanged() => OnChange?.Invoke();
     public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
     public string AppName { get; set; } = AppInfo.Current.Name;
@@ -18,7 +19,8 @@ public class AppState
     private bool _isDarkTheme;
     private bool _isDownloading = false;
     private string _currentWikiPage;
-
+    private string _searchQuery = "";
+    
 
     public AppState()
     {
@@ -69,6 +71,7 @@ public class AppState
 
         }
     }
+
     public bool IsDownloading
     {
         get => _isDownloading;
@@ -80,6 +83,7 @@ public class AppState
 
         }
     }
+
     public string CurrentWikiPage
     {
         get => _currentWikiPage;
@@ -89,5 +93,19 @@ public class AppState
             NotifyStateChanged();
         }
     }
+
     public List<TempHistory> TempHistory { get; set; }
+
+    public string SearchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            if (_searchQuery != value)
+            {
+                _searchQuery = value;
+                OnSearchQueryChanged?.Invoke();
+            }
+        }
+    }
 }
