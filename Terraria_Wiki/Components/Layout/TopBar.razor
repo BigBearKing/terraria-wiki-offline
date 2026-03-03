@@ -41,7 +41,7 @@
 		{
 			if (_searchText != value)
 			{
-				_searchText = value;
+				DebounceSearchAsync(_searchText);
 
 				if (AppState.CurrentPage != "home")
 				{
