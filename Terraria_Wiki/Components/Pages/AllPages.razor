@@ -93,6 +93,7 @@
 			if (_virtualizeComponent != null)
 			{
 				await _virtualizeComponent.RefreshDataAsync();
+				StateHasChanged();
 			}
 		});
 	}

@@ -21,7 +21,7 @@
 		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
 		@if (AppState.CurrentPage == "home")
 		{
-			<SearchResultPanel Query="@SearchText" OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+			<SearchResultPanel Query="@_debouncedSearchText" OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
 		}
 		
 	</div>
@@ -34,6 +34,8 @@
 	private bool _isFavorite = false;
 	private bool _isProcessing = false;
 	private string _searchText = "";
+	private string _debouncedSearchText = "";
+	private CancellationTokenSource? _debounceCts;
 	public string SearchText
 	{
 		get => _searchText;
@@ -41,13 +43,10 @@
 		{
 			if (_searchText != value)
 			{
+				_searchText = value;
 				DebounceSearchAsync(_searchText);
 
-				if (AppState.CurrentPage != "home")
-				{
 
-					AppState.SearchQuery = _searchText;
-				}
 			}
 		}
 	}
@@ -69,6 +68,8 @@
 	{
 		AppState.OnChange -= RefreshUI;
 		AppState.OnCurrentPageChanged -= HandlePageChanged;
+		_debounceCts?.Cancel();
+		_debounceCts?.Dispose();
 	}
 
 	private async void RefreshUI()
@@ -76,10 +77,11 @@
 		_isFavorite = await IsFavoritePageAsync();
 		InvokeAsync(StateHasChanged);
 	}
-
+	
+	// 当页面切换时，自动清空搜索框
 	private void HandlePageChanged()
 	{
-		// 当页面切换时，自动清空搜索框
+		
 		ClearSearch();
 	}
 	//
@@ -181,6 +183,46 @@
 			_isProcessing = false;
 		}
 	}
+	
+	// 搜索防抖逻辑
+	private async void DebounceSearchAsync(string query)
+	{
+		_debounceCts?.Cancel();
+		_debounceCts = new CancellationTokenSource();
+		var token = _debounceCts.Token;
+
+		try
+		{
+			// 体验优化：如果用户删空了输入框，不需要等 300ms，瞬间清空面板和列表！
+			if (string.IsNullOrWhiteSpace(query))
+			{
+				ApplyDebouncedValue(query);
+				return;
+			}
+
+			// 等待
+			await Task.Delay(500, token);
+
+			// 平安度过冷却期，统一分发状态
+			ApplyDebouncedValue(query);
+		}
+		catch (TaskCanceledException)
+		{
+			// 用户手速过快被打断，忽略
+		}
+	}
+
+	private void ApplyDebouncedValue(string query)
+	{
+		// 1. 给 Home 页面的面板传值
+		_debouncedSearchText = query;
+
+		// 2. 给非 Home 页面的虚拟化列表传值 (全局状态)
+		AppState.SearchQuery = query;
+
+		// 3. 极其重要：由于 Task.Delay 跨越了异步线程，必须手动通知 UI 刷新
+		InvokeAsync(StateHasChanged);
+	}
 	// 当用户在弹出面板里点击了某一条结果
 	private void HandleResultClick(string title)
 	{
@@ -195,5 +237,6 @@
 	{
 		SearchText = "";
 		AppState.SearchQuery = "";
+		_debouncedSearchText = "";
 	}
 }
