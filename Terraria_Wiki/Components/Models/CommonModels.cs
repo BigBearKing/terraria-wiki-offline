@@ -115,5 +115,13 @@ public class WikiPackageInfo
     public bool IsResourceDownloaded { get; set; }
     public DateTime UpdateTime { get; set; }
     public string AppVersion { get; set; }
-    public string Hash { get; set; }
+    public List<FileMeta> Files { get; set; }
+}
+
+// 记录单个文件的信息
+public class FileMeta
+{
+    public string RelativePath { get; set; }
+    public long Size { get; set; }
+    public string MD5 { get; set; }
 }

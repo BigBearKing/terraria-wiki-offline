@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services
@@ -9,6 +10,7 @@ namespace Terraria_Wiki.Services
         private readonly HttpListener _listener;
         private readonly ContentDbService _dbService;
         private readonly string _prefix;
+        private bool _shouldShowImages = false;
 
         // 构造函数注入数据库服务
         public LocalWebServer(ContentDbService dbService)
@@ -21,7 +23,7 @@ namespace Terraria_Wiki.Services
             _listener.Prefixes.Add(_prefix);
         }
 
-        public void Start()
+        public async Task Start()
         {
             if (!_listener.IsListening)
             {
@@ -29,6 +31,8 @@ namespace Terraria_Wiki.Services
                 Task.Run(ListenLoop);
                 Debug.WriteLine($"[Web Server] Started at {_prefix}");
             }
+            var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+            _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
 
         public void Stop()
@@ -83,10 +87,32 @@ namespace Terraria_Wiki.Services
                 // ==========================================
                 if (path.StartsWith("/src/", StringComparison.OrdinalIgnoreCase))
                 {
+
+
                     // 提取文件名: "/src/sword.png" -> "sword.png"
                     string fileName = path.Substring(5);
+                    WikiAsset asset;
+                    if (_shouldShowImages)
+                    {
+                        asset = await _dbService.GetItemAsync<WikiAsset>(fileName);
+                    }
+                    else
+                    {
+                        asset = new WikiAsset
+                        {
+                            FileName = fileName,
+                            MimeType = GetMimeType(fileName)
+                        };
+                        if (asset.MimeType == "image/svg+xml")
+                        {
+                            asset.Data= Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>");
+                        }
+                        else
+                        {
+                            asset.Data= Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+                        }
+                    }
 
-                    var asset = await _dbService.GetItemAsync<WikiAsset>(fileName);
 
                     if (asset != null)
                     {

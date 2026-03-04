@@ -147,7 +147,7 @@ namespace Terraria_Wiki.Services
         {
             if (App.AppStateManager.CurrentPage == pageName)
                 return;
-            if (App.AppStateManager.IsDownloading)
+            if (App.AppStateManager.IsProcessing)
             {
                 Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
                 return;
@@ -279,6 +279,54 @@ namespace Terraria_Wiki.Services
 
             // 将源流的内容异步复制并追加到目标流的尾部
             await sourceStream.CopyToAsync(destStream);
+        }
+
+        //文件及文件夹选择
+        public static async Task<string> PickFileAsync(string title = "请选择文件", FilePickerFileType types = null)
+        {
+            try
+            {
+                var result = await FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = title,
+                    FileTypes = types ?? FilePickerFileType.Png // 默认可选图片，可根据需要修改
+                });
+
+                return result?.FullPath;
+            }
+            catch (Exception ex)
+            {
+                // 处理异常（如用户取消选择在某些平台可能抛出异常）
+                System.Diagnostics.Debug.WriteLine($"文件选择出错: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 选择文件夹并返回路径 (目前主要针对 Windows 优化)
+        /// </summary>
+        public static async Task<string> PickFolderAsync()
+        {
+#if WINDOWS
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+
+            // 获取当前窗口句柄 (WinUI3 必需)
+            var window = Application.Current.Windows[0].Handler.PlatformView as MauiWinUIWindow;
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            folderPicker.FileTypeFilter.Add("*");
+            var folder = await folderPicker.PickSingleFolderAsync();
+
+            return folder?.Path;
+#elif ANDROID || IOS
+        // 移动端通常通过 FilePicker 的特定配置或原生 Intent 实现
+        // 这里建议在移动端使用提示：移动端通常建议直接在应用沙箱内操作
+        await Shell.Current.DisplayAlert("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
+        return null;
+#else
+        return null;
+#endif
         }
     }
 }

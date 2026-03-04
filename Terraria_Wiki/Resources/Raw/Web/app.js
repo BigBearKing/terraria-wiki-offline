@@ -45,6 +45,7 @@ window.addEventListener('message', async e => {
         window.parent.postMessage({ type: 'res', id: msg.id, data: result }, '*');
     }
 });
+
 //点击事件
 document.addEventListener('click', function (e) {
     // 1. 使用 closest('a') 查找最近的 a 标签祖先
@@ -69,6 +70,7 @@ document.addEventListener('click', function (e) {
         }
     }
 });
+
 //鼠标侧键
 document.addEventListener('mouseup', function (e) {
     // e.button === 3 是侧键后退，e.button === 4 是侧键前进
@@ -77,6 +79,7 @@ document.addEventListener('mouseup', function (e) {
         callCSharpAsync("WikiBackAsync","");
     }
 });
+
 redirect("Terraria Wiki");
 
 

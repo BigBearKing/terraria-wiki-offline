@@ -22,11 +22,8 @@ public class DatabaseService
         DatabasePath = dbPath;
         Mode = mode;
 
-        // 核心配置：
-        // ReadWrite | Create: 允许读写和创建
-        // SharedCache: 允许并发访问（比如边看边通过API更新）
         var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;
-        string path = Path.GetDirectoryName(dbPath);
+        string path = Path.GetDirectoryName(DatabasePath);
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
@@ -77,7 +74,20 @@ public class DatabaseService
 
     public async Task CloseConnection()
     {
+        await _db.ExecuteScalarAsync<string>("PRAGMA journal_mode = DELETE;");
         await _db.CloseAsync();
+    }
+    public async void ReConnection()
+    {
+        _initialized = false;
+        var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;
+        string path = Path.GetDirectoryName(DatabasePath);
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        _db = new SQLiteAsyncConnection(DatabasePath, flags);
+
     }
     public async Task DeleteDatabaseFile()
     {

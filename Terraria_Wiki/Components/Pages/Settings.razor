@@ -96,14 +96,22 @@
 		</div>
 		<div class="category-card">
 			<span class="category-title">数据库</span>
-
+			<div class="setting-item">
+				<div class="setting-info">
+					<span class="setting-name">导出数据</span>
+					<span class="setting-desc">导出当前数据到本地文件</span>
+				</div>
+				<button class="button setting-btn" @onclick="() => RunSafe(ExportData)">
+					@_exportMessage
+				</button>
+			</div>
 			<div class="setting-item">
 				<div class="setting-info">
 					<span class="setting-name">导入数据</span>
 					<span class="setting-desc">从本地文件导入数据库</span>
 				</div>
-				<button class="button setting-btn" @onclick="ImportDatabase">
-					选择文件
+				<button class="button setting-btn" @onclick="() => RunSafe(ImportData)">
+					@_importMessage
 				</button>
 			</div>
 		</div>
@@ -115,7 +123,7 @@
 					<span class="setting-name">当前版本</span>
 					<span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
 				</div>
-				<button class="button setting-btn" @onclick="CheckUpdateCommand">
+				<button class="button setting-btn" @onclick="() => RunSafe(CheckUpdateCommand)">
 					@_checkUpdateMessage
 				</button>
 			</div>
@@ -196,19 +204,86 @@
 	private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
 	private string BuildNumber => AppInfo.Current.BuildString;
 	private string Author => "BigBearKing";
-	private bool _isProcessing = false;
 	private string _checkUpdateMessage = "检查更新";
-	private async Task ImportDatabase()
+	private string _exportMessage = "导出";
+	private string _importMessage = "选择文件";
+	private async Task RunSafe(Func<Task> action)
 	{
-		
+		// 统一检查
+		if (AppState.IsProcessing)
+		{
+			await Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
+			return;
+		}
+		await action();
+	}
+	private async Task ExportData()
+	{
+
+		AppState.IsProcessing = true;
+		_exportMessage = "正在导出...";
+		try
+		{
+			string exportPath = await AppService.PickFolderAsync();
+			if (string.IsNullOrEmpty(exportPath)) return;
+			await Task.Run(async () =>
+			{
+				await DataService.ExportData(exportPath);
+			});
+			
+
+			Application.Current.MainPage.DisplayAlert("提示", "导出到本地文件夹完成。", "确定");
+		}catch(Exception ex)
+		{
+			Application.Current.MainPage.DisplayAlert("提示", $"发生错误，请重试。\n{ex}", "确定");
+		}
+		finally
+		{
+			AppState.IsProcessing = false;
+			_exportMessage = "导出";
+		}
+
+	}
+	private async Task ImportData()
+	{
+		AppState.IsProcessing = true;
+		_importMessage = "正在导入...";
+		try
+		{
+			var customFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+				{
+					{ DevicePlatform.WinUI, new[] { ".pkg" } },
+				});
+			string filePath = await AppService.PickFileAsync("请选择导入包", customFileType);
+			if (string.IsNullOrEmpty(filePath)) return;
+			await Task.Run(async () =>
+			{
+				await DataService.ImportData(filePath);
+			});
+			
+			await Application.Current.MainPage.DisplayAlert("提示", "数据导入完成，即将重启。", "确定");
+			AppService.RestartApp();
+		}
+		catch (Exception ex)
+		{
+			Application.Current.MainPage.DisplayAlert("提示", $"发生错误，请重试。\n{ex}", "确定"); 
+			
+			
+		}
+		finally
+		{
+			_importMessage = "选择文件";
+			AppState.IsProcessing = false;
+		}
+
 	}
 	private async Task CheckUpdateCommand()
 	{
-		if (_isProcessing) return;
+		AppState.IsProcessing = true;
+		_checkUpdateMessage = "正在检查...";
 		try
 		{
-			_isProcessing = true;
-			_checkUpdateMessage = "正在检查...";
+			
 			var updateService = new UpdateService();
 			var result = await updateService.CheckForUpdatesAsync();
 
@@ -239,7 +314,7 @@
 		}
 		finally
 		{
-			_isProcessing = false;
+			AppState.IsProcessing = false;
 			_checkUpdateMessage = "检查更新";
 		}
 

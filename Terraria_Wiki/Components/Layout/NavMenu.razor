@@ -60,11 +60,11 @@
 
 	<div class="sidebar-footer">
 		<button class="nav-item button">
-			<div class="icon-container" style=@(AppState.IsDownloading ? "color:var(--blue-primary)" : "")>
+			<div class="icon-container" style=@(AppState.IsProcessing ? "color:var(--blue-primary)" : "")>
 				<Icon Name="download"> </Icon>
 			</div>
 			<span class="text-container">
-				@(AppState.IsDownloading ? "有下载任务" : "无下载任务")
+				@(AppState.IsProcessing ? "正在处理任务" : "无任务")
 			</span>
 		</button>
 		<button class="nav-item theme-toggle button" @onclick="ToggleTheme">

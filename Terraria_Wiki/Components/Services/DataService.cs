@@ -1,6 +1,9 @@
 ﻿using HtmlAgilityPack;
+using Microsoft.Windows.Management.Deployment;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -21,6 +24,7 @@ namespace Terraria_Wiki.Services
 
 
         private static readonly string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
+        private static readonly string _tempDir = Path.Combine(FileSystem.AppDataDirectory, "Temp");
         private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
         private static readonly string _resListPath = Path.Combine(_baseDir, "res.txt");
         private static readonly string _tempResListPath = Path.Combine(_baseDir, "temp_res.txt");
@@ -47,7 +51,7 @@ namespace Terraria_Wiki.Services
         public async Task DownloadDataAsync(bool isAll)
         {
             // 1. 锁定状态
-            App.AppStateManager.IsDownloading = true;
+            App.AppStateManager.IsProcessing = true;
 
             try
             {
@@ -84,7 +88,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsDownloading = false;
+                App.AppStateManager.IsProcessing = false;
                 ShowCompletionNotification();
 
             }
@@ -93,7 +97,7 @@ namespace Terraria_Wiki.Services
         public async Task DownloadResAsync()
         {
             // 1. 锁定状态
-            App.AppStateManager.IsDownloading = true;
+            App.AppStateManager.IsProcessing = true;
 
             try
             {
@@ -131,7 +135,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsDownloading = false;
+                App.AppStateManager.IsProcessing = false;
                 ShowCompletionNotification();
 
             }
@@ -140,7 +144,7 @@ namespace Terraria_Wiki.Services
         //更新页面和资源
         public async Task UpdateDataAsync(bool isAll)
         {
-            App.AppStateManager.IsDownloading = true;
+            App.AppStateManager.IsProcessing = true;
             try
             {
                 await InitializeSettings();
@@ -180,7 +184,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsDownloading = false;
+                App.AppStateManager.IsProcessing = false;
                 ShowCompletionNotification();
             }
         }
@@ -236,6 +240,10 @@ namespace Terraria_Wiki.Services
         //检查是否有失败列表
         public async void CheckFailList()
         {
+            if (App.AppStateManager.IsProcessing)
+            {
+                return;
+            }
 
             bool isAll = true;
             if (!(AppService.IsFileValid(_failedResListPath) || AppService.IsFileValid(_failedPageListPath)))
@@ -258,7 +266,7 @@ namespace Terraria_Wiki.Services
         //重试失败列表
         private async Task RetryFailList(bool isAll)
         {
-            App.AppStateManager.IsDownloading = true;
+            App.AppStateManager.IsProcessing = true;
             try
             {
                 OnLog?.Invoke("开始重试失败任务");
@@ -294,7 +302,7 @@ namespace Terraria_Wiki.Services
             finally
             {
 
-                App.AppStateManager.IsDownloading = false;
+                App.AppStateManager.IsProcessing = false;
                 ShowCompletionNotification();
             }
         }
@@ -313,19 +321,154 @@ namespace Terraria_Wiki.Services
             string databasePath = App.ContentDb.DatabasePath;
             if (!File.Exists(databasePath))
             {
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await Application.Current.MainPage.DisplayAlert("提示", "没有找到数据库文件，无法导出。", "确定");
-                });
-                return;
+
+                throw new Exception("没有找到数据库文件，无法导出。");
             }
-            using var fsOut = new FileStream(exportPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            using var writer = new BinaryWriter(fsOut);
-            writer.Write(Encoding.UTF8.GetBytes("WIKIDATA"));
-            var wikibook=await App.ContentDb.GetItemAsync<WikiBook>(1);
+            var wikibook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
             var info = new WikiPackageInfo
             {
-                Id=1,
+                Id = 1,
+                Title = wikibook.Title,
+                IsPageDownloaded = wikibook.IsPageDownloaded,
+                IsResourceDownloaded = wikibook.IsResourceDownloaded,
+                UpdateTime = wikibook.UpdateTime,
+                AppVersion = AppInfo.Current.VersionString,
+                Files = new List<FileMeta>()
+            };
+            //解除数据库占用
+            await App.ContentDb.CloseConnection();
+            var files = Directory.GetFiles(_baseDir, "*.*", SearchOption.AllDirectories);
+
+            try
+            {
+                // 1. 预计算所有文件的 MD5 和大小
+                using (var md5 = MD5.Create())
+                {
+                    foreach (var file in files)
+                    {
+                        using var fs = File.OpenRead(file);
+                        byte[] hashBytes = md5.ComputeHash(fs);
+
+                        info.Files.Add(new FileMeta
+                        {
+                            RelativePath = Path.GetRelativePath(_baseDir, file),
+                            Size = fs.Length,
+                            MD5 = Convert.ToHexStringLower(hashBytes)
+                        });
+                    }
+                }
+                // 2. 开始写入私有包
+                var exportFileName = Path.GetFileName(_baseDir) + ".pkg";
+                using var fsOut = new FileStream(Path.Combine(exportPath, exportFileName), FileMode.Create, FileAccess.Write, FileShare.None);
+                using var writer = new BinaryWriter(fsOut);
+
+                // 写入私有头
+                writer.Write(Encoding.UTF8.GetBytes("WIKIDATA"));
+
+                // 写入 JSON 元数据
+                string json = JsonSerializer.Serialize(info);
+                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                writer.Write(jsonBytes.Length);
+                writer.Write(jsonBytes);
+
+                // 3. 流式写入所有文件的真实二进制数据
+                foreach (var file in files)
+                {
+                    using var fsIn = File.OpenRead(file);
+                    fsIn.CopyTo(fsOut);
+                }
+            }
+            finally
+            {
+                //重连数据库
+                App.ContentDb.ReConnection();
+            }
+
+
+        }
+
+        //导入数据
+        public static async Task ImportData(string filePath)
+        {
+            try
+            {
+                using var fsIn = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                using var reader = new BinaryReader(fsIn);
+
+                // 1. 校验私有头
+                byte[] headerBytes = reader.ReadBytes(8);
+                if (Encoding.UTF8.GetString(headerBytes) != "WIKIDATA")
+                {
+                    throw new Exception("非法的文件格式：无法识别该导入包！");
+                }
+
+                // 2. 读取元数据
+                int jsonLen = reader.ReadInt32();
+                string json = Encoding.UTF8.GetString(reader.ReadBytes(jsonLen));
+                Debug.Write(json);
+
+                var meta = JsonSerializer.Deserialize<WikiPackageInfo>(json);
+
+                // 如果目标主文件夹不存在，则创建
+                if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
+
+                // 3. 逐个提取文件并实时校验 MD5
+                using var md5 = MD5.Create();
+                byte[] buffer = new byte[1024 * 1024]; // 1MB 缓冲区，处理 3GB 毫无压力
+
+                foreach (var fileMeta in meta.Files)
+                {
+                    string outPath = Path.Combine(_tempDir, fileMeta.RelativePath);
+
+                    // 确保子文件夹存在
+                    string outDir = Path.GetDirectoryName(outPath);
+                    if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
+
+                    using var fsOut = new FileStream(outPath, FileMode.Create, FileAccess.Write);
+
+                    long remainingBytes = fileMeta.Size;
+                    int bytesRead;
+                    md5.Initialize(); // 重置 MD5 计算器
+
+                    // 精准读取该文件的长度
+                    while (remainingBytes > 0)
+                    {
+                        int toRead = (int)Math.Min(buffer.Length, remainingBytes);
+                        bytesRead = fsIn.Read(buffer, 0, toRead);
+                        if (bytesRead == 0) throw new Exception("文件意外结束，包可能已损坏！");
+
+                        fsOut.Write(buffer, 0, bytesRead);
+                        md5.TransformBlock(buffer, 0, bytesRead, null, 0); // 提取时同步计算 MD5
+
+                        remainingBytes -= bytesRead;
+                    }
+
+                    // 结束当前文件的 MD5 计算并比对
+                    md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    string calculatedMd5 = BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
+
+                    if (calculatedMd5 != fileMeta.MD5)
+                    {
+                        throw new Exception($"数据校验失败！文件已被篡改或损坏: {fileMeta.RelativePath}");
+                    }
+                }
+
+                //开始替换数据
+                await App.ContentDb.CloseConnection();
+                if (Directory.Exists(_baseDir))
+                {
+                    Directory.Delete(_baseDir, true);
+                }
+                Directory.Move(_tempDir, _baseDir);
+                WikiBook wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(meta.Id);
+                wikiBook.IsPageDownloaded=meta.IsPageDownloaded;
+                wikiBook.IsResourceDownloaded=meta.IsResourceDownloaded;
+                wikiBook.UpdateTime=meta.UpdateTime;
+                await App.ManagerDb.SaveItemAsync(wikiBook);
+            }
+            finally
+            {
+                if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
             }
 
         }

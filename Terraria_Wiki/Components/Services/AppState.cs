@@ -17,7 +17,7 @@ public class AppState
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
     private bool _isDarkTheme;
-    private bool _isDownloading = false;
+    private bool _isProcessing = false;
     private string _currentWikiPage;
     private string _searchQuery = "";
     
@@ -72,13 +72,13 @@ public class AppState
         }
     }
 
-    public bool IsDownloading
+    public bool IsProcessing
     {
-        get => _isDownloading;
+        get => _isProcessing;
         set
         {
 
-            _isDownloading = value;
+            _isProcessing = value;
             NotifyStateChanged();
 
         }
