@@ -14,7 +14,7 @@
 			<Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
 		</button>
 	</div>
-	<div class="page-title" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
+	<div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
 
 	<div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
 		<Icon class="search-icon" Name="search"></Icon>
@@ -128,6 +128,13 @@
 	private string GetWikiTitle()
 	{
 		return AppState.CurrentWikiPage;
+	}
+
+	private void WikiToTopAsync()
+	{
+		if (AppState.CurrentPage != "home") return;
+
+		IframeBridge.CallJsAsync("ToTop", "");
 	}
 
 	private void WikiBackAsync()

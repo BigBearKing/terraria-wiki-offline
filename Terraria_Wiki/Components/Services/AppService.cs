@@ -88,6 +88,20 @@ namespace Terraria_Wiki.Services
                     await WikiBackAsync();
                 return null;
             };
+            
+            IframeBridge.Actions["OpenExternalWebsite"] = async (url) =>
+            {
+                try
+                {
+                    await Browser.Default.OpenAsync(url, BrowserLaunchMode.SystemPreferred);
+                }
+                catch (Exception ex)
+                {
+                    await Application.Current.MainPage.DisplayAlert("提示", "无法打开链接。", "确定");
+                }
+                return null;
+            };
+            
         }
         public static void Init(NavigationManager navManager) => _navManager = navManager;
 

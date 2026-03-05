@@ -689,11 +689,6 @@ body > .content-wrapper
     grid-template-rows: [body-start topbar-start] var(--wikigg-header-height) [topbar-end page-start] var(--layout-box-gap-y) [logo-start] var(--layout-logo-height) [logo-end] var(--layout-box-gap-y) [aside-start] auto [aside-end] var(--layout-box-gap-y) [nav-start] auto [nav-end content-start] auto [content-end footer-start] auto [footer-end] minmax(var(--layout-box-gap-y), 1fr) [page-end] var(--layout-footerspace) [body-end];
   }
   
-  
-  /* remove the "grass" from main box */
-  #mw-head-base {
-    display: none;
-  }
   /* logo: smaller, and position relative to #mw-panel */
   #p-logo {
     background-size: var(--layout-logo-width) auto;
@@ -797,6 +792,33 @@ body > .content-wrapper
     margin-bottom: 1em;
 }
 
+/*css for wide table */
+.table-wide {
+  clear: both;
+  position: relative;
+}
+.mw-parser-output > .table-width {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+.table-wide-inner {
+    overflow-x: auto;
+  overflow-x: auto;
+}
+.table-wide-inner > table {
+  margin: 0 !important;
+}
+.table-wide:before {
+  content: "";
+  display: block;
+  pointer-events: none;
+  box-shadow: inset -15px 0 20px -15px var(--theme-wide-table-shadow-color);
+  width: 20px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  z-index: 2;
+}
 /* -------------------------------------------------------------------------------- */
 
 
@@ -4365,10 +4387,10 @@ abbr.mode-exclusive {
 
 /***********************************************************************************************************
  * CSS that only affects specific content pages
- ***********************************************************************************************************/
-/********* [[Terraria Wiki]] *********/
-/* Wiki main page.
- * The responsive layout relies on [[MediaWiki:Common.js]] to adapt to different skins. */
+ ***********************************************************************************************************
+ //********* [[Terraria Wiki]] *********/
+/* Wiki main page. (Pure CSS Responsive Rewrite) */
+
 #box-wikiheader,
 #box-game,
 #box-news,
@@ -4385,18 +4407,15 @@ abbr.mode-exclusive {
   border-radius: 8px;
 }
 
+
 body.rootpage-Terraria_Wiki.action-view h1.firstHeading,
 body.rootpage-Terraria_Wiki.action-view .mw-body .mw-indicators,
-body.rootpage-Terraria_Wiki.action-view #mw-content-text::before {
-  /* Hide page title on main page */
-  display: none;
-}
+body.rootpage-Terraria_Wiki.action-view #mw-content-text::before,
 body.rootpage-Terraria_Wiki #mw-indicator-translation-project {
-  /* Hide the translation project flag */
   display: none;
 }
+
 body.rootpage-Terraria_Wiki #mainpage-wrapper {
-  /* main wrapper min width */
   min-width: 300px;
 }
 body.rootpage-Terraria_Wiki #mainpage-wrapper .section {
@@ -4407,7 +4426,6 @@ body.rootpage-Terraria_Wiki #mainpage-wrapper .section .infocard {
   margin: 2px;
 }
 body.rootpage-Terraria_Wiki .infocard {
-  /* boxes */
   min-width: 200px;
 }
 body.rootpage-Terraria_Wiki .infocard .outro {
@@ -4422,23 +4440,22 @@ body.rootpage-Terraria_Wiki .infocard.compact .heading {
 body.rootpage-Terraria_Wiki .mclist {
   column-gap: 0.5em;
 }
-@media (max-width: 360px) {
-  body.rootpage-Terraria_Wiki .mclist {
-    column-gap: 0;
-  }
-}
 body.rootpage-Terraria_Wiki .mclist ul {
   list-style: none;
   margin: 0;
 }
+
+@media (max-width: 360px) {
+  body.rootpage-Terraria_Wiki .mclist { column-gap: 0; }
+}
+
+/* --- WIKI HEADER --- */
 body.rootpage-Terraria_Wiki #box-wikiheader {
-  /* header box */
   background: var(--theme-highlight-background);
   margin-bottom: 2px;
   padding: 7px;
   position: relative;
-  border: 1px solid;
-  border-color: var(--theme-widget-border-color);
+  border: 1px solid var(--theme-widget-border-color);
 }
 body.rootpage-Terraria_Wiki #box-wikiheader > div {
   background: var(--theme-background);
@@ -4467,47 +4484,20 @@ body.rootpage-Terraria_Wiki #box-wikiheader-toggle-link span {
   padding: 3px 0;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader-toggle-link span:first-child::before {
-  content: "";
-  vertical-align: middle;
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  transform: rotate(45deg);
-  position: relative;
-  left: -3px;
-  border-left: 0;
-  border-top: 0;
-  border-right: 2px solid var(--theme-link-color);
-  border-bottom: 2px solid var(--theme-link-color);
-  top: -2px;
+  content: ""; vertical-align: middle; display: inline-block; width: 4px; height: 4px;
+  transform: rotate(45deg); position: relative; left: -3px; border-left: 0; border-top: 0;
+  border-right: 2px solid var(--theme-link-color); border-bottom: 2px solid var(--theme-link-color); top: -2px;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader-toggle-link span:last-child::before {
-  content: "";
-  vertical-align: middle;
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  transform: rotate(45deg);
-  position: relative;
-  left: -3px;
-  border-left: 2px solid var(--theme-link-color);
-  border-top: 2px solid var(--theme-link-color);
-  border-right: 0;
-  border-bottom: 0;
-  top: 1px;
+  content: ""; vertical-align: middle; display: inline-block; width: 4px; height: 4px;
+  transform: rotate(45deg); position: relative; left: -3px;
+  border-left: 2px solid var(--theme-link-color); border-top: 2px solid var(--theme-link-color); border-right: 0; border-bottom: 0; top: 1px;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .main-title {
-  flex: 1 1 411px;
-  text-align: center;
-  position: relative;
-  margin: 3px 0;
-  font-size: 12px;
+  flex: 1 1 411px; text-align: center; position: relative; margin: 3px 0; font-size: 12px;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .main-title > span {
-  font-size: 200%;
-  line-height: 1;
-  margin-bottom: 4px;
-  color: var(--theme-text-color-highlight);
+  font-size: 200%; line-height: 1; margin-bottom: 4px; color: var(--theme-text-color-highlight);
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .main-title > span > span {
   display: inline-block;
@@ -4519,15 +4509,10 @@ body.rootpage-Terraria_Wiki #box-wikiheader .main-title .statistics {
   margin: 0.5em auto;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .related-info {
-  flex: 1 1 1230px;
-  position: relative;
-  /*background: var(--theme-page-background-color);*/
-  overflow: hidden;
-  margin: 2px 0;
+  flex: 1 1 1230px; position: relative; overflow: hidden; margin: 2px 0;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .related-info .ii {
-  margin: 5px 1em;
-  text-align: center;
+  margin: 5px 1em; text-align: center;
 }
 body.rootpage-Terraria_Wiki #box-wikiheader .related-info .ii .iconlist-label {
   margin-right: 1em;
@@ -4535,77 +4520,8 @@ body.rootpage-Terraria_Wiki #box-wikiheader .related-info .ii .iconlist-label {
 body.rootpage-Terraria_Wiki #box-wikiheader .related-info .ii li {
   margin: 0;
 }
-body.rootpage-Terraria_Wiki #latest-version {
-  line-height: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 0.5em 0;
-  font-size: 12px;
-}
-body.rootpage-Terraria_Wiki #latest-version * {
-  vertical-align: middle;
-}
-body.rootpage-Terraria_Wiki #latest-version a:hover {
-  text-decoration: none;
-}
-body.rootpage-Terraria_Wiki #latest-version a.external {
-  padding: 0;
-  background: none;
-  color: var(--theme-link-color);
-}
-body.rootpage-Terraria_Wiki #latest-version ul {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 0 2px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: auto 4px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div {
-  margin: auto auto auto 3px;
-  text-align: left;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div > * {
-  display: block;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div.pic > * {
-  display: inline;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .platform {
-  font-size: 9px;
-  line-height: 9px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .versionnumber {
-  font-weight: bold;
-  font-size: 15px;
-  line-height: 15px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .equivalentversion {
-  color: var(--theme-text-color-note);
-  font-size: 9px;
-  line-height: 9px;
-}
-body.rootpage-Terraria_Wiki #latest-version ul:first-child li:first-child {
-  margin-left: auto;
-}
-body.rootpage-Terraria_Wiki #latest-version ul:last-child li:last-child {
-  margin-right: auto;
-}
-body.rootpage-Terraria_Wiki #latest-version div.pic {
-  text-align: center;
-}
+
+
 body.rootpage-Terraria_Wiki #box-wikiheader.collapsable #latest-version {
   margin: 0.25em auto 0;
 }
@@ -4651,496 +4567,316 @@ body.rootpage-Terraria_Wiki #box-wikiheader.collapsable.collapsed #box-wikiheade
 body.rootpage-Terraria_Wiki #box-wikiheader.collapsable.collapsed #box-wikiheader-toggle-link span:last-child {
   display: none;
 }
-body.rootpage-Terraria_Wiki #main-section .sep {
-  display: none;
-  width: 100%;
-  height: 0;
-}
-body.rootpage-Terraria_Wiki #main-section li {
-  margin-bottom: 1px;
-}
-body.rootpage-Terraria_Wiki .box-row-l #main-section #sep-D {
-  display: block;
-}
-body.rootpage-Terraria_Wiki .box-row-m #main-section #sep-B, body.rootpage-Terraria_Wiki .box-row-m #main-section #sep-E {
-  display: block;
-}
-body.rootpage-Terraria_Wiki .box-row-s #main-section #sep-B, body.rootpage-Terraria_Wiki .box-row-s #main-section #sep-D, body.rootpage-Terraria_Wiki .box-row-s #main-section #sep-F {
-  display: block;
-}
-body.rootpage-Terraria_Wiki #box-game {
-  flex: 3 0 960px;
-}
-body.rootpage-Terraria_Wiki #box-game .i {
-  line-height: 60px;
-}
-body.rootpage-Terraria_Wiki #box-game .intro {
-  margin-right: 1em;
-}
-body.rootpage-Terraria_Wiki #box-game .mclist {
-  columns: 5;
-}
-body.rootpage-Terraria_Wiki #box-game .mclist li {
-  height: 60px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-game {
-  flex: 2 0 640px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-game .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-b#box-game {
-  flex: 3 0 840px;
-}
-body.rootpage-Terraria_Wiki .width-c#box-game {
-  flex: 19 0 640px;
-}
-body.rootpage-Terraria_Wiki .width-c#box-game .mclist {
-  columns: 4;
-  margin: auto;
-}
-body.rootpage-Terraria_Wiki .width-d#box-game {
-  flex: 1 1 1000px;
-}
-body.rootpage-Terraria_Wiki .width-d#box-game .mclist {
-  columns: 5;
-}
-body.rootpage-Terraria_Wiki .width-e#box-game .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-f#box-game .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-g#box-game .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki #box-news {
-  flex: 1 0 480px;
-  display: flex;
-  flex-direction: column;
-}
-body.rootpage-Terraria_Wiki #box-news .main-heading {
-  flex: none;
-}
-body.rootpage-Terraria_Wiki #box-news .news ul {
-  margin-top: 0;
-}
-body.rootpage-Terraria_Wiki #box-news .outro {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-}
-body.rootpage-Terraria_Wiki #box-news .more {
-  display: block;
-  font-style: italic;
-  font-size: 85%;
-  margin-left: 2em;
-  margin-top: 0.5em;
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-news .links {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-  text-align: center;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around; /*fallback*/
-  justify-content: space-evenly;
-}
-body.rootpage-Terraria_Wiki #box-news .links span {
-  margin: 0.75em 0.25em 0;
-  display: inline-block;
-}
-body.rootpage-Terraria_Wiki .width-a#box-news {
-  flex: 1 0 320px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-news {
-  flex: 1 0 280px;
-}
-body.rootpage-Terraria_Wiki #box-items {
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-items .i {
-  line-height: 28px;
-}
-body.rootpage-Terraria_Wiki #box-items .i > a:first-child {
-  display: inline-block;
-  width: 20px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-items .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki #box-items .mclist li {
-  height: 28px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-items .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-b#box-items .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-c#box-items .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-d#box-items .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-e#box-items {
-  flex: 1 1 320px;
-}
-body.rootpage-Terraria_Wiki .width-e#box-items .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-f#box-items {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-f#box-items .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-g#box-items .mclist {
-  columns: 6;
-}
-body.rootpage-Terraria_Wiki .width-h#box-items .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-i#box-items .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-j#box-items .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki #box-biomes {
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-biomes .i {
-  line-height: 28px;
-}
-body.rootpage-Terraria_Wiki #box-biomes .i > a:first-child {
-  display: inline-block;
-  width: 22px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-biomes .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki #box-biomes .mclist li {
-  height: 28px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-biomes .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-b#box-biomes .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-c#box-biomes .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-d#box-biomes .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-e#box-biomes {
-  flex: 1 1 430px;
-}
-body.rootpage-Terraria_Wiki .width-e#box-biomes .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-f#box-biomes {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-f#box-biomes .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-g#box-biomes .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-h#box-biomes .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-i#box-biomes .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-j#box-biomes .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki #box-mechanics {
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-mechanics .i {
-  line-height: 28px;
-}
-body.rootpage-Terraria_Wiki #box-mechanics .i > a:first-child {
-  display: inline-block;
-  width: 20px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-mechanics .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki #box-mechanics .mclist li {
-  height: 28px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-mechanics .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-b#box-mechanics .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-c#box-mechanics {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-c#box-mechanics .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-d#box-mechanics .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-e#box-mechanics .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-f#box-mechanics .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki #box-npcs {
-  flex: 3 0 720px;
-}
-body.rootpage-Terraria_Wiki #box-npcs .i {
-  line-height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-npcs .i > a:first-child {
-  display: inline-block;
-  width: 32px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-npcs .mclist li {
-  height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-npcs .prehardmode {
-  padding-right: 40px;
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki #box-npcs .hardmode {
-  flex: 1 0 150px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-npcs {
-  flex: 2 0 460px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-npcs .prehardmode {
-  padding-right: 0;
-}
-body.rootpage-Terraria_Wiki .width-a#box-npcs .prehardmode .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-a#box-npcs .hardmode {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-b#box-npcs {
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-b#box-npcs .prehardmode {
-  padding-right: 20px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-npcs .hardmode {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-c#box-npcs {
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-c#box-npcs .prehardmode {
-  padding-right: 1em;
-  flex: 2 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-c#box-npcs .prehardmode .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-c#box-npcs .hardmode {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-d#box-npcs {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-d#box-npcs .prehardmode .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-e#box-npcs {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-e#box-npcs .prehardmode {
-  width: 100%;
-  padding-right: 0;
-}
-body.rootpage-Terraria_Wiki .width-e#box-npcs .prehardmode .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-e#box-npcs .hardmode {
-  width: 100%;
-}
-body.rootpage-Terraria_Wiki .width-e#box-npcs .hardmode .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-f#box-npcs .prehardmode .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-f#box-npcs .hardmode .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-g#box-npcs .prehardmode .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki .width-g#box-npcs .hardmode .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki #box-bosses {
-  flex: 2 0 360px;
-}
-body.rootpage-Terraria_Wiki #box-bosses .i {
-  line-height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-bosses .i > a:first-child {
-  display: inline-block;
-  width: 24px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-bosses .mclist li {
-  height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-bosses .content > div {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-a#box-bosses {
-  flex: 2 0 310px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-bosses {
-  flex: 3 0 600px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-bosses .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-c#box-bosses .mclist {
-  columns: 2;
-  column-gap: 0.25em;
-}
-body.rootpage-Terraria_Wiki .width-d#box-bosses .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki .width-e#box-bosses {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-e#box-bosses .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-f#box-bosses .prehardmode,
-body.rootpage-Terraria_Wiki .width-f#box-bosses .hardmode {
-  width: 100%;
-}
-body.rootpage-Terraria_Wiki .width-f#box-bosses .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-g#box-bosses .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki #box-events {
-  flex: 2 0 360px;
-}
-body.rootpage-Terraria_Wiki #box-events .i {
-  line-height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-events .i > a:first-child {
-  display: inline-block;
-  width: 24px;
-  text-align: center;
-}
-body.rootpage-Terraria_Wiki #box-events .mclist li {
-  height: 32px;
-}
-body.rootpage-Terraria_Wiki #box-events .content > div {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-a#box-events {
-  flex: 2 0 310px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-events .mclist {
-  columns: 2;
-  column-gap: 0.25em;
-}
-body.rootpage-Terraria_Wiki .width-c#box-events .mclist {
-  columns: 1;
-}
-body.rootpage-Terraria_Wiki .width-d#box-events {
-  flex: 1 1 720px;
-}
-body.rootpage-Terraria_Wiki .width-d#box-events .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki .width-e#box-events .prehardmode,
-body.rootpage-Terraria_Wiki .width-e#box-events .hardmode {
-  width: 100%;
-}
-body.rootpage-Terraria_Wiki .width-e#box-events .mclist {
-  columns: 4;
-}
-body.rootpage-Terraria_Wiki .width-f#box-events .mclist {
-  columns: 3;
-}
-body.rootpage-Terraria_Wiki .width-g#box-events .mclist {
-  columns: 2;
-}
-body.rootpage-Terraria_Wiki #sect-ext dd {
-  margin-left: 1em;
-}
-body.rootpage-Terraria_Wiki #box-software {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki #box-wiki {
-  flex: 3 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-a#sect-ext .outro {
-  display: flex;
-}
-body.rootpage-Terraria_Wiki .width-a#sect-ext .outro dl {
-  flex: 1 0 auto;
-}
-body.rootpage-Terraria_Wiki .width-a#box-software {
-  flex-basis: 220px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-software .outro dl {
-  display: inline-block;
-  width: 100%;
-}
-body.rootpage-Terraria_Wiki .width-a#box-wiki {
-  flex-basis: 900px;
-}
-body.rootpage-Terraria_Wiki .width-a#box-wiki .outro dl {
-  display: inline-block;
-  width: 33.33333333%;
-}
-body.rootpage-Terraria_Wiki .width-b#box-wiki {
-  flex-basis: 620px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-wiki .outro dl {
-  width: 50%;
-}
-body.rootpage-Terraria_Wiki .width-b#box-software {
-  flex-basis: 620px;
-}
-body.rootpage-Terraria_Wiki .width-b#box-software .outro dl {
-  width: 50%;
-}
-body.rootpage-Terraria_Wiki .width-c#box-software {
-  flex-shrink: 1;
-}
-body.rootpage-Terraria_Wiki .width-c#box-software .outro dl {
-  width: 100%;
-}
-body.rootpage-Terraria_Wiki .width-c#box-wiki {
-  flex-shrink: 1;
-}
-body.rootpage-Terraria_Wiki .width-c#box-wiki .outro dl {
-  width: 100%;
-}
+
+
+/* LATEST VERSION BOX */
+body.rootpage-Terraria_Wiki #latest-version {
+  line-height: 1; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin: 0.5em 0; font-size: 12px;
+}
+body.rootpage-Terraria_Wiki #latest-version * { vertical-align: middle; }
+body.rootpage-Terraria_Wiki #latest-version a:hover { text-decoration: none; }
+body.rootpage-Terraria_Wiki #latest-version a.external { padding: 0; background: none; color: var(--theme-link-color); }
+body.rootpage-Terraria_Wiki #latest-version ul { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin: 0 2px; }
+body.rootpage-Terraria_Wiki #latest-version ul li { display: flex; justify-content: center; align-items: center; margin: auto 4px; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div { margin: auto auto auto 3px; text-align: left; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div > * { display: block; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div.pic > * { display: inline; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text { display: flex; flex-direction: column; gap: 4px; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .platform { font-size: 9px; line-height: 9px; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .versionnumber { font-weight: bold; font-size: 15px; line-height: 15px; }
+body.rootpage-Terraria_Wiki #latest-version ul li > div.platform-and-version-text > .equivalentversion { color: var(--theme-text-color-note); font-size: 9px; line-height: 9px; }
+body.rootpage-Terraria_Wiki #latest-version ul:first-child li:first-child { margin-left: auto; }
+body.rootpage-Terraria_Wiki #latest-version ul:last-child li:last-child { margin-right: auto; }
+body.rootpage-Terraria_Wiki #latest-version div.pic { text-align: center; }
+
+/* HEADER COLLAPSIBLE RESPONSIVE LOGIC */
+@media (max-width: 1300px) {
+  body.rootpage-Terraria_Wiki #box-wikiheader #latest-version { margin: 0.25em auto 0; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #latest-version ul:first-child li:first-child { margin-left: 4px; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #latest-version ul:last-child li:last-child { margin-right: 4px; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #latest-version ul li { margin: 0.25em 0.5em; }
+  body.rootpage-Terraria_Wiki #box-wikiheader .main-title > span { display: block; }
+  body.rootpage-Terraria_Wiki #box-wikiheader .related-info { margin: 0.25em auto 0; }
+  body.rootpage-Terraria_Wiki #box-wikiheader .related-info .ii { margin: 0.25em 1em; }
+  body.rootpage-Terraria_Wiki #box-wikiheader > div { padding-bottom: 15px; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #box-wikiheader-toggle-link { display: inline-block; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #box-wikiheader-toggle-link span { display: inline-block; }
+  body.rootpage-Terraria_Wiki #box-wikiheader #box-wikiheader-toggle-link span:first-child { display: none; }
+}
+
+
+
+
+/* --- SECTIONS CONTENT RESPONSIVE LOGIC --- */
+
+/* Base Styles */
+body.rootpage-Terraria_Wiki #main-section .sep { display: none; width: 100%; height: 0; }
+body.rootpage-Terraria_Wiki #main-section li { margin-bottom: 1px; }
+
+/* Separators */
+@media (min-width: 2400px) and (max-width: 3500px) {
+  body.rootpage-Terraria_Wiki #main-section #sep-D { display: block; }
+}
+@media (min-width: 1670px) and (max-width: 2399px) {
+  body.rootpage-Terraria_Wiki #main-section #sep-B, body.rootpage-Terraria_Wiki #main-section #sep-E { display: block; }
+}
+@media (max-width: 1669px) {
+  body.rootpage-Terraria_Wiki #main-section #sep-B, body.rootpage-Terraria_Wiki #main-section #sep-D, body.rootpage-Terraria_Wiki #main-section #sep-F { display: block; }
+}
+
+/* Box-Game */
+body.rootpage-Terraria_Wiki #box-game { flex: 3 0 960px; }
+body.rootpage-Terraria_Wiki #box-game .i { line-height: 60px; }
+body.rootpage-Terraria_Wiki #box-game .intro { margin-right: 1em; }
+body.rootpage-Terraria_Wiki #box-game .mclist { columns: 5; }
+body.rootpage-Terraria_Wiki #box-game .mclist li { height: 60px; }
+
+@media (min-width: 3250px) and (max-width: 4500px) {
+  body.rootpage-Terraria_Wiki #box-game { flex: 2 0 640px; }
+  body.rootpage-Terraria_Wiki #box-game .mclist { columns: 4; }
+}
+@media (min-width: 1670px) and (max-width: 3249px) {
+  body.rootpage-Terraria_Wiki #box-game { flex: 3 0 840px; }
+}
+@media (max-width: 1669px) {
+  body.rootpage-Terraria_Wiki #box-game { flex: 19 0 640px; }
+  body.rootpage-Terraria_Wiki #box-game .mclist { columns: 4; margin: auto; }
+}
+@media (max-width: 1200px) {
+  body.rootpage-Terraria_Wiki #box-game { flex: 1 1 1000px; }
+  body.rootpage-Terraria_Wiki #box-game .mclist { columns: 5; }
+}
+@media (max-width: 1160px) { body.rootpage-Terraria_Wiki #box-game .mclist { columns: 4; } }
+@media (max-width: 700px) { body.rootpage-Terraria_Wiki #box-game .mclist { columns: 3; } }
+@media (max-width: 540px) { body.rootpage-Terraria_Wiki #box-game .mclist { columns: 2; } }
+
+/* Box-News */
+body.rootpage-Terraria_Wiki #box-news { flex: 1 0 480px; display: flex; flex-direction: column; }
+body.rootpage-Terraria_Wiki #box-news .main-heading { flex: none; }
+body.rootpage-Terraria_Wiki #box-news .news ul { margin-top: 0; }
+body.rootpage-Terraria_Wiki #box-news .outro { flex: 1 0 auto; display: flex; flex-direction: column; }
+body.rootpage-Terraria_Wiki #box-news .more { display: block; font-style: italic; font-size: 85%; margin-left: 2em; margin-top: 0.5em; flex: 1 0 auto; }
+body.rootpage-Terraria_Wiki #box-news .links { margin-top: 0.25em; margin-bottom: 0.25em; text-align: center; display: flex; flex-wrap: wrap; justify-content: space-evenly; }
+body.rootpage-Terraria_Wiki #box-news .links span { margin: 0.75em 0.25em 0; display: inline-block; }
+
+@media (min-width: 1750px), (max-width: 1669px) {
+  body.rootpage-Terraria_Wiki #box-news { flex: 1 0 320px; }
+}
+@media (max-width: 400px) {
+  body.rootpage-Terraria_Wiki #box-news { flex: 1 0 280px; }
+}
+
+/* Box-Items */
+body.rootpage-Terraria_Wiki #box-items { flex: 2 0 auto; }
+body.rootpage-Terraria_Wiki #box-items .i { line-height: 28px; }
+body.rootpage-Terraria_Wiki #box-items .i > a:first-child { display: inline-block; width: 20px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-items .mclist { columns: 3; }
+body.rootpage-Terraria_Wiki #box-items .mclist li { height: 28px; }
+
+@media (min-width: 3250px) and (max-width: 4500px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 2; } }
+@media (max-width: 1769px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 2; } }
+@media (max-width: 1669px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 3; } }
+@media (max-width: 1320px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 2; } }
+@media (max-width: 1140px) {
+  body.rootpage-Terraria_Wiki #box-items { flex: 1 1 320px; }
+  body.rootpage-Terraria_Wiki #box-items .mclist { columns: 2; }
+}
+@media (max-width: 1040px) {
+  body.rootpage-Terraria_Wiki #box-items { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-items .mclist { columns: 4; }
+}
+@media (max-width: 980px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 6; } }
+@media (max-width: 870px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 4; } }
+@media (max-width: 620px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 3; } }
+@media (max-width: 450px) { body.rootpage-Terraria_Wiki #box-items .mclist { columns: 2; } }
+
+/* Box-Biomes */
+body.rootpage-Terraria_Wiki #box-biomes { flex: 2 0 auto; }
+body.rootpage-Terraria_Wiki #box-biomes .i { line-height: 28px; }
+body.rootpage-Terraria_Wiki #box-biomes .i > a:first-child { display: inline-block; width: 22px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 3; }
+body.rootpage-Terraria_Wiki #box-biomes .mclist li { height: 28px; }
+
+@media (min-width: 2560px) and (max-width: 3250px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 3; } }
+@media (max-width: 1769px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 2; } }
+@media (max-width: 1669px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 3; } }
+@media (max-width: 1320px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 2; } }
+@media (max-width: 1140px) {
+  body.rootpage-Terraria_Wiki #box-biomes { flex: 1 1 430px; }
+  body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 2; }
+}
+@media (max-width: 1040px) {
+  body.rootpage-Terraria_Wiki #box-biomes { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 3; }
+}
+@media (max-width: 980px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 4; } }
+@media (max-width: 830px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 3; } }
+@media (max-width: 630px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 2; } }
+@media (max-width: 428px) { body.rootpage-Terraria_Wiki #box-biomes .mclist { columns: 1; } }
+
+/* Box-Mechanics */
+body.rootpage-Terraria_Wiki #box-mechanics { flex: 2 0 auto; }
+body.rootpage-Terraria_Wiki #box-mechanics .i { line-height: 28px; }
+body.rootpage-Terraria_Wiki #box-mechanics .i > a:first-child { display: inline-block; width: 20px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 3; }
+body.rootpage-Terraria_Wiki #box-mechanics .mclist li { height: 28px; }
+
+@media (min-width: 3250px) and (max-width: 4500px), (max-width: 1470px) { body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 2; } }
+@media (min-width: 1670px) and (max-width: 1769px) { body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 2; } }
+@media (max-width: 1080px) {
+  body.rootpage-Terraria_Wiki #box-mechanics { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 4; }
+}
+@media (max-width: 750px) { body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 3; } }
+@media (max-width: 550px) { body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 2; } }
+@media (max-width: 359px) { body.rootpage-Terraria_Wiki #box-mechanics .mclist { columns: 1; } }
+
+/* Box-NPCs */
+body.rootpage-Terraria_Wiki #box-npcs { flex: 3 0 720px; }
+body.rootpage-Terraria_Wiki #box-npcs .i { line-height: 32px; }
+body.rootpage-Terraria_Wiki #box-npcs .i > a:first-child { display: inline-block; width: 32px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-npcs .mclist li { height: 32px; }
+body.rootpage-Terraria_Wiki #box-npcs .prehardmode { padding-right: 40px; flex: 1 0 auto; }
+body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist { columns: 3; }
+body.rootpage-Terraria_Wiki #box-npcs .hardmode { flex: 1 0 150px; }
+
+@media (min-width: 3250px) and (max-width: 4500px) {
+  body.rootpage-Terraria_Wiki #box-npcs { flex: 2 0 460px; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode { padding-right: 0; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist { columns: 2; }
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode { flex: 1 0 auto; }
+}
+@media (min-width: 2560px) and (max-width: 3249px) {
+  body.rootpage-Terraria_Wiki #box-npcs { flex: 2 0 auto; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode { padding-right: 20px; }
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode { flex: 1 0 auto; }
+}
+@media (max-width: 1470px) {
+  body.rootpage-Terraria_Wiki #box-npcs { flex: 2 0 auto; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode { padding-right: 1em; flex: 2 0 auto; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist { columns: 2; }
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode { flex: 1 0 auto; }
+}
+@media (max-width: 1080px) {
+  body.rootpage-Terraria_Wiki #box-npcs { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist { columns: 3; }
+}
+@media (max-width: 720px) {
+  body.rootpage-Terraria_Wiki #box-npcs { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode { width: 100%; padding-right: 0; }
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist { columns: 3; }
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode { width: 100%; }
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode .mclist { columns: 3; }
+}
+@media (max-width: 570px) {
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist,
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode .mclist { columns: 2; }
+}
+@media (max-width: 350px) {
+  body.rootpage-Terraria_Wiki #box-npcs .prehardmode .mclist,
+  body.rootpage-Terraria_Wiki #box-npcs .hardmode .mclist { columns: 1; }
+}
+
+/* Box-Bosses */
+body.rootpage-Terraria_Wiki #box-bosses { flex: 2 0 360px; }
+body.rootpage-Terraria_Wiki #box-bosses .i { line-height: 32px; }
+body.rootpage-Terraria_Wiki #box-bosses .i > a:first-child { display: inline-block; width: 24px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-bosses .mclist li { height: 32px; }
+body.rootpage-Terraria_Wiki #box-bosses .content > div { flex: 1 0 auto; }
+
+@media (min-width: 3250px) and (max-width: 4500px) {
+  body.rootpage-Terraria_Wiki #box-bosses { flex: 2 0 310px; }
+}
+@media (min-width: 2560px) and (max-width: 3249px) {
+  body.rootpage-Terraria_Wiki #box-bosses { flex: 3 0 600px; }
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 2; }
+}
+@media (max-width: 1669px) {
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 2; column-gap: 0.25em; }
+}
+@media (max-width: 1365px) {
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 1; }
+}
+@media (max-width: 800px) {
+  body.rootpage-Terraria_Wiki #box-bosses { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 2; }
+}
+@media (max-width: 720px) {
+  body.rootpage-Terraria_Wiki #box-bosses .prehardmode, body.rootpage-Terraria_Wiki #box-bosses .hardmode { width: 100%; }
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 3; }
+}
+@media (max-width: 480px) {
+  body.rootpage-Terraria_Wiki #box-bosses .mclist { columns: 2; }
+}
+
+/* Box-Events */
+body.rootpage-Terraria_Wiki #box-events { flex: 2 0 360px; }
+body.rootpage-Terraria_Wiki #box-events .i { line-height: 32px; }
+body.rootpage-Terraria_Wiki #box-events .i > a:first-child { display: inline-block; width: 24px; text-align: center; }
+body.rootpage-Terraria_Wiki #box-events .mclist li { height: 32px; }
+body.rootpage-Terraria_Wiki #box-events .content > div { flex: 1 0 auto; }
+
+@media (min-width: 3250px) and (max-width: 4500px) {
+  body.rootpage-Terraria_Wiki #box-events { flex: 2 0 310px; }
+}
+@media (max-width: 1669px) {
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 2; column-gap: 0.25em; }
+}
+@media (max-width: 1365px) {
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 1; }
+}
+@media (max-width: 800px) {
+  body.rootpage-Terraria_Wiki #box-events { flex: 1 1 720px; }
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 2; }
+}
+@media (max-width: 720px) {
+  body.rootpage-Terraria_Wiki #box-events .prehardmode, body.rootpage-Terraria_Wiki #box-events .hardmode { width: 100%; }
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 4; }
+}
+@media (max-width: 650px) {
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 3; }
+}
+@media (max-width: 540px) {
+  body.rootpage-Terraria_Wiki #box-events .mclist { columns: 2; }
+}
+
+/* Sect-Ext */
+body.rootpage-Terraria_Wiki #sect-ext dd { margin-left: 1em; }
+@media (min-width: 2300px) {
+  body.rootpage-Terraria_Wiki #sect-ext .outro { display: flex; }
+  body.rootpage-Terraria_Wiki #sect-ext .outro dl { flex: 1 0 auto; }
+}
+
+/* Box-Software */
+body.rootpage-Terraria_Wiki #box-software { flex: 1 0 auto; }
+@media (max-width: 2299px) {
+  body.rootpage-Terraria_Wiki #box-software { flex-basis: 220px; }
+  body.rootpage-Terraria_Wiki #box-software .outro dl { display: inline-block; width: 100%; }
+}
+@media (max-width: 1100px) {
+  body.rootpage-Terraria_Wiki #box-software { flex-basis: 620px; }
+  body.rootpage-Terraria_Wiki #box-software .outro dl { width: 50%; }
+}
+@media (max-width: 680px) {
+  body.rootpage-Terraria_Wiki #box-software { flex-shrink: 1; }
+  body.rootpage-Terraria_Wiki #box-software .outro dl { width: 100%; }
+}
+
+/* Box-Wiki */
+body.rootpage-Terraria_Wiki #box-wiki { flex: 3 0 auto; }
+@media (max-width: 2299px) {
+  body.rootpage-Terraria_Wiki #box-wiki { flex-basis: 900px; }
+  body.rootpage-Terraria_Wiki #box-wiki .outro dl { display: inline-block; width: 33.33333333%; }
+}
+@media (max-width: 1499px) {
+  body.rootpage-Terraria_Wiki #box-wiki { flex-basis: 620px; }
+  body.rootpage-Terraria_Wiki #box-wiki .outro dl { width: 50%; }
+}
+@media (max-width: 680px) {
+  body.rootpage-Terraria_Wiki #box-wiki { flex-shrink: 1; }
+  body.rootpage-Terraria_Wiki #box-wiki .outro dl { width: 100%; }
+}
+
 body.rootpage-Terraria_Wiki #mainpage-wrapper .footer {
   text-align: center;
   margin: 0.75em 2px 0;

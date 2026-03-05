@@ -65,6 +65,10 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 	</PropertyGroup>
+	<PropertyGroup>
+		<SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+	</PropertyGroup>
+
 
 	<ItemGroup>
 		<!-- App Icon -->

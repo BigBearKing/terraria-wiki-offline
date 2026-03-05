@@ -48,7 +48,7 @@
 #if !DEBUG
 			try
 			{
-				await JSRuntime.InvokeVoidAsync("disableBrowserShortcuts");
+				await JS.InvokeVoidAsync("disableBrowserShortcuts");
 			}
 			catch (Exception ex)
 			{

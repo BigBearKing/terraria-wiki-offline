@@ -1,3 +1,12 @@
+/*!
+handy-scroll v2.0.6
+https://amphiluke.github.io/handy-scroll/
+(c) 2026 Amphiluke
+*/
+const t = new CSSStyleSheet; t.replaceSync(':host{bottom:0;min-height:17px;overflow:auto;position:fixed}.strut{height:1px;overflow:hidden;pointer-events:none;&:before{content:" "}}:host,.strut{font-size:1px;line-height:0;margin:0;padding:0}:host(:state(latent)){clip-path:inset(100%);.strut:before{content:"  "}}:host([viewport]:not([hidden])){display:block}:host([viewport]:not(:state(latent))){position:sticky}'); let e = t => `Attribute ‘${t}’ must reference a valid container ‘id’`; class i extends HTMLElement { static get observedAttributes() { return ["owner", "viewport", "hidden"] } #t = null; #e = null; #i = null; #s = null; #h = null; #n = null; #o = !0; #l = !0; get owner() { return this.getAttribute("owner") } set owner(t) { this.setAttribute("owner", t) } get viewport() { return this.getAttribute("viewport") } set viewport(t) { this.setAttribute("viewport", t) } get #r() { return this.#t.states.has("latent") } set #r(t) { this.#t.states[t ? "add" : "delete"]("latent") } constructor() { super(); let e = this.attachShadow({ mode: "open" }); e.adoptedStyleSheets = [t], this.#s = document.createElement("div"), this.#s.classList.add("strut"), e.appendChild(this.#s), this.#t = this.attachInternals() } connectedCallback() { this.#d(), this.#a(), this.#c(), this.#u(), this.update() } disconnectedCallback() { this.#w(), this.#p(), this.#i = this.#e = null } attributeChangedCallback(t) { if (this.#h) { if ("hidden" === t) return void (this.hasAttribute("hidden") || this.update()); "owner" === t ? this.#d() : "viewport" === t && this.#a(), this.#w(), this.#p(), this.#c(), this.#u(), this.update() } } #d() { let t = this.getAttribute("owner"); if (this.#i = document.getElementById(t), !this.#i) throw new DOMException(e("owner")) } #a() { if (!this.hasAttribute("viewport")) return void (this.#e = window); let t = this.getAttribute("viewport"); if (this.#e = document.getElementById(t), !this.#e) throw new DOMException(e("viewport")) } #c() { this.#h = new AbortController; let t = { signal: this.#h.signal }; this.#e.addEventListener("scroll", () => this.#f(), t), this.#e === window && this.#e.addEventListener("resize", () => this.update(), t), this.addEventListener("scroll", () => { this.#o && !this.#r && this.#g(), this.#o = !0 }, t), this.#i.addEventListener("scroll", () => { this.#l && this.#v(), this.#l = !0 }, t), this.#i.addEventListener("focusin", () => { setTimeout(() => { this.isConnected && this.#v() }, 0) }, t) } #w() { this.#h?.abort(), this.#h = null } #u() { this.#e !== window && (this.#n = new ResizeObserver(([t]) => { t.contentBoxSize?.[0]?.inlineSize && this.update() }), this.#n.observe(this.#e)) } #p() { this.#n?.disconnect(), this.#n = null } #g() { let { scrollLeft: t } = this; this.#i.scrollLeft !== t && (this.#l = !1, this.#i.scrollLeft = t) } #v() { let { scrollLeft: t } = this.#i; this.scrollLeft !== t && (this.#o = !1, this.scrollLeft = t) } #f() { let t = this.scrollWidth <= this.offsetWidth; if (!t) { let e = this.#i.getBoundingClientRect(), i = this.#e === window ? window.innerHeight || document.documentElement.clientHeight : this.#e.getBoundingClientRect().bottom; t = e.bottom <= i || e.top > i } this.#r !== t && (this.#r = t) } update() { let { clientWidth: t, scrollWidth: e } = this.#i, { style: i } = this; i.width = `${t}px`, this.#e === window && (i.left = `${this.#i.getBoundingClientRect().left}px`), this.#s.style.width = `${e}px`, e > t && (i.height = this.offsetHeight - this.clientHeight + 1 + "px"), this.#v(), this.#f() } } customElements.define("handy-scroll", i); export { i as default };
+
+
+
 window.pageTitle = null; // 当前页面标题，初始为空
 const handlers = {}; // 存 JS 方法
 const pending = {};  // 存等待 C# 的 Promise
@@ -18,6 +27,10 @@ handlers["BackHome"] = async () => {
     return null;
 }
 
+handlers["ToTop"] = () => {
+    document.querySelector('html').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    return null;
+}
 
 
 
@@ -62,7 +75,7 @@ document.addEventListener('click', function (e) {
         const href = targetLink.getAttribute('href') || '';
         if (href.startsWith('http')) {
             e.preventDefault();
-
+            callCSharpAsync("OpenExternalWebsite", href);
             return;
         }
         if (title && !href) {
@@ -76,7 +89,7 @@ document.addEventListener('mouseup', function (e) {
     // e.button === 3 是侧键后退，e.button === 4 是侧键前进
     if (e.button === 3 || e.button === 4) {
         e.preventDefault();
-        callCSharpAsync("WikiBackAsync","");
+        callCSharpAsync("WikiBackAsync", "");
     }
 });
 
@@ -166,23 +179,95 @@ function refresh() {
     // 1 & 2. Handle Wide Tables (宽表格处理 + 滚动条)
     // 原理：检测表格宽度，如果超出容器，就包裹一个 div 让它横向滚动
     // ============================================================
-    function handleWideTables() {
-        const tables = document.querySelectorAll('table');
-        tables.forEach(table => {
-            // 如果已经被处理过，跳过
-            if (table.parentElement.classList.contains('table-scroll-wrapper')) return;
 
-            // 简单的包裹逻辑，不管是否超宽都包裹，防止 resize 时闪烁
-            // 如果你想严格判断宽度，可以对比 table.offsetWidth > table.parentElement.offsetWidth
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-scroll-wrapper';
+function initHandyScrollForTables(containerSelector = '#bodyContent') {
+    const TABLE_WIDE_CLASS = 'table-wide';
+    const TABLE_WIDE_INNER_CLASS = 'table-wide-inner';
 
-            // 插入 wrapper 并移动 table
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
+    // 防抖函数
+    const debounce = (func, wait) => {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    };
+
+    const processWideTables = () => {
+        const containerEl = document.querySelector(containerSelector);
+        if (!containerEl) return;
+
+        const tables = containerEl.querySelectorAll('table');
+        if (tables.length === 0) return;
+
+        tables.forEach((table) => {
+            if (!table._originalContainer) {
+                table._originalContainer = table.parentNode;
+            }
+            const originalContainer = table._originalContainer;
+            if (!originalContainer) return;
+
+            // 检查是否已包装
+            const isWrapped = table.parentNode && table.parentNode.classList.contains(TABLE_WIDE_INNER_CLASS);
+            const innerBox = isWrapped ? table.parentNode : null;
+            const outerBox = isWrapped ? innerBox.parentNode : null;
+
+            // 测量宽度
+            const overwide = table.getBoundingClientRect().width > originalContainer.getBoundingClientRect().width;
+
+            if (isWrapped) {
+                if (overwide) {
+                    // 表格依然过宽：找到对应的 custom element 并调用官方的 .update()
+                    const handyComponent = outerBox.querySelector('handy-scroll');
+                    if (handyComponent && typeof handyComponent.update === 'function') {
+                        handyComponent.update();
+                    }
+                } else {
+                    // 宽度足够了，不需要滚动条：解包并移除 custom element
+                    outerBox.parentNode.insertBefore(table, outerBox);
+                    outerBox.remove();
+                }
+            } else {
+                if (overwide) {
+                    // 需要生成滚动条：创建包装层和自定义标签
+                    const newOuter = document.createElement('div');
+                    newOuter.className = TABLE_WIDE_CLASS;
+                    
+                    const newInner = document.createElement('div');
+                    newInner.className = TABLE_WIDE_INNER_CLASS;
+                    
+                    // Web Component 需要通过 ID 来绑定目标容器
+                    // 我们给内层容器生成一个唯一的 ID
+                    const uniqueId = 'scroll-inner-' + Math.random().toString(36).substring(2, 9);
+                    newInner.id = uniqueId;
+
+                    // 组装 DOM
+                    table.parentNode.insertBefore(newOuter, table);
+                    newInner.appendChild(table);
+                    newOuter.appendChild(newInner);
+
+                    // 创建 <handy-scroll> 自定义标签
+                    const handyComponent = document.createElement('handy-scroll');
+                    // 绑定 owner 属性到刚才生成的内部容器 ID
+                    handyComponent.setAttribute('owner', uniqueId);
+                    
+                    // 将组件放到包裹层内（位于滚动容器后面）
+                    newOuter.appendChild(handyComponent);
+                }
+            }
         });
+    };
+
+    // 立即执行一次
+    processWideTables();
+
+    // 绑定 resize 事件
+    if (!initHandyScrollForTables._resizeBound) {
+        window.addEventListener('resize', debounce(processWideTables, 100));
+        initHandyScrollForTables._resizeBound = true;
     }
-    handleWideTables(); // 初始化运行
+}
+    initHandyScrollForTables();
 
     // ============================================================
     // 3. Mobile Floating Fix (移动端浮动修复)
@@ -213,7 +298,7 @@ function refresh() {
         window.resizeTimer = setTimeout(fixMobileFloating, 200);
     });
 
-// ============================================================
+    // ============================================================
     // 4. Template:Sound (音频播放控制)
     // ============================================================
     const sounds = document.querySelectorAll('.sound');
@@ -225,7 +310,7 @@ function refresh() {
         if (!audio) return;
 
         // ✅ 新增：监听当前音频自然播放结束的事件
-        audio.addEventListener('ended', function() {
+        audio.addEventListener('ended', function () {
             container.classList.remove('sound-playing');
             container.title = '点击播放';
             audio.currentTime = 0; // 将进度条重置回开头
@@ -250,14 +335,14 @@ function refresh() {
                 this.title = '点击停止';
             } else {
                 audio.pause();
-                audio.currentTime = 0; 
+                audio.currentTime = 0;
                 this.classList.remove('sound-playing');
                 this.title = '点击播放';
             }
         });
     });
 
-    
+
     // ============================================================
     // 5. NPC/Item Infobox Mode Switch (模式切换 Tab)
     // 原理：点击 Tab，切换父容器的 class (c-normal/c-expert/c-master)
@@ -291,120 +376,60 @@ function refresh() {
     });
 
     // ============================================================
-    // 6. Main Page Layout (首页响应式布局)
-    // 原理：根据宽度给首页特定 ID 的元素添加 width-a, width-b 等类名
+    // 6. 首页切换显示
     // ============================================================
-    function updateMainPageLayout() {
-        if (!document.querySelector('body').classList.contains('rootpage-Terraria_Wiki')) return;
-        const content = document.getElementById('content') || document.body;
-        const width = content.offsetWidth;
-        // 偏移量计算 (原版逻辑)
-        const offset = width > 980 ? 250 : (width > 500 ? 42 : 12);
 
-        // 辅助函数：简化 class 切换
-        const toggleClass = (elementIdOrClass, className, condition) => {
-            const el = document.querySelector('.' + elementIdOrClass);
-            if (!el) return;
-            if (condition) el.classList.add(className);
-            else el.classList.remove(className);
-        };
+    if (document.querySelector('#box-wikiheader-toggle-link')) {
+        const toggleBtn = document.querySelector('#box-wikiheader #box-wikiheader-toggle-link');
+        const wikiHeader = document.querySelector('#box-wikiheader');
+        const content = document.querySelector('#content');
 
-        // --- 核心断点逻辑 (直接翻译自原版 common.js) ---
+        if (!toggleBtn || !wikiHeader || !content) return;
 
-        toggleClass('box-game', 'width-a', (width <= 4500 - offset) && (width >= 3250 - offset));
-        toggleClass('box-game', 'width-b', (width <= 3249 - offset) && (width >= 1670 - offset));
-        toggleClass('box-game', 'width-c', (width <= 1669 - offset));
-        toggleClass('box-game', 'width-d', (width <= 1200 - offset));
-        toggleClass('box-game', 'width-e', (width <= 1160 - offset));
-        toggleClass('box-game', 'width-f', (width <= 700 - offset));
-        toggleClass('box-game', 'width-g', (width <= 540 - offset));
+        // 防止重复绑定
+        if (toggleBtn.dataset.toggleBound === 'true') return;
+        toggleBtn.dataset.toggleBound = 'true';
 
-        // --- 4. Box-News (新闻) ---
-        toggleClass('box-news', 'width-a', (width >= 1750 - offset) || (width <= 1669 - offset));
-        toggleClass('box-news', 'width-b', (width <= 400 - offset));
+        // 原生防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function () {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
 
-        // --- 5. Box-Items (物品) ---
-        toggleClass('box-items', 'width-a', (width <= 4500 - offset) && (width >= 3250 - offset));
-        toggleClass('box-items', 'width-b', (width <= 1769 - offset));
-        toggleClass('box-items', 'width-c', (width <= 1669 - offset));
-        toggleClass('box-items', 'width-d', (width <= 1320 - offset));
-        toggleClass('box-items', 'width-e', (width <= 1140 - offset));
-        toggleClass('box-items', 'width-f', (width <= 1040 - offset));
-        toggleClass('box-items', 'width-g', (width <= 980 - offset));
-        toggleClass('box-items', 'width-h', (width <= 870 - offset));
-        toggleClass('box-items', 'width-i', (width <= 620 - offset));
-        toggleClass('box-items', 'width-j', (width <= 450 - offset));
+        // 更新头部状态逻辑
+        function updateHeaderState() {
+            const width = content.offsetWidth;
 
-        // --- 6. Box-Biomes (生物群落) ---
-        toggleClass('box-biomes', 'width-a', (width <= 3250 - offset) && (width >= 2560 - offset));
-        toggleClass('box-biomes', 'width-b', (width <= 1769 - offset));
-        toggleClass('box-biomes', 'width-c', (width <= 1669 - offset));
-        toggleClass('box-biomes', 'width-d', (width <= 1320 - offset));
-        toggleClass('box-biomes', 'width-e', (width <= 1140 - offset));
-        toggleClass('box-biomes', 'width-f', (width <= 1040 - offset));
-        toggleClass('box-biomes', 'width-g', (width <= 980 - offset));
-        toggleClass('box-biomes', 'width-h', (width <= 830 - offset));
-        toggleClass('box-biomes', 'width-i', (width <= 630 - offset));
-        toggleClass('box-biomes', 'width-j', (width <= 428 - offset));
+            // 对应 CSS 中的 .collapsable 逻辑
+            if (width < 1300) {
+                wikiHeader.classList.add('collapsable');
+            } else {
+                wikiHeader.classList.remove('collapsable');
+            }
 
-        // --- 7. Box-Mechanics (游戏机制) ---
-        toggleClass('box-mechanics', 'width-a', ((width <= 4500 - offset) && (width >= 3250 - offset)) || (width <= 1470 - offset));
-        toggleClass('box-mechanics', 'width-b', (width <= 1769 - offset) && (width >= 1670 - offset));
-        toggleClass('box-mechanics', 'width-c', (width <= 1080 - offset));
-        toggleClass('box-mechanics', 'width-d', (width <= 750 - offset));
-        toggleClass('box-mechanics', 'width-e', (width <= 550 - offset));
-        toggleClass('box-mechanics', 'width-f', (width <= 359 - offset));
+            // 对应 CSS 中的 .collapsed 逻辑
+            if (width < 730) {
+                wikiHeader.classList.add('collapsed');
+            } else {
+                wikiHeader.classList.remove('collapsed');
+            }
+        }
 
-        // --- 8. Box-NPCs (NPC) ---
-        toggleClass('box-npcs', 'width-a', (width <= 4500 - offset) && (width >= 3250 - offset));
-        toggleClass('box-npcs', 'width-b', (width <= 3249 - offset) && (width >= 2560 - offset));
-        toggleClass('box-npcs', 'width-c', (width <= 1470 - offset));
-        toggleClass('box-npcs', 'width-d', (width <= 1080 - offset));
-        toggleClass('box-npcs', 'width-e', (width <= 720 - offset));
-        toggleClass('box-npcs', 'width-f', (width <= 570 - offset));
-        toggleClass('box-npcs', 'width-g', (width <= 350 - offset));
+        // 初始化
+        updateHeaderState();
 
-        // --- 9. Box-Bosses (Boss) ---
-        toggleClass('box-bosses', 'width-a', (width <= 4500 - offset) && (width >= 3250 - offset));
-        toggleClass('box-bosses', 'width-b', (width <= 3249 - offset) && (width >= 2560 - offset));
-        toggleClass('box-bosses', 'width-c', (width <= 1669 - offset));
-        toggleClass('box-bosses', 'width-d', (width <= 1365 - offset));
-        toggleClass('box-bosses', 'width-e', (width <= 800 - offset));
-        toggleClass('box-bosses', 'width-f', (width <= 720 - offset));
-        toggleClass('box-bosses', 'width-g', (width <= 480 - offset));
+        // 监听窗口缩放
+        window.addEventListener('resize', debounce(updateHeaderState, 200));
 
-        // --- 10. Box-Events (事件) ---
-        toggleClass('box-events', 'width-a', (width <= 4500 - offset) && (width >= 3250 - offset));
-        toggleClass('box-events', 'width-b', (width <= 1669 - offset));
-        toggleClass('box-events', 'width-c', (width <= 1365 - offset));
-        toggleClass('box-events', 'width-d', (width <= 800 - offset));
-        toggleClass('box-events', 'width-e', (width <= 720 - offset));
-        toggleClass('box-events', 'width-f', (width <= 650 - offset));
-        toggleClass('box-events', 'width-g', (width <= 540 - offset));
-
-        // --- 11. Sect-Ext (扩展区域) ---
-        toggleClass('sect-ext', 'width-a', width >= 2300 - offset);
-
-        // --- 12. Box-Software (软件) ---
-        toggleClass('box-software', 'width-a', (width <= 2299 - offset));
-        toggleClass('box-software', 'width-b', (width <= 1100 - offset));
-        toggleClass('box-software', 'width-c', (width <= 680 - offset));
-
-        // --- 13. Box-Wiki (Wiki信息) ---
-        toggleClass('box-wiki', 'width-a', (width <= 2299 - offset));
-        toggleClass('box-wiki', 'width-b', (width <= 1499 - offset));
-        toggleClass('box-wiki', 'width-c', (width <= 680 - offset));
-
-        // 注意：原版代码非常长，针对每个 box 都有判断。
-        // 如果你的数据库里的首页 HTML ID 和原版一致，这些代码会生效。
-        // 如果不一致，你可能需要去 CSS 里用 Grid/Flexbox 重写，比 JS 更高效。
+        // 点击展开/折叠按钮
+        toggleBtn.addEventListener('click', function () {
+            console.log('Toggle wiki header');
+            wikiHeader.classList.toggle('collapsed');
+        });
     }
-
-    // 初始化首页布局
-    updateMainPageLayout();
-    window.addEventListener('resize', () => {
-        clearTimeout(window.mainLayoutTimer);
-        window.mainLayoutTimer = setTimeout(updateMainPageLayout, 100);
-    });
-
 }
+
