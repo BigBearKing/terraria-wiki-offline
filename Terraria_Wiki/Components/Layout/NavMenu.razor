@@ -1,6 +1,8 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @using Terraria_Wiki.Services
+<div class="sidebar-mask @(AppState.SidebarIsExpanded ? "show" : "")" @onclick="CloseSidebar"></div>
+
 <div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
 
 	<div class="sidebar-header" @onclick="ToggleSidebar">
@@ -100,7 +102,11 @@
 		return AppState.CurrentPage.Contains(pageName) ? "actived" : "";
 	}
 
-
+	// 新增：点击遮罩层关闭侧边栏
+	private void CloseSidebar()
+	{
+		AppState.SidebarIsExpanded = false;
+	}
 
 	private void ToggleSidebar()
 	{
@@ -226,5 +232,6 @@
 		gap: 4px;
 		padding: 12px;
 	}
+
 
 </style>

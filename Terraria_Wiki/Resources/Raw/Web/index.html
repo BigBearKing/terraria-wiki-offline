@@ -99,26 +99,30 @@
         /* 简单的淡入淡出动画 */
     }
 
-    /* 显示模态框的状态类 */
-    #image-modal.show {
-        opacity: 1;
-        pointer-events: auto;
-    }
+        /* 显示模态框的状态类 */
+        #image-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
-    /* 内部的大图 */
-    #image-modal img {
-        max-width: 95%;
-        max-height: 90%;
-        object-fit: contain;
-        /* 保持比例缩放，绝不拉伸变形 */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    }
+        /* 内部的大图 */
+        #image-modal img {
+            max-width: 95%;
+            max-height: 90%;
+            object-fit: contain;
+            /* 保持比例缩放，绝不拉伸变形 */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
 
 
     html.modal-open {
         overflow: hidden !important;
         touch-action: none !important;
     }
+    .mclist{
+        overflow-y:hidden;
+    }
+
 </style>
 
 </html>

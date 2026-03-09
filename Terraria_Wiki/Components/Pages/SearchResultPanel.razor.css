@@ -76,3 +76,19 @@
     border-radius: 3px;
     font-weight: bold;
 }
+
+@media(max-width:768px) {
+    /* 搜索面板必须向上弹出 */
+    .search-popup-panel {
+        bottom: var(--header-height) !important;
+        top: auto !important;
+        left: 0;
+        width: 100% !important;
+        max-height: 50vh;
+        border-radius: 12px 12px 0 0 !important;
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+    .search-overlay {
+        height: calc(100vh - 2*var(--header-height));
+    }
+}

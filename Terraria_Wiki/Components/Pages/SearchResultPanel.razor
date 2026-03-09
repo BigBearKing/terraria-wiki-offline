@@ -70,6 +70,7 @@
 		if (string.IsNullOrWhiteSpace(query))
 		{
 			results = null;
+			StateHasChanged();
 			return;
 		}
 		await ExecuteSearchAsync(query);

@@ -3,32 +3,43 @@
 @using Terraria_Wiki.Models
 <header class="top-bar">
 
-	<div class="actions-wrapper" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-		<button class="action-btn button" title="后退" @onclick="WikiBackAsync">
+	<div class="actions-wrapper">
+		<button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none; padding: 0 12px; align-items: center;">
+			<img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
+		</button>
+		<button class="action-btn button" title="后退" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
 			<Icon Name="arrow-left" Size="20"></Icon>
 		</button>
-		<button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync">
+		<button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
 			<Icon Name="home" Size="20"></Icon>
 		</button>
-		<button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "")" @onclick="ToggleFavoriteAsync">
+		<button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
 			<Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
 		</button>
 	</div>
 	<div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
 
-	<div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
-		<Icon class="search-icon" Name="search"></Icon>
-		<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
-		@if (AppState.CurrentPage == "home")
-		{
-			<SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
-		}
-
+	<div class="bottom-bar" id="mobileBottomBar" style="display:@(ShouldShowSearch() ? "" : "none")">
+		<div class="search-wrapper">
+			<Icon class="search-icon" Name="search"></Icon>
+			<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
+			@if (AppState.CurrentPage == "home")
+			{
+				<SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+			}
+		</div>
 	</div>
 
 
 </header>
-
+<style>
+	@@media (max-width: 768px) {
+		.main-area .content-container,
+		.main-area .iframe-container {
+			padding-bottom: @(ShouldShowSearch() ? "var(--header-height)" : "0");
+		}
+	}
+</style>
 
 @code {
 	private bool _isFavorite = false;
@@ -83,6 +94,13 @@
 
 		ClearSearch();
 	}
+
+	// 新增：移动端打开侧边栏
+	private void OpenMobileSidebar()
+	{
+		AppState.SidebarIsExpanded = true;
+	}
+
 	//
 	private string GetPageTitle()
 	{

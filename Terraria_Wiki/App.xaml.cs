@@ -47,8 +47,10 @@ namespace Terraria_Wiki
         {
             Window window = new Window(new MainPage());
             window.Title = AppInfo.Current.Name;
+#if RELEASE
             window.MinimumWidth = 800;
             window.MinimumHeight = 600;
+#endif
             // 1. 恢复普通大小和位置（非最大化时的尺寸）
             RestoreWindowBounds(window);
 

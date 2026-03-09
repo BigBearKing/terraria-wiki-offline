@@ -3,8 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Terraria_Wiki"
              xmlns:components="clr-namespace:Terraria_Wiki.Components"
-             x:Class="Terraria_Wiki.MainPage"
-             Padding="{OnPlatform Android='0,40,0,0'}">
+             x:Class="Terraria_Wiki.MainPage">
 
     <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html" StartPath="/home">
         <BlazorWebView.RootComponents>
