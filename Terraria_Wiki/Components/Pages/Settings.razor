@@ -21,6 +21,15 @@
 					<option value="dark">深色模式</option>
 				</select>
 			</div>
+			<div class="setting-item">
+				<div class="setting-info">
+					<span class="setting-name">内容颜色主题</span>
+				</div>
+				<select class="modern-select" @bind="ContentTheme">
+					<option value="auto">跟随界面</option>
+					<option value="original">Wiki原版</option>
+				</select>
+			</div>
 		</div>
 
 		<div class="category-card">
@@ -145,6 +154,18 @@
 	private string AppTheme
 	{
 		get => Preferences.Default.Get("AppTheme", "auto");
+		set
+		{
+
+			// 1. 存入 C# 存储（供原生 MAUI 代码使用）
+			Preferences.Default.Set("AppTheme", value);
+			// 2. 存入前端 localStorage（供 index.html 下次刚打开时瞬间读取）
+			JSRuntime.InvokeVoidAsync("localStorage.setItem", "app-theme", value);
+		}
+	}
+	private string ContentTheme
+	{
+		get => Preferences.Default.Get("ContentTheme", "auto");
 		set
 		{
 

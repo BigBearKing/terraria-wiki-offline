@@ -1,0 +1,242 @@
+html.light #drilldown-header img,
+html.light div.drilldown-filters-wrapper img {
+    filter: none
+}
+
+html.light .hp>div .text-red {
+    color: #d61616
+}
+
+html.light .hp>div .text-golden {
+    color: #946114
+}
+
+html.light .message-box::before {
+    background: var(--message-box-highlight-color, var(--theme-box-border-color))
+}
+
+html.light {
+    --theme-modetabs-classic-background: var(--theme-highlight-background);
+    --theme-modetabs-expert-background: #ffeece;
+    --theme-modetabs-expert-border-color: #ffca67;
+    --theme-modetabs-expert-text-color: #3a3119;
+    --theme-modetabs-expert-text-color-label: #9b5700;
+    --theme-modetabs-master-background: #ffe9e9;
+    --theme-modetabs-master-border-color: #ffbaba;
+    --theme-modetabs-master-text-color: #462b08;
+    --theme-modetabs-master-text-color-label: #dd1414;
+    --custom-template-expert-color: #9b5700;
+    --custom-template-master-color: #dd1414;
+    --custom-template-journey-color: #c70a7d
+}
+
+html.light {
+    --theme-site-background: #9079c8 url(/images/main/Site-background-snow.jpg) center top / cover no-repeat fixed;
+
+}
+
+html.light {
+    --theme-background: #f6f6f6;
+}
+
+html.light {
+    --theme-background-accent: rgba(20, 20, 20, 0.2)
+}
+
+
+html.light {
+    --theme-text-color: #080a13;
+    --theme-text-color--rgb: 8, 10, 19;
+    --theme-text-color-note: #666;
+    --theme-text-color-em: #080a13;
+    --theme-text-color-highlight: #000;
+    --theme-text-color-green: #007e00;
+    --theme-text-color-orange: #9d5900;
+    --theme-text-color-red: #d61616
+}
+
+html.light {
+    --theme-text-background-color-highlight: #d1e1e6
+}
+
+html.light {
+    --theme-link-color: #2d4068;
+    --theme-link-color--rgb: 45, 64, 104;
+    --theme-link-color-hover: #2d4068;
+    --theme-link-color-visited: #2d4068;
+    --theme-link-color-redlink: #9f0000
+}
+
+html.light {
+    --theme-highlight-background: rgba(20, 20, 20, 0.1)
+}
+
+html.light {
+    --theme-widget-shadow: 0px 0px 15px 0px rgba(10, 10, 40, 0.45);
+    --theme-widget-background: linear-gradient(rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.1)), #d6dbdf url(/images/main/Content-background-snow.jpg)
+}
+
+html.light {
+    --theme-box-border-color: #aaa;
+    --theme-box-border-color--rgb: 170, 170, 170;
+    --theme-box-border-color-light: rgba(0, 0, 0, 0.1);
+    --theme-box-background: rgba(200, 200, 210, 0.15);
+    --theme-box-inset-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.05);
+    --theme-border-color-accent: #333
+}
+
+html.light {
+    --theme-hr-color-bottom: rgba(255, 255, 255, 0.5)
+}
+
+html.light {
+    --theme-dropdown-background: #d6dbdf url(/images/main/Content-background-snow.jpg)
+}
+
+html.light #mw-head {
+    --theme-background: #f6f6f6 url(/images/main/Navbar-background-snow.jpg);
+    --theme-background-shadow: linear-gradient(to top, rgba(10, 10, 10, 0.15), transparent 30%);
+    --theme-tab-background-selected: #eaeef1;
+    --theme-tab-background: linear-gradient(rgba(20, 20, 20, 0.4), rgba(20, 20, 20, 0.4)), #eaeef1
+}
+
+html.light #footer {
+    --theme-background: linear-gradient(rgba(20, 20, 20, 0.05), rgba(20, 20, 20, 0.05)), #f6f6f6 url(/images/main/Navbar-background-snow.jpg) center top / auto 100%
+}
+
+html.light .catlinks {
+    --theme-background: #f6f6f6;
+}
+
+html.light {
+    --oouihelper--red: #900000;
+    --oouihelper--red-darker: #491010;
+    --oouihelper--red-lighter: #b40000;
+    --oouihelper--red-lightest: #bc0000
+}
+
+html.light {
+    --oouihelper--progressive: var(--theme-link-color);
+    --oouihelper--progressive-transparent: rgba(var(--theme-link-color--rgb), 0.6);
+    --oouihelper--progressive-lighter: rgba(var(--theme-link-color--rgb), 0.8)
+}
+
+html.light {
+    --oouihelper--disabled: #666;
+    --oouihelper--disabled-lighter-transparent: rgba(100, 100, 100, 0.1);
+    --oouihelper--disabled-darker-transparent: rgba(10, 10, 10, 0.1)
+}
+
+html.light {
+    --oouihelper--borderdark: var(--theme-border-color);
+    --oouihelper--borderdark-lighter: rgba(var(--theme-border-color--rgb), 0.85);
+    --oouihelper--borderdark-hover: rgba(var(--theme-border-color--rgb), 0.9)
+}
+
+html.light {
+    --oouihelper--textinput-background: rgba(100, 100, 110, 0.1);
+    --oouihelper--textinput-background-lighter: rgba(130, 130, 140, 0.1);
+    --oouihelper--textinput-background-darker: rgba(80, 80, 90, 0.2)
+}
+
+html.light {
+    --oouihelper--placeholdertext: var(--theme-text-color-note)
+}
+
+html.light {
+    --oouihelper--themerelated: #adb0b1;
+    --oouihelper--themerelated-lighter: #b7babd;
+    --oouihelper--themerelated-lighter-transparent: rgba(197, 200, 204, 0.6);
+    --oouihelper--themerelated-lightest: #c6c9ce;
+    --oouihelper--themerelated-darker: #808588;
+    --oouihelper--themerelated-darkest: #5e6569;
+    --oouihelper--themerelated-disabled: rgba(128, 133, 136, 0.1);
+    --oouihelper--themerelated-disabled-transparent: rgba(128, 133, 136, 0.05);
+    --oouihelper--themerelated-disabled-lighter: rgb(183, 186, 189)
+}
+
+html.light {
+    --oouihelper--text-background: #eaeef1;
+    --oouihelper--text-deeper: var(--theme-text-color)
+}
+
+html.light {
+    --ooui--button-background--hover: #7b573d url(/images/main/main/Button-background-snow.jpg) center center / cover repeat-x;
+    --ooui--button-background: linear-gradient(rgba(100, 100, 100, 0.05), rgba(100, 100, 100, 0.05)), var(--ooui--button-background--hover);
+    --ooui--button-box-shadow: rgba(50, 50, 60, 0.15) 2px 2px 3px
+}
+
+html.light {
+    --ooui--button-border-top: 1px solid rgb(191, 200, 221);
+    --ooui--button-border-right: 1px solid rgb(68, 51, 89);
+    --ooui--button-border-top--hover: 1px solid rgba(191, 200, 221, 0.5);
+    --ooui--button-border-right--hover: 1px solid rgba(191, 200, 221, 0.5);
+    --ooui--button-color--hover: var(--oouihelper--text-deeper)
+}
+
+html.light {
+    --ooui--button-frameless-on-color: var(--oouihelper--text-deeper)
+}
+
+html.light {
+    --ooui--checkbox-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Ctitle%3Echeck%3C/title%3E%3Cg fill=%22%23adb0b1%22%3E%3Cpath d=%22M7 14.17L2.83 10l-1.41 1.41L7 17 19 5l-1.41-1.42z%22/%3E%3C/g%3E%3C/svg%3E");
+    --ooui--checkbox-icon--hover: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Ctitle%3Echeck%3C/title%3E%3Cg fill=%22%23b7babd%22%3E%3Cpath d=%22M7 14.17L2.83 10l-1.41 1.41L7 17 19 5l-1.41-1.42z%22/%3E%3C/g%3E%3C/svg%3E")
+}
+
+html.light {
+    --ooui--tagitem-background-color: rgba(20, 20, 20, 0.1);
+    --ooui--tagitem-color--hover: var(--theme-text-color-em);
+    --ooui--tagitem-disabled-background-color: rgba(20, 20, 20, 0.2)
+}
+
+html.light {
+    --ooui--progressbar-pending-background-color-1: rgba(var(--theme-link-color--rgb), 0.35);
+    --ooui--progressbar-pending-background-color-2: rgba(var(--theme-border-color--rgb), 0.2)
+}
+
+html.light {
+    --ooui--messagewidget-notice-background-color: #eaeef1
+}
+
+html.light {
+    --ooui--indicator-filter: brightness(0) invert(50%) sepia(21%) saturate(662%) hue-rotate(170deg) brightness(80%) contrast(91%)
+}
+
+html.light {
+    --ooui--icon-normal-filter: brightness(0) invert(0%) sepia(0%) saturate(100%) hue-rotate(5deg) brightness(100%) contrast(100%);
+    --ooui--icon-progressive-filter: brightness(0) invert(50%) sepia(21%) saturate(662%) hue-rotate(170deg) brightness(80%) contrast(91%)
+}
+
+html.light {
+    --background-color-base: #eaeef1
+}
+
+html.light {
+    --color-base: #080a13
+}
+
+html.light {
+    --color-emphasized: #080a13;
+    --color-subtle: #666
+}
+
+html.light {
+    --color-progressive: #2d4068;
+    --color-progressive--hover: #2d4068;
+    --color-progressive--focus: #2d4068
+}
+
+html.light {
+    --color-destructive: #9f0000;
+    --color-destructive--focus: #9f0000
+}
+
+html.light {
+    --color-error: #d61616;
+    --color-warning: #9d5900;
+    --color-success: #007e00
+}
+
+html.light {
+    --border-color-base: #aaa
+}

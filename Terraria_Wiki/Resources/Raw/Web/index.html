@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="zh" class="client-js">
+<html lang="zh" class="client-js light">
 
 <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="vector.css" />
     <link rel="stylesheet" href="common.css" />
     <link rel="stylesheet" href="Nunito.css" />
+    <link rel="stylesheet" href="theme/dark.css" />
+    <link rel="stylesheet" href="theme/light.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Terraria Wiki</title>
     <script type="module" src="app.js" defer></script>
@@ -122,6 +124,30 @@
     .mclist{
         overflow-y:hidden;
     }
+
+    /*滚动条*/
+    ::-webkit-scrollbar {
+        width: 7px; /* 纵向滚动条宽度 */
+        height: 7px; /* 横向滚动条高度 */
+    }
+
+    /* 2. 滚动条轨道 (Track) - 设为透明，让背景透出来 */
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* 3. 滚动条滑块 (Thumb) - 核心样式 */
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--hover-bg); /* 半透明灰，适应任何背景 */
+        border-radius: 9999px; /* 胶囊圆角 */
+        /* 增加一个白色边框，可以制造出“悬浮”在轨道上的错觉 */
+        background-clip: content-box; /* 关键：让背景只渲染在内容区，配合边框实现留白 */
+    }
+
+        /* 4. 鼠标悬停时变深 */
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: var(--pressed-bg);
+        }
 
 </style>
 
