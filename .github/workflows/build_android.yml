@@ -1,52 +1,45 @@
 name: .NET MAUI Android CI
 
-on: 
+on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  ANDROID_SDK_VERSION: '34'
-  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-  KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-  KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
-      # 设置.NET环境
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          
-      # 配置Android环境
-      - name: Setup Android
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.ANDROID_SDK_VERSION }}
-          
-      # 还原NuGet包
+
+      # 如果你需要安装特定 Android SDK 版本（可选，MAUI 通常自带）
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
+      #   with:
+      #     api-level: 34
+
       - name: Restore dependencies
         run: dotnet restore
-        
-      # 构建安卓应用
+
       - name: Build Android APK
         run: |
           dotnet publish -f:net8.0-android -c:Release \
-          -p:AndroidSigningKeyPass=${{ env.KEY_PASSWORD }} \
-          -p:AndroidSigningStorePass=${{ env.KEYSTORE_PASSWORD }} \
-          -p:AndroidKeyStore=true \
-          -p:AndroidSigningKeyAlias=${{ env.KEY_ALIAS }} \
-          -p:AndroidSigningStoreKey=${{ github.workspace }}/keystore.jks \
-          -p:AndroidPackageFormat=apk
-          
-      # 上传APK产物
-      - uses: actions/upload-artifact@v3
+            -p:AndroidKeyStore=true \
+            -p:AndroidSigningKeyAlias=QiQikey \
+            -p:AndroidSigningKeyPass=123456 \
+            -p:AndroidSigningStorePass=123456 \
+            -p:AndroidSigningStoreKey=${{ github.workspace }}/keystore.jks \
+            -p:AndroidPackageFormat=apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
           path: |
