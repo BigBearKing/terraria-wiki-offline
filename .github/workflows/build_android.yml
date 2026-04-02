@@ -40,7 +40,9 @@ jobs:
             -p:AndroidSigningStorePass=123456 `
             -p:AndroidSigningStoreKey=${{ github.workspace }}/keystore.jks `
             -p:AndroidPackageFormat=apk `
-            -p:JavaMaximumHeapSize=1G
+            -p:JavaMaximumHeapSize=2G `
+            -p:AndroidEnableMultiDex=true `
+            -p:AndroidDexTool=d8
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
