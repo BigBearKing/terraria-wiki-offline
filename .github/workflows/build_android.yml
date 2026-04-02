@@ -34,17 +34,17 @@ jobs:
       - name: Build Android APK
         run: |
           dotnet publish -f:net10.0-android -c:Release `
-  -v:detailed `
-  -p:AndroidKeyStore=true `
-  -p:AndroidSigningKeyAlias=QiQikey `
-  -p:AndroidSigningKeyPass=123456 `
-  -p:AndroidSigningStorePass=123456 `
-  -p:AndroidSigningStoreKey=D:\a\terraria-wiki-offline\terraria-wiki-offline/keystore.jks `
-  -p:AndroidPackageFormat=apk `
-  -p:JavaMaximumHeapSize=4G `
-  -p:AndroidEnableMultiDex=true `
-  -p:AndroidDexTool=d8 `
-  -p:AndroidEnableR8=false
+            -v:detailed `
+            -p:AndroidKeyStore=true `
+            -p:AndroidSigningKeyAlias=QiQikey `
+            -p:AndroidSigningKeyPass=123456 `
+            -p:AndroidSigningStorePass=123456 `
+            "-p:AndroidSigningStoreKey=${{ github.workspace }}/keystore.jks" `
+            -p:AndroidPackageFormat=apk `
+            -p:JavaMaximumHeapSize=4G `
+            -p:AndroidEnableMultiDex=true `
+            -p:AndroidDexTool=d8 `
+            -p:AndroidEnableR8=false
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
