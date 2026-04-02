@@ -1,5 +1,7 @@
 # Terraria Wiki Offline
 
+一个使用 .NET MAUI Blazor Hybrid 构建的应用，提供快速、离线的泰拉瑞亚百科查阅体验。
+
 ![](Screenshot/225322.png)
 
 [BigBearK的个人空间-BigBearK个人主页-哔哩哔哩视频](https://space.bilibili.com/470138112)
@@ -77,7 +79,7 @@
    链接：https://pan.quark.cn/s/9e4116487189
    提取码：J2zU
 
-   
+
 
 2. 打开应用，进入 **设置**。
 
@@ -85,7 +87,7 @@
 
 4. 等待导入完成重启即可使用。
 
-   
+
 
 ## 开源致谢
 
@@ -101,7 +103,7 @@
 
 - **[handy-scroll](https://amphiluke.github.io/handy-scroll)**: 页面宽列表滚动条处理。
 
-  
+
 
 ## 版权与协议
 
@@ -111,7 +113,7 @@
 
 - 本应用客户端代码开源，免费提供，禁止用于商业牟利。
 
-  
+
 
 ## 赞助与支持
 
@@ -132,7 +134,7 @@
 - **鑫
 
 - 不卜庐七七
-  
+
 
 **支付方式**
 
@@ -144,6 +146,6 @@
 
   ![](Screenshot/IMG_3712.JPG)
 
-  
 
-您也可以在 GitHub 上为本项目点亮 **Star** 以表支持
+
+您也可以在 GitHub 上为本项目点亮 **Star** 以表支持。
