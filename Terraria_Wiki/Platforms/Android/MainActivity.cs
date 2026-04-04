@@ -1,6 +1,8 @@
-﻿using Android.App;
+using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using Android.Views;
+using AndroidX.Core.View;
 
 namespace Terraria_Wiki
 {
@@ -10,12 +12,24 @@ namespace Terraria_Wiki
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            SetImmersive();
+        }
 
-            // 1. 确保内容不延伸到系统窗口（状态栏和导航栏）下方
-            AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, true);
+        public override void OnWindowFocusChanged(bool hasFocus)
+        {
+            base.OnWindowFocusChanged(hasFocus);
+            if (hasFocus) SetImmersive();
+        }
 
-            // 2. 明确清除全屏标志（如果被意外设置的话）
-            Window?.ClearFlags(Android.Views.WindowManagerFlags.Fullscreen);
+        private void SetImmersive()
+        {
+            if (Window == null) return;
+
+            WindowCompat.SetDecorFitsSystemWindows(Window, false);
+
+            var controller = WindowCompat.GetInsetsController(Window, Window.DecorView);
+            controller.Hide(WindowInsetsCompat.Type.SystemBars());
+            controller.SystemBarsBehavior = WindowInsetsControllerCompat.BehaviorShowTransientBarsBySwipe;
         }
     }
 }

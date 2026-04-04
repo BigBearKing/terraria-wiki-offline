@@ -1,0 +1,67 @@
+name: .NET MAUI Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install MAUI workloads
+        run: dotnet workload install maui
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Decode keystore
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.KEYSTORE_BASE64 }}")
+          [IO.File]::WriteAllBytes("$env:GITHUB_WORKSPACE\keystore.jks", $bytes)
+
+      - name: Build Android APK (unsigned)
+        run: dotnet publish -f:net10.0-android -c:Release `
+          -p:AndroidPackageFormat=apk `
+          -p:JavaMaximumHeapSize=4G `
+          -p:AndroidEnableMultiDex=true `
+          -p:AndroidDexTool=d8 `
+          -p:AndroidEnableR8=true
+
+      - name: Sign APK
+        run: |
+          $unsignedApk = (Get-ChildItem -Recurse -Filter "*.apk").FullName | Select-Object -First 1
+          $signedApk = $unsignedApk -replace "\.apk$", "-Signed.apk"
+          $ks = "$env:GITHUB_WORKSPACE\keystore.jks"
+
+          $buildTools = (Get-ChildItem "$env:ANDROID_SDK_ROOT\build-tools" | Sort-Object Name -Descending | Select-Object -First 1).FullName
+
+          & "$buildTools\zipalign.exe" -f 4 $unsignedApk $signedApk
+          & "$buildTools\apksigner.bat" sign `
+            --ks $ks `
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} `
+            --key-pass pass:${{ secrets.KEY_PASSWORD }} `
+            --ks-key-alias ${{ secrets.KEY_ALIAS }} `
+            $signedApk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: '**/*-Signed.apk'
