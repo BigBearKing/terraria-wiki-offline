@@ -26,7 +26,7 @@ namespace Terraria_Wiki.Services
                 string apiUrl = $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
 
                 // 2. 发送 GET 请求并解析 JSON
-                var releaseInfo = await _httpClient.GetFromJsonAsync<GitHubReleaseInfo>(apiUrl);
+                var releaseInfo = await _httpClient.GetFromJsonAsync(apiUrl, AppJsonContext.Custom.GitHubReleaseInfo);
 
                 if (releaseInfo == null || string.IsNullOrEmpty(releaseInfo.TagName))
                 {

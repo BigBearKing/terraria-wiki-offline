@@ -23,14 +23,21 @@ handlers["BackToPage"] = async (msg) => {
 }
 handlers["BackHome"] = async () => {
     await redirect("Terraria Wiki")
-    document.querySelector('html').scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     return null;
 }
 
 handlers["ToTop"] = () => {
-    document.querySelector('html').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     return null;
 }
+
+handlers["ChangeTheme"] = (isDarkTheme) => {
+
+
+    return null;
+}
+
 
 
 
@@ -93,6 +100,11 @@ document.addEventListener('mouseup', function (e) {
     }
 });
 
+const isDarkTheme = await callCSharpAsync('GetTheme', "");
+console.log(isDarkTheme);
+if (isDarkTheme != null) {
+    changTheme(isDarkTheme);
+}
 redirect("Terraria Wiki");
 
 
@@ -115,15 +127,15 @@ async function gotoPage(title) {
 
 
 }
+
 async function backToPage(title, position) {
     if (await redirect(title) == null) return;
     window.scrollTo({ top: position, left: 0, behavior: 'instant' });
 }
+
 async function gotoHistory(title) {
     if (await redirect(title) == null) return;
 }
-
-
 
 async function redirect(title) {
     const result = JSON.parse(await callCSharpAsync("PageRedirectAsync", title));
@@ -165,7 +177,16 @@ function openThumb(thumb) {
     }
 }
 
-
+function changTheme(isDarkTheme) {
+    if (isDarkTheme=="True") {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+    } else {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+    }
+    console.log(3);
+}
 
 
 
@@ -180,93 +201,93 @@ function refresh() {
     // 原理：检测表格宽度，如果超出容器，就包裹一个 div 让它横向滚动
     // ============================================================
 
-function initHandyScrollForTables(containerSelector = '#bodyContent') {
-    const TABLE_WIDE_CLASS = 'table-wide';
-    const TABLE_WIDE_INNER_CLASS = 'table-wide-inner';
+    function initHandyScrollForTables(containerSelector = '#bodyContent') {
+        const TABLE_WIDE_CLASS = 'table-wide';
+        const TABLE_WIDE_INNER_CLASS = 'table-wide-inner';
 
-    // 防抖函数
-    const debounce = (func, wait) => {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
+        // 防抖函数
+        const debounce = (func, wait) => {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
         };
-    };
 
-    const processWideTables = () => {
-        const containerEl = document.querySelector(containerSelector);
-        if (!containerEl) return;
+        const processWideTables = () => {
+            const containerEl = document.querySelector(containerSelector);
+            if (!containerEl) return;
 
-        const tables = containerEl.querySelectorAll('table');
-        if (tables.length === 0) return;
+            const tables = containerEl.querySelectorAll('table');
+            if (tables.length === 0) return;
 
-        tables.forEach((table) => {
-            if (!table._originalContainer) {
-                table._originalContainer = table.parentNode;
-            }
-            const originalContainer = table._originalContainer;
-            if (!originalContainer) return;
+            tables.forEach((table) => {
+                if (!table._originalContainer) {
+                    table._originalContainer = table.parentNode;
+                }
+                const originalContainer = table._originalContainer;
+                if (!originalContainer) return;
 
-            // 检查是否已包装
-            const isWrapped = table.parentNode && table.parentNode.classList.contains(TABLE_WIDE_INNER_CLASS);
-            const innerBox = isWrapped ? table.parentNode : null;
-            const outerBox = isWrapped ? innerBox.parentNode : null;
+                // 检查是否已包装
+                const isWrapped = table.parentNode && table.parentNode.classList.contains(TABLE_WIDE_INNER_CLASS);
+                const innerBox = isWrapped ? table.parentNode : null;
+                const outerBox = isWrapped ? innerBox.parentNode : null;
 
-            // 测量宽度
-            const overwide = table.getBoundingClientRect().width > originalContainer.getBoundingClientRect().width;
+                // 测量宽度
+                const overwide = table.getBoundingClientRect().width > originalContainer.getBoundingClientRect().width;
 
-            if (isWrapped) {
-                if (overwide) {
-                    // 表格依然过宽：找到对应的 custom element 并调用官方的 .update()
-                    const handyComponent = outerBox.querySelector('handy-scroll');
-                    if (handyComponent && typeof handyComponent.update === 'function') {
-                        handyComponent.update();
+                if (isWrapped) {
+                    if (overwide) {
+                        // 表格依然过宽：找到对应的 custom element 并调用官方的 .update()
+                        const handyComponent = outerBox.querySelector('handy-scroll');
+                        if (handyComponent && typeof handyComponent.update === 'function') {
+                            handyComponent.update();
+                        }
+                    } else {
+                        // 宽度足够了，不需要滚动条：解包并移除 custom element
+                        outerBox.parentNode.insertBefore(table, outerBox);
+                        outerBox.remove();
                     }
                 } else {
-                    // 宽度足够了，不需要滚动条：解包并移除 custom element
-                    outerBox.parentNode.insertBefore(table, outerBox);
-                    outerBox.remove();
+                    if (overwide) {
+                        // 需要生成滚动条：创建包装层和自定义标签
+                        const newOuter = document.createElement('div');
+                        newOuter.className = TABLE_WIDE_CLASS;
+
+                        const newInner = document.createElement('div');
+                        newInner.className = TABLE_WIDE_INNER_CLASS;
+
+                        // Web Component 需要通过 ID 来绑定目标容器
+                        // 我们给内层容器生成一个唯一的 ID
+                        const uniqueId = 'scroll-inner-' + Math.random().toString(36).substring(2, 9);
+                        newInner.id = uniqueId;
+
+                        // 组装 DOM
+                        table.parentNode.insertBefore(newOuter, table);
+                        newInner.appendChild(table);
+                        newOuter.appendChild(newInner);
+
+                        // 创建 <handy-scroll> 自定义标签
+                        const handyComponent = document.createElement('handy-scroll');
+                        // 绑定 owner 属性到刚才生成的内部容器 ID
+                        handyComponent.setAttribute('owner', uniqueId);
+
+                        // 将组件放到包裹层内（位于滚动容器后面）
+                        newOuter.appendChild(handyComponent);
+                    }
                 }
-            } else {
-                if (overwide) {
-                    // 需要生成滚动条：创建包装层和自定义标签
-                    const newOuter = document.createElement('div');
-                    newOuter.className = TABLE_WIDE_CLASS;
-                    
-                    const newInner = document.createElement('div');
-                    newInner.className = TABLE_WIDE_INNER_CLASS;
-                    
-                    // Web Component 需要通过 ID 来绑定目标容器
-                    // 我们给内层容器生成一个唯一的 ID
-                    const uniqueId = 'scroll-inner-' + Math.random().toString(36).substring(2, 9);
-                    newInner.id = uniqueId;
+            });
+        };
 
-                    // 组装 DOM
-                    table.parentNode.insertBefore(newOuter, table);
-                    newInner.appendChild(table);
-                    newOuter.appendChild(newInner);
+        // 立即执行一次
+        processWideTables();
 
-                    // 创建 <handy-scroll> 自定义标签
-                    const handyComponent = document.createElement('handy-scroll');
-                    // 绑定 owner 属性到刚才生成的内部容器 ID
-                    handyComponent.setAttribute('owner', uniqueId);
-                    
-                    // 将组件放到包裹层内（位于滚动容器后面）
-                    newOuter.appendChild(handyComponent);
-                }
-            }
-        });
-    };
-
-    // 立即执行一次
-    processWideTables();
-
-    // 绑定 resize 事件
-    if (!initHandyScrollForTables._resizeBound) {
-        window.addEventListener('resize', debounce(processWideTables, 100));
-        initHandyScrollForTables._resizeBound = true;
+        // 绑定 resize 事件
+        if (!initHandyScrollForTables._resizeBound) {
+            window.addEventListener('resize', debounce(processWideTables, 100));
+            initHandyScrollForTables._resizeBound = true;
+        }
     }
-}
     initHandyScrollForTables();
 
     // ============================================================

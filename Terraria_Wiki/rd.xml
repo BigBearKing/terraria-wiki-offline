@@ -1,0 +1,9 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <Assembly Name="Microsoft.JSInterop">
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
+    </Assembly>
+  </Application>
+</Directives>

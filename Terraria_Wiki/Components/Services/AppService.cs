@@ -24,7 +24,7 @@ namespace Terraria_Wiki.Services
                 }
                 else
                 {
-                    await Application.Current.MainPage.DisplayAlert("提示", "页面不存在。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlert("提示", "页面不存在。", "确定");
                     return null;
 
                 }
@@ -88,7 +88,7 @@ namespace Terraria_Wiki.Services
                     await WikiBackAsync();
                 return null;
             };
-            
+
             IframeBridge.Actions["OpenExternalWebsite"] = async (url) =>
             {
                 try
@@ -97,11 +97,24 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert("提示", "无法打开链接。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlert("提示", "无法打开链接。", "确定");
                 }
                 return null;
             };
-            
+
+            IframeBridge.Actions["GetTheme"] = async (args) =>
+            {
+                if (Preferences.Default.Get("ContentTheme", "auto") == "auto")
+                {
+                    return App.AppStateManager.IsDarkTheme.ToString();
+                }
+                else
+                {
+                    return null;
+                }
+
+            };
+
         }
         public static void Init(NavigationManager navManager) => _navManager = navManager;
 
@@ -130,10 +143,11 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.MainPage.DisplayAlert("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlert("提示", "这已经是首页。", "确定");
             }
 
         }
+
         public static async Task WikiBackHomeAsync()
         {
             var list = App.AppStateManager.TempHistory;
@@ -145,10 +159,11 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.MainPage.DisplayAlert("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlert("提示", "这已经是首页。", "确定");
             }
 
         }
+
         public static async Task OpenPageAsync(string title)
         {
             await IframeBridge.CallJsAsync("GotoPage", title);
@@ -163,7 +178,7 @@ namespace Terraria_Wiki.Services
                 return;
             if (App.AppStateManager.IsProcessing)
             {
-                Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
+                Application.Current.Windows[0].Page.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
                 return;
             }
 
@@ -386,10 +401,10 @@ namespace Terraria_Wiki.Services
 
             return folder?.Path;
 #elif ANDROID || IOS
-        // 移动端通常通过 FilePicker 的特定配置或原生 Intent 实现
-        // 这里建议在移动端使用提示：移动端通常建议直接在应用沙箱内操作
-        await Shell.Current.DisplayAlert("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
-        return null;
+            // 移动端通常通过 FilePicker 的特定配置或原生 Intent 实现
+            // 这里建议在移动端使用提示：移动端通常建议直接在应用沙箱内操作
+            await Shell.Current.DisplayAlert("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
+            return null;
 #else
         return null;
 #endif

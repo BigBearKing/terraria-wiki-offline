@@ -48,11 +48,28 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<PublishAot>true</PublishAot>
+		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>full</TrimMode>
+		<TrimmerSingleWarn>false</TrimmerSingleWarn>
+		<IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
+
 	
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
 	</PropertyGroup>
+	<ItemGroup>
+		<TrimmerRootAssembly Include="SQLite-net" />
+		<TrimmerRootAssembly Include="Terraria_Wiki" />
+		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components" />
+		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.Web" />
+		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.WebView" />
+		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.WebView.Maui" />
+		<TrimmerRootAssembly Include="Microsoft.JSInterop" />
+		<RdXmlFile Include="rd.xml" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->

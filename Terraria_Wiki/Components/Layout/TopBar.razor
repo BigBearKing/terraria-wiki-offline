@@ -3,261 +3,261 @@
 @using Terraria_Wiki.Models
 <header class="top-bar">
 
-	<div class="actions-wrapper">
-		<button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none; padding: 0 12px; align-items: center;">
-			<img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
-		</button>
-		<button class="action-btn button" title="后退" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-			<Icon Name="arrow-left" Size="20"></Icon>
-		</button>
-		<button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-			<Icon Name="home" Size="20"></Icon>
-		</button>
-		<button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
-			<Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
-		</button>
-	</div>
-	<div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
+    <div class="actions-wrapper">
+        <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none; padding: 0 12px; align-items: center;">
+            <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
+        </button>
+        <button class="action-btn button" title="后退" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
+            <Icon Name="arrow-left" Size="20"></Icon>
+        </button>
+        <button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
+            <Icon Name="home" Size="20"></Icon>
+        </button>
+        <button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
+            <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
+        </button>
+    </div>
+    <div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
 
-	<div class="bottom-bar" id="mobileBottomBar" style="display:@(ShouldShowSearch() ? "" : "none")">
-		<div class="search-wrapper">
-			<Icon class="search-icon" Name="search"></Icon>
-			<input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
-			@if (AppState.CurrentPage == "home")
-			{
-				<SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
-			}
-		</div>
-	</div>
+    <div class="bottom-bar" id="mobileBottomBar" style="display:@(ShouldShowSearch() ? "" : "none")">
+        <div class="search-wrapper">
+            <Icon class="search-icon" Name="search"></Icon>
+            <input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
+            @if (AppState.CurrentPage == "home")
+            {
+                <SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+            }
+        </div>
+    </div>
 
 
 </header>
 <style>
-	@@media (max-width: 768px) {
-		.main-area .content-container,
-		.main-area .iframe-container {
-			padding-bottom: @(ShouldShowSearch() ? "var(--header-height)" : "0");
-		}
-	}
+    @@media (max-width: 768px) {
+        .main-area .content-container,
+        .main-area .iframe-container {
+            padding-bottom: @(ShouldShowSearch() ? "var(--header-height)" : "0");
+        }
+    }
 </style>
 
 @code {
-	private bool _isFavorite = false;
-	private bool _isProcessing = false;
-	private string _searchText = "";
-	private CancellationTokenSource? _debounceCts;
-	public string SearchText
-	{
-		get => _searchText;
-		set
-		{
-			if (_searchText != value)
-			{
-				_searchText = value;
-				DebounceSearchAsync(_searchText);
+    private bool _isFavorite = false;
+    private bool _isProcessing = false;
+    private string _searchText = "";
+    private CancellationTokenSource? _debounceCts;
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (_searchText != value)
+            {
+                _searchText = value;
+                DebounceSearchAsync(_searchText);
 
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	protected override async Task OnParametersSetAsync()
-	{
-		_isFavorite = await IsFavoritePageAsync();
-	}
+    protected override async Task OnParametersSetAsync()
+    {
+        _isFavorite = await IsFavoritePageAsync();
+    }
 
-	//刷新机制
-	protected override void OnInitialized()
-	{
-		AppState.OnChange += RefreshUI;
-		AppState.OnCurrentPageChanged += HandlePageChanged;
+    //刷新机制
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += RefreshUI;
+        AppState.OnCurrentPageChanged += HandlePageChanged;
 
-	}
+    }
 
-	public void Dispose()
-	{
-		AppState.OnChange -= RefreshUI;
-		AppState.OnCurrentPageChanged -= HandlePageChanged;
-		_debounceCts?.Cancel();
-		_debounceCts?.Dispose();
-	}
+    public void Dispose()
+    {
+        AppState.OnChange -= RefreshUI;
+        AppState.OnCurrentPageChanged -= HandlePageChanged;
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
 
-	private async void RefreshUI()
-	{
-		_isFavorite = await IsFavoritePageAsync();
-		InvokeAsync(StateHasChanged);
-	}
+    private async void RefreshUI()
+    {
+        _isFavorite = await IsFavoritePageAsync();
+        InvokeAsync(StateHasChanged);
+    }
 
-	// 当页面切换时，自动清空搜索框
-	private void HandlePageChanged()
-	{
+    // 当页面切换时，自动清空搜索框
+    private void HandlePageChanged()
+    {
 
-		ClearSearch();
-	}
+        ClearSearch();
+    }
 
-	// 新增：移动端打开侧边栏
-	private void OpenMobileSidebar()
-	{
-		AppState.SidebarIsExpanded = true;
-	}
+    // 新增：移动端打开侧边栏
+    private void OpenMobileSidebar()
+    {
+        AppState.SidebarIsExpanded = true;
+    }
 
-	//
-	private string GetPageTitle()
-	{
-		return AppState.CurrentPage switch
-		{
-			"home" => GetWikiTitle(),
-			"favorites" => "收藏",
-			"history" => "历史",
-			"all-pages" => "页面",
-			var p when p == "data" || p.StartsWith("data/") => "数据",
-			"settings" => "设置",
-			_ => ""
-		};
-	}
+    //
+    private string GetPageTitle()
+    {
+        return AppState.CurrentPage switch
+        {
+            "home" => GetWikiTitle(),
+            "favorites" => "收藏",
+            "history" => "历史",
+            "all-pages" => "页面",
+            var p when p == "data" || p.StartsWith("data/") => "数据",
+            "settings" => "设置",
+            _ => ""
+        };
+    }
 
-	private string GetSearchPlaceholder()
-	{
-		return AppState.CurrentPage switch
-		{
-			"home" => "输入关键词搜索...",
-			_ => "匹配标题"
-		};
-	}
+    private string GetSearchPlaceholder()
+    {
+        return AppState.CurrentPage switch
+        {
+            "home" => "输入关键词搜索...",
+            _ => "匹配标题"
+        };
+    }
 
-	private bool ShouldShowActionButtons()
-	{
-		return AppState.CurrentPage switch
-		{
-			"home" => true,
-			_ => false
-		};
-	}
+    private bool ShouldShowActionButtons()
+    {
+        return AppState.CurrentPage switch
+        {
+            "home" => true,
+            _ => false
+        };
+    }
 
-	private bool ShouldShowSearch()
-	{
-		return AppState.CurrentPage switch
-		{
-			"home" or "favorites" or "history" or "all-pages" => true,
-			_ => false
-		};
-	}
+    private bool ShouldShowSearch()
+    {
+        return AppState.CurrentPage switch
+        {
+            "home" or "favorites" or "history" or "all-pages" => true,
+            _ => false
+        };
+    }
 
-	private string GetWikiTitle()
-	{
-		return AppState.CurrentWikiPage;
-	}
+    private string GetWikiTitle()
+    {
+        return AppState.CurrentWikiPage;
+    }
 
-	private void WikiToTopAsync()
-	{
-		if (AppState.CurrentPage != "home") return;
+    private void WikiToTopAsync()
+    {
+        if (AppState.CurrentPage != "home") return;
 
-		IframeBridge.CallJsAsync("ToTop", "");
-	}
+        IframeBridge.CallJsAsync("ToTop", "");
+    }
 
-	private void WikiBackAsync()
-	{
-		AppService.WikiBackAsync();
-	}
+    private void WikiBackAsync()
+    {
+        AppService.WikiBackAsync();
+    }
 
-	private void WikiBackHomeAsync()
-	{
-		AppService.WikiBackHomeAsync();
-	}
+    private void WikiBackHomeAsync()
+    {
+        AppService.WikiBackHomeAsync();
+    }
 
-	private async Task<bool> IsFavoritePageAsync()
-	{
-		return await App.ContentDb.ItemExistsAsync<WikiFavorite>(AppState.CurrentWikiPage);
-	}
+    private async Task<bool> IsFavoritePageAsync()
+    {
+        return await App.ContentDb.ItemExistsAsync<WikiFavorite>(AppState.CurrentWikiPage);
+    }
 
-	// 新增一个处理状态标志
-	private async Task ToggleFavoriteAsync()
-	{
-		// 1. 如果当前正在处理中，直接拦截忽略（防止连击的核心）
-		if (_isProcessing) return;
+    // 新增一个处理状态标志
+    private async Task ToggleFavoriteAsync()
+    {
+        // 1. 如果当前正在处理中，直接拦截忽略（防止连击的核心）
+        if (_isProcessing) return;
 
-		try
-		{
-			// 2. 上锁
-			_isProcessing = true;
+        try
+        {
+            // 2. 上锁
+            _isProcessing = true;
 
-			if (_isFavorite)
-			{
-				await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
-				_isFavorite = false;
-			}
-			else
-			{
-				var newFav = new WikiFavorite
-				{
-					WikiTitle = AppState.CurrentWikiPage,
-					FavoritedAt = DateTime.Now
-				};
-				await App.ContentDb.SaveItemAsync(newFav);
-				_isFavorite = true;
-			}
+            if (_isFavorite)
+            {
+                await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
+                _isFavorite = false;
+            }
+            else
+            {
+                var newFav = new WikiFavorite
+                {
+                    WikiTitle = AppState.CurrentWikiPage,
+                    FavoritedAt = DateTime.Now
+                };
+                await App.ContentDb.SaveItemAsync(newFav);
+                _isFavorite = true;
+            }
 
-			// 3. (可选体验优化) 如果本地数据库太快，瞬间就处理完了，
-			// 用户可能还会凭手速连击。人为加 200 毫秒的“冷却时间”能极大提升稳定性和手感。
-			await Task.Delay(200);
-		}
-		finally
-		{
-			// 4. 解锁：无论上面是成功、失败还是报错，finally 都会绝对执行，确保按钮恢复可用
-			_isProcessing = false;
-		}
-	}
+            // 3. (可选体验优化) 如果本地数据库太快，瞬间就处理完了，
+            // 用户可能还会凭手速连击。人为加 200 毫秒的“冷却时间”能极大提升稳定性和手感。
+            await Task.Delay(200);
+        }
+        finally
+        {
+            // 4. 解锁：无论上面是成功、失败还是报错，finally 都会绝对执行，确保按钮恢复可用
+            _isProcessing = false;
+        }
+    }
 
-	// 搜索防抖逻辑
-	private async void DebounceSearchAsync(string query)
-	{
-		_debounceCts?.Cancel();
-		_debounceCts = new CancellationTokenSource();
-		var token = _debounceCts.Token;
+    // 搜索防抖逻辑
+    private async void DebounceSearchAsync(string query)
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
 
-		try
-		{
-			// 体验优化：如果用户删空了输入框，不需要等，瞬间清空面板和列表！
-			if (string.IsNullOrWhiteSpace(query))
-			{
-				ApplyDebouncedValue(query);
-				return;
-			}
+        try
+        {
+            // 体验优化：如果用户删空了输入框，不需要等，瞬间清空面板和列表！
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                ApplyDebouncedValue(query);
+                return;
+            }
 
-			// 等待
-			await Task.Delay(500, token);
+            // 等待
+            await Task.Delay(500, token);
 
-			// 平安度过冷却期，统一分发状态
-			ApplyDebouncedValue(query);
-		}
-		catch (TaskCanceledException)
-		{
-			// 用户手速过快被打断，忽略
-		}
-	}
+            // 平安度过冷却期，统一分发状态
+            ApplyDebouncedValue(query);
+        }
+        catch (TaskCanceledException)
+        {
+            // 用户手速过快被打断，忽略
+        }
+    }
 
-	private void ApplyDebouncedValue(string query)
-	{
-		if (query.Contains('\''))
-		{
-			return;
-		}
-		AppState.SearchQuery = query;
+    private void ApplyDebouncedValue(string query)
+    {
+        if (query.Contains('\''))
+        {
+            return;
+        }
+        AppState.SearchQuery = query;
 
-		InvokeAsync(StateHasChanged);
-	}
-	// 当用户在弹出面板里点击了某一条结果
-	private void HandleResultClick(string title)
-	{
-		ClearSearch();
+        InvokeAsync(StateHasChanged);
+    }
+    // 当用户在弹出面板里点击了某一条结果
+    private void HandleResultClick(string title)
+    {
+        ClearSearch();
 
-		AppService.OpenPageAsync(title);
-	}
+        AppService.OpenPageAsync(title);
+    }
 
-	// 当用户点击了面板外面的空白处
-	private void ClearSearch()
-	{
-		SearchText = "";
-		AppState.SearchQuery = "";
-	}
+    // 当用户点击了面板外面的空白处
+    private void ClearSearch()
+    {
+        SearchText = "";
+        AppState.SearchQuery = "";
+    }
 }

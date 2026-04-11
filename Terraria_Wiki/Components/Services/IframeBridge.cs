@@ -16,26 +16,19 @@ public static class IframeBridge
 
     public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
 
-    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions
-    {
-        // 1. 允许中文直接显示，不转义
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        // 2. (可选) 自动转驼峰命名: C# UserId -> JS userId
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
-    public static string ObjToJson(object obj)
+    public static string ObjToJson<T>(T obj)
     {
-
         if (obj == null) return string.Empty;
-        return JsonSerializer.Serialize(obj, Options);
+        return JsonSerializer.Serialize(obj, typeof(T), AppJsonContext.Custom);
     }
-    public static T JsonToObj<T>(string json) where T : class
-    {
 
-        if (json == null || json == "") return null;
-        return JsonSerializer.Deserialize<T>(json, Options);
+    public static T? JsonToObj<T>(string json) where T : class
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+        return (T?)JsonSerializer.Deserialize(json, typeof(T), AppJsonContext.Custom);
     }
+
     // 2. C# 调用 Iframe：发送请求并等待结果
     public static async Task<string> CallJsAsync(string methodName, string argsJson)
     {
@@ -54,7 +47,9 @@ public static class IframeBridge
     public static async Task ReceiveMessage(string json)
     {
 
-        var msg = JsonSerializer.Deserialize<JsMsg>(json, Options);
+        var msg = (JsMsg?)JsonSerializer.Deserialize(json, typeof(JsMsg), AppJsonContext.Custom);
+
+        if (msg == null) return;
 
         if (msg.Type == "res") // A. 这是 JS 给 C# 的返回值
         {

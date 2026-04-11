@@ -108,7 +108,7 @@ namespace Terraria_Wiki.Services
                     // 修复：确保弹窗代码在主线程（UI 线程）上执行，防止跨线程调用引发应用崩溃
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        Application.Current.MainPage?.DisplayAlert("提示", "文件不存在或损坏。", "确定");
+                        Application.Current.Windows[0].Page?.DisplayAlert("提示", "文件不存在或损坏。", "确定");
                     });
 
                     // 直接 return 即可，下方的 finally 块会自动接管并重置状态
@@ -253,7 +253,7 @@ namespace Terraria_Wiki.Services
 
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                bool result = await Application.Current.MainPage.DisplayAlert("提示", "检测到有失败文件，是否要重试下载？", "是", "否");
+                bool result = await Application.Current.Windows[0].Page.DisplayAlert("提示", "检测到有失败文件，是否要重试下载？", "是", "否");
                 if (result)
                 {
                     _ = Task.Run(() => RetryFailList(isAll));
@@ -365,7 +365,7 @@ namespace Terraria_Wiki.Services
                 writer.Write(Encoding.UTF8.GetBytes("WIKIDATA"));
 
                 // 写入 JSON 元数据
-                string json = JsonSerializer.Serialize(info);
+                string json = JsonSerializer.Serialize(info, AppJsonContext.Custom.WikiPackageInfo);
                 byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                 writer.Write(jsonBytes.Length);
                 writer.Write(jsonBytes);
@@ -406,7 +406,7 @@ namespace Terraria_Wiki.Services
                 string json = Encoding.UTF8.GetString(reader.ReadBytes(jsonLen));
                 Debug.Write(json);
 
-                var meta = JsonSerializer.Deserialize<WikiPackageInfo>(json);
+                var meta = JsonSerializer.Deserialize(json, AppJsonContext.Custom.WikiPackageInfo);
 
                 // 如果目标主文件夹不存在，则创建
                 if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
@@ -494,7 +494,7 @@ namespace Terraria_Wiki.Services
                     retryCount = 0; // 成功重置
 
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var rawData = JsonSerializer.Deserialize<RawResponse>(jsonResponse, options);
+                    var rawData = JsonSerializer.Deserialize(jsonResponse, AppJsonContext.Custom.RawResponse);
 
                     if (rawData?.Query?.Pages != null)
                     {
@@ -915,7 +915,7 @@ namespace Terraria_Wiki.Services
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                Application.Current.MainPage?.DisplayAlert("提示", "任务完成。", "确定");
+                Application.Current.Windows[0].Page?.DisplayAlert("提示", "任务完成。", "确定");
             });
         }
 
