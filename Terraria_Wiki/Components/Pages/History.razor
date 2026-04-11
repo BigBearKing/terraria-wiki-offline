@@ -137,7 +137,7 @@
 	//清空历史
 	private async void ClearHistory()
 	{
-		bool isConfirmed = await Application.Current.MainPage?.DisplayAlert("提示", "确认清空历史记录吗？", "确定","取消");
+		bool isConfirmed = await Application.Current.MainPage?.DisplayAlertAsync("提示", "确认清空历史记录吗？", "确定","取消");
 		if (isConfirmed)
 		{
 			await App.ContentDb.DeleteItemsAsync<WikiHistory>();

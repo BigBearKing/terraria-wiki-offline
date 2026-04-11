@@ -28,13 +28,6 @@ public class AppState
 
     }
 
-    public async Task InitializeThemeAsync()
-    {
-        IsDarkTheme = await _js.InvokeAsync<bool>("checkTheme");
-    }
-
-
-
     public string CurrentPage
     {
         get => _currentPage;
@@ -90,7 +83,7 @@ public class AppState
         set
         {
             _currentWikiPage = value;
-            NotifyStateChanged();
+
         }
     }
 

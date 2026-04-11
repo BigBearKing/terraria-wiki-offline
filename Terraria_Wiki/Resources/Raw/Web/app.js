@@ -34,7 +34,7 @@ handlers["ToTop"] = () => {
 
 handlers["ChangeTheme"] = (isDarkTheme) => {
 
-
+    changTheme(isDarkTheme)
     return null;
 }
 
@@ -65,6 +65,10 @@ window.addEventListener('message', async e => {
         window.parent.postMessage({ type: 'res', id: msg.id, data: result }, '*');
     }
 });
+
+//初始化主题
+window.parent.postMessage({ type: 'iframe_ready' }, '*');
+
 
 //点击事件
 document.addEventListener('click', function (e) {
@@ -100,11 +104,7 @@ document.addEventListener('mouseup', function (e) {
     }
 });
 
-const isDarkTheme = await callCSharpAsync('GetTheme', "");
-console.log(isDarkTheme);
-if (isDarkTheme != null) {
-    changTheme(isDarkTheme);
-}
+
 redirect("Terraria Wiki");
 
 
@@ -131,10 +131,6 @@ async function gotoPage(title) {
 async function backToPage(title, position) {
     if (await redirect(title) == null) return;
     window.scrollTo({ top: position, left: 0, behavior: 'instant' });
-}
-
-async function gotoHistory(title) {
-    if (await redirect(title) == null) return;
 }
 
 async function redirect(title) {
@@ -178,14 +174,14 @@ function openThumb(thumb) {
 }
 
 function changTheme(isDarkTheme) {
-    if (isDarkTheme=="True") {
+    if (isDarkTheme == "True") {
         document.documentElement.classList.remove("light");
         document.documentElement.classList.add("dark");
     } else {
         document.documentElement.classList.remove("dark");
         document.documentElement.classList.add("light");
     }
-    console.log(3);
+    console.log(`Theme changed to ${isDarkTheme}`);
 }
 
 

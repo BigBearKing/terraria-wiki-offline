@@ -108,7 +108,7 @@ namespace Terraria_Wiki.Services
                     // 修复：确保弹窗代码在主线程（UI 线程）上执行，防止跨线程调用引发应用崩溃
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        Application.Current.Windows[0].Page?.DisplayAlert("提示", "文件不存在或损坏。", "确定");
+                        Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "文件不存在或损坏。", "确定");
                     });
 
                     // 直接 return 即可，下方的 finally 块会自动接管并重置状态
@@ -253,7 +253,7 @@ namespace Terraria_Wiki.Services
 
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                bool result = await Application.Current.Windows[0].Page.DisplayAlert("提示", "检测到有失败文件，是否要重试下载？", "是", "否");
+                bool result = await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "检测到有失败文件，是否要重试下载？", "是", "否");
                 if (result)
                 {
                     _ = Task.Run(() => RetryFailList(isAll));
@@ -915,7 +915,7 @@ namespace Terraria_Wiki.Services
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                Application.Current.Windows[0].Page?.DisplayAlert("提示", "任务完成。", "确定");
+                Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "任务完成。", "确定");
             });
         }
 

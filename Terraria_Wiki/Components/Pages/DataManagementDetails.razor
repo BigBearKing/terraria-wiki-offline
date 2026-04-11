@@ -189,7 +189,7 @@
 		// 统一检查
 		if (AppState.IsProcessing)
 		{
-			await Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
+			await Application.Current.MainPage.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
 			return;
 		}
 		await action();
@@ -230,7 +230,7 @@
 		{
 			await App.ContentDb.VacuumDatabaseAsync();
 			await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-			Application.Current.MainPage.DisplayAlert("提示", "未用资源清理完成。", "确定");
+			Application.Current.MainPage.DisplayAlertAsync("提示", "未用资源清理完成。", "确定");
 		}
 		finally
 		{
@@ -241,7 +241,7 @@
 
 	private async Task DeleteRes()
 	{
-		bool isConfirmed = await Application.Current.MainPage?.DisplayAlert("提示", "确认删除图片资源等数据吗？", "确定", "取消");
+		bool isConfirmed = await Application.Current.MainPage?.DisplayAlertAsync("提示", "确认删除图片资源等数据吗？", "确定", "取消");
 		if (isConfirmed)
 		{
 			AppState.IsProcessing = true;
@@ -253,7 +253,7 @@
 				await App.ManagerDb.SaveItemAsync(wikiBook);
 				await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
 				StateHasChanged();
-				await Application.Current.MainPage.DisplayAlert("提示", "图片资源等数据删除完成。", "确定");
+				await Application.Current.MainPage.DisplayAlertAsync("提示", "图片资源等数据删除完成。", "确定");
 				AppService.RestartApp();
 			}
 			finally
@@ -266,7 +266,7 @@
 
 	private async Task Delete()
 	{
-		bool isConfirmed = await Application.Current.MainPage?.DisplayAlert("提示", "确认删除整个数据库（包含收藏、历史）吗？", "确定", "取消");
+		bool isConfirmed = await Application.Current.MainPage?.DisplayAlertAsync("提示", "确认删除整个数据库（包含收藏、历史）吗？", "确定", "取消");
 		if (isConfirmed)
 		{
 			AppState.IsProcessing = true;

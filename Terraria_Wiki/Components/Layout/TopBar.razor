@@ -16,6 +16,9 @@
         <button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
             <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
         </button>
+        <button class="action-btn button" title="x" >
+            <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
+        </button>
     </div>
     <div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
 
@@ -260,4 +263,5 @@
         SearchText = "";
         AppState.SearchQuery = "";
     }
+
 }

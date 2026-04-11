@@ -12,19 +12,40 @@
 
 <body>
     <script>
+        window.hostBridge = {
+            iframeWin: null,
+
+            // C# 调用此方法发送给 Iframe
+            sendToIframe: function (msg) {
+                var iframe = document.getElementById("wiki-frame");
+                if (iframe) iframe.contentWindow.postMessage(msg, '*');
+            }
+        };
         // 尝试从前端缓存读取主题设置
-        var savedTheme = localStorage.getItem('app-theme');
+        const savedAppTheme = localStorage.getItem('app-theme');
+        const savedContentTheme = localStorage.getItem('content-theme');
+        if (!savedContentTheme) {
+            localStorage.setItem('content-theme', 'auto');
+        }
+        if (!savedAppTheme) {
+            localStorage.setItem('app-theme', 'auto');
+        }
 
         // 如果用户选择了深色，或者没选择但系统是深色
-        if (savedTheme === 'dark' || ((savedTheme === 'auto' || !savedTheme) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            // 给 body 加上你在 app.css 里写好的暗色类名
+        if (savedAppTheme === 'dark' || ((savedAppTheme === 'auto') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.body.classList.add('dark-theme');
+
         } else {
             document.body.classList.remove('dark-theme');
+
         }
+
+
+
         window.checkTheme = function () {
             return document.body.classList.contains('dark-theme');
         };
+
     </script>
     <div class="status-bar-safe-area"></div>
     <div id="app">
@@ -41,14 +62,20 @@
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
     <script>
-        console.log('6666666666');
         const pendingCsharpCalls = {};
 
         window.toggleTheme = () => {
             document.body.classList.add('is-switching-theme');
 
-            // 2. 真正的切换黑/白逻辑
             const isDark = document.body.classList.toggle('dark-theme');
+            if (savedContentTheme === "auto") {
+                if (isDark) {
+                    hostBridge.sendToIframe({ type: "req", id: '999', method: "ChangeTheme", data: 'True' });
+                } else {
+                    hostBridge.sendToIframe({ type: "req", id: '999', method: "ChangeTheme", data: 'False' });
+                }
+            }
+
 
             setTimeout(() => {
                 document.body.classList.remove('is-switching-theme');
@@ -115,20 +142,15 @@
             }
         }
 
-        window.hostBridge = {
-            iframeWin: null,
-
-            // C# 调用此方法发送给 Iframe
-            sendToIframe: function (msg) {
-                var iframe = document.getElementById("wiki-frame");
-                if (iframe) iframe.contentWindow.postMessage(msg, '*');
-            }
-        };
-
         // 监听 Iframe 发来的消息 -> 转发给 C#
         window.addEventListener('message', function (e) {
             if (typeof event.data === 'string' && event.data.startsWith('__bwv:')) {
                 return;
+            }
+            if (e.data.type === 'iframe_ready' && savedContentTheme === 'auto') {
+                const isDark = document.body.classList.contains('dark-theme');
+                hostBridge.sendToIframe({ type: "req", id: '999', method: "ChangeTheme", data: isDark ? 'True' : 'False' });
+
             }
             // 调用 C# 的静态方法 ReceiveMessage
             // 注意：把 'YourProjectName' 换成你的项目名！！！

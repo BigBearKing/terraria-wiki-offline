@@ -1,5 +1,4 @@
 ﻿@page "/settings"
-@inject IJSRuntime JSRuntime
 @using Terraria_Wiki.Services
 <div class="page-anim page-content">
 	<header class="page-header">
@@ -72,8 +71,6 @@
 					<option value="1">1</option>
 					<option value="2">2（默认）</option>
 					<option value="3">3</option>
-					<option value="4">4</option>
-					<option value="5">5</option>
 				</select>
 			</div>
 
@@ -153,28 +150,22 @@
 @code {
 	private string AppTheme
 	{
-		get => Preferences.Default.Get("AppTheme", "auto");
+		get => ThemeService.AppTheme;
 		set
 		{
-
-			// 1. 存入 C# 存储（供原生 MAUI 代码使用）
-			Preferences.Default.Set("AppTheme", value);
-			// 2. 存入前端 localStorage（供 index.html 下次刚打开时瞬间读取）
-			JSRuntime.InvokeVoidAsync("localStorage.setItem", "app-theme", value);
+			_ = ThemeService.SetAppThemeAsync(value);
 		}
 	}
+    
 	private string ContentTheme
 	{
-		get => Preferences.Default.Get("ContentTheme", "auto");
+		get => ThemeService.ContentTheme;
 		set
 		{
-
-			// 1. 存入 C# 存储（供原生 MAUI 代码使用）
-			Preferences.Default.Set("AppTheme", value);
-			// 2. 存入前端 localStorage（供 index.html 下次刚打开时瞬间读取）
-			JSRuntime.InvokeVoidAsync("localStorage.setItem", "app-theme", value);
+			_ = ThemeService.SetContentThemeAsync(value);
 		}
 	}
+
 	private bool IsSideButtonBack
 	{
 		// 页面一加载，就会执行 get，从存储中读取状态。如果之前没存过，默认返回 false（关）吗
@@ -233,7 +224,7 @@
 		// 统一检查
 		if (AppState.IsProcessing)
 		{
-			await Application.Current.MainPage.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
+			await Application.Current.MainPage.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
 			return;
 		}
 		await action();
@@ -253,10 +244,10 @@
 			});
 
 
-			Application.Current.MainPage.DisplayAlert("提示", "导出到本地文件夹完成。", "确定");
+			Application.Current.MainPage.DisplayAlertAsync("提示", "导出到本地文件夹完成。", "确定");
 		}catch(Exception ex)
 		{
-			Application.Current.MainPage.DisplayAlert("提示", $"发生错误，请重试。\n{ex}", "确定");
+			Application.Current.MainPage.DisplayAlertAsync("提示", $"发生错误，请重试。\n{ex}", "确定");
 		}
 		finally
 		{
@@ -264,7 +255,7 @@
 			_exportMessage = "导出";
 		}
 #elif ANDROID
-		Application.Current.MainPage.DisplayAlert("提示", $"手机版暂不支持此功能。", "确定");
+		Application.Current.MainPage.DisplayAlertAsync("提示", $"手机版暂不支持此功能。", "确定");
 #endif
 
 
@@ -286,12 +277,12 @@
 				await DataService.ImportData(filePath);
 			});
 
-			await Application.Current.MainPage.DisplayAlert("提示", "数据导入完成，即将重启。", "确定");
+			await Application.Current.MainPage.DisplayAlertAsync("提示", "数据导入完成，即将重启。", "确定");
 			AppService.RestartApp();
 		}
 		catch (Exception ex)
 		{
-			Application.Current.MainPage.DisplayAlert("提示", $"发生错误，请重试。\n{ex}", "确定");
+			Application.Current.MainPage.DisplayAlertAsync("提示", $"发生错误，请重试。\n{ex}", "确定");
 
 
 		}
@@ -315,7 +306,7 @@
 			if (result != null && result.IsUpdateAvailable)
 			{
 				// 发现新版本，弹出提示框
-				bool wantsToUpdate = await Application.Current.MainPage.DisplayAlert(
+				bool wantsToUpdate = await Application.Current.MainPage.DisplayAlertAsync(
 					$"发现新版本: v{result.LatestVersion}",
 					$"更新内容：\n{result.ReleaseNotes}",
 					"前往下载",
@@ -330,12 +321,12 @@
 			else
 			{
 
-				Application.Current.MainPage.DisplayAlert("提示", "当前已是最新版本。", "确定");
+				Application.Current.MainPage.DisplayAlertAsync("提示", "当前已是最新版本。", "确定");
 			}
 		}
 		catch (Exception e)
 		{
-			Application.Current.MainPage.DisplayAlert("提示", $"检查失败：\n{e.Message}", "确定");
+			Application.Current.MainPage.DisplayAlertAsync("提示", $"检查失败：\n{e.Message}", "确定");
 		}
 		finally
 		{

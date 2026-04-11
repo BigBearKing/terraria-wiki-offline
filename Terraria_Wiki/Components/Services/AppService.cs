@@ -24,7 +24,7 @@ namespace Terraria_Wiki.Services
                 }
                 else
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlert("提示", "页面不存在。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "页面不存在。", "确定");
                     return null;
 
                 }
@@ -97,23 +97,11 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlert("提示", "无法打开链接。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "无法打开链接。", "确定");
                 }
                 return null;
             };
 
-            IframeBridge.Actions["GetTheme"] = async (args) =>
-            {
-                if (Preferences.Default.Get("ContentTheme", "auto") == "auto")
-                {
-                    return App.AppStateManager.IsDarkTheme.ToString();
-                }
-                else
-                {
-                    return null;
-                }
-
-            };
 
         }
         public static void Init(NavigationManager navManager) => _navManager = navManager;
@@ -143,7 +131,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlert("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页。", "确定");
             }
 
         }
@@ -159,7 +147,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlert("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页。", "确定");
             }
 
         }
@@ -178,7 +166,7 @@ namespace Terraria_Wiki.Services
                 return;
             if (App.AppStateManager.IsProcessing)
             {
-                Application.Current.Windows[0].Page.DisplayAlert("提示", "请稍后，正在处理任务。", "确定");
+                Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
                 return;
             }
 
@@ -301,10 +289,6 @@ namespace Terraria_Wiki.Services
             // 打开目标文件（追加模式，如果不存在会自动创建）
             using var destStream = new FileStream(destPath, FileMode.Append, FileAccess.Write, FileShare.None);
 
-            // 【关键】如果是纯文本文件，并且你希望源文件另起一行追加，
-            // 可以先在这里手动写入一个换行符：
-            // byte[] newline = System.Text.Encoding.UTF8.GetBytes(Environment.NewLine);
-            // await destStream.WriteAsync(newline, 0, newline.Length);
 
             // 将源流的内容异步复制并追加到目标流的尾部
             await sourceStream.CopyToAsync(destStream);
@@ -353,17 +337,6 @@ namespace Terraria_Wiki.Services
 
                 if (result == null) return null;
 
-                // --- 选完之后的逻辑保持一致 ---
-
-                // 1. 如果你还是想限制只能选图片或数据库，可以在这里手动拦截：
-                /*
-                var ext = Path.GetExtension(result.FileName).ToLower();
-                if (ext != ".db" && ext != ".png") {
-                     await App.Current.MainPage.DisplayAlert("错误", "请选择正确的文件格式", "确定");
-                     return null;
-                }
-                */
-
                 // 2. 拷贝到沙盒（解决 content:// 无法直接读取的问题）
                 var targetPath = Path.Combine(FileSystem.CacheDirectory, result.FileName);
 
@@ -403,7 +376,7 @@ namespace Terraria_Wiki.Services
 #elif ANDROID || IOS
             // 移动端通常通过 FilePicker 的特定配置或原生 Intent 实现
             // 这里建议在移动端使用提示：移动端通常建议直接在应用沙箱内操作
-            await Shell.Current.DisplayAlert("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
+            await Shell.Current.DisplayAlertAsync("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
             return null;
 #else
         return null;
