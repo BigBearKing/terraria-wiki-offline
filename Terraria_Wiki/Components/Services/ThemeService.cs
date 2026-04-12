@@ -6,13 +6,6 @@ namespace Terraria_Wiki.Services
 {
     public class ThemeService
     {
-        private static IJSRuntime? _js;
-
-        // 初始化注入 JS 运行时
-        public static void Init(IJSRuntime jsRuntime)
-        {
-            _js = jsRuntime;
-        }
 
         // --- 属性读取（仅负责读） ---
 
@@ -20,36 +13,25 @@ namespace Terraria_Wiki.Services
 
         public static string ContentTheme => Preferences.Default.Get("ContentTheme", "auto");
 
-        // --- 状态修改（负责存入 Preferences、同步 localStorage 并更新 UI） ---
+
 
         public static async Task SetAppThemeAsync(string value)
         {
-            // 1. 存入 C# 存储
+
             Preferences.Default.Set("AppTheme", value);
 
-            // 2. 存入前端 localStorage
-            if (_js != null)
-            {
-                await _js.InvokeVoidAsync("localStorage.setItem", "app-theme", value);
-            }
 
         }
 
         public static async Task SetContentThemeAsync(string value)
         {
-            // 1. 存入 C# 存储
-            Preferences.Default.Set("ContentTheme", value);
 
-            // 2. 存入前端 localStorage (修复了你原来代码中存错键名的 Bug)
-            if (_js != null)
-            {
-                await _js.InvokeVoidAsync("localStorage.setItem", "content-theme", value);
-            }
+            Preferences.Default.Set("ContentTheme", value);
 
         }
 
 
-        public static async Task InitThemeAsync()
+        public static void InitTheme()
         {
             bool isDark = false;
             var theme = AppTheme;
@@ -62,16 +44,26 @@ namespace Terraria_Wiki.Services
             {
                 isDark = false;
             }
-            else // auto
+            else // auto 跟随系统
             {
-                if (_js != null)
-                {
-                    isDark = await _js.InvokeAsync<bool>("checkTheme");
-                }
+                // 使用 MAUI 原生 API 获取系统当前主题，瞬间完成！
+                isDark = Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
             }
 
-            // 更新全局状态
             App.AppStateManager.IsDarkTheme = isDark;
+        }
+        public static async Task InitWebThemeAsync(IJSRuntime JS)
+        {
+            await JS.InvokeAsync<object>("initTheme", App.AppStateManager.IsDarkTheme ? "True" : "False");
+        }
+        public static string GetIframeThemeState()
+        {
+            if (ContentTheme == "auto")
+            {
+                // 注意这里，返回全小写的字符串方便前端处理
+                return App.AppStateManager.IsDarkTheme ? "dark" : "light";
+            }
+            return "original";
         }
 
     }

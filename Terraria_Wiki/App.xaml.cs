@@ -27,19 +27,21 @@ namespace Terraria_Wiki
 #if ANDROID
             MainPage= new MainPage();
 #endif
+            ThemeService.InitTheme();
+            _ = InitializeAsync();
+
 
 
         }
-        protected override async void OnStart()
+
+
+        private async Task InitializeAsync()
         {
-            base.OnStart();
             _webServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
             DataManager.OnLog += (msg) => LogManager.AppendLog(msg);
-            Debug.WriteLine($"[App] 启动完成！数据库路径：{ManagerDb.DatabasePath}，{ContentDb.DatabasePath}");
-
         }
 
 #if WINDOWS

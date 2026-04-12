@@ -8,9 +8,6 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="Terraria_Wiki.styles.css" />
     <link rel="icon" href="data:,">
-</head>
-
-<body>
     <script>
         window.hostBridge = {
             iframeWin: null,
@@ -21,53 +18,47 @@
                 if (iframe) iframe.contentWindow.postMessage(msg, '*');
             }
         };
-        // 尝试从前端缓存读取主题设置
-        const savedAppTheme = localStorage.getItem('app-theme');
-        const savedContentTheme = localStorage.getItem('content-theme');
-        if (!savedContentTheme) {
-            localStorage.setItem('content-theme', 'auto');
-        }
-        if (!savedAppTheme) {
-            localStorage.setItem('app-theme', 'auto');
-        }
-
-        // 如果用户选择了深色，或者没选择但系统是深色
-        if (savedAppTheme === 'dark' || ((savedAppTheme === 'auto') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.body.classList.add('dark-theme');
-
-        } else {
-            document.body.classList.remove('dark-theme');
-
-        }
-
+        // 监听 Iframe 发来的消息 -> 转发给 C#
+        window.addEventListener('message', function (e) {
+            if (typeof event.data === 'string' && event.data.startsWith('__bwv:')) {
+                return;
+            }
+            // 调用 C# 的静态方法 ReceiveMessage
+            // 注意：把 'YourProjectName' 换成你的项目名！！！
+            DotNet.invokeMethodAsync('Terraria_Wiki', 'ReceiveMessage', JSON.stringify(e.data));
+        });
 
 
         window.checkTheme = function () {
-            return document.body.classList.contains('dark-theme');
+            return document.documentElement.classList.contains('dark-theme');
+        };
+
+        window.initTheme = function (isDark) {
+            if (isDark === "True") {
+                document.documentElement.classList.add('dark-theme');
+            } else {
+                document.documentElement.classList.remove('dark-theme');
+            }
         };
 
     </script>
-    <div class="status-bar-safe-area"></div>
+</head>
+
+<body>
+
     <div id="app">
-        <div class="loading-wrapper">
-            <div class="spinner"></div>
-            <p class="loading-text">Loading...</p>
-        </div>
+
     </div>
-    <!--<div id="blazor-error-ui" class="loading-text">
-        发生了一些错误
-        <a href="" class="reload loading-text">重试</a>
-        <a class="dismiss loading-text">关闭</a>
-    </div>-->
+
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
     <script>
         const pendingCsharpCalls = {};
 
-        window.toggleTheme = () => {
-            document.body.classList.add('is-switching-theme');
+        window.toggleTheme = function (savedContentTheme) {
+            document.documentElement.classList.add('is-switching-theme');
 
-            const isDark = document.body.classList.toggle('dark-theme');
+            const isDark = document.documentElement.classList.toggle('dark-theme');
             if (savedContentTheme === "auto") {
                 if (isDark) {
                     hostBridge.sendToIframe({ type: "req", id: '999', method: "ChangeTheme", data: 'True' });
@@ -78,7 +69,7 @@
 
 
             setTimeout(() => {
-                document.body.classList.remove('is-switching-theme');
+                document.documentElement.classList.remove('is-switching-theme');
             }, 350);
 
             // 4. 最后再返回结果给 C#
@@ -142,78 +133,9 @@
             }
         }
 
-        // 监听 Iframe 发来的消息 -> 转发给 C#
-        window.addEventListener('message', function (e) {
-            if (typeof event.data === 'string' && event.data.startsWith('__bwv:')) {
-                return;
-            }
-            if (e.data.type === 'iframe_ready' && savedContentTheme === 'auto') {
-                const isDark = document.body.classList.contains('dark-theme');
-                hostBridge.sendToIframe({ type: "req", id: '999', method: "ChangeTheme", data: isDark ? 'True' : 'False' });
 
-            }
-            // 调用 C# 的静态方法 ReceiveMessage
-            // 注意：把 'YourProjectName' 换成你的项目名！！！
-            DotNet.invokeMethodAsync('Terraria_Wiki', 'ReceiveMessage', JSON.stringify(e.data));
-        });
 
     </script>
 
-    <style>
-        /* 1. 容器：居中显示 */
-        .loading-wrapper {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh; /* 占满全屏高度 */
-            width: 100vw;
-            background-color: var(--bg-color: #131313);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            transition: background-color 0.3s;
-        }
-
-        /* 2. 圆圈动画本体 */
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid #e5e7eb; /* 浅灰色底环 */
-            border-top: 4px solid var(--blue-primary);
-            border-radius: 50%; /* 变成圆形 */
-            animation: spin 1s linear infinite; /* 无限旋转动画 */
-            margin-bottom: 16px;
-        }
-
-        /* 3. 文字样式 */
-        .loading-text {
-            font-size: 1.4rem;
-            font-weight: 600;
-            opacity: 0.8;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        /* 4. 定义旋转动画 */
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* 5. 定义文字呼吸动画 */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.6;
-            }
-
-            50% {
-                opacity: 1;
-            }
-        }
-    </style>
 </body>
 </html>

@@ -45,17 +45,17 @@ html.dark {
 }
 
 html.dark #mw-panel {
-    /* --theme-background: #40404a url(/images/main/Navbar-background-underground.jpg) */
+
     --theme-background: #1E1F21；
 }
 
 html.dark #mw-head {
-    --theme-background: #1E1F21 url(/images/main/Navbar-background-underground.jpg);
+    --theme-background: #1E1F21;
 
 }
 
 html.dark #footer {
-    --theme-background: linear-gradient(rgba(20, 20, 20, 0.3), rgba(20, 20, 20, 0.3)), #40404a url(/images/main/Navbar-background-underground.jpg) center top / auto 100%
+    --theme-background: #1E1F21;
 }
 
 html.dark {

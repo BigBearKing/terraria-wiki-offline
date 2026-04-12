@@ -1,3 +1,16 @@
+// 1. 从网址中提取参数 (例如 ?theme=dark)
+const urlParams = new URLSearchParams(window.location.search);
+const initialTheme = urlParams.get('theme');
+
+// 2. 瞬间应用主题
+if (initialTheme === "dark") {
+    changTheme('True');
+} else if (initialTheme === "light") {
+    changTheme('False');
+}
+
+
+
 /*!
 handy-scroll v2.0.6
 https://amphiluke.github.io/handy-scroll/
@@ -66,10 +79,6 @@ window.addEventListener('message', async e => {
     }
 });
 
-//初始化主题
-window.parent.postMessage({ type: 'iframe_ready' }, '*');
-
-
 //点击事件
 document.addEventListener('click', function (e) {
     // 1. 使用 closest('a') 查找最近的 a 标签祖先
@@ -114,7 +123,11 @@ async function gotoPage(title) {
         title: window.pageTitle,
         position: window.pageYOffset
     }
+    document.documentElement.style.cursor = 'progress';
+    document.documentElement.style.opacity = '0.5';
     const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
+    document.documentElement.style.cursor = '';
+    document.documentElement.style.opacity = '1';
     if (await redirect(titleWithAnchor.title) == null) return;
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (titleWithAnchor.anchor) {
@@ -181,7 +194,6 @@ function changTheme(isDarkTheme) {
         document.documentElement.classList.remove("dark");
         document.documentElement.classList.add("light");
     }
-    console.log(`Theme changed to ${isDarkTheme}`);
 }
 
 

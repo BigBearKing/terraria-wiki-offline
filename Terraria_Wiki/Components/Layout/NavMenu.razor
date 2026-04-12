@@ -115,7 +115,8 @@
 
 	private async Task ToggleTheme()
 	{
-		AppState.IsDarkTheme = await JSRuntime.InvokeAsync<bool>("toggleTheme");
+
+		AppState.IsDarkTheme = await JSRuntime.InvokeAsync<bool>("toggleTheme",ThemeService.ContentTheme);
 	}
 }
 <style>

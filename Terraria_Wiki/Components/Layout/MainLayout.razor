@@ -5,65 +5,74 @@
 
 <div class="app-layout">
 
-	<NavMenu />
+    <NavMenu />
 
-	<main class="main-area">
+    <main class="main-area">
 
-		<TopBar />
-		<div class="iframe-container page-anim"
-			 style="display: @(AppState.CurrentPage=="home" ? "block" : "none")">
+        <TopBar />
+        <div class="iframe-container page-anim"
+             style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
 
-			<iframe src="http://127.0.0.1:55000"
-					class="wiki-frame" id="wiki-frame">
-			</iframe>
-		</div>
-		<div class="content-container" style="display: @(AppState.CurrentPage == "home" ? "none" : "block")">
-			@Body
-		</div>
-	</main>
+            <iframe src="http://127.0.0.1:55000?theme=@iframeTheme"
+                    class="wiki-frame" id="wiki-frame">
+            </iframe>
+        </div>
+        <div class="content-container" style="display: @(AppState.CurrentPage == "home" ? "none" : "block")">
+            @Body
+        </div>
+    </main>
 </div>
 
 @code {
-	//刷新机制
-	protected override void OnInitialized()
-	{
-		AppState.OnChange += RefreshUI;
-	}
 
-	public void Dispose()
-	{
-		AppState.OnChange -= RefreshUI;
-	}
+    string iframeTheme;
 
-	private void RefreshUI()
-	{
+    //刷新机制
+    protected override void OnInitialized()
+    {
 
-		InvokeAsync(StateHasChanged);
-	}
+        AppState.OnChange += RefreshUI;
+        iframeTheme = ThemeService.GetIframeThemeState();
 
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-		if (firstRender)
-		{
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= RefreshUI;
+    }
+
+    private void RefreshUI()
+    {
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
 #if !DEBUG
-	try
-	{
-	await JS.InvokeVoidAsync("disableBrowserShortcuts");
-	}
-	catch (Exception ex)
-	{
-	// 处理可能的 JS 互操作异常
-	Console.WriteLine($"无法禁用快捷键: {ex.Message}");
-	}
+            try
+            {
+                await JS.InvokeVoidAsync("disableBrowserShortcuts");
+            }
+            catch (Exception ex)
+            {
+                // 处理可能的 JS 互操作异常
+                Console.WriteLine($"无法禁用快捷键: {ex.Message}");
+            }
 #endif
-			AppState.Init(JS);
-			ThemeService.Init(JS);
-			ThemeService.InitThemeAsync();
-			IframeBridge.Init(JS);
-			AppService.Init(NavManager);
+            AppState.Init(JS);
+            IframeBridge.Init(JS);
+            AppService.Init(NavManager);
+            await ThemeService.InitWebThemeAsync(JS);
+            if (Application.Current?.MainPage is MainPage mainPage)
+            {
+                mainPage.HideLoadingScreen();
+            }
 
-		}
-		await base.OnAfterRenderAsync(firstRender);
-	}
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
 }

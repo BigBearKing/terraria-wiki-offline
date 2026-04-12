@@ -94,14 +94,12 @@ html.light {
 }
 
 html.light #mw-head {
-    --theme-background: #f6f6f6 url(/images/main/Navbar-background-snow.jpg);
-    --theme-background-shadow: linear-gradient(to top, rgba(10, 10, 10, 0.15), transparent 30%);
-    --theme-tab-background-selected: #eaeef1;
-    --theme-tab-background: linear-gradient(rgba(20, 20, 20, 0.4), rgba(20, 20, 20, 0.4)), #eaeef1
+    --theme-background: #f6f6f6;
+
 }
 
 html.light #footer {
-    --theme-background: linear-gradient(rgba(20, 20, 20, 0.05), rgba(20, 20, 20, 0.05)), #f6f6f6 url(/images/main/Navbar-background-snow.jpg) center top / auto 100%
+    --theme-background: #f6f6f6;
 }
 
 html.light .catlinks {

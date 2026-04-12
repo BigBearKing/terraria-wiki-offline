@@ -4,11 +4,19 @@
              xmlns:local="clr-namespace:Terraria_Wiki"
              xmlns:components="clr-namespace:Terraria_Wiki.Components"
              x:Class="Terraria_Wiki.MainPage">
+    <Grid>
+        <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html" StartPath="/home">
+            <BlazorWebView.RootComponents>
+                <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
+            </BlazorWebView.RootComponents>
+        </BlazorWebView>
 
-    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html" StartPath="/home">
-        <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
-        </BlazorWebView.RootComponents>
-    </BlazorWebView>
+        <ContentView x:Name="LoadingOverlay">
+            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="15">
+                <ActivityIndicator x:Name="LoadingSpinner" IsRunning="True" />
+                <Label x:Name="LoadingText" Text="Loading..." FontSize="18" />
+            </VerticalStackLayout>
+        </ContentView>
+    </Grid>
 
 </ContentPage>

@@ -25,7 +25,7 @@
     --blue-tertiary: rgba(0, 136, 255, 0.16);
 }
 /* --- 暗色模式 (Dark) --- */
-body.dark-theme {
+html.dark-theme {
     --bg-color: #131313;
     --bg-color-secondary: #1E1F21;
     --text-primary: #f9fafb;
@@ -48,16 +48,11 @@ body.dark-theme {
 *, *::before, *::after {
     box-sizing: border-box;
 }
-html {
-    background-color: var(--bg-color);
-    transition: background-color 0.35s;
-}
-body.is-switching-theme,
-/* 2. Body 里的所有后代元素 */
-body.is-switching-theme *,
-/* 3. 所有后代的伪元素 (before/after) */
-body.is-switching-theme *::before,
-body.is-switching-theme *::after {
+
+html.is-switching-theme,
+html.is-switching-theme *,
+html.is-switching-theme *::before,
+html.is-switching-theme *::after {
     /* 强制所有属性使用 0.3s 过渡 */
     pointer-events: none;
     transition: background-color 0.35s,color 0.35s !important;

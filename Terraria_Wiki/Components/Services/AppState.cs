@@ -83,6 +83,7 @@ public class AppState
         set
         {
             _currentWikiPage = value;
+            NotifyStateChanged();
 
         }
     }
