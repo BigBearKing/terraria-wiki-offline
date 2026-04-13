@@ -124,18 +124,24 @@ async function gotoPage(title) {
         position: window.pageYOffset
     };
     document.getElementById("loading-mask").style.display = "block";
-    const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
+    try {
+        const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
 
-    if (await redirect(titleWithAnchor.title) == null) return;
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.getElementById("loading-mask").style.display = "none";
-    if (titleWithAnchor.anchor) {
-        const element = document.getElementById(titleWithAnchor.anchor);
-        if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
+        if (await redirect(titleWithAnchor.title) == null) return;
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        if (titleWithAnchor.anchor) {
+            const element = document.getElementById(titleWithAnchor.anchor);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth" });
+            }
         }
+    } finally {
+        document.getElementById("loading-mask").style.display = "none";
     }
-    
+
+
+
+
     callCSharpAsync("SaveToTempHistory", JSON.stringify(args))
 
 
