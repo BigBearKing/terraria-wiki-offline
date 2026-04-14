@@ -47,7 +47,7 @@
                FontSize="18"
                FontAttributes="Bold"
                HorizontalTextAlignment="Center" 
-                           TextColor="{AppThemeBinding Light=#6b7280, Dark=#9ca3af}"/>
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#f9fafb}"/>
 
                     <Label x:Name="AlertMessage"
                Text=""

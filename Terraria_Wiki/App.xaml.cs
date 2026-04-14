@@ -10,7 +10,7 @@ namespace Terraria_Wiki
     {
         public static ManagerDbService? ManagerDb { get; private set; }
         public static ContentDbService? ContentDb { get; private set; }
-        private readonly LocalWebServer _webServer;
+        public static LocalWebServer? WebServer { get; private set; }
         public static DataService? DataManager { get; private set; }
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
@@ -18,7 +18,7 @@ namespace Terraria_Wiki
         ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService)
         {
             InitializeComponent();
-            _webServer = webServer;
+            WebServer = webServer;
             ManagerDb = managerDb;
             ContentDb = contentDb;
             DataManager = dataService;
@@ -37,11 +37,10 @@ namespace Terraria_Wiki
 
         private async Task InitializeAsync()
         {
-            _webServer.Start();
+            WebServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
-            DataManager.OnLog += (msg) => LogManager.AppendLog(msg);
         }
 
 #if WINDOWS

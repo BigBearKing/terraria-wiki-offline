@@ -51,6 +51,11 @@ handlers["ChangeTheme"] = (isDarkTheme) => {
     return null;
 }
 
+handlers["ClearPage"] = () => {
+
+    document.getElementById("mw-content-text").innerHTML = "";
+    return null;
+}
 
 
 

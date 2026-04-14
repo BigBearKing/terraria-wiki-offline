@@ -32,6 +32,7 @@
     {
 
         AppState.OnChange += RefreshUI;
+        AppState.OnShowAlert += HandleShowAlert;
         iframeTheme = ThemeService.GetIframeThemeState();
 
     }
@@ -39,6 +40,7 @@
     public void Dispose()
     {
         AppState.OnChange -= RefreshUI;
+        AppState.OnShowAlert -= HandleShowAlert;
     }
 
     private void RefreshUI()
@@ -74,6 +76,19 @@
 
         }
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void HandleShowAlert(string title, string message)
+    {
+
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            var mainPage = Application.Current?.Windows[0].Page;
+            if (mainPage != null)
+            {
+                await mainPage.DisplayAlertAsync(title, message, "确定");
+            }
+        });
     }
 
 }

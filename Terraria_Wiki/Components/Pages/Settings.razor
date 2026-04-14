@@ -241,71 +241,11 @@
     }
     private async Task ExportData()
     {
-#if WINDOWS
-        AppState.IsProcessing = true;
-        _exportMessage = "正在导出...";
-        try
-        {
-            string exportPath = await AppService.PickFolderAsync();
-            if (string.IsNullOrEmpty(exportPath)) return;
-            await Task.Run(async () =>
-            {
-                await DataService.ExportData(exportPath);
-            });
-
-
-            Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "导出到本地文件夹完成。", "确定");
-        }catch(Exception ex)
-        {
-            Application.Current.Windows[0].Page.DisplayAlertAsync("提示", $"发生错误，请重试。\n{ex}", "确定");
-        }
-        finally
-        {
-            AppState.IsProcessing = false;
-            _exportMessage = "导出";
-        }
-#elif ANDROID
-		Application.Current.Windows[0].Page.DisplayAlertAsync("提示", $"手机版暂不支持此功能。", "确定");
-#endif
-
-
+        _ = App.DataManager?.ExportData();
     }
     private async Task ImportData()
     {
-        AppState.IsProcessing = true;
-        _importMessage = "正在导入...";
-        try
-        {
-            var customFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
-                {
-                    { DevicePlatform.WinUI, new[] { ".pkg" } },
-                });
-            string filePath = await AppService.PickFileAsync("请选择导入包", customFileType);
-            if (string.IsNullOrEmpty(filePath)) return;
-            if (Application.Current?.Windows[0].Page is MainPage mainPage)
-            {
-                mainPage.ShowLoadingPopup("导入数据", "正在导入数据，请稍候...");
-
-            }
-            await Task.Run(async () =>
-            {
-                await DataService.ImportData(filePath);
-            });
-
-            AppService.RestartApp();
-        }
-        catch (Exception ex)
-        {
-            Application.Current.Windows[0].Page.DisplayAlertAsync("提示", $"发生错误，请重试。\n{ex}", "确定");
-
-
-        }
-        finally
-        {
-            _importMessage = "选择文件";
-            AppState.IsProcessing = false;
-        }
-
+        _ = App.DataManager?.ImportData();
     }
     private async Task CheckUpdateCommand()
     {
@@ -361,8 +301,7 @@
         bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync("确认清理", "此操作将删除所有下载失败的记录，无法恢复。确定要继续吗？", "确定", "取消");
         if (confirm)
         {
-            await DataService.ClearFailedListAsync();
-            await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "已清理失败列表。", "确定");
+            App.DataManager.ClearFailedList();
         }
     }
 }

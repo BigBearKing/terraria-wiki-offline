@@ -158,6 +158,12 @@ namespace Terraria_Wiki.Services
             AppService.NavigateTo("home");
         }
 
+        public static async Task WikiRefreshAsync()
+        {
+            App.AppStateManager.TempHistory.Clear();
+            await IframeBridge.CallJsAsync("ClearPage", "");
+            await IframeBridge.CallJsAsync("BackHome", "");
+        }
 
         // 跳转页面
         public static void NavigateTo(string pageName)
@@ -184,27 +190,6 @@ namespace Terraria_Wiki.Services
 
         }
 
-        //判断文件有效性
-        public static bool IsFileValid(string filePath)
-        {
-            try
-            {
-
-                //文件是否存在
-                if (!File.Exists(filePath)) return false;
-                //文件大小是否大于 0 字节
-                FileInfo fileInfo = new FileInfo(filePath);
-                if (fileInfo.Length == 0) return false;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                // 捕获权限异常或路径非法异常
-                System.Diagnostics.Debug.WriteLine($"文件有效性检查失败: {ex.Message}");
-                return false;
-            }
-        }
-
 
 
         //刷新数据库
@@ -214,173 +199,11 @@ namespace Terraria_Wiki.Services
             book.PageCount = await wikiContent.GetCountAsync<WikiPage>();
             book.RedirectCount = await wikiContent.GetCountAsync<WikiRedirect>();
             book.ResourceCount = await wikiContent.GetCountAsync<WikiAsset>();
-            book.DataSize = GetSizeBytes(wikiContent.DatabasePath);
+            book.DataSize = FileHelper.GetSizeBytes(wikiContent.DatabasePath);
             await wikiBook.SaveItemAsync(book);
         }
-        //获取文件大小（字节），用于逻辑判断
-        public static long GetSizeBytes(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            {
-                return 0;
-            }
-
-            return new FileInfo(filePath).Length;
-        }
-
-        // 2. 获取格式化后的大小（字符串），用于 UI 显示
-        public static string GetSizeString(long bytes)
-        {
-
-            return FormatBytes(bytes);
-        }
-
-        //这是一个静态辅助工具，负责把 long 转成 "MB", "KB"
-        private static string FormatBytes(long bytes)
-        {
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-            int counter = 0;
-            decimal number = (decimal)bytes;
-
-            while (Math.Round(number / 1024) >= 1)
-            {
-                number = number / 1024;
-                counter++;
-            }
-
-            //保留2位小数
-            return string.Format("{0:n2} {1}", number, suffixes[counter]);
-        }
-
-        //文本去重
-        public static int RemoveDuplicatesOptimized(string inputPath, string outputPath)
-        {
-            var uniqueSet = new HashSet<string>(150000);
-
-            using (var reader = new StreamReader(inputPath))
-            using (var writer = new StreamWriter(outputPath))
-            {
-                string? line;
-                int duplicateCount = 0;
-
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (uniqueSet.Add(line))
-                    {
-                        writer.WriteLine(line);
-                    }
-                    else
-                    {
-                        duplicateCount++;
-                    }
-                }
-                return duplicateCount;
-            }
-        }
-
-        //追加文件
-        public static async Task AppendFileAsync(string sourcePath, string destPath)
-        {
-            if (!File.Exists(sourcePath)) return;
-
-            // 打开源文件（只读流）
-            using var sourceStream = File.OpenRead(sourcePath);
-
-            // 打开目标文件（追加模式，如果不存在会自动创建）
-            using var destStream = new FileStream(destPath, FileMode.Append, FileAccess.Write, FileShare.None);
 
 
-            // 将源流的内容异步复制并追加到目标流的尾部
-            await sourceStream.CopyToAsync(destStream);
-        }
 
-        //文件及文件夹选择
-#if WINDOWS
-        public static async Task<string> PickFileAsync(string title = "请选择文件", FilePickerFileType types = null)
-        {
-            try
-            {
-                var result = await FilePicker.Default.PickAsync(new PickOptions
-                {
-                    PickerTitle = title,
-                    FileTypes = types ?? FilePickerFileType.Png // 默认可选图片，可根据需要修改
-                });
-
-                return result?.FullPath;
-            }
-            catch (Exception ex)
-            {
-                // 处理异常（如用户取消选择在某些平台可能抛出异常）
-                System.Diagnostics.Debug.WriteLine($"文件选择出错: {ex.Message}");
-                return null;
-            }
-        }
-#endif
-#if ANDROID
-        public static async Task<string> PickFileAsync(string title = "请选择文件", FilePickerFileType types = null)
-        {
-            try
-            {
-                // 🛡️ 核心改变：在安卓上忽略传入的 types，强行使用“所有文件”过滤器
-                // 这样可以确保没有任何文件会被系统置灰
-                var options = new PickOptions
-                {
-                    PickerTitle = title,
-                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
-            {
-                { DevicePlatform.Android, new[] { "*/*" } }, // 允许选择任何东西
-                { DevicePlatform.WinUI, new[] { ".db", ".png", ".jpg" } }
-            })
-                };
-
-                var result = await FilePicker.Default.PickAsync(options);
-
-                if (result == null) return null;
-
-                // 2. 拷贝到沙盒（解决 content:// 无法直接读取的问题）
-                var targetPath = Path.Combine(FileSystem.CacheDirectory, result.FileName);
-
-                using (var stream = await result.OpenReadAsync())
-                using (var newFile = File.Create(targetPath))
-                {
-                    await stream.CopyToAsync(newFile);
-                }
-
-                return targetPath;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"文件选择出错: {ex.Message}");
-                return null;
-            }
-        }
-#endif
-
-        /// <summary>
-        /// 选择文件夹并返回路径 (目前主要针对 Windows 优化)
-        /// </summary>
-        public static async Task<string> PickFolderAsync()
-        {
-#if WINDOWS
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-
-            // 获取当前窗口句柄 (WinUI3 必需)
-            var window = Application.Current.Windows[0].Handler.PlatformView as MauiWinUIWindow;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            folderPicker.FileTypeFilter.Add("*");
-            var folder = await folderPicker.PickSingleFolderAsync();
-
-            return folder?.Path;
-#elif ANDROID || IOS
-            // 移动端通常通过 FilePicker 的特定配置或原生 Intent 实现
-            // 这里建议在移动端使用提示：移动端通常建议直接在应用沙箱内操作
-            await Shell.Current.DisplayAlertAsync("提示", "该平台暂不支持原生文件夹选择，请使用默认路径", "确定");
-            return null;
-#else
-        return null;
-#endif
-        }
     }
 }

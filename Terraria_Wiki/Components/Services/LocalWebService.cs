@@ -34,6 +34,11 @@ namespace Terraria_Wiki.Services
             var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
             _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
+        public async Task Refresh()
+        {
+            var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+            _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
+        }
 
         public void Stop()
         {

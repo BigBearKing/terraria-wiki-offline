@@ -19,6 +19,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
+		<SelfContained>true</SelfContained>
+
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
         <!-- Enable XAML source generation for faster build times and improved performance.
              This generates C# code from XAML at compile time instead of runtime inflation.
@@ -36,7 +39,7 @@
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
-		<ApplicationVersion>$([System.DateTime]::Now.ToString('yyyyMMddHH'))</ApplicationVersion>
+		<ApplicationVersion>3</ApplicationVersion>
 		<Company>BigBearKingdom</Company>
 		
 		<Authors>BigBearKing</Authors>

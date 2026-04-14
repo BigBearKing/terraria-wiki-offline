@@ -13,7 +13,7 @@ public enum DbMode
 public class DatabaseService
 {
     private SQLiteAsyncConnection _db;
-    private bool _initialized = false; // 标记是否已经初始化过
+    public bool _initialized = false; // 标记是否已经初始化过
     public string DatabasePath { get; private set; }
     public DbMode Mode { get; private set; }
 
@@ -33,9 +33,9 @@ public class DatabaseService
     }
 
     // 1. 初始化：这里必须列出所有需要用到的表
-    public async Task Init()
+    public async Task Init(bool force = false)
     {
-        if (_initialized) return; // 如果已经初始化过，直接跳过
+        if (_initialized && !force) return; // 如果已经初始化过且不强制，直接跳过
         await _db.ExecuteScalarAsync<string>("PRAGMA journal_mode = WAL;");
         // 在这里把所有表都建好
 
@@ -83,17 +83,31 @@ public class DatabaseService
         await _db.ExecuteScalarAsync<string>("PRAGMA journal_mode = DELETE;");
         await _db.CloseAsync();
     }
-    public async void ReConnection()
+    public async Task ReconnectAsync()
     {
+        // 1. 重置初始化状态
         _initialized = false;
+
+        // 2. 安全地关闭并释放旧连接（最关键的一步）
+        if (_db != null)
+        {
+            await _db.CloseAsync(); // 确保底层文件锁被释放
+            _db = null;
+        }
+
         var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;
         string path = Path.GetDirectoryName(DatabasePath);
-        if (!Directory.Exists(path))
+
+        // 3. 确保目录存在 (加了 null 检查更严谨)
+        if (!string.IsNullOrEmpty(path) && !Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
+
+        // 4. 建立新连接
         _db = new SQLiteAsyncConnection(DatabasePath, flags);
 
+        await Init();
     }
     public async Task DeleteDatabaseFile()
     {
@@ -102,37 +116,43 @@ public class DatabaseService
 
     private async Task SeedWikiBooksAsync()
     {
-        // 第一步：先数数表里有几条数据
-        var count = await _db.Table<WikiBook>().CountAsync();
-
-        // 第二步：如果表是空的 (count == 0)，说明用户是第一次打开 App
-        if (count == 0)
+        // 第一步：准备好你所有的“默认数据”清单
+        var defaultWikiBooks = new List<WikiBook>
+    {
+        new WikiBook
         {
-            // 准备你的默认数据
-            var defaultWikiBooks = new List<WikiBook>
-            {
-                new WikiBook
-                {
-                    Id=1,
-                    Title = "Terraria Wiki",
-                    Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
-                    IsPageDownloaded = false,
-                    IsResourceDownloaded = false,
-                },
-                new WikiBook
-                {
-                    Id=2,
-                    Title = "Calamity Wiki",
-                    Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
-                    IsPageDownloaded = false,
-                    IsResourceDownloaded = false,
-                }
-            };
+            Id=1,
+            Title = "Terraria Wiki",
+            Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+        },
+        new WikiBook
+        {
+            Id=2,
+            Title = "Calamity Wiki",
+            Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+        }
+    };
 
-            // 第三步：一股脑存进去
-            await _db.InsertAllAsync(defaultWikiBooks);
+        // 第二步：查询当前数据库里已经存在的数据
+        var existingBooks = await _db.Table<WikiBook>().ToListAsync();
+        // 提取出所有已经存在的 Id，存进 HashSet 方便快速查找
+        var existingIds = existingBooks.Select(b => b.Id).ToHashSet();
+
+        // 第三步：比对并筛选出“缺失”的数据
+        // 遍历默认数据，如果它的 Id 不在 existingIds 里，说明缺失了
+        var missingBooks = defaultWikiBooks.Where(b => !existingIds.Contains(b.Id)).ToList();
+
+        // 第四步：如果发现有缺失的，把缺失的部分统一存进去
+        if (missingBooks.Any())
+        {
+            await _db.InsertAllAsync(missingBooks);
         }
     }
+
     private async Task SeedWikiPageAsync()
     {
         var count = await _db.Table<WikiPage>().CountAsync();

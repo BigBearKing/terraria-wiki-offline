@@ -7,471 +7,470 @@
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 <div class="page-anim page-content">
-	<div class="header-with-back">
-		<div class="icon-btn button" @onclick="BackToList">
-			<Icon Name="arrow-left" Size="24" />
-		</div>
-		<span class="page-title" style="margin-top: -4px;">@_selectedWiki?.Title</span>
-	</div>
-	<div class="list-container detail-container">
-		@if (_selectedWiki != null)
-		{
+    <div class="header-with-back">
+        <div class="icon-btn button" @onclick="BackToList">
+            <Icon Name="arrow-left" Size="24" />
+        </div>
+        <span class="page-title" style="margin-top: -4px;">@_selectedWiki?.Title</span>
+    </div>
+    <div class="list-container detail-container">
+        @if (_selectedWiki != null)
+        {
 
-			@* --- 状态 A：已下载 (显示数据大小、更新按钮、页面列表) --- *@
-			<div class="title-placeholder">
-				<div class="placeholder-icon">
-					<img src="images/@_selectedWiki.Title.Replace(" ", "_")/logo.png" style="
-					height: 85px;object-fit: contain;" />
-				</div>
-				<h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title: "尚未获取数据")</h3>
-				<p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki。")</p>
-			</div>
-			@if (_selectedWiki.IsPageDownloaded)
-			{
-				@* 1. 数据概览卡片 *@
-				<div class="stats-panel">
-					<div class="stat-item">
-						<span class="stat-label">数据库大小</span>
-						<span class="stat-value">@AppService.GetSizeString(_selectedWiki.DataSize)</span>
-					</div>
+            @* --- 状态 A：已下载 (显示数据大小、更新按钮、页面列表) --- *@
+            <div class="title-placeholder">
+                <div class="placeholder-icon">
+                    <img src="images/@_selectedWiki.Title.Replace(" ", "_")/logo.png" style="
+                    height: 85px;object-fit: contain;" />
+                </div>
+                <h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title: "尚未获取数据")</h3>
+                <p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki。")</p>
+            </div>
+            @if (_selectedWiki.IsPageDownloaded)
+            {
+                @* 1. 数据概览卡片 *@
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <span class="stat-label">数据库大小</span>
+                        <span class="stat-value">@FileHelper.GetSizeString(_selectedWiki.DataSize)</span>
+                    </div>
 
-					<div class="stat-item">
-						<span class="stat-label">页面数量</span>
-						<span class="stat-value">@_selectedWiki.PageCount</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-label">重定向数量</span>
-						<span class="stat-value">@_selectedWiki.RedirectCount</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-label">资源数量</span>
-						<span class="stat-value">@_selectedWiki.ResourceCount</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-label">上次更新时间</span>
-						<span class="stat-value">@_selectedWiki.UpdateTime.ToString("yyyy-MM-dd\nHH:mm")</span>
-					</div>
-				</div>
+                    <div class="stat-item">
+                        <span class="stat-label">页面数量</span>
+                        <span class="stat-value">@_selectedWiki.PageCount</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">重定向数量</span>
+                        <span class="stat-value">@_selectedWiki.RedirectCount</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">资源数量</span>
+                        <span class="stat-value">@_selectedWiki.ResourceCount</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">上次更新时间</span>
+                        <span class="stat-value">@_selectedWiki.UpdateTime.ToString("yyyy-MM-dd\nHH:mm")</span>
+                    </div>
+                </div>
 
-				@* 2. 操作按钮 *@
-				<div class="action-row">
-					<div class="primary-btn btn-blue" @onclick="() => RunSafe(Update)">
-						<Icon Name="sync" Size="16" />
-						检查数据更新
-					</div>
+                @* 2. 操作按钮 *@
+                <div class="action-row">
+                    <div class="primary-btn btn-blue" @onclick="() => RunSafe(UpdateData)">
+                        <Icon Name="sync" Size="16" />
+                        检查数据更新
+                    </div>
 
-					<div class="primary-btn btn-green" @onclick="() => RunSafe(CleanUpRes)">
-						<Icon Name="clean" Size="16" />
-						清理未用资源
-					</div>
-					@if (_selectedWiki.IsResourceDownloaded)
-					{
-						<div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteRes)">
-							<Icon Name="delete" Size="16" />
-							删除资源数据
-						</div>
-					}
-					else
-					{
-						<div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadRes)">
-							<Icon Name="download" Size="16" />
-							下载资源数据
-						</div>
-					}
+                    <div class="primary-btn btn-green" @onclick="() => RunSafe(CleanUpRes)">
+                        <Icon Name="clean" Size="16" />
+                        清理未用资源
+                    </div>
+                    @if (_selectedWiki.IsResourceDownloaded)
+                    {
+                        <div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteRes)">
+                            <Icon Name="delete" Size="16" />
+                            删除资源数据
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadRes)">
+                            <Icon Name="download" Size="16" />
+                            下载资源数据
+                        </div>
+                    }
 
 
-					<div class="primary-btn btn-red" @onclick="() => RunSafe(Delete)">
-						<Icon Name="delete" Size="16" />
-						删除数据库
-					</div>
-				</div>
+                    <div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteDatabase)">
+                        <Icon Name="delete" Size="16" />
+                        删除数据库
+                    </div>
+                </div>
 
-			}
-			else
-			{
-				<div class="download-actions">
+            }
+            else
+            {
+                <div class="download-actions">
 
-					<div class="download-card">
-						<div class="dl-info">
-							<div class="dl-title">所有内容</div>
-							<div class="dl-desc">包含所有文本内容、属性和链接关系、图片、音视频。</div>
-						</div>
-						<div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadAll)">
-							下载
-						</div>
-					</div>
-					<div class="download-card">
-						<div class="dl-info">
-							<div class="dl-title">基础数据</div>
-							<div class="dl-desc">仅包含所有文本内容、属性和链接关系。</div>
-						</div>
-						<div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadPages)">
-							下载
-						</div>
-					</div>
-				</div>
-			}
-			<div id="log-container" class="log-container">
-				<Virtualize @ref="_virtualize"
-							ItemsProvider="LoadLogs"
-							Context="log"
-							OverscanCount="20">
-					<div class="log-line">@log</div>
-				</Virtualize>
-			</div>
-		}
+                    <div class="download-card">
+                        <div class="dl-info">
+                            <div class="dl-title">所有内容</div>
+                            <div class="dl-desc">包含所有文本内容、属性和链接关系、图片、音视频。</div>
+                        </div>
+                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadAll)">
+                            下载
+                        </div>
+                    </div>
+                    <div class="download-card">
+                        <div class="dl-info">
+                            <div class="dl-title">基础数据</div>
+                            <div class="dl-desc">仅包含所有文本内容、属性和链接关系。</div>
+                        </div>
+                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadPages)">
+                            下载
+                        </div>
+                    </div>
+                </div>
+            }
+            <div id="log-container" class="log-container">
+                <Virtualize @ref="_virtualize"
+                            ItemsProvider="LoadLogs"
+                            Context="log"
+                            OverscanCount="20">
+                    <div class="log-line">@log</div>
+                </Virtualize>
+            </div>
+        }
 
-	</div>
+    </div>
 </div>
 @code {
-	[Parameter]
-	public int WikiId { get; set; }
-	private void BackToList()
-	{
-		AppState.CurrentPage = "data";
-		NavManager.NavigateTo(AppState.CurrentPage);
-	}
-	private WikiBook _selectedWiki;
-	protected override async Task OnInitializedAsync()
-	{
-		base.OnInitializedAsync();
-		_selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
-		App.DataManager.CheckFailList();
+    [Parameter]
+    public int WikiId { get; set; }
+    private void BackToList()
+    {
+        AppState.CurrentPage = "data";
+        NavManager.NavigateTo(AppState.CurrentPage);
+    }
+    private WikiBook _selectedWiki;
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitializedAsync();
+        _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+
+        CheckFailList();
 
 
-	}
-	protected override void OnInitialized()
-	{
-		base.OnInitialized();
-		App.LogManager.OnLogAdded += RefreshUI;
+    }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        App.LogManager.OnLogAdded += RefreshUI;
 
-	}
+    }
 
-	//logs
+    //logs
 
-	private Virtualize<string> _virtualize;
+    private Virtualize<string> _virtualize;
 
 
-	private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)
-	{
-		var total = App.LogManager.GetTotalCount();
-		// 这里读取的永远是当前 _activeLogPath 的内容
-		var items = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
-		return new ItemsProviderResult<string>(items, total);
-	}
+    private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)
+    {
+        var total = App.LogManager.GetTotalCount();
+        // 这里读取的永远是当前 _activeLogPath 的内容
+        var items = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
+        return new ItemsProviderResult<string>(items, total);
+    }
 
-	private bool _isAutoScrolling = false; // 防止重入
+    private bool _isAutoScrolling = false; // 防止重入
 
-	private async void RefreshUI()
-	{
-		// 如果正在处理中，跳过
-		if (_isAutoScrolling) return;
-		_isAutoScrolling = true;
+    private async void RefreshUI()
+    {
+        // 如果正在处理中，跳过
+        if (_isAutoScrolling) return;
+        _isAutoScrolling = true;
 
-		await InvokeAsync(async () =>
-		{
-			// 1. 告诉 Virtualize 数据变了
-			if (_virtualize != null)
-			{
-				await _virtualize.RefreshDataAsync();
-			}
-			StateHasChanged();
-			await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
-		});
+        await InvokeAsync(async () =>
+        {
+            // 1. 告诉 Virtualize 数据变了
+            if (_virtualize != null)
+            {
+                await _virtualize.RefreshDataAsync();
+            }
+            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
+        });
 
-		_isAutoScrolling = false;
-	}
+        _isAutoScrolling = false;
+    }
 
-	public void Dispose()
-	{
-		App.LogManager.OnLogAdded -= RefreshUI;
-	}
+    public void Dispose()
+    {
+        App.LogManager.OnLogAdded -= RefreshUI;
+    }
 
-	private async Task RunSafe(Func<Task> action)
-	{
-		// 统一检查
-		if (AppState.IsProcessing)
-		{
-			await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
-			return;
-		}
-		await action();
-	}
+    private async Task RunSafe(Func<Task> action)
+    {
+        // 统一检查
+        if (AppState.IsProcessing)
+        {
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
+            return;
+        }
+        await action();
+    }
 
-	private async Task DownloadAll()
-	{
+    private async Task CheckFailList()
+    {
+        if (App.DataManager.CheckFailList())
+        {
+            bool result = await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "检测到有失败文件，是否要重试下载？", "是", "否");
+            if (result)
+            {
+                _ = App.DataManager.RetryFailList();
+            }
+        }
 
-		await App.DataManager.DownloadDataAsync(true);
+    }
 
-	}
-	private async Task DownloadPages()
-	{
+    private async Task DownloadAll()
+    {
 
-		await App.DataManager.DownloadDataAsync(false);
+        _ = App.DataManager.DownloadDataAsync(true);
 
-	}
+    }
+	
+    private async Task DownloadPages()
+    {
 
-	private async Task DownloadRes()
-	{
+        _ = App.DataManager.DownloadDataAsync(false);
 
-		await App.DataManager.DownloadResAsync();
+    }
 
-	}
+    private async Task DownloadRes()
+    {
 
-	private async Task Update()
-	{
-		bool isAll = _selectedWiki.IsResourceDownloaded;
+        _ = App.DataManager.DownloadResAsync();
 
-		await App.DataManager.UpdateDataAsync(isAll);
+    }
 
-	}
+    private async Task UpdateData()
+    {
+        bool isAll = _selectedWiki.IsResourceDownloaded;
 
-	private async Task CleanUpRes()
-	{
-		AppState.IsProcessing = true;
-		try
-		{
-			await App.ContentDb.VacuumDatabaseAsync();
-			await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-			Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "未用资源清理完成。", "确定");
-		}
-		finally
-		{
-			AppState.IsProcessing = false;
-		}
+        _ = App.DataManager.UpdateDataAsync(isAll);
 
-	}
+    }
 
-	private async Task DeleteRes()
-	{
-		bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除图片资源等数据吗？", "确定", "取消");
-		if (isConfirmed)
-		{
-			AppState.IsProcessing = true;
-			try
-			{
-				await App.ContentDb.DeleteItemsAsync<WikiAsset>();
-				var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
-				wikiBook.IsResourceDownloaded = false;
-				await App.ManagerDb.SaveItemAsync(wikiBook);
-				await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-				StateHasChanged();
-				await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "图片资源等数据删除完成。", "确定");
-				AppService.RestartApp();
-			}
-			finally
-			{
-				AppState.IsProcessing = false;
-			}
+    private async Task CleanUpRes()
+    {
+        _ = App.DataManager.CleanUpResAsync();
 
-		}
-	}
+    }
 
-	private async Task Delete()
-	{
-		bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除整个数据库（包含收藏、历史）吗？", "确定", "取消");
-		if (isConfirmed)
-		{
-			AppState.IsProcessing = true;
-			await App.ContentDb.CloseConnection();
-			await App.ManagerDb.CloseConnection();
-			await DataService.DeleteData();
-			await App.ManagerDb.DeleteDatabaseFile();
-			await Task.Delay(500);
-			AppService.RestartApp();
+    private async Task DeleteRes()
+    {
+        bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除图片资源等数据吗？", "确定", "取消");
+        if (isConfirmed)
+        {
+            AppState.IsProcessing = true;
+            try
+            {
+                await App.ContentDb.DeleteItemsAsync<WikiAsset>();
+                var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+                wikiBook.IsResourceDownloaded = false;
+                await App.ManagerDb.SaveItemAsync(wikiBook);
+                await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+                StateHasChanged();
+                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "图片资源等数据删除完成。", "确定");
+                AppService.RestartApp();
+            }
+            finally
+            {
+                AppState.IsProcessing = false;
+            }
 
-		}
-	}
+        }
+    }
+
+    private async Task DeleteDatabase()
+    {
+        bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除整个数据库（包含收藏、历史）吗？", "确定", "取消");
+        if (isConfirmed)
+        {
+            _ = App.DataManager.DeleteDatabase();
+
+        }
+    }
 
 }
 
 <style>
 
-	.icon-btn {
-		padding: 4px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+    .icon-btn {
+        padding: 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-	.header-with-back {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: large;
-		font-weight: 500;
-	}
+    .header-with-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: large;
+        font-weight: 500;
+    }
 
-	/* === 详情页样式 === */
-	.detail-container {
-		display: flex;
-		flex-direction: column;
-		padding: 0 0 20px;
-		gap: 16px;
-	}
+    /* === 详情页样式 === */
+    .detail-container {
+        display: flex;
+        flex-direction: column;
+        padding: 0 0 20px;
+        gap: 16px;
+    }
 
-	/* 统计面板 */
-	.stats-panel {
-		background-color: var(--bg-color-secondary);
-		border-radius: 16px;
-		padding: 20px;
-		display: flex;
-		align-items: stretch;
-	}
+    /* 统计面板 */
+    .stats-panel {
+        background-color: var(--bg-color-secondary);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: stretch;
+    }
 
-	.stat-item {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-	}
+    .stat-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
 
-	.stat-label {
-		font-size: 0.8rem;
-		color: var(--text-secondary);
-		margin-bottom: 4px;
-		text-align: center;
-	}
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        text-align: center;
+    }
 
-	.stat-value {
-		font-size: 1.1rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		white-space: pre-line;
-		text-align: center;
-	}
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: pre-line;
+        text-align: center;
+    }
 
-	/* 操作按钮 */
-	.action-row {
-		display: flex;
-		gap: 12px;
-	}
+    /* 操作按钮 */
+    .action-row {
+        display: flex;
+        gap: 12px;
+    }
 
-	/* 通用按钮 */
-	/* 1. 基础按钮样式重置 */
-	.primary-btn {
-		/* 移除之前的 background-color 和 color */
-		padding: 12px 20px;
-		border-radius: 12px;
-		font-size: 1rem;
-		font-weight: 500;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		gap: 8px;
-		/* 关键：添加平滑过渡 */
-		transition: all 0.2s;
-		border: none;
-		/* 防止移动端点击出现高亮背景块 */
-		-webkit-tap-highlight-color: transparent;
-		-webkit-user-select: none;
-		user-select: none;
-	}
+    /* 通用按钮 */
+    /* 1. 基础按钮样式重置 */
+    .primary-btn {
+        /* 移除之前的 background-color 和 color */
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+        /* 关键：添加平滑过渡 */
+        transition: all 0.2s;
+        border: none;
+        /* 防止移动端点击出现高亮背景块 */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+    }
 
-		/* 2. 交互反馈 (通用) */
-		.primary-btn:hover {
-			/* 悬停时：整体提亮 20% */
-			/* 在深色背景下，brightness > 1 会让半透明色块显得更“实”、更亮 */
-			filter: brightness(1.2);
-		}
+        /* 2. 交互反馈 (通用) */
+        .primary-btn:hover {
+            /* 悬停时：整体提亮 20% */
+            /* 在深色背景下，brightness > 1 会让半透明色块显得更“实”、更亮 */
+            filter: brightness(1.2);
+        }
 
-		.primary-btn:active {
-			/* 点击时：稍微变暗并缩小，产生“按压感” */
-			filter: brightness(1.0); /* 恢复亮度或稍微暗一点 */
-			transform: scale(0.97); /* 物理回弹效果 */
-		}
+        .primary-btn:active {
+            /* 点击时：稍微变暗并缩小，产生“按压感” */
+            filter: brightness(1.0); /* 恢复亮度或稍微暗一点 */
+            transform: scale(0.97); /* 物理回弹效果 */
+        }
 
-	/* === 颜色变体 (Tinted Style) === */
+    /* === 颜色变体 (Tinted Style) === */
 
-	/* 蓝色 */
-	.btn-blue {
-		background-color: var(--blue-tertiary);
-		color: var(--blue-primary);
-	}
+    /* 蓝色 */
+    .btn-blue {
+        background-color: var(--blue-tertiary);
+        color: var(--blue-primary);
+    }
 
-	/* 绿色 */
-	.btn-green {
-		background-color: var(--green-tertiary);
-		color: var(--green-primary);
-	}
+    /* 绿色 */
+    .btn-green {
+        background-color: var(--green-tertiary);
+        color: var(--green-primary);
+    }
 
-	/* 红色 */
-	.btn-red {
-		background-color: var(--red-tertiary);
-		color: var(--red-primary);
-	}
+    /* 红色 */
+    .btn-red {
+        background-color: var(--red-tertiary);
+        color: var(--red-primary);
+    }
 
-	.title-placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 30px 20px;
-		text-align: center;
-	}
+    .title-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 20px;
+        text-align: center;
+    }
 
-	.placeholder-icon {
-		font-size: 4rem;
-		margin-bottom: 16px;
-	}
+    .placeholder-icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+    }
 
-	.title-placeholder h3 {
-		margin: 0 0 8px 0;
-		color: var(--text-primary);
-	}
+    .title-placeholder h3 {
+        margin: 0 0 8px 0;
+        color: var(--text-primary);
+    }
 
-	.title-placeholder p {
-		margin: 0;
-		color: var(--text-secondary);
-		font-size: 0.9rem;
-	}
+    .title-placeholder p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
 
-	.download-actions {
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		padding-bottom: 24px;
-	}
+    .download-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 24px;
+    }
 
-	.download-card {
-		background-color: var(--bg-color-secondary);
-		border-radius: 16px;
-		padding: 16px;
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-	}
+    .download-card {
+        background-color: var(--bg-color-secondary);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
-	.dl-title {
-		font-weight: 600;
-		color: var(--text-primary);
-		margin-bottom: 4px;
-	}
+    .dl-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
 
-	.dl-desc {
-		font-size: 0.8rem;
-		color: var(--text-secondary);
-		line-height: 1.4;
-	}
+    .dl-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
 
-	.log-container {
-		min-height: 200px;
-		max-height: 200px;
-		background-color: var(--bg-color-secondary);
-		border-radius: 16px;
-		padding: 16px;
-		overflow-y: auto;
-		font-size: 0.8rem;
-		overflow-anchor: none;
-	}
+    .log-container {
+        min-height: 200px;
+        max-height: 200px;
+        background-color: var(--bg-color-secondary);
+        border-radius: 16px;
+        padding: 16px;
+        overflow-y: auto;
+        font-size: 0.8rem;
+        overflow-anchor: none;
+    }
 
-	.log-line {
-		color: var(--text-secondary);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+    .log-line {
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>

@@ -10,7 +10,9 @@ public class AppState
     public event Action? OnChange;
     public event Action? OnCurrentPageChanged;
     public event Action? OnSearchQueryChanged;
-    private void NotifyStateChanged() => OnChange?.Invoke();
+    public event Action<string, string>? OnShowAlert;
+
+    
     public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
     public string AppName { get; set; } = AppInfo.Current.Name;
 
@@ -36,7 +38,7 @@ public class AppState
 
             _currentPage = value;
             OnCurrentPageChanged?.Invoke();
-            NotifyStateChanged();
+            OnChange?.Invoke();
 
         }
     }
@@ -48,7 +50,7 @@ public class AppState
         {
 
             _sidebarIsExpanded = value;
-            NotifyStateChanged();
+            OnChange?.Invoke();
 
         }
     }
@@ -60,7 +62,7 @@ public class AppState
         {
 
             _isDarkTheme = value;
-            NotifyStateChanged();
+            OnChange?.Invoke();
 
         }
     }
@@ -72,7 +74,7 @@ public class AppState
         {
 
             _isProcessing = value;
-            NotifyStateChanged();
+            OnChange?.Invoke();
 
         }
     }
@@ -83,7 +85,7 @@ public class AppState
         set
         {
             _currentWikiPage = value;
-            NotifyStateChanged();
+            OnChange?.Invoke();
 
         }
     }
@@ -101,5 +103,10 @@ public class AppState
                 OnSearchQueryChanged?.Invoke();
             }
         }
+    }
+
+    public void TriggerAlert(string title, string message)
+    {
+        OnShowAlert?.Invoke(title, message);
     }
 }

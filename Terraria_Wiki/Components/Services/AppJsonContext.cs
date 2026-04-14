@@ -15,6 +15,8 @@ namespace Terraria_Wiki.Services;
 [JsonSerializable(typeof(TitleWithAnchor))]
 [JsonSerializable(typeof(TempHistory))]
 [JsonSerializable(typeof(WikiPackageInfo))]
+[JsonSerializable(typeof(List<FileMeta>))]
+[JsonSerializable(typeof(FileMeta))]
 [JsonSerializable(typeof(RawResponse))]
 [JsonSerializable(typeof(JsonElement[]))]
 [JsonSerializable(typeof(object[]))]
