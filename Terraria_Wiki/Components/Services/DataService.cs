@@ -448,8 +448,10 @@ namespace Terraria_Wiki.Services
                 // 1. 在线备份数据库 (SQLite API 本身支持异步，留在 UI 线程即可)
                 _log.Info("正在备份数据库文件");
                 var conn = App.ContentDb.GetConnection();
-                await conn.BackupAsync(tempDbPath);
-
+                await Task.Run(async () =>
+                {
+                    await conn.BackupAsync(tempDbPath);
+                });
                 // 2. 准备基础数据
                 _log.Info("开始打包数据");
                 var wikibook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
@@ -562,10 +564,7 @@ namespace Terraria_Wiki.Services
                 // 如果是移动端，临时生成的包分享完后也要删掉防占用空间
                 if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
                 {
-                    if (!string.IsNullOrEmpty(finalPkgPath) && File.Exists(finalPkgPath))
-                    {
-                        try { File.Delete(finalPkgPath); } catch { }
-                    }
+                    _ = FileHelper.ClearAppCacheAsync();
                 }
 
                 App.AppStateManager?.IsProcessing = false;
@@ -585,7 +584,12 @@ namespace Terraria_Wiki.Services
         {
             { DevicePlatform.WinUI, new[] { ".pkg" } },
         });
-                if(DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (Application.Current?.Windows[0].Page is MainPage mainPage)
+                {
+                    mainPage.ShowLoadingPopup("导入数据", "正在导入数据，请稍候...");
+                }
+
+                if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
                     filePath = await FileHelper.ImportFileAsync("请选择导入包", customFileType);
                 }
@@ -596,10 +600,6 @@ namespace Terraria_Wiki.Services
                 
                 if (string.IsNullOrEmpty(filePath)) return;
 
-                if (Application.Current?.Windows[0].Page is MainPage mainPage)
-                {
-                    mainPage.ShowLoadingPopup("导入数据", "正在导入数据，请稍候...");
-                }
 
                 // ====== 核心修改开始 ======
                 // 声明一个变量，用来把后台线程解析出的 meta 数据传递给外面的 UI 线程
@@ -623,7 +623,14 @@ namespace Terraria_Wiki.Services
                     int jsonLen = reader.ReadInt32();
                     string json = Encoding.UTF8.GetString(reader.ReadBytes(jsonLen));
                     Debug.Write(json);
-                    meta = JsonSerializer.Deserialize(json, AppJsonContext.Custom.WikiPackageInfo);
+                    if(DeviceInfo.Platform == DevicePlatform.WinUI)
+                    {
+                        meta = JsonSerializer.Deserialize<WikiPackageInfo>(json, AppJsonContext.Custom.WikiPackageInfo);
+                    }
+                    else
+                    {
+                        meta = JsonSerializer.Deserialize<WikiPackageInfo>(json);
+                    }
 
                     if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
 
@@ -707,7 +714,7 @@ namespace Terraria_Wiki.Services
                 if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
                 if ((DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS) && !string.IsNullOrEmpty(filePath))
                 {
-                    FileHelper.CleanupTempFile(filePath);
+                    _ = FileHelper.ClearAppCacheAsync();
                 }
                 if (Application.Current?.Windows[0].Page is MainPage mainPage)
                 {

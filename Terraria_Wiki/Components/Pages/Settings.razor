@@ -302,6 +302,7 @@
         if (confirm)
         {
             App.DataManager.ClearFailedList();
+            _ = FileHelper.ClearAppCacheAsync();
         }
     }
 }

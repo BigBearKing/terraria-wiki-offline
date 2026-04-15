@@ -27,33 +27,39 @@
             </VerticalStackLayout>
         </ContentView>
         <Grid x:Name="CustomAlertMask"
-  IsVisible="False"
-  BackgroundColor="#80000000" 
-  HorizontalOptions="Fill"
-  VerticalOptions="Fill">
+      IsVisible="False"
+      BackgroundColor="#80000000" 
+      HorizontalOptions="Fill"
+      VerticalOptions="Fill"
+      InputTransparent="False"
+      CascadeInputTransparent="False">
+
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer />
+            </Grid.GestureRecognizers>
 
             <Frame VerticalOptions="Center"
-       HorizontalOptions="Center"
-       WidthRequest="280"
-       Padding="20"
-       CornerRadius="15"
-       BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131313}"
-       HasShadow="True">
+           HorizontalOptions="Center"
+           WidthRequest="280"
+           Padding="20"
+           CornerRadius="15"
+           BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#131313}"
+           HasShadow="True">
 
                 <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
 
                     <Label x:Name="AlertTitle"
-               Text="处理中"
-               FontSize="18"
-               FontAttributes="Bold"
-               HorizontalTextAlignment="Center" 
-                           TextColor="{AppThemeBinding Light=#111827, Dark=#f9fafb}"/>
+                   Text="处理中"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center" 
+                   TextColor="{AppThemeBinding Light=#111827, Dark=#f9fafb}"/>
 
                     <Label x:Name="AlertMessage"
-               Text=""
-               FontSize="14"
-               HorizontalTextAlignment="Center"
-               TextColor="{AppThemeBinding Light=#6b7280, Dark=#9ca3af}" />
+                   Text=""
+                   FontSize="14"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light=#6b7280, Dark=#9ca3af}" />
 
                     <ActivityIndicator IsRunning="True" Color="{AppThemeBinding Light=#0078d7, Dark=#4da8da}" />
                 </VerticalStackLayout>

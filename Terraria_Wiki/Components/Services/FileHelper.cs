@@ -35,7 +35,6 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
             if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
             {
                 var targetPath = Path.Combine(FileSystem.CacheDirectory, result.FileName);
-                await Task.Delay(500);
 
                 await Task.Run(async () =>
                 {
@@ -107,28 +106,60 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// <summary>
         /// 清理导入时产生的临时缓存文件（移动端专属安全清理）
         /// </summary>
-        /// <param name="filePath">需要清理的文件路径</param>
-        public static void CleanupTempFile(string filePath)
+        public static async Task<long> ClearAppCacheAsync()
         {
-            if (string.IsNullOrEmpty(filePath)) return;
+            long freedSpace = 0;
 
-            // 【安全锁】检查该路径是否真的在 App 的缓存目录中
-            // 这样能绝对防止在 Windows 端误删用户的原文件
-            string cacheDir = FileSystem.CacheDirectory;
-
-            if (filePath.StartsWith(cacheDir, StringComparison.OrdinalIgnoreCase))
+            await Task.Run(() =>
             {
-                if (File.Exists(filePath))
+                try
                 {
-                    File.Delete(filePath);
-                    System.Diagnostics.Debug.WriteLine($"[安全清理] 已删除临时文件: {filePath}");
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[安全拦截] 该文件不在缓存区，跳过清理以保护源文件: {filePath}");
-            }
+                    string cachePath = FileSystem.CacheDirectory;
 
+                    if (!Directory.Exists(cachePath)) return;
+
+                    // 1. 删除缓存根目录下的所有散落文件
+                    string[] files = Directory.GetFiles(cachePath);
+                    foreach (string file in files)
+                    {
+                        try
+                        {
+                            FileInfo fi = new FileInfo(file);
+                            long size = fi.Length;
+                            fi.Delete();
+                            freedSpace += size;
+                        }
+                        catch
+                        {
+                            // 忽略单个文件删除失败（可能正被系统占用或刚被创建）
+                        }
+                    }
+
+                    // 2. 删除缓存目录下的所有子文件夹（递归删除）
+                    string[] directories = Directory.GetDirectories(cachePath);
+                    foreach (string dir in directories)
+                    {
+                        try
+                        {
+
+                            // true 表示连同里面的文件一起强制删除
+                            Directory.Delete(dir, true);
+                        }
+                        catch
+                        {
+                            // 忽略单个文件夹删除失败
+                        }
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[缓存清理] 完成！共释放空间: {freedSpace / 1024 / 1024} MB");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[缓存清理] 发生严重错误: {ex.Message}");
+                }
+            });
+
+            return freedSpace;
         }
 
         //获取文件大小（字节），用于逻辑判断
