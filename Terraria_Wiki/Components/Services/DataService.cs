@@ -306,6 +306,36 @@ namespace Terraria_Wiki.Services
 
         }
 
+        //删除图片资源
+        public async Task DeleteResAsync()
+        {
+            App.AppStateManager.IsProcessing = true;
+            _log.Info("开始删除图片资源等数据");
+            try
+            {
+                await App.ContentDb.DeleteItemsAsync<WikiAsset>();
+                var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                wikiBook.IsResourceDownloaded = false;
+                await App.ManagerDb.SaveItemAsync(wikiBook);
+                await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+                await AppService.WikiRefreshAsync();
+                await App.WebServer.Refresh();
+                _log.Success("图片资源等数据删除成功");
+                App.AppStateManager?.TriggerAlert("提示", "图片资源等数据删除成功");
+
+            }
+            catch(Exception ex)
+
+            {
+                _log.Error("发生错误", ex);
+                App.AppStateManager?.TriggerAlert("发生错误", ex.Message);
+            }
+            finally
+            {
+                App.AppStateManager.IsProcessing = false;
+            }
+        }
+        
         //检查是否有失败列表
         public bool CheckFailList()
         {
@@ -407,8 +437,8 @@ namespace Terraria_Wiki.Services
             }
             catch (Exception ex)
             {
-                _log.Error("删除数据库文件时发生错误", ex);
-                App.AppStateManager?.TriggerAlert("错误", $"删除数据库文件时发生错误: {ex.Message}");
+                _log.Error("发生错误", ex);
+                App.AppStateManager?.TriggerAlert("发生错误", ex.Message);
             }
             finally
             {

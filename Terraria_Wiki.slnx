@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="Terraria_Wiki/Terraria_Wiki.csproj">
-    <Deploy Solution="Debug|*" />
+    <Deploy />
   </Project>
 </Solution>

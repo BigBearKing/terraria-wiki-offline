@@ -252,22 +252,7 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除图片资源等数据吗？", "确定", "取消");
         if (isConfirmed)
         {
-            AppState.IsProcessing = true;
-            try
-            {
-                await App.ContentDb.DeleteItemsAsync<WikiAsset>();
-                var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
-                wikiBook.IsResourceDownloaded = false;
-                await App.ManagerDb.SaveItemAsync(wikiBook);
-                await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                StateHasChanged();
-                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "图片资源等数据删除完成。", "确定");
-                AppService.RestartApp();
-            }
-            finally
-            {
-                AppState.IsProcessing = false;
-            }
+            _ = App.DataManager.DeleteResAsync();
 
         }
     }
