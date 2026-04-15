@@ -371,11 +371,12 @@
     }
 
         /* 2. 交互反馈 (通用) */
-        .primary-btn:hover {
+        body.has-hover .primary-btn:hover {
             /* 悬停时：整体提亮 20% */
             /* 在深色背景下，brightness > 1 会让半透明色块显得更“实”、更亮 */
             filter: brightness(1.2);
         }
+    
 
         .primary-btn:active {
             /* 点击时：稍微变暗并缩小，产生“按压感” */

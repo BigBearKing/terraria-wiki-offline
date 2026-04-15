@@ -135,7 +135,7 @@
                 <span class="category-title">关于</span>
 
                 <div class="setting-item">
-                    <div class="setting-info">
+                    <div class="setting-info" @onclick="OnVersionLabelClicked">
                         <span class="setting-name">当前版本</span>
                         <span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
                     </div>
@@ -305,6 +305,30 @@
             _ = FileHelper.ClearAppCacheAsync();
         }
     }
+    private int _clickCount = 0;
+    private DateTime _lastClickTime;
+
+    private void OnVersionLabelClicked()
+    {
+        var now = DateTime.Now;
+    
+        // 如果两次点击间隔超过 500ms，重置计数（防止用户平时误触累积）
+        if ((now - _lastClickTime).TotalMilliseconds > 500)
+        {
+            _clickCount = 0;
+        }
+
+        _clickCount++;
+        _lastClickTime = now;
+
+        if (_clickCount == 7) // 连点 7 次触发
+        {
+            _clickCount = 0;
+
+            AppService.NavigateTo("test");
+            
+        }
+    }
 }
 <style>
 
@@ -423,10 +447,10 @@
         background-size: 16px;
     }
 
-        .modern-select:hover {
+        body.has-hover .modern-select:hover {
             border-color: var(--text-secondary);
         }
-
+    
         .modern-select:focus {
             border-color: var(--blue-primary);
             box-shadow: 0 0 0 3px var(--blue-tertiary);

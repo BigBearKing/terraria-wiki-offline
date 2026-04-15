@@ -31,27 +31,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
             var result = await FilePicker.Default.PickAsync(options);
             if (result == null) return null;
 
-            // 移动端：因权限问题，先将文件拷贝到 App 缓存区，才能返回有效路径供底层读取
-            if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
-            {
-                var targetPath = Path.Combine(FileSystem.CacheDirectory, result.FileName);
 
-                await Task.Run(async () =>
-                {
-
-                    int bufferSize = 1024 * 1024; // 1MB 缓冲区
-
-                    using (var stream = await result.OpenReadAsync())
-                    // 不要用 File.Create，用 FileStream 自己定义缓冲区大小
-                    using (var newFile = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
-                    {
-                        // CopyToAsync 也必须指定同样的缓冲区大小
-                        await stream.CopyToAsync(newFile, bufferSize);
-                    }
-                });
-
-                return targetPath;
-            }
 
             // 桌面端：直接返回绝对路径
             return result.FullPath;

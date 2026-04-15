@@ -54,20 +54,29 @@
         if (firstRender)
         {
 #if !DEBUG
-            try
-            {
-                await JS.InvokeVoidAsync("disableBrowserShortcuts");
-            }
-            catch (Exception ex)
-            {
-                // 处理可能的 JS 互操作异常
-                Console.WriteLine($"无法禁用快捷键: {ex.Message}");
-            }
+    try
+    {
+    await JS.InvokeVoidAsync("disableBrowserShortcuts");
+    }
+    catch (Exception ex)
+    {
+    // 处理可能的 JS 互操作异常
+    Console.WriteLine($"无法禁用快捷键: {ex.Message}");
+    }
 #endif
             AppState.Init(JS);
             IframeBridge.Init(JS);
             AppService.Init(NavManager);
-            await ThemeService.InitWebThemeAsync(JS);
+            await ThemeService.InitIframeThemeAsync(JS);
+            if(DeviceInfo.Platform==DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
+            {
+                await JS.InvokeVoidAsync("initHover", "False");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("initHover", "True");
+            }
+
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
             {
                 mainPage.HideLoadingScreen();

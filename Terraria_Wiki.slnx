@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="Terraria_Wiki/Terraria_Wiki.csproj" />
+  <Project Path="Terraria_Wiki/Terraria_Wiki.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>

@@ -10,7 +10,6 @@
     --text-secondary: #6b7280;
     --hover-bg: #eeeeee;
     --pressed-bg: #e3e3e3;
-
     --red-primary: rgba(255, 56, 60, 1);
     --red-secondary: rgba(255, 56, 60, 0.6);
     --red-tertiary: rgba(255, 56, 60, 0.16);
@@ -45,8 +44,12 @@ html.dark-theme {
     --blue-secondary: rgba(0, 145, 255, 0.6);
     --blue-tertiary: rgba(0, 145, 255, 0.16);
 }
+
 *, *::before, *::after {
     box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
 }
 
 html.is-switching-theme,
@@ -65,6 +68,7 @@ html, body {
     /* 2. 禁止选择文本（防止长按弹出选择框，看着更像 App） */
     user-select: none;
     -webkit-user-select: none;
+    -webkit-user-drag: none;
     /* 3. 强制页面高度固定，不产生溢出滚动 */
     height: 100%;
     overflow: hidden;
@@ -80,8 +84,12 @@ body {
     color: var(--text-primary);
     margin: 0;
     overflow: hidden;
-     /* 主题切换时的渐变动画 */
+    /* 主题切换时的渐变动画 */
 }
+    /* 当 body 被加上这个类时，页面里所有的 iframe 都会无视鼠标事件 */
+    body.is-mouse-down iframe {
+        pointer-events: none !important;
+    }
 /* 1. 增加宽度，为“留白”腾出空间 */
 ::-webkit-scrollbar {
     width: 14px; /* 从 7px 增加到 14px */
@@ -127,7 +135,6 @@ body {
     flex: 1;
     width: 100%;
     min-height: 0;
-
 }
 
 .iframe-container {
@@ -174,17 +181,19 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding:0 0 12px;
+    padding: 0 0 12px;
+}
 
+.page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
 }
-.page-title{
-    font-size:1.4rem;
-    font-weight:700;
-}
+
 .sub-text {
     color: var(--text-secondary);
     font-size: 0.8rem;
 }
+
 .list-container {
     flex: 1;
     overflow-y: auto;
@@ -192,29 +201,33 @@ body {
     display: flex;
     flex-direction: column;
 }
+
 .button {
     border: none;
     display: block;
     transition: color 0.2s,background-color 0.2s;
-    -webkit-user-select: none;
     user-select: none;
     cursor: pointer;
 }
-    .button:hover {
-        background-color: var(--hover-bg);
-    }
+
+body.has-hover .button:hover {
+    background-color: var(--hover-bg);
+}
+
+
     .button:active {
         background-color: var(--pressed-bg);
         transition: none
     }
+
     .button > * {
         transition: inherit;
     }
 
+
 /* ============================================================== */
 /* 移动端专属适配 (屏幕宽度 <= 768px)                             */
 /* ============================================================== */
-
 /* 默认在 PC 端隐藏移动端元素 */
 .mobile-menu-btn {
     display: none;
@@ -232,12 +245,10 @@ body {
         justify-content: center;
         padding: 0 12px;
     }
-
     /* 2. 隐藏原侧边栏内部的头部Logo（因为已经移到了顶部栏） */
     .sidebar-header {
         display: none !important;
     }
-
     /* 3. 侧边栏：脱离文档流，悬浮在最上层，不挤压内容 */
     .sidebar {
         position: fixed !important;
@@ -249,12 +260,10 @@ body {
         transform: translateX(-100%); /* 默认滑出屏幕左侧隐藏 */
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 用平移代替宽度的动画 */
     }
-
         /* 侧边栏展开时滑入屏幕 */
         .sidebar.expanded {
             transform: translateX(0);
         }
-
     /* 4. 遮罩层：悬浮在内容和侧边栏中间 */
     .sidebar-mask {
         display: block !important;
@@ -266,14 +275,11 @@ body {
         pointer-events: none; /* 隐藏时禁止阻挡点击 */
         transition: opacity 0.3s ease;
     }
-
         /* 遮罩层显示状态 */
         .sidebar-mask.show {
             opacity: 1;
             pointer-events: auto; /* 允许点击遮罩层触发关闭 */
         }
-
-
 }
 /* ================== Bottom Bar 样式 ================== */
 /* PC端：作为透明容器，完全不影响原有的 flex 顶部布局 */
@@ -298,12 +304,10 @@ body {
         /* 核心：添加滑动隐藏的平滑动画 */
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
         /* 当 JS 加上这个类名时，底栏向下滑出屏幕 */
         .bottom-bar.hide-bar {
             transform: translateY(100%);
         }
-
     /* 修正搜索框在底部的样式 */
     .top-bar .search-wrapper {
         width: 100% !important;
@@ -314,5 +318,4 @@ body {
         text-align: right;
         padding-right: 16px;
     }
-
 }

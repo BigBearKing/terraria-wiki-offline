@@ -38,7 +38,7 @@
         <ApplicationId>com.bigbearking.terrariawiki</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>0.3.0</ApplicationDisplayVersion>
 		<ApplicationVersion>3</ApplicationVersion>
 		<Company>BigBearKingdom</Company>
 		
@@ -59,16 +59,7 @@
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
 	</PropertyGroup>
-	<ItemGroup>
-		<TrimmerRootAssembly Include="SQLite-net" />
-		<TrimmerRootAssembly Include="Terraria_Wiki" />
-		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components" />
-		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.Web" />
-		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.WebView" />
-		<TrimmerRootAssembly Include="Microsoft.AspNetCore.Components.WebView.Maui" />
-		<TrimmerRootAssembly Include="Microsoft.JSInterop" />
-		<RdXmlFile Include="rd.xml" />
-	</ItemGroup>
+
 
 	<ItemGroup>
 		<!-- App Icon -->

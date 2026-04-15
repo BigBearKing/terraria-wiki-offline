@@ -31,15 +31,16 @@
 
 
 
-    .action-btn:hover {
-        background-color: var(--hover-bg);
-        color: var(--text-primary);
-    }
+body.has-hover .action-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
 
     .action-btn:active {
         background-color: var(--pressed-bg);
+        color: var(--text-primary);
     }
-
 /* --- 2. 中间标题 (核心改动) --- */
 .page-title {
     flex: 1; /* ★ 关键：占据所有剩余空间 */
@@ -54,7 +55,6 @@
     user-select: none;
     min-width: 0; /* 修复 Flex 布局下省略号失效的 Bug */
 }
-
 /* --- 3. 右侧搜索框 (核心改动) --- */
 .search-wrapper {
     width: 260px; /* ★ 给定一个合适的宽度 */
@@ -76,14 +76,12 @@
     line-height: 1.2;
     transition: border-color 0.2s;
 }
-
     /* 搜索框聚焦效果 */
     .search-input:focus {
         background-color: var(--bg-color);
         border-color: var(--blue-primary);
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
-
 /* 图标定位 */
 .search-wrapper ::deep .search-icon {
     position: absolute;

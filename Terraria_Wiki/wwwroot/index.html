@@ -41,6 +41,15 @@
             }
         };
 
+        window.initHover = function (hasHover) {
+            if (hasHover === "True") {
+                document.body.classList.add('has-hover');
+            } else {
+                document.body.classList.remove('has-hover');
+            }
+
+        };
+
     </script>
 </head>
 
@@ -76,13 +85,21 @@
             return isDark;
         };
 
+        // 鼠标/手指按下时，给 body 加上标记
+        document.addEventListener('pointerdown', function () {
+            document.body.classList.add('is-mouse-down');
+        }, { passive: true });
+
         // 拦截按下事件，阻止 WebView 的默认导航行为
-        document.addEventListener('mouseup', function (e) {
+        document.addEventListener('pointerup', function (e) {
             // e.button === 3 是侧键后退，e.button === 4 是侧键前进
             if (e.button === 3 || e.button === 4) {
                 e.preventDefault();
             }
+            document.body.classList.remove('is-mouse-down');
+
         });
+
 
         //拦截默认浏览器行为
         window.disableBrowserShortcuts = function () {
@@ -133,7 +150,12 @@
             }
         }
 
+        // 当鼠标点进 iframe 或切换到其他软件窗口时触发
+        window.addEventListener('mouseup', function () {
+            // 强行让当前处于 hover/active 状态的元素失去焦点
+            document.activeElement.blur();
 
+        });
 
     </script>
 

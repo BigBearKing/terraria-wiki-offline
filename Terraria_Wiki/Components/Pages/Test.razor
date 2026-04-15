@@ -1,0 +1,16 @@
+﻿@page "/test"
+<h3>Test</h3>
+
+<button class="button" @onclick="ShowAlert">Click Me</button>
+
+@code {
+
+    private void ShowAlert()
+    {
+        (Application.Current.MainPage as MainPage)?.ShowLoadingPopup("标题", "内容");
+    }
+
+
+
+
+}

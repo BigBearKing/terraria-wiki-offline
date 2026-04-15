@@ -48,9 +48,9 @@
 }
 
 
-    .result-item:hover {
-        background-color: var(--hover-bg);
-    }
+body.has-hover .result-item:hover {
+    background-color: var(--hover-bg);
+}
 
 .result-title {
     font-weight: 600;
@@ -67,7 +67,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-
 /* 高亮标签样式，因为是注入的 HTML，可能需要 ::deep 穿透 */
 ::deep mark.search-highlight {
     background-color: var(--yellow-tertiary);
@@ -88,6 +87,7 @@
         border-radius: 12px 12px 0 0 !important;
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
+
     .search-overlay {
         height: calc(100vh - 2*var(--header-height));
     }

@@ -52,7 +52,7 @@ namespace Terraria_Wiki.Services
 
             App.AppStateManager.IsDarkTheme = isDark;
         }
-        public static async Task InitWebThemeAsync(IJSRuntime JS)
+        public static async Task InitIframeThemeAsync(IJSRuntime JS)
         {
             await JS.InvokeAsync<object>("initTheme", App.AppStateManager.IsDarkTheme ? "True" : "False");
         }
