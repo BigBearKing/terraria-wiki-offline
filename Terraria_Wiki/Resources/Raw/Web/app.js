@@ -130,6 +130,7 @@ async function gotoPage(title) {
     };
     document.getElementById("loading-mask").style.display = "block";
     try {
+        
         const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
 
         if (await redirect(titleWithAnchor.title) == null) return;
@@ -471,5 +472,114 @@ function refresh() {
             wikiHeader.classList.toggle('collapsed');
         });
     }
+
+    // ============================================================
+    // 7.表格展开和折叠功能
+    // ============================================================
+    function initToggleBox() {
+        // 1. 全局事件委托 (防止多次调用此函数时重复绑定)
+        if (!window._toggleBoxInitialized) {
+            document.addEventListener('click', function (event) {
+                const handle = event.target.closest('.trw-togglehandle');
+                if (handle) {
+                    const toggleable = handle.closest('.trw-toggleable');
+                    if (toggleable) {
+                        toggleable.classList.toggle('toggled');
+                        toggleable.classList.toggle('not-toggled');
+                    }
+                }
+            });
+            window._toggleBoxInitialized = true; // 标记为已初始化
+        }
+
+        // 2. 处理 URL 锚点 (Hash) 自动展开
+        const anchor = window.location.hash.substring(1);
+        if (anchor) {
+            const targetId = decodeURI(anchor).replaceAll(' ', '_');
+            const target = document.getElementById(targetId);
+
+            if (target) {
+                let parent = target.parentElement;
+                while (parent) {
+                    if (parent.matches('.trw-toggleable.trw-toggled-with-anchor')) {
+                        // 对于锚点定位，确保强制切换到展开状态
+                        parent.classList.add('toggled');
+                        parent.classList.remove('not-toggled');
+                    }
+                    parent = parent.parentElement;
+                }
+            }
+        }
+    }
+    initToggleBox();
+
+    // ============================================================
+    // 8. 表格头尾处理
+    // ============================================================
+    function emulateTHeadAndFoot(table) {
+    // 确保传入的是一个 DOM 元素
+    if (!table || table.tagName.toLowerCase() !== 'table') return;
+
+    // 获取 table 的直接子元素 tbody 里的所有直接子元素 tr
+    const tbody = table.querySelector(':scope > tbody') || table;
+    const rows = Array.from(tbody.querySelectorAll(':scope > tr'));
+
+    // 1. 处理 Thead
+    if (!table.tHead) {
+        const thead = document.createElement('thead');
+        for (let row of rows) {
+            // 如果这一行里面包含了 td，说明表头结束，退出循环
+            if (row.querySelector('td')) {
+                break;
+            }
+            // 否则（全是 th），将其移动到 thead 中
+            thead.appendChild(row);
+        }
+        
+        // 如果成功提取到了表头行，将其插入到 tbody 的前面
+        if (thead.children.length > 0) {
+            table.insertBefore(thead, tbody);
+        }
+    }
+
+    // 2. 处理 Tfoot
+    if (!table.tFoot) {
+        const tfoot = document.createElement('tfoot');
+        let tfootRows = [];
+        let remainingCellRowSpan = 0;
+
+        // 重新遍历所有行（注意：刚刚被移走变成 thead 的行不在 tbody 里了）
+        const remainingRows = Array.from(tbody.querySelectorAll(':scope > tr'));
+        
+        for (let row of remainingRows) {
+            const cells = row.querySelectorAll('td');
+            
+            for (let cell of cells) {
+                // 原生 DOM 属性 rowSpan，如果没有显式设置通常为 1
+                remainingCellRowSpan = Math.max(cell.rowSpan, remainingCellRowSpan);
+            }
+
+            if (remainingCellRowSpan > 0) {
+                // 如果还有剩余的 rowSpan 没消耗完，说明当前的行仍然和上面的数据行相连，不能做表尾
+                tfootRows = [];
+                remainingCellRowSpan--;
+            } else {
+                // 如果当前行完全没有受到上面 rowSpan 的影响，暂时将其视为表尾的候选行
+                tfootRows.push(row);
+            }
+        }
+
+        // 如果收集到了符合条件的表尾行，将它们追加到 tfoot
+        if (tfootRows.length > 0) {
+            for (let row of tfootRows) {
+                tfoot.appendChild(row);
+            }
+            table.appendChild(tfoot);
+        }
+    }
+    }
+    document.querySelectorAll('table').forEach(table => {
+    emulateTHeadAndFoot(table);
+    });
 }
 

@@ -67,7 +67,7 @@
 				<Icon Name="sync"> </Icon>
 			</div>
 			<span class="text-container">
-				正在处理任务
+				日志
 			</span>
 		</button>
 		<button class="nav-item theme-toggle button" @onclick="ToggleTheme">
@@ -80,10 +80,7 @@
 		</button>
 	</div>
 
-    @if (AppState.LogPanelIsOpen)
-    {
-        <LogPanel/>
-    }
+
 
 </div>
 
@@ -187,8 +184,8 @@
 	
 
 		.nav-item.actived {
-			background-color: var(--blue-tertiary); /* 极淡的蓝 */
-			color: var(--blue-primary);
+			background-color: var(--blue-tertiary) !important; /* 极淡的蓝 */
+			color: var(--blue-primary) !important;
 		}
 
 

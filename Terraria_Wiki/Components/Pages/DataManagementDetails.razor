@@ -8,7 +8,7 @@
         <div class="icon-btn button" @onclick="BackToList">
             <Icon Name="arrow-left" Size="24" />
         </div>
-        <span class="page-title" style="margin-top: -4px;">@_selectedWiki?.Title</span>
+        <span class="page-title">@_selectedWiki?.Title</span>
     </div>
     <div class="list-container detail-container">
         @if (_selectedWiki != null)
@@ -245,12 +245,16 @@
         background-color: var(--bg-color-secondary);
         border-radius: 16px;
         padding: 20px;
+        /* 改用允许换行的 Flex 布局 */
         display: flex;
+        flex-wrap: wrap;
+        gap: 16px; /* 添加元素之间的间距 */
         align-items: stretch;
     }
 
     .stat-item {
-        flex: 1;
+        /* 核心：基础宽度设定为 120px，但允许它们自由放大（flex-grow: 1）或缩小 */
+        flex: 1 1 120px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -271,10 +275,25 @@
         text-align: center;
     }
 
-    /* 操作按钮 */
     .action-row {
-        display: flex;
+        display: grid;
+        /* 默认状态（大屏）：一行 4 个，均分宽度 */
+        grid-template-columns: repeat(4, 1fr);
         gap: 12px;
+    }
+
+    /* 当屏幕宽度小于特定值时触发 */
+    @@media (max-width: 768px) {
+        .action-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* 可选：如果屏幕极窄，强制变成单列 */
+    @@media (max-width: 365px) {
+        .action-row {
+            grid-template-columns: 1fr;
+        }
     }
 
     /* 通用按钮 */

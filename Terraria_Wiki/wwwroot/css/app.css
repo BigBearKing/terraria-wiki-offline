@@ -215,10 +215,10 @@ body.has-hover .button:hover {
 }
 
 
-    .button:active {
-        background-color: var(--pressed-bg);
-        transition: none
-    }
+.button:active {
+    background-color: var(--pressed-bg) !important;
+    transition: none
+}
 
     .button > * {
         transition: inherit;
@@ -295,7 +295,7 @@ body.has-hover .button:hover {
         left: 0;
         width: 100%;
         background-color: var(--bg-color);
-        z-index: 998;
+        z-index: 901;
         padding: 0 8px;
         height: var(--header-height);
         display: flex;

@@ -4,7 +4,13 @@
 @implements IDisposable
 
 <div class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
-    <span class="log-title">日志</span>
+    <div class="log-header">
+        <span class="log-title">日志</span>
+        
+        <div class="close-btn button" @onclick="ClosePanel">
+            <Icon Name="dismiss" />
+        </div>
+    </div>
     <div id="log-container" class="log-container">
         <Virtualize @ref="_virtualize"
                     ItemsProvider="LoadLogs"
@@ -25,6 +31,7 @@
     {
         base.OnInitialized();
         RefreshUI();
+        AppState.OnChange += RefreshUI;
         App.LogManager.OnLogAdded += RefreshUI;
     }
 
@@ -55,14 +62,40 @@
         });
         _isAutoScrolling = false;
     }
+    private void ClosePanel()
+    {
+        AppState.LogPanelIsOpen = false;
+    }
 
     public void Dispose()
     {
         App.LogManager.OnLogAdded -= RefreshUI;
+        AppState.OnChange -= RefreshUI;
     }
 }
 
 <style>
+    .log-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        flex-shrink: 0;
+    }
+    .close-btn{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px; /* 给一个好看的圆角 */
+        color: var(--text-secondary); /* 默认用次要文字颜色，没那么突兀 */
+        cursor: pointer;
+    }
+    body.has-hover .close-btn:hover {
+        background-color: var(--hover-bg);
+        color: var(--text-primary);
+    }
     .log-panel.expanded{
         left: calc(var(--sidebar-width-expanded) + 8px);
         width: 40vw;
@@ -78,12 +111,12 @@
         display: flex;
         flex-direction: column;
         bottom: 4px;
-        transition: width 0.3s left 0.3s;
+        transition: width 0.3s, left 0.3s;
         height: 50vh;
         background: var(--bg-color);
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         border-radius: 16px;
-        z-index: 901;
+        z-index: 902;
     }
 
     .log-title{
@@ -115,5 +148,33 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+@@media (max-width: 768px) {
+        .log-panel.expanded,
+        .log-panel.collapsed {
+            /* 1. 宽度占满屏幕 */
+            left: 0;
+            right: 0;
+            width: 100vw;
+            
+            /* 2. 位居页面最下方 */
+            bottom: 0;
+            
+            /* 3. 高度为屏幕一半 */
+            height: 50vh;
+            
+            
+            /* 移动端视觉优化：底部不需要圆角，顶部保留圆角 */
+            border-radius: 16px 16px 0 0;
+            margin: 0;
+            
+            /* 如果有底栏 bottom-bar，可能需要考虑是否被完全覆盖 */
+        }
+
+        .log-container {
+            /* 移动端缩小内边距，增加显示面积 */
+            border: 8px solid transparent; 
+        }
     }
 </style>

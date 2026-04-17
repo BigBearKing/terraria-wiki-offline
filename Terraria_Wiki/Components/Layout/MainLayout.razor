@@ -1,12 +1,16 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject NavigationManager NavManager
+@using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 
 <div class="app-layout">
 
     <NavMenu />
-
+    @if (AppState.LogPanelIsOpen)
+    {
+        <LogPanel/>
+    }
     <main class="main-area">
 
         <TopBar />
