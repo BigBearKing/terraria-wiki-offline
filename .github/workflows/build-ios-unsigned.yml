@@ -8,7 +8,7 @@ on:
 jobs:
   build-ios:
     # 必须使用 macOS 环境才能编译 iOS
-    runs-on: macos-13 
+    runs-on: macos-latest
 
     steps:
     - name: Checkout repository
@@ -17,7 +17,7 @@ jobs:
     - name: Setup .NET 10.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.0' # 如果你使用的是 .NET 7 或 9，请相应修改
+        dotnet-version: '10.0.x' # 如果你使用的是 .NET 7 或 9，请相应修改
 
     - name: Install MAUI Workloads
       run: dotnet workload install maui
