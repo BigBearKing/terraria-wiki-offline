@@ -1,29 +1,38 @@
 name: Build Unsigned iOS IPA
 
 on:
-  workflow_dispatch: # 允许在 GitHub Actions 页面手动点击运行
+  workflow_dispatch:          # 允许手动触发
   push:
-    branches: [ "main" ] # 监听的分支，根据需要修改
+    branches: [ "main" ]
 
 jobs:
   build-ios:
-    # 必须使用 macOS 环境才能编译 iOS
-    runs-on: macos-latest
+    runs-on: macos-26        # 推荐使用 macos-26，更匹配 .NET 10 + Xcode 26
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Setup Xcode 26.3
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '26.3'   # 如果报错，可改为 '26.2' 或 'latest-stable'
+
+    - name: Verify Xcode Version
+      run: |
+        xcode-select -p
+        xcodebuild -version
+        echo "✅ Xcode version confirmed"
+
     - name: Setup .NET 10.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x' # 如果你使用的是 .NET 7 或 9，请相应修改
+        dotnet-version: '10.0.x'
 
     - name: Install MAUI Workloads
-      run: dotnet workload install maui
+      run: dotnet workload install maui --ignore-failed-sources
 
     - name: Publish iOS App (Unsigned)
-      # 核心参数：使用 "-" 进行 Ad-Hoc 本地伪签名，并禁用 Provisioning Profile 检查
       run: |
         dotnet publish Terraria_Wiki/Terraria_Wiki.csproj \
           -f net10.0-ios \
@@ -31,19 +40,29 @@ jobs:
           -p:RuntimeIdentifier=ios-arm64 \
           -p:CodesignKey="-" \
           -p:CodesignProvision="-" \
-          -p:RequireProvisioningProfile=false
+          -p:RequireProvisioningProfile=false \
+          -p:BuildIpa=true \
+          --verbosity:normal
 
     - name: Package .app to .ipa
-      # 寻找生成的 .app 并将其放进 Payload 文件夹压缩成 ipa
       run: |
-        # 自动查找生成的 .app 文件夹路径
+        # 自动查找生成的 .app（兼容不同输出路径）
         APP_PATH=$(find Terraria_Wiki/bin/Release/net10.0-ios/ios-arm64 -type d -name "*.app" | head -n 1)
-        echo "Found App: $APP_PATH"
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ 未找到 .app 文件！"
+          ls -R Terraria_Wiki/bin/Release/net10.0-ios/
+          exit 1
+        fi
         
-        # 按照 IPA 的标准目录结构打包
-        mkdir Payload
+        echo "✅ Found App: $APP_PATH"
+        
+        mkdir -p Payload
         cp -r "$APP_PATH" Payload/
+        
+        # 打包成 IPA
         zip -qr Terraria_Wiki-Unsigned.ipa Payload
+        
+        echo "✅ IPA 打包完成：Terraria_Wiki-Unsigned.ipa"
 
     - name: Upload Unsigned IPA
       uses: actions/upload-artifact@v4
