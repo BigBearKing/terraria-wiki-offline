@@ -1,7 +1,4 @@
-﻿using HtmlAgilityPack;
-using SQLite;
-using System.Net;
-using System.Text.RegularExpressions;
+﻿using SQLite;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
@@ -22,7 +19,7 @@ public class DatabaseService
         DatabasePath = dbPath;
         Mode = mode;
 
-        var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;    
+        var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;
         string path = Path.GetDirectoryName(DatabasePath);
         if (!Directory.Exists(path))
         {
@@ -160,7 +157,7 @@ public class DatabaseService
         {
             var defaultPage = new WikiPage();
             defaultPage.Title = "Terraria Wiki";
-            defaultPage.Content = "请先下载数据。";
+            defaultPage.Content = "请先下载数据";
             defaultPage.LastModified = DateTime.Now;
             await _db.InsertAsync(defaultPage);
         }

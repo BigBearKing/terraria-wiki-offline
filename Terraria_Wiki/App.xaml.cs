@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-using Terraria_Wiki.Services;
+﻿using Terraria_Wiki.Services;
 using Terraria_Wiki.Models;
 #if WINDOWS
 using Microsoft.UI.Windowing;
 #endif
+
 namespace Terraria_Wiki
 {
     public partial class App : Application
@@ -25,7 +25,7 @@ namespace Terraria_Wiki
             LogManager = logService;
             AppStateManager = appState;
 #if ANDROID
-            MainPage= new MainPage();
+            MainPage = new MainPage();
 #endif
             ThemeService.InitTheme();
             _ = InitializeAsync();
@@ -148,5 +148,5 @@ namespace Terraria_Wiki
         }
 #endif
     }
-        
+
 }

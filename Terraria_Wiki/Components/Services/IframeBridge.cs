@@ -1,6 +1,5 @@
 ﻿using Microsoft.JSInterop;
 using System.Collections.Concurrent;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;

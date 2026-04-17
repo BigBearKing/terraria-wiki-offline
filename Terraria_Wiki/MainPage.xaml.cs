@@ -1,6 +1,4 @@
-﻿using Terraria_Wiki.Services;
-
-namespace Terraria_Wiki
+﻿namespace Terraria_Wiki
 {
     public partial class MainPage : ContentPage
     {

@@ -24,7 +24,7 @@ namespace Terraria_Wiki.Services
                 }
                 else
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "页面不存在。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "页面不存在", "确定");
                     return null;
 
                 }
@@ -97,7 +97,7 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "无法打开链接。", "确定");
+                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "无法打开链接", "确定");
                 }
                 return null;
             };
@@ -131,7 +131,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页", "确定");
             }
 
         }
@@ -147,7 +147,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页。", "确定");
+                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页", "确定");
             }
 
         }

@@ -2,10 +2,7 @@
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
-@using Microsoft.AspNetCore.Components.Web.Virtualization
 @inject NavigationManager NavManager
-@inject IJSRuntime JSRuntime
-@implements IDisposable
 <div class="page-anim page-content">
     <div class="header-with-back">
         <div class="icon-btn button" @onclick="BackToList">
@@ -24,7 +21,7 @@
                     height: 85px;object-fit: contain;" />
                 </div>
                 <h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title: "尚未获取数据")</h3>
-                <p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki。")</p>
+                <p>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Description: "你需要下载基础数据包和资源文件才能离线浏览此 Wiki")</p>
             </div>
             @if (_selectedWiki.IsPageDownloaded)
             {
@@ -94,7 +91,7 @@
                     <div class="download-card">
                         <div class="dl-info">
                             <div class="dl-title">所有内容</div>
-                            <div class="dl-desc">包含所有文本内容、属性和链接关系、图片、音视频。</div>
+                            <div class="dl-desc">包含所有文本内容、属性和链接关系、图片、音视频</div>
                         </div>
                         <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadAll)">
                             下载
@@ -103,7 +100,7 @@
                     <div class="download-card">
                         <div class="dl-info">
                             <div class="dl-title">基础数据</div>
-                            <div class="dl-desc">仅包含所有文本内容、属性和链接关系。</div>
+                            <div class="dl-desc">仅包含所有文本内容、属性和链接关系</div>
                         </div>
                         <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadPages)">
                             下载
@@ -111,14 +108,7 @@
                     </div>
                 </div>
             }
-            <div id="log-container" class="log-container">
-                <Virtualize @ref="_virtualize"
-                            ItemsProvider="LoadLogs"
-                            Context="log"
-                            OverscanCount="20">
-                    <div class="log-line">@log</div>
-                </Virtualize>
-            </div>
+
         }
 
     </div>
@@ -141,59 +131,14 @@
 
 
     }
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        App.LogManager.OnLogAdded += RefreshUI;
 
-    }
-
-    //logs
-
-    private Virtualize<string> _virtualize;
-
-
-    private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)
-    {
-        var total = App.LogManager.GetTotalCount();
-        // 这里读取的永远是当前 _activeLogPath 的内容
-        var items = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
-        return new ItemsProviderResult<string>(items, total);
-    }
-
-    private bool _isAutoScrolling = false; // 防止重入
-
-    private async void RefreshUI()
-    {
-        // 如果正在处理中，跳过
-        if (_isAutoScrolling) return;
-        _isAutoScrolling = true;
-
-        await InvokeAsync(async () =>
-        {
-            // 1. 告诉 Virtualize 数据变了
-            if (_virtualize != null)
-            {
-                await _virtualize.RefreshDataAsync();
-            }
-            StateHasChanged();
-            await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
-        });
-
-        _isAutoScrolling = false;
-    }
-
-    public void Dispose()
-    {
-        App.LogManager.OnLogAdded -= RefreshUI;
-    }
 
     private async Task RunSafe(Func<Task> action)
     {
         // 统一检查
         if (AppState.IsProcessing)
         {
-            await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务", "确定");
             return;
         }
         await action();
@@ -336,7 +281,7 @@
     /* 1. 基础按钮样式重置 */
     .primary-btn {
         /* 移除之前的 background-color 和 color */
-        padding: 12px 20px;
+        padding: 12px;
         border-radius: 12px;
         font-size: 1rem;
         font-weight: 500;
@@ -442,21 +387,4 @@
         line-height: 1.4;
     }
 
-    .log-container {
-        min-height: 200px;
-        max-height: 200px;
-        background-color: var(--bg-color-secondary);
-        border-radius: 16px;
-        padding: 16px;
-        overflow-y: auto;
-        font-size: 0.8rem;
-        overflow-anchor: none;
-    }
-
-    .log-line {
-        color: var(--text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
 </style>

@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Terraria_Wiki.Models;
-using static SQLite.SQLite3;
 
 namespace Terraria_Wiki.Services
 {
@@ -324,7 +323,7 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager?.TriggerAlert("提示", "图片资源等数据删除成功");
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
 
             {
                 _log.Error("发生错误", ex);
@@ -335,7 +334,7 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.IsProcessing = false;
             }
         }
-        
+
         //检查是否有失败列表
         public bool CheckFailList()
         {
@@ -468,7 +467,7 @@ namespace Terraria_Wiki.Services
 
             if (!File.Exists(originalDbPath))
             {
-                _log.Error("没有找到数据库文件，无法导出。");
+                _log.Error("没有找到数据库文件，无法导出");
                 App.AppStateManager?.IsProcessing = false;
                 return;
             }
@@ -572,7 +571,7 @@ namespace Terraria_Wiki.Services
                 // 5. 移动端/Mac端：调用系统分享弹窗 (UI 操作，需在主线程)
                 if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
                 {
-                    await FileHelper.ExportFileAsync(finalPkgPath, exportFileName);
+                    await FileHelper.ExportFileMobileAsync(finalPkgPath);
                 }
 
                 _log.Success($"数据导出成功: {finalPkgPath}");
@@ -627,7 +626,7 @@ namespace Terraria_Wiki.Services
                 {
                     filePath = await FileHelper.ImportFileAsync("请选择导入包");
                 }
-                
+
                 if (string.IsNullOrEmpty(filePath)) return;
 
 
@@ -653,7 +652,7 @@ namespace Terraria_Wiki.Services
                     int jsonLen = reader.ReadInt32();
                     string json = Encoding.UTF8.GetString(reader.ReadBytes(jsonLen));
                     Debug.Write(json);
-                    if(DeviceInfo.Platform == DevicePlatform.WinUI)
+                    if (DeviceInfo.Platform == DevicePlatform.WinUI)
                     {
                         meta = JsonSerializer.Deserialize<WikiPackageInfo>(json, AppJsonContext.Custom.WikiPackageInfo);
                     }
@@ -822,7 +821,7 @@ namespace Terraria_Wiki.Services
             string nextUrl = RedirectStartUrl;
             int pageCount = 1;
             int totalRedirects = 0;
-            _log.AppendLog("开始获取重定向列表");
+            _log.Info("开始获取重定向列表");
             while (!string.IsNullOrEmpty(nextUrl))
             {
                 int retry = 0;
@@ -842,7 +841,6 @@ namespace Terraria_Wiki.Services
                             break;
                         }
 
-                        int countOnPage = 0;
                         var wikiRedirects = new List<WikiRedirect>();
                         foreach (var li in listItems)
                         {
@@ -854,11 +852,11 @@ namespace Terraria_Wiki.Services
                                 string toTitle = HtmlEntity.DeEntitize(links.Last().InnerText);
                                 var wikiRedirect = new WikiRedirect { FromName = fromTitle, ToTarget = toTitle };
                                 wikiRedirects.Add(wikiRedirect);
-                                countOnPage++;
+                                totalRedirects++;
                             }
                         }
                         await App.ContentDb.SaveItemsAsync(wikiRedirects);
-                        _log.AppendLog($"第 {pageCount} 页解析出 {countOnPage} 条重定向");
+                        _log.Info($"第 {pageCount} 页解析完成");
                         var nextLinkNode = doc.DocumentNode.SelectSingleNode("//a[@class='mw-nextlink']");
 
                         if (nextLinkNode != null)
@@ -869,7 +867,7 @@ namespace Terraria_Wiki.Services
                         }
                         else
                         {
-                            _log.Success("重定向列表获取成功");
+                            _log.Success($"重定向列表获取成功，共解析出 {totalRedirects} 条重定向");
                             nextUrl = null;
                             break;
                         }

@@ -16,7 +16,7 @@
 /* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
-    top: var(--header-height);
+    top: calc(var(--header-height) + 4px);
     right: 8px;
     width: 500px;
     max-height: 50vh;

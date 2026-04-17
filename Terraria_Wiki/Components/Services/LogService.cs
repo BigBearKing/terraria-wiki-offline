@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO.Compression;
 using System.Text;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
-using Microsoft.Maui.Storage; // 针对 FileSystem
 
 namespace Terraria_Wiki.Services
 {
@@ -58,7 +53,7 @@ namespace Terraria_Wiki.Services
                 var fileInfo = new FileInfo(_activeLogPath);
 
                 // 只有文件有内容时才归档
-                if (fileInfo.Length > 0)
+                if (FileHelper.IsFileValid(_activeLogPath))
                 {
                     // ★ 核心改变：获取文件的最后修改时间，代表最后一条日志的落盘时间
                     DateTime lastLogTime = fileInfo.LastWriteTime;
@@ -216,6 +211,58 @@ namespace Terraria_Wiki.Services
             if (_streamWriter != null) await _streamWriter.DisposeAsync();
             if (_writeStream != null) await _writeStream.DisposeAsync();
             _offsetLock.Dispose();
+        }
+
+
+        //导出日志
+        public async Task ExportLogsAsync()
+        {
+            // 直接复制当前日志文件到指定位置，简单高效
+            try
+            {
+                string tempZipPath = Path.Combine(FileSystem.CacheDirectory, $"logs_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip");
+                FileHelper.CreateZipFromDirectory(_archiveFolderPath, tempZipPath);
+                await FileHelper.AddFilesToZip(tempZipPath, new[] { _activeLogPath });
+
+                if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                {
+                    await FileHelper.ExportFileMobileAsync(tempZipPath);
+                }
+                else
+                {
+#if WINDOWS
+                    string outputFolder = await FileHelper.PickFolderWindowsAsync();
+                    if (!Directory.Exists(outputFolder))
+                    {
+                        Directory.CreateDirectory(outputFolder);
+                    }
+                    string destinationPath = Path.Combine(outputFolder, Path.GetFileName(tempZipPath));
+                    File.Copy(tempZipPath, destinationPath, true);
+#else
+                    throw new PlatformNotSupportedException("当前平台不支持导出日志功能");
+#endif
+                }
+                App.AppStateManager.TriggerAlert("导出日志成功", Path.GetFileName(tempZipPath));
+            }
+            catch (Exception ex)
+            {
+                App.AppStateManager.TriggerAlert("导出日志失败", $"{ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"导出日志失败: {ex.Message}");
+            }
+            finally
+            {
+                await FileHelper.ClearAppCacheAsync();
+
+            }
+
+        }
+
+        //删除日志
+        public void DeleteLogs()
+        {
+
+            FileHelper.ClearDirectory(_archiveFolderPath);
+            App.AppStateManager.TriggerAlert("提示", "日志已清除");
         }
     }
 }

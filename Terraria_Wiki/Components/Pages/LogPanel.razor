@@ -1,5 +1,119 @@
-﻿<h3>LogPanel</h3>
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Terraria_Wiki.Services
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
+    <span class="log-title">日志</span>
+    <div id="log-container" class="log-container">
+        <Virtualize @ref="_virtualize"
+                    ItemsProvider="LoadLogs"
+                    Context="log"
+                    OverscanCount="20">
+            <div class="log-line">@log</div>
+        </Virtualize>
+    </div>
+</div>
 
 @code {
 
+    private Virtualize<string> _virtualize;
+
+    private bool _isAutoScrolling = false; // 防止重入
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        RefreshUI();
+        App.LogManager.OnLogAdded += RefreshUI;
+    }
+
+    private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)
+    {
+        var total = App.LogManager.GetTotalCount();
+        // 这里读取的永远是当前 _activeLogPath 的内容
+        var items = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
+        return new ItemsProviderResult<string>(items, total);
+    }
+
+    private async void RefreshUI()
+    {
+        // 如果正在处理中，跳过
+        if (_isAutoScrolling) return;
+        _isAutoScrolling = true;
+
+        await InvokeAsync(async () =>
+        {
+            // 1. 告诉 Virtualize 数据变了
+            if (_virtualize != null)
+            {
+                await _virtualize.RefreshDataAsync();
+            }
+            StateHasChanged();
+  
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
+        });
+        _isAutoScrolling = false;
+    }
+
+    public void Dispose()
+    {
+        App.LogManager.OnLogAdded -= RefreshUI;
+    }
 }
+
+<style>
+    .log-panel.expanded{
+        left: calc(var(--sidebar-width-expanded) + 8px);
+        width: 40vw;
+    }
+    .log-panel.collapsed{
+        left: calc(var(--sidebar-width-collapsed) + 8px);
+        width: 50vw;
+    }
+    .log-panel{
+        padding: 12px;
+        gap:12px;
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        bottom: 4px;
+        transition: width 0.3s left 0.3s;
+        height: 50vh;
+        background: var(--bg-color);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        border-radius: 16px;
+        z-index: 901;
+    }
+
+    .log-title{
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-user-select: none;
+        user-select: none;
+        min-width: 0;
+    }
+
+    .log-container {
+        width: 100%;
+        height:100%;
+        background-color: var(--bg-color-secondary);
+        border: 12px solid transparent;
+        border-radius: 16px;
+        overflow-y: auto;
+        font-size: 0.8rem;
+        overflow-anchor: none;
+    }
+
+    .log-line {
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>

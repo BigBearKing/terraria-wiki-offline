@@ -1,14 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.Maui.ApplicationModel.DataTransfer;
-using Microsoft.Maui.Devices;
-using Microsoft.Maui.Storage;
-
-#if WINDOWS
-using Microsoft.Maui.Controls;
-#endif
-
+﻿using System.IO.Compression;
+using System.Text;
 namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
 {
     public static class FileHelper
@@ -42,8 +33,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// 导出文件（Windows 弹出文件夹选择，移动端/Mac 调用原生分享保存）
         /// </summary>
         /// <param name="sourceFilePath">要导出的源文件全路径（必须存在）</param>
-        /// <param name="exportFileName">希望用户保存时的默认文件名</param>
-        public static async Task ExportFileAsync(string sourceFilePath, string exportFileName)
+        public static async Task ExportFileMobileAsync(string sourceFilePath)
         {
             if (string.IsNullOrEmpty(sourceFilePath) || !File.Exists(sourceFilePath))
             {
@@ -219,26 +209,109 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
             await sourceStream.CopyToAsync(destStream);
         }
 
-        //判断文件有效性
+        //判断文件是否为空
         public static bool IsFileValid(string filePath)
         {
+            const long MinValidSize = 1024; // 1KB
+
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return false;
+
+            var fileInfo = new FileInfo(filePath);
+
+            // 大于 1KB 直接判定为有效
+            if (fileInfo.Length > MinValidSize)
+                return true;
+
+            // ≤ 1KB 时才读取内容进行检查
+            if (fileInfo.Length == 0)
+                return false;
+
             try
             {
+                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-                //文件是否存在
-                if (!File.Exists(filePath)) return false;
-                //文件大小是否大于 0 字节
-                FileInfo fileInfo = new FileInfo(filePath);
-                if (fileInfo.Length == 0) return false;
-                return true;
+                byte[] buffer = new byte[fileInfo.Length];
+                int bytesRead = fs.Read(buffer, 0, buffer.Length);
+
+                if (bytesRead == 0)
+                    return false;
+
+                string content = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                // 检查是否全是空白字符（空格、换行、制表符等）或 \0 空字符
+                bool isEmpty = string.IsNullOrWhiteSpace(content) ||
+                               content.All(c => c == '\0' || char.IsWhiteSpace(c));
+
+                return !isEmpty;   // 如果不是空的，则视为有效
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // 捕获权限异常或路径非法异常
-                System.Diagnostics.Debug.WriteLine($"文件有效性检查失败: {ex.Message}");
+                // 读取失败时，保守处理：视为无效（防止异常导致误判）
                 return false;
             }
         }
+
+
+        //清空文件夹
+        public static void ClearDirectory(string path)
+        {
+            if (!Directory.Exists(path))
+                return;
+
+            var directory = new DirectoryInfo(path);
+
+            foreach (FileInfo file in directory.GetFiles("*.*", SearchOption.AllDirectories))
+            {
+                file.Attributes = FileAttributes.Normal;
+                file.Delete();
+            }
+
+            foreach (DirectoryInfo dir in directory.GetDirectories("*.*", SearchOption.AllDirectories))
+            {
+                dir.Delete(true);
+            }
+        }
+
+        //创建zip
+        public static void CreateZipFromDirectory(string sourceDirectory, string zipFilePath, bool overwrite = true)
+        {
+            // 如果 ZIP 已存在且需要覆盖，先删除
+            if (File.Exists(zipFilePath) && overwrite)
+                File.Delete(zipFilePath);
+
+            // 直接把整个目录（含子文件夹）压缩成 ZIP
+            ZipFile.CreateFromDirectory(sourceDirectory, zipFilePath, CompressionLevel.Optimal, false);
+        }
+
+        //添加zip
+        public static async Task AddFilesToZip(string zipFilePath, string[] filesToAdd, bool overwrite = true)
+        {
+            using var stream = new FileStream(zipFilePath,
+                File.Exists(zipFilePath) ? FileMode.Open : FileMode.Create,
+                FileAccess.ReadWrite);
+
+            using var archive = new ZipArchive(stream,
+                File.Exists(zipFilePath) ? ZipArchiveMode.Update : ZipArchiveMode.Create, true);
+
+            foreach (string file in filesToAdd)
+            {
+                if (!File.Exists(file)) continue;
+
+                string entryName = Path.GetFileName(file);
+
+                var existing = archive.GetEntry(entryName);
+                if (existing != null && overwrite)
+                    existing.Delete();
+
+                // ★ 关键：用 FileShare.ReadWrite 打开可能被占用的日志文件
+                using var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                using var entryStream = entry.Open();
+                await fileStream.CopyToAsync(entryStream);   // 改成异步更好
+            }
+        }
+
 
     }
 }

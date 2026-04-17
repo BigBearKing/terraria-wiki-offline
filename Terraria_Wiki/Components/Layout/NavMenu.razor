@@ -1,5 +1,6 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
+@using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 <div class="sidebar-mask @(AppState.SidebarIsExpanded ? "show" : "")" @onclick="CloseSidebar"></div>
 
@@ -61,7 +62,7 @@
 	</nav>
 
 	<div class="sidebar-footer">
-		<button class="nav-item button" style=@(AppState.IsProcessing ? "" : "display:none")>
+		<button class="nav-item button" @onclick="ToggleLogPanel">
 			<div class="icon-container @(AppState.IsProcessing?"rotating":"")" style=" @(AppState.IsProcessing?"color:var(--blue-primary)":"")">
 				<Icon Name="sync"> </Icon>
 			</div>
@@ -78,6 +79,11 @@
 			</span>
 		</button>
 	</div>
+
+    @if (AppState.LogPanelIsOpen)
+    {
+        <LogPanel/>
+    }
 
 </div>
 
@@ -117,6 +123,11 @@
 	{
 
 		AppState.IsDarkTheme = await JSRuntime.InvokeAsync<bool>("toggleTheme",ThemeService.ContentTheme);
+	}
+
+	private void ToggleLogPanel()
+	{
+		AppState.LogPanelIsOpen = !AppState.LogPanelIsOpen;
 	}
 }
 <style>

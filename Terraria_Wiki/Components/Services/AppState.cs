@@ -5,24 +5,25 @@ namespace Terraria_Wiki.Services;
 public class AppState
 {
     private static IJSRuntime? _js;
-    
+
 
     public event Action? OnChange;
     public event Action? OnCurrentPageChanged;
     public event Action? OnSearchQueryChanged;
     public event Action<string, string>? OnShowAlert;
 
-    
+
     public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
     public string AppName { get; set; } = AppInfo.Current.Name;
 
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
+    private bool _logPanelIsOpen = false;
     private bool _isDarkTheme;
     private bool _isProcessing = false;
     private string _currentWikiPage;
     private string _searchQuery = "";
-    
+
 
     public AppState()
     {
@@ -52,6 +53,16 @@ public class AppState
             _sidebarIsExpanded = value;
             OnChange?.Invoke();
 
+        }
+    }
+
+    public bool LogPanelIsOpen
+    {
+        get => _logPanelIsOpen;
+        set
+        {
+            _logPanelIsOpen = value;
+            OnChange?.Invoke();
         }
     }
 
