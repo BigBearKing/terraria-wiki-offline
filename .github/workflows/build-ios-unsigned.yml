@@ -8,7 +8,7 @@ on:
 jobs:
   build-ios:
     # 必须使用 macOS 环境才能编译 iOS
-    runs-on: macos-13 
+    runs-on: macos-latest
 
     steps:
     - name: Checkout repository
