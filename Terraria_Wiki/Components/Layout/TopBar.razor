@@ -185,8 +185,9 @@
 
             if (_isFavorite)
             {
-                await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
                 _isFavorite = false;
+                await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
+                
             }
             else
             {
@@ -195,8 +196,9 @@
                     WikiTitle = AppState.CurrentWikiPage,
                     FavoritedAt = DateTime.Now
                 };
-                await App.ContentDb.SaveItemAsync(newFav);
                 _isFavorite = true;
+                await App.ContentDb.SaveItemAsync(newFav);
+                
             }
 
             // 3. (可选体验优化) 如果本地数据库太快，瞬间就处理完了，
