@@ -2,8 +2,6 @@ name: Build Unsigned iOS IPA
 
 on:
   workflow_dispatch:          # 允许手动触发
-  push:
-    branches: [ "main" ]
 
 jobs:
   build-ios:
