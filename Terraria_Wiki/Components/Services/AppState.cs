@@ -23,6 +23,7 @@ public class AppState
     private bool _isProcessing = false;
     private string _currentWikiPage;
     private string _searchQuery = "";
+    private bool _isPinned = false;
 
 
     public AppState()
@@ -120,4 +121,15 @@ public class AppState
     {
         OnShowAlert?.Invoke(title, message);
     }
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set
+        {
+            _isPinned = value;
+            OnChange?.Invoke();
+        }
+    }
+
 }

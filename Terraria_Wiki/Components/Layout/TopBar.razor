@@ -30,6 +30,12 @@
         </div>
     </div>
 
+    <div class="actions-wrapper" style="display:@(ShouldShowPinButton() ? "" : "none")">
+        <button class="action-btn button" title="置顶" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "");" @onclick="TogglePinStateAsync">
+            <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
+        </button>
+    </div>
+
 
 </header>
 <style>
@@ -60,7 +66,7 @@
 
             }
         }
-        
+
     }
 
     protected override async Task OnParametersSetAsync()
@@ -136,6 +142,7 @@
         };
     }
 
+
     private bool ShouldShowSearch()
     {
         return AppState.CurrentPage switch
@@ -187,7 +194,7 @@
             {
                 _isFavorite = false;
                 await App.ContentDb.DeleteItemAsync<WikiFavorite>(AppState.CurrentWikiPage);
-                
+
             }
             else
             {
@@ -198,7 +205,7 @@
                 };
                 _isFavorite = true;
                 await App.ContentDb.SaveItemAsync(newFav);
-                
+
             }
 
             // 3. (可选体验优化) 如果本地数据库太快，瞬间就处理完了，
@@ -265,4 +272,27 @@
         AppState.SearchQuery = "";
     }
 
+    private bool ShouldShowPinButton()
+    {
+        if (DeviceInfo.Platform == DevicePlatform.WinUI|| DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private async Task TogglePinStateAsync()
+    {
+        if (AppState.IsPinned)
+        {
+            AppService.SetAlwaysOnTop(Application.Current.Windows[0], false);
+            AppState.IsPinned = false;
+
+        }
+        else
+        {
+            AppService.SetAlwaysOnTop(Application.Current.Windows[0], true);
+            AppState.IsPinned = true;
+        }
+    }
 }
