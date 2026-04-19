@@ -118,7 +118,7 @@
                         <span class="setting-desc">导出当前数据到本地文件</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ExportData)">
-                        @_exportMessage
+                    @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].ProcessingText : "导出")
                     </button>
                 </div>
                 <div class="setting-item">
@@ -127,7 +127,7 @@
                         <span class="setting-desc">从本地文件导入数据库</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ImportData)">
-                        @_importMessage
+                    @(AppState.ProcessingTaskId == 10 ? AppState.Tasks[10].ProcessingText : "选择文件")
                     </button>
                 </div>
             </div>
@@ -161,7 +161,7 @@
                         <span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(CheckUpdateCommand)">
-                        @_checkUpdateMessage
+                    @(AppState.ProcessingTaskId == 1 ? AppState.Tasks[1].ProcessingText : "检查更新")
                     </button>
                 </div>
                 <div class="setting-item">
@@ -179,6 +179,21 @@
     </div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += RefreshUI;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= RefreshUI;
+    }
+
+    private void RefreshUI()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private string AppTheme
     {
         get => ThemeService.AppTheme;
@@ -247,9 +262,6 @@
     private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
     private string BuildNumber => AppInfo.Current.BuildString;
     private string Author => "BigBearKing";
-    private string _checkUpdateMessage = "检查更新";
-    private string _exportMessage = "导出";
-    private string _importMessage = "选择文件";
     private async Task RunSafe(Func<Task> action)
     {
         // 统一检查

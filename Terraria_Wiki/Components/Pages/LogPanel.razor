@@ -5,8 +5,11 @@
 
 <div class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
     <div class="log-header">
-        <span class="log-title">日志</span>
-        
+        <div class="left-group">
+            <span class="log-title">日志</span>
+            <span class="log-info">@(AppState.ProcessingTaskId != 0 ? "当前任务：" + AppState.Tasks[AppState.ProcessingTaskId].Name : "")</span>
+        </div>
+
         <div class="close-btn button" @onclick="ClosePanel">
             <Icon Name="dismiss" />
         </div>
@@ -39,7 +42,7 @@
         if (firstRender)
         {
             // ✅ 关键 1：等待 50ms，让 Virtualize 有足够时间去计算高度并把 Div 渲染出来
-            await Task.Delay(50);
+            await Task.Delay(30);
             
             try
             {
@@ -96,7 +99,8 @@
         width: 100%;
         flex-shrink: 0;
     }
-    .close-btn{
+
+    .close-btn {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -106,21 +110,25 @@
         color: var(--text-secondary); /* 默认用次要文字颜色，没那么突兀 */
         cursor: pointer;
     }
+
     body.has-hover .close-btn:hover {
         background-color: var(--hover-bg);
         color: var(--text-primary);
     }
-    .log-panel.expanded{
+
+    .log-panel.expanded {
         left: calc(var(--sidebar-width-expanded) + 8px);
         width: 40vw;
     }
-    .log-panel.collapsed{
+
+    .log-panel.collapsed {
         left: calc(var(--sidebar-width-collapsed) + 8px);
         width: 50vw;
     }
-    .log-panel{
+
+    .log-panel {
         padding: 12px;
-        gap:12px;
+        gap: 12px;
         position: fixed;
         display: flex;
         flex-direction: column;
@@ -133,11 +141,27 @@
         z-index: 902;
     }
 
-    .log-title{
+    .left-group{
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+    }
+
+    .log-title {
         font-size: 1.1rem;
         font-weight: 600;
         color: var(--text-primary);
-        
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-user-select: none;
+        user-select: none;
+        min-width: 0;
+    }
+
+    .log-info {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -148,7 +172,7 @@
 
     .log-container {
         width: 100%;
-        height:100%;
+        height: 100%;
         background-color: var(--bg-color-secondary);
         border: 12px solid transparent;
         border-radius: 16px;
@@ -164,31 +188,26 @@
         text-overflow: ellipsis;
     }
 
-@@media (max-width: 768px) {
+    @@media (max-width: 768px) {
         .log-panel.expanded,
         .log-panel.collapsed {
             /* 1. 宽度占满屏幕 */
             left: 0;
             right: 0;
             width: 100vw;
-            
             /* 2. 位居页面最下方 */
             bottom: 0;
-            
             /* 3. 高度为屏幕一半 */
             height: 50vh;
-            
-            
             /* 移动端视觉优化：底部不需要圆角，顶部保留圆角 */
             border-radius: 16px 16px 0 0;
             margin: 0;
-            
             /* 如果有底栏 bottom-bar，可能需要考虑是否被完全覆盖 */
         }
 
         .log-container {
             /* 移动端缩小内边距，增加显示面积 */
-            border: 8px solid transparent; 
+            border: 8px solid transparent;
         }
     }
 </style>

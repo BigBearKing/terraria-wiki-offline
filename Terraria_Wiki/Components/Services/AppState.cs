@@ -28,7 +28,7 @@ public class AppState
     public readonly Dictionary<int, TaskConfig> Tasks = new()
     {
         { 1, new TaskConfig { Id = 1, Name = "检查软件更新", ProcessingText = "正在检查更新" } },
-        { 2, new TaskConfig { Id = 2, Name = "下载所有页面和资源", ProcessingText = "正在下载" } },
+        { 2, new TaskConfig { Id = 2, Name = "下载所有页面", ProcessingText = "正在下载" } },
         { 3, new TaskConfig { Id = 3, Name = "下载所有资源", ProcessingText = "正在下载" } },
         { 4, new TaskConfig { Id = 4, Name = "更新数据", ProcessingText = "正在更新" } },
         { 5, new TaskConfig { Id = 5, Name = "清理未用资源", ProcessingText = "正在清理" }  },
@@ -104,7 +104,10 @@ public class AppState
 
             _processingTaskId = value;
             OnChange?.Invoke();
-
+            if(value != 0)
+            {
+                LogPanelIsOpen = true;
+            }
         }
     }
 
