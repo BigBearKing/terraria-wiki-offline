@@ -124,6 +124,16 @@
             }, { capture: true });
         };
 
+        window.scrollToBottomImmediate = (elementId) => {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.scrollTop = element.scrollHeight;
+                console.log("成功");
+            } else {
+                console.log("还没画完");
+            }
+        };
+
         window.scrollToBottom = (elementId) => {
             var element = document.getElementById(elementId);
             if (!element) return;

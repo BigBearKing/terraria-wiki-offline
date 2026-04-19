@@ -30,9 +30,23 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        RefreshUI();
         AppState.OnChange += RefreshUI;
         App.LogManager.OnLogAdded += RefreshUI;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // ✅ 关键 1：等待 50ms，让 Virtualize 有足够时间去计算高度并把 Div 渲染出来
+            await Task.Delay(50);
+            
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("scrollToBottomImmediate", "log-container");
+            }
+            catch (Exception) { /* 忽略在组件销毁时偶尔触发的 JS 异常 */ }
+        }
     }
 
     private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)

@@ -76,6 +76,8 @@ public class WikiAsset
     public byte[] Data { get; set; }     // 图片的二进制数据
 
     public string MimeType { get; set; } // 文件类型 (如 "image/png")
+
+    public DateTime? LastModified { get; set; } = DateTime.MinValue;
 }
 
 public class ManagerDbService : DatabaseService

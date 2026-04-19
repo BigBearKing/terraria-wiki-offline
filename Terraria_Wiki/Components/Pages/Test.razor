@@ -1,16 +1,103 @@
 ﻿@page "/test"
+@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
+@using System.Net
 <h3>Test</h3>
 
-<button class="button" @onclick="ShowAlert">Click Me</button>
+<button class="button" @onclick="ShowAlert">ShowAlert</button>
+<button class="button" @onclick="PrintAssetInfo">PrintAssetInfo</button>
+<div style="display:flex">
+    <input type="text" @bind="fileUrl" placeholder="输入文件 URL" style="flex:1; margin-right:10px;" />
+    <button class="button" @onclick="() => TestAssetUpdateLogicAsync(fileUrl)">Test Asset Update</button>
+</div>
+
 
 @code {
+    private string fileUrl;
 
     private void ShowAlert()
     {
         (Application.Current.MainPage as MainPage)?.ShowLoadingPopup("标题", "内容");
     }
 
+    private async Task PrintAssetInfo()
+    {
+        var assetsInfo = await App.ContentDb.GetAllAssetsMetadataAsync();
+        App.LogManager.Info($"共计 {assetsInfo.Count} 个资源文件。");
+        foreach (var asset in assetsInfo)
+        {
+            // 计算文件大小，转换为 KB，保留两位小数
+            double sizeInKb = asset.FileSize / 1024.0;
+            string sizeStr = FileHelper.GetSizeString(asset.FileSize);
+        
+            // 格式化时间，如果没有时间则显示 "未知时间"
+            string timeStr = asset.LastModified.HasValue
+                ? asset.LastModified.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                : "未知时间";
 
+            // 输出示例：[2024-05-12 10:00:00] logo.png - 14.50 KB
+            App.LogManager.Info($"[{timeStr}] {asset.FileName} - {sizeStr}");
+        }
+
+    
+    }
+
+    public async Task TestAssetUpdateLogicAsync(string fileUrl)
+    {
+        try
+        {
+            string fileName = DataService.GetFileNameFromUrl(fileUrl);
+            // 1. 去数据库查本地记录
+            WikiAsset existingAsset = null;
+            if (await App.ContentDb.ItemExistsAsync<WikiAsset>(fileName))
+            {
+                existingAsset = await App.ContentDb.GetItemAsync<WikiAsset>(fileName);
+            }
+
+            // 2. 构造 HTTP 请求
+            using var request = new HttpRequestMessage(HttpMethod.Get, fileUrl);
+
+            string logMessage = $"正在测试文件: {fileName}";
+
+            // 如果有本地记录，加上时间戳验证
+            if (existingAsset != null && existingAsset.LastModified.HasValue)
+            {
+                var localTimeUtc = DateTime.SpecifyKind(existingAsset.LastModified.Value, DateTimeKind.Utc);
+                request.Headers.IfModifiedSince = new DateTimeOffset(localTimeUtc);
+                App.LogManager.Info($"📍 本地记录存在，最后修改时间: {localTimeUtc} (UTC)");
+            }
+            else
+            {
+                App.LogManager.Info($"📍 本地无此文件记录或无时间戳，预期行为：必须下载。");
+            }
+
+            // 3. 发送请求（仅读取头部，不下载 Body，极速测试）
+            using var response = await App.DataManager.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+            // 4. 解析结果
+            if (response.StatusCode == HttpStatusCode.NotModified)
+            {
+                App.LogManager.Info("✅ 测试结果：【不需要更新】 (服务器返回 304 Not Modified)");
+
+            }
+            else if (response.StatusCode == HttpStatusCode.OK)
+            {
+                // 如果返回 200，抓取一下服务器的最新时间看看
+                DateTime? remoteTime = response.Content.Headers.LastModified?.UtcDateTime;
+                App.LogManager.Info($"🔄 测试结果：【需要更新】 (服务器返回 200 OK)\n服务器文件的最新时间为: {remoteTime?.ToString() ?? "未知"}");
+
+            }
+            else
+            {
+                App.LogManager.Info($"⚠️ 测试结果：【异常状态】 服务器返回了 {response.StatusCode}");
+
+            }
+        }
+        catch (Exception ex)
+        {
+            App.LogManager.Info($"❌ 测试失败，发生错误: {ex.Message}");
+        }
+    }
 
 
 }

@@ -494,6 +494,23 @@ public class DatabaseService
             isDesc: isDesc);
     }
 
+    // 获取所有资源的元数据（名称、大小、时间），避免加载实际的二进制数据爆内存
+    public async Task<List<AssetMetadata>> GetAllAssetsMetadataAsync()
+    {
+        await Init();
+
+        // 核心技巧：使用 length(Data) 直接在数据库层获取二进制列的长度，绝不提取实际数据
+        string sql = @"
+            SELECT 
+                FileName, 
+                length(Data) AS FileSize, 
+                LastModified 
+            FROM WikiAsset 
+            ORDER BY LastModified DESC"; // 按照修改时间倒序排，或者改成 ORDER BY FileName ASC
+
+        return await _db.QueryAsync<AssetMetadata>(sql);
+    }
+
 }
 
 

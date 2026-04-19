@@ -40,6 +40,7 @@ namespace Terraria_Wiki.Services
         private int _pageConcurrency;
         private int _resConcurrency;
 
+        public HttpClient HttpClient => _httpClient;
         public DataService(LogService logService)
         {
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
@@ -1016,16 +1017,23 @@ namespace Terraria_Wiki.Services
             _log.Info($"开始下载资源文件，共 {totalCount} 个");
             async Task ProcessResLine(int workerId, string url)
             {
-
+                bool changeData = false;
                 string fileName = DataService.GetFileNameFromUrl(url);
                 try
                 {
-                    await DownloadAndSaveResToDbAsync(url, fileName);
+                    changeData = await DownloadAndSaveResToDbAsync(url, fileName);
                 }
                 finally
                 {
                     int c = Interlocked.Increment(ref currentCount);
-                    _log.Info($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
+                    if(changeData)
+                    {
+                        _log.Info($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
+                    }
+                    else
+                    {
+                        _log.Info($"[Worker {workerId}] {c}/{totalCount} 跳过资源: {fileName}");
+                    }
                 }
 
             }
@@ -1172,20 +1180,55 @@ namespace Terraria_Wiki.Services
             return Regex.Replace(plainText, @"\s+", " ").Trim();
         }
 
-        private async Task DownloadAndSaveResToDbAsync(string url, string fileName)
+        private async Task<bool> DownloadAndSaveResToDbAsync(string url, string fileName)
         {
-            using var response = await _httpClient.GetAsync(url);
+            // 1. 尝试从数据库获取已存在的资源记录
+            WikiAsset existingAsset = null;
+            if (await App.ContentDb.ItemExistsAsync<WikiAsset>(fileName))
+            {
+                existingAsset = await App.ContentDb.GetItemAsync<WikiAsset>(fileName);
+            }
+
+            // 2. 构造请求
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+            // 如果本地已存在该资源，并且记录了最后修改时间，将其加入请求头验证
+            if (existingAsset != null && existingAsset.LastModified != null)
+            {
+                var localTimeUtc = DateTime.SpecifyKind(existingAsset.LastModified.Value, DateTimeKind.Utc);
+                request.Headers.IfModifiedSince = new DateTimeOffset(localTimeUtc);
+            }
+
+            // 3. 发送请求
+            using var response = await _httpClient.SendAsync(request);
+
+            // ================= 核心更新逻辑 =================
+            // 4. 如果服务器返回 304 Not Modified，说明云端资源未更改，无需重新下载耗费流量和性能
+            if (response.StatusCode == HttpStatusCode.NotModified)
+            {
+                // 资源没变，直接返回即可
+                return false;
+            }
+
+            // 如果返回其他错误状态码（如 404 / 500 等），抛出异常以进入外层的失败重试循环
             response.EnsureSuccessStatusCode();
 
+            // 5. 如果返回 200 OK，说明有更新或首次下载，读取新数据
             string mimeType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
             byte[] data = await response.Content.ReadAsByteArrayAsync();
 
+            // 6. 提取服务器返回的最后修改时间（Last-Modified），如果服务器没给，则用当前系统时间兜底
+            DateTime lastModifiedDate = response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+
+            // 7. 保存或覆盖更新到数据库
             await App.ContentDb.SaveItemAsync(new WikiAsset
             {
                 FileName = fileName,
                 Data = data,
-                MimeType = mimeType
+                MimeType = mimeType,
+                LastModified = lastModifiedDate // 记录本次更新的时间
             });
+            return true;
         }
 
         // ================= 辅助工具方法 =================
@@ -1235,7 +1278,6 @@ namespace Terraria_Wiki.Services
             {
                 File.Delete(_updateResListPath);
             }
-            _log.Info("临时文件清理完毕");
         }
 
         //清理 URL 中的查询参数，获取干净的文件名
@@ -1246,7 +1288,7 @@ namespace Terraria_Wiki.Services
         }
 
         // 从 URL 中提取文件名，并进行 URL 解码
-        private static string GetFileNameFromUrl(string url)
+        public static string GetFileNameFromUrl(string url)
         {
             string cleanUrl = DataService.CleanUpUrl(url);
             string name = cleanUrl.Substring(cleanUrl.LastIndexOf('/') + 1);

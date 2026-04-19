@@ -198,6 +198,8 @@
         if (isConfirmed)
         {
             _ = App.DataManager.DeleteResAsync();
+            BackToList();
+            
 
         }
     }
@@ -207,8 +209,8 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认删除整个数据库（包含收藏、历史）吗？", "确定", "取消");
         if (isConfirmed)
         {
-            _ = App.DataManager.DeleteDatabase();
-
+            await App.DataManager.DeleteDatabase();
+            BackToList();
         }
     }
 
@@ -319,19 +321,19 @@
         user-select: none;
     }
 
-        /* 2. 交互反馈 (通用) */
-        body.has-hover .primary-btn:hover {
-            /* 悬停时：整体提亮 20% */
-            /* 在深色背景下，brightness > 1 会让半透明色块显得更“实”、更亮 */
-            filter: brightness(1.2);
-        }
+    /* 2. 交互反馈 (通用) */
+    body.has-hover .primary-btn:hover {
+        /* 悬停时：整体提亮 20% */
+        /* 在深色背景下，brightness > 1 会让半透明色块显得更“实”、更亮 */
+        filter: brightness(1.2);
+    }
     
 
-        .primary-btn:active {
-            /* 点击时：稍微变暗并缩小，产生“按压感” */
-            filter: brightness(1.0); /* 恢复亮度或稍微暗一点 */
-            transform: scale(0.97); /* 物理回弹效果 */
-        }
+    .primary-btn:active {
+        /* 点击时：稍微变暗并缩小，产生“按压感” */
+        filter: brightness(1.0); /* 恢复亮度或稍微暗一点 */
+        transform: scale(0.97); /* 物理回弹效果 */
+    }
 
     /* === 颜色变体 (Tinted Style) === */
 

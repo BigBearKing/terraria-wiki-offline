@@ -125,3 +125,11 @@ public class FileMeta
     public long Size { get; set; }
     public string MD5 { get; set; }
 }
+
+public class AssetMetadata
+{
+    public string FileName { get; set; }
+    // SQLite 的 length() 函数返回的是 long 类型（字节数）
+    public long FileSize { get; set; }
+    public DateTime? LastModified { get; set; }
+}
