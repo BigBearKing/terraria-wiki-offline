@@ -133,3 +133,10 @@ public class AssetMetadata
     public long FileSize { get; set; }
     public DateTime? LastModified { get; set; }
 }
+
+public class TaskConfig
+{
+    public int Id { get; set; }             // 任务ID
+    public string Name { get; set; }        // 操作名称（按钮默认文字）
+    public string ProcessingText { get; set; } // 按钮正在运行时的文字
+}

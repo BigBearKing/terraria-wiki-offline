@@ -1,5 +1,4 @@
-﻿using System.IO.Compression;
-using System.Text;
+﻿using System.Text;
 using System.Threading.Channels;
 
 namespace Terraria_Wiki.Services

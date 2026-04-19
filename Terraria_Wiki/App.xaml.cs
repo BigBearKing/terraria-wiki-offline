@@ -1,5 +1,5 @@
-﻿using Terraria_Wiki.Services;
-using Terraria_Wiki.Models;
+﻿using Terraria_Wiki.Models;
+using Terraria_Wiki.Services;
 #if WINDOWS
 using Microsoft.UI.Windowing;
 #endif

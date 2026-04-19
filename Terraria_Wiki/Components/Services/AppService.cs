@@ -170,11 +170,6 @@ namespace Terraria_Wiki.Services
         {
             if (App.AppStateManager.CurrentPage == pageName)
                 return;
-            //if (App.AppStateManager.IsProcessing)
-            //{
-            //    Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务。", "确定");
-            //    return;
-            //}
 
             App.AppStateManager.CurrentPage = pageName;
             _navManager.NavigateTo(App.AppStateManager.CurrentPage);
@@ -209,37 +204,37 @@ namespace Terraria_Wiki.Services
             if (window?.Handler?.PlatformView == null) return;
 
 #if WINDOWS
-        // 获取 Windows 原生窗口实例
-        var nativeWindow = window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
-        if (nativeWindow != null)
-        {
-            // 通过 Win32 互操作获取 AppWindow
-            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-            
-            // 设置置顶属性
-            if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+            // 获取 Windows 原生窗口实例
+            var nativeWindow = window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
+            if (nativeWindow != null)
             {
-                presenter.IsAlwaysOnTop = isAlwaysOnTop;
+                // 通过 Win32 互操作获取 AppWindow
+                var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+                // 设置置顶属性
+                if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                {
+                    presenter.IsAlwaysOnTop = isAlwaysOnTop;
+                }
             }
-        }
 #elif MACCATALYST
-        // 获取 Mac Catalyst 的底层 UIWindow
-        var nativeWindow = window.Handler.PlatformView as UIKit.UIWindow;
-        if (nativeWindow != null)
-        {
-            if (isAlwaysOnTop)
+            // 获取 Mac Catalyst 的底层 UIWindow
+            var nativeWindow = window.Handler.PlatformView as UIKit.UIWindow;
+            if (nativeWindow != null)
             {
-                // 将窗口层级调高（超过普通弹窗层级），实现置顶
-                nativeWindow.WindowLevel = UIKit.UIWindowLevel.Alert + 1;
+                if (isAlwaysOnTop)
+                {
+                    // 将窗口层级调高（超过普通弹窗层级），实现置顶
+                    nativeWindow.WindowLevel = UIKit.UIWindowLevel.Alert + 1;
+                }
+                else
+                {
+                    // 恢复普通层级
+                    nativeWindow.WindowLevel = UIKit.UIWindowLevel.Normal;
+                }
             }
-            else
-            {
-                // 恢复普通层级
-                nativeWindow.WindowLevel = UIKit.UIWindowLevel.Normal;
-            }
-        }
 #endif
         }
 

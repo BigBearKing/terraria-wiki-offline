@@ -19,7 +19,6 @@ namespace Terraria_Wiki.Services
 
         public async Task<UpdateCheckResult?> CheckForUpdatesAsync()
         {
-            App.AppStateManager.IsProcessing = true;
             try
             {
                 // 1. 构建 GitHub API URL 获取 Latest Release
@@ -60,10 +59,6 @@ namespace Terraria_Wiki.Services
             catch (Exception ex)
             {
                 throw (ex);
-            }
-            finally
-            {
-                App.AppStateManager.IsProcessing = false;
             }
         }
     }

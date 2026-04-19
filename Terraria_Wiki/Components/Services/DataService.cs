@@ -52,7 +52,7 @@ namespace Terraria_Wiki.Services
         public async Task DownloadDataAsync(bool isAll)
         {
             // 1. 锁定状态
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 2;
             if (isAll)
             {
                 _log.Info("开始下载所有页面和资源");
@@ -111,7 +111,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
 
             }
         }
@@ -119,7 +119,7 @@ namespace Terraria_Wiki.Services
         public async Task DownloadResAsync()
         {
             // 1. 锁定状态
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 3;
             _log.Info("开始下载所有资源");
 
             try
@@ -159,7 +159,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
 
             }
         }
@@ -167,7 +167,7 @@ namespace Terraria_Wiki.Services
         //更新页面和资源
         public async Task UpdateDataAsync(bool isAll)
         {
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 4;
             if (isAll)
             {
                 _log.Info("开始更新所有页面和资源");
@@ -230,7 +230,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
 
             }
         }
@@ -284,7 +284,7 @@ namespace Terraria_Wiki.Services
         //清理数据库
         public async Task CleanUpResAsync()
         {
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 5;
             _log.Info("开始清理未用资源");
             try
             {
@@ -301,7 +301,7 @@ namespace Terraria_Wiki.Services
             finally
             {
 
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
 
         }
@@ -309,7 +309,7 @@ namespace Terraria_Wiki.Services
         //删除图片资源
         public async Task DeleteResAsync()
         {
-            App.AppStateManager.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 6;
             _log.Info("开始删除图片资源等数据");
             try
             {
@@ -332,14 +332,14 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
         }
 
         //检查是否有失败列表
         public bool CheckFailList()
         {
-            if (App.AppStateManager.IsProcessing)
+            if (App.AppStateManager.ProcessingTaskId != 0)
             {
                 return false;
             }
@@ -355,7 +355,7 @@ namespace Terraria_Wiki.Services
         //重试失败列表
         public async Task RetryFailList()
         {
-            App.AppStateManager.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 7;
             try
             {
                 bool isAll = true;
@@ -394,7 +394,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
         }
 
@@ -418,7 +418,7 @@ namespace Terraria_Wiki.Services
         //删除文件夹
         public async Task DeleteDatabase()
         {
-            App.AppStateManager.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 8;
             _log.Info("正在删除数据库文件");
             try
             {
@@ -442,7 +442,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
-                App.AppStateManager.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
 
         }
@@ -456,7 +456,7 @@ namespace Terraria_Wiki.Services
         //导出数据
         public async Task ExportData()
         {
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 9;
             _log.Info("开始导出数据");
             string exportPath = null;
             string finalPkgPath = null;
@@ -469,7 +469,7 @@ namespace Terraria_Wiki.Services
             if (!File.Exists(originalDbPath))
             {
                 _log.Error("没有找到数据库文件，无法导出");
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
                 return;
             }
 
@@ -597,14 +597,14 @@ namespace Terraria_Wiki.Services
                     _ = FileHelper.ClearAppCacheAsync();
                 }
 
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
         }
 
         //导入数据
         public async Task ImportData()
         {
-            App.AppStateManager?.IsProcessing = true;
+            App.AppStateManager?.ProcessingTaskId = 10;
             _log.Info("开始导入数据");
             string filePath = null;
 
@@ -750,7 +750,7 @@ namespace Terraria_Wiki.Services
                 {
                     mainPage.HideLoadingPopup();
                 }
-                App.AppStateManager?.IsProcessing = false;
+                App.AppStateManager?.ProcessingTaskId = 0;
             }
         }
 
@@ -1026,7 +1026,7 @@ namespace Terraria_Wiki.Services
                 finally
                 {
                     int c = Interlocked.Increment(ref currentCount);
-                    if(changeData)
+                    if (changeData)
                     {
                         _log.Info($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
                     }

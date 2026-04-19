@@ -63,7 +63,7 @@
 
 	<div class="sidebar-footer">
 		<button class="nav-item button" @onclick="ToggleLogPanel">
-			<div class="icon-container @(AppState.IsProcessing?"rotating":"")" style=" @(AppState.IsProcessing?"color:var(--blue-primary)":"")">
+			<div class="icon-container @(AppState.ProcessingTaskId != 0?"rotating":"")" style=" @(AppState.ProcessingTaskId != 0?"color:var(--blue-primary)":"")">
 				<Icon Name="sync"> </Icon>
 			</div>
 			<span class="text-container">
