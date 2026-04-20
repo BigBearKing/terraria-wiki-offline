@@ -128,9 +128,7 @@
             var element = document.getElementById(elementId);
             if (element) {
                 element.scrollTop = element.scrollHeight;
-                console.log("成功");
             } else {
-                console.log("还没画完");
             }
         };
 
@@ -142,7 +140,7 @@
             // 公式：总高度 - (卷去的高度 + 可视窗口高度)
             var distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
 
-            var threshold = 80;
+            var threshold = 100;
 
             // 3. 只有当用户“就在底部附近”时，才自动滚动
             if (distanceToBottom < threshold) {

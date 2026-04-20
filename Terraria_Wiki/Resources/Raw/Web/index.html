@@ -11,6 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Terraria Wiki</title>
     <script type="module" src="app.js" defer></script>
+    <script type="module" src="viewer/viewer.min.js"></script>
+    <link rel="stylesheet" href="viewer/viewer.min.css" />
 </head>
 
 
@@ -72,57 +74,26 @@
 
         </footer>
     </div>
-    <div id="image-modal" class="hidden">
 
-        <img id="modal-full-image" src="" alt="原图" />
-    </div>
     <div id="loading-mask"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; cursor: wait;">
     </div>
 
 </body>
 <style>
-    /* 模态框背景层 */
-    #image-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.9);
-        /* 半透明纯黑背景 */
-        z-index: 9999;
-        /* 确保它盖住所有 UI，包括应用的顶栏/底栏 */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        pointer-events: none;
-        /* 隐藏时不可点击 */
-        transition: opacity 0.2s ease-in-out;
-        /* 简单的淡入淡出动画 */
+    body {
+        padding-right: 0 !important;
     }
 
-    /* 显示模态框的状态类 */
-    #image-modal.show {
-        opacity: 1;
-        pointer-events: auto;
+    /* 覆盖 Viewer.js 全局的形变/缩放动画速度 */
+    .viewer-transition {
+        transition: all 0.15s !important;
+        /* 默认通常是 0.3s，数值越小越快 */
     }
 
-    /* 内部的大图 */
-    #image-modal img {
-        max-width: 95%;
-        max-height: 90%;
-        object-fit: contain;
-        /* 保持比例缩放，绝不拉伸变形 */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    }
-
-
-    html.modal-open {
-        overflow: hidden !important;
-        touch-action: none !important;
+    /* 覆盖 Viewer.js 背景和遮罩层的淡入淡出速度 */
+    .viewer-fade {
+        transition: opacity 0.15s !important;
     }
 
     .mclist {

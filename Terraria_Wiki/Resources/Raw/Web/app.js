@@ -177,25 +177,27 @@ async function redirect(title) {
 }
 
 function openThumb(thumb) {
-    const modal = document.getElementById('image-modal');
-    const modalImg = document.getElementById('modal-full-image');
-    if (thumb.querySelector('img') == null) return;
-    modalImg.src = thumb.querySelector('img').src;
-    document.documentElement.classList.add('modal-open');
-    modal.classList.add('show');
-    if (modal.dataset.closeBound !== 'true') {
-        modal.dataset.closeBound = 'true';
+    const img = thumb.querySelector('img');
+    if (!img) return;
 
-        modal.addEventListener('click', function () {
-            // 隐藏模态框
-            modal.classList.remove('show');
-            document.documentElement.classList.remove('modal-open');
-            // 延迟一点清空 src，防止出现“图片突然消失”的闪烁感，同时释放大图内存
-            setTimeout(() => {
-                modalImg.src = '';
-            }, 200);
-        });
-    }
+    // 每次点击实例化一个 Viewer
+    const viewer = new Viewer(img, {
+        inline: false,       // 模态框全屏模式
+        button: true,        // 显示右上角关闭按钮
+        navbar: false,       // 隐藏底部的缩略图导航栏 (单图不需要)
+        title: true,        // 隐藏图片标题
+        toolbar: false,       // 显示底部的放大/缩小/复原等工具栏
+        backdrop: true,      // 点击黑色背景关闭
+        zoomRatio: 0.3,      // 滚轮缩放的灵敏度
+        hidden: function () {
+            // 当模态框完全隐藏后，销毁实例释放内存
+            viewer.destroy();
+        },
+
+    });
+
+    // 主动触发显示
+    viewer.show();
 }
 
 function changTheme(isDarkTheme) {
