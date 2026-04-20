@@ -158,7 +158,7 @@
         // 统一检查
         if (AppState.ProcessingTaskId != 0)
         {
-            await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "请稍后，正在处理任务", "确定");
+            AppState.TriggerAlert("提示", "请稍后，正在处理任务");
             return;
         }
         await action();

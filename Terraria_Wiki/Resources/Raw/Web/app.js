@@ -130,7 +130,7 @@ async function gotoPage(title) {
     };
     document.getElementById("loading-mask").style.display = "block";
     try {
-        
+
         const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
 
         if (await redirect(titleWithAnchor.title) == null) return;
@@ -211,7 +211,99 @@ function changTheme(isDarkTheme) {
 }
 
 
+// 自定义右键菜单逻辑
 
+function initContextMenu() {
+    const contextMenu = document.getElementById('custom-context-menu');
+    let rightClickTarget = null;
+
+    // --- 提取公共的隐藏菜单方法 ---
+    function hideMenu() {
+        if (contextMenu.classList.contains('show-menu')) {
+            contextMenu.classList.remove('show-menu');
+            window.removeEventListener('scroll', hideMenu);
+        window.removeEventListener('wheel', hideMenu);
+        }
+    }
+
+    // 1. 监听全局右键事件
+    document.addEventListener('contextmenu', function (e) {
+        contextMenu.classList.add('show-menu');
+        e.preventDefault();
+        rightClickTarget = e.target;
+
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
+        let x = e.clientX;
+        let y = e.clientY;
+
+        contextMenu.classList.add('show-menu');
+        const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
+
+        // 边缘碰撞检测
+        if (x + menuWidth > winWidth) x = winWidth - menuWidth - 5;
+        if (y + menuHeight > winHeight) y = winHeight - menuHeight - 5;
+
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        // 2. 任何点击（除了点击菜单本身）都会隐藏菜单
+        document.addEventListener('click', function (e) {
+            if (!contextMenu.contains(e.target)) {
+                hideMenu();
+            }
+        });
+
+        // --- 新增：捕捉用户的其他所有操作来隐藏菜单 ---
+        // 监听页面滚动
+        window.addEventListener('scroll', hideMenu, { passive: true });
+        // 监听鼠标滚轮 (即使页面没有滚动条，滑动滚轮也会触发)
+        window.addEventListener('wheel', hideMenu, { passive: true });
+        // 监听窗口大小改变
+        window.addEventListener('resize', hideMenu, { passive: true });
+
+        // 3. 复制逻辑：判断选中的是文字还是图片
+        document.getElementById('menu-copy').addEventListener('click', () => {
+            const selectedText = window.getSelection().toString().trim();
+
+            if (selectedText) {
+                callCSharpAsync("CopyTextToClipboard", selectedText);
+                console.log("复制文字: " + selectedText);
+            }
+            else if (rightClickTarget && rightClickTarget.tagName === 'IMG') {
+                callCSharpAsync("CopyImageToClipboard", rightClickTarget.src);
+                console.log("复制图片: " + rightClickTarget.src);
+            }
+
+            hideMenu();
+        });
+
+        // 4. 打开原文逻辑
+        document.getElementById('menu-open-source').addEventListener('click', () => {
+            const aTag = rightClickTarget ? rightClickTarget.closest('a') : null;
+            let targetUrl = '';
+
+            if (aTag && aTag.href && aTag.href.startsWith('http')) {
+                targetUrl = aTag.href;
+            } else {
+                const title = window.pageTitle || "Terraria Wiki";
+                targetUrl = "https://terraria.wiki.gg/zh/wiki/" + encodeURIComponent(title.replace(/ /g, "_"));
+            }
+
+            if (targetUrl) {
+                callCSharpAsync("OpenExternalWebsite", targetUrl);
+                console.log("打开原文: " + targetUrl);
+            }
+
+            hideMenu();
+        });
+
+    });
+
+}
+
+// 初始化
+initContextMenu();
 
 
 
@@ -519,69 +611,69 @@ function refresh() {
     // 8. 表格头尾处理
     // ============================================================
     function emulateTHeadAndFoot(table) {
-    // 确保传入的是一个 DOM 元素
-    if (!table || table.tagName.toLowerCase() !== 'table') return;
+        // 确保传入的是一个 DOM 元素
+        if (!table || table.tagName.toLowerCase() !== 'table') return;
 
-    // 获取 table 的直接子元素 tbody 里的所有直接子元素 tr
-    const tbody = table.querySelector(':scope > tbody') || table;
-    const rows = Array.from(tbody.querySelectorAll(':scope > tr'));
+        // 获取 table 的直接子元素 tbody 里的所有直接子元素 tr
+        const tbody = table.querySelector(':scope > tbody') || table;
+        const rows = Array.from(tbody.querySelectorAll(':scope > tr'));
 
-    // 1. 处理 Thead
-    if (!table.tHead) {
-        const thead = document.createElement('thead');
-        for (let row of rows) {
-            // 如果这一行里面包含了 td，说明表头结束，退出循环
-            if (row.querySelector('td')) {
-                break;
-            }
-            // 否则（全是 th），将其移动到 thead 中
-            thead.appendChild(row);
-        }
-        
-        // 如果成功提取到了表头行，将其插入到 tbody 的前面
-        if (thead.children.length > 0) {
-            table.insertBefore(thead, tbody);
-        }
-    }
-
-    // 2. 处理 Tfoot
-    if (!table.tFoot) {
-        const tfoot = document.createElement('tfoot');
-        let tfootRows = [];
-        let remainingCellRowSpan = 0;
-
-        // 重新遍历所有行（注意：刚刚被移走变成 thead 的行不在 tbody 里了）
-        const remainingRows = Array.from(tbody.querySelectorAll(':scope > tr'));
-        
-        for (let row of remainingRows) {
-            const cells = row.querySelectorAll('td');
-            
-            for (let cell of cells) {
-                // 原生 DOM 属性 rowSpan，如果没有显式设置通常为 1
-                remainingCellRowSpan = Math.max(cell.rowSpan, remainingCellRowSpan);
+        // 1. 处理 Thead
+        if (!table.tHead) {
+            const thead = document.createElement('thead');
+            for (let row of rows) {
+                // 如果这一行里面包含了 td，说明表头结束，退出循环
+                if (row.querySelector('td')) {
+                    break;
+                }
+                // 否则（全是 th），将其移动到 thead 中
+                thead.appendChild(row);
             }
 
-            if (remainingCellRowSpan > 0) {
-                // 如果还有剩余的 rowSpan 没消耗完，说明当前的行仍然和上面的数据行相连，不能做表尾
-                tfootRows = [];
-                remainingCellRowSpan--;
-            } else {
-                // 如果当前行完全没有受到上面 rowSpan 的影响，暂时将其视为表尾的候选行
-                tfootRows.push(row);
+            // 如果成功提取到了表头行，将其插入到 tbody 的前面
+            if (thead.children.length > 0) {
+                table.insertBefore(thead, tbody);
             }
         }
 
-        // 如果收集到了符合条件的表尾行，将它们追加到 tfoot
-        if (tfootRows.length > 0) {
-            for (let row of tfootRows) {
-                tfoot.appendChild(row);
+        // 2. 处理 Tfoot
+        if (!table.tFoot) {
+            const tfoot = document.createElement('tfoot');
+            let tfootRows = [];
+            let remainingCellRowSpan = 0;
+
+            // 重新遍历所有行（注意：刚刚被移走变成 thead 的行不在 tbody 里了）
+            const remainingRows = Array.from(tbody.querySelectorAll(':scope > tr'));
+
+            for (let row of remainingRows) {
+                const cells = row.querySelectorAll('td');
+
+                for (let cell of cells) {
+                    // 原生 DOM 属性 rowSpan，如果没有显式设置通常为 1
+                    remainingCellRowSpan = Math.max(cell.rowSpan, remainingCellRowSpan);
+                }
+
+                if (remainingCellRowSpan > 0) {
+                    // 如果还有剩余的 rowSpan 没消耗完，说明当前的行仍然和上面的数据行相连，不能做表尾
+                    tfootRows = [];
+                    remainingCellRowSpan--;
+                } else {
+                    // 如果当前行完全没有受到上面 rowSpan 的影响，暂时将其视为表尾的候选行
+                    tfootRows.push(row);
+                }
             }
-            table.appendChild(tfoot);
+
+            // 如果收集到了符合条件的表尾行，将它们追加到 tfoot
+            if (tfootRows.length > 0) {
+                for (let row of tfootRows) {
+                    tfoot.appendChild(row);
+                }
+                table.appendChild(tfoot);
+            }
         }
-    }
     }
     document.querySelectorAll('table').forEach(table => {
-    emulateTHeadAndFoot(table);
+        emulateTHeadAndFoot(table);
     });
 }
 

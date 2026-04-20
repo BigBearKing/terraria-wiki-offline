@@ -79,6 +79,12 @@
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; cursor: wait;">
     </div>
 
+    <div id="custom-context-menu" class="hidden-menu">
+        <div class="menu-item" id="menu-copy">复制</div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" id="menu-open-source">打开原文</div>
+    </div>
+
 </body>
 <style>
     body {
@@ -125,6 +131,67 @@
     /* 4. 悬停状态 - 宽度不变，但颜色加深，增加互动反馈 */
     ::-webkit-scrollbar-thumb:hover {
         background-color: rgba(128, 128, 128, 0.5);
+    }
+
+    /* 自定义右键菜单基础样式 */
+    #custom-context-menu {
+        position: fixed;
+        /* 使用 fixed 定位，因为坐标是基于视窗的 */
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 100000;
+        /* 必须极高，盖住放大图片的蒙版 */
+        min-width: 140px;
+        padding: 6px 0;
+        display: none;
+        /* 默认隐藏 */
+        font-family: inherit;
+    }
+
+    /* 显示菜单的状态 */
+    #custom-context-menu.show-menu {
+        display: block;
+    }
+
+    /* 菜单项样式 */
+    .menu-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        transition: background-color 0.1s;
+    }
+
+    .menu-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    /* 菜单分割线 */
+    .menu-divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 4px 0;
+    }
+
+    /* ---- 适配你代码里的深色模式 (dark theme) ---- */
+    html.dark #custom-context-menu {
+        background: #2b2b2b;
+        border-color: #444;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    html.dark .menu-item {
+        color: #eee;
+    }
+
+    html.dark .menu-item:hover {
+        background-color: #3a3a3a;
+    }
+
+    html.dark .menu-divider {
+        background-color: #444;
     }
 </style>
 

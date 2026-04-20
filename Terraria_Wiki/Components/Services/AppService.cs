@@ -24,7 +24,7 @@ namespace Terraria_Wiki.Services
                 }
                 else
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "页面不存在", "确定");
+                    App.AppStateManager.TriggerAlert("提示", "页面不存在");
                     return null;
 
                 }
@@ -97,12 +97,29 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "无法打开链接", "确定");
+                    App.AppStateManager.TriggerAlert("提示", $"无法打开链接: {ex.Message}");
                 }
                 return null;
             };
 
+            IframeBridge.Actions["CopyTextToClipboard"] = async (text) =>
+            {
 
+                await Clipboard.Default.SetTextAsync(text);
+                return null;
+            };
+
+            IframeBridge.Actions["CopyImageToClipboard"] = async (src) =>
+            {
+
+                WikiAsset asset = await App.ContentDb.GetItemAsync<WikiAsset>(src);
+                byte[] imageBytes = asset?.Data;
+                if (imageBytes != null)
+                {
+                    //未来实现
+                }
+                return null;
+            };
         }
         public static void Init(NavigationManager navManager) => _navManager = navManager;
 
@@ -131,7 +148,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页", "确定");
+                App.AppStateManager.TriggerAlert("提示", "这已经是首页");
             }
 
         }
@@ -147,7 +164,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                await Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "这已经是首页", "确定");
+                App.AppStateManager.TriggerAlert("提示", "这已经是首页");
             }
 
         }
