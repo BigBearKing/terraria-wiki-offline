@@ -1,6 +1,13 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Terraria_Wiki.Models;
 
+#if WINDOWS
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage.Streams;
+#endif
+
+
 namespace Terraria_Wiki.Services
 {
     public class AppService
@@ -104,8 +111,7 @@ namespace Terraria_Wiki.Services
 
             IframeBridge.Actions["CopyTextToClipboard"] = async (text) =>
             {
-
-                await Clipboard.Default.SetTextAsync(text);
+                Microsoft.Maui.ApplicationModel.DataTransfer.Clipboard.Default.SetTextAsync(text);
                 return null;
             };
 
@@ -116,7 +122,9 @@ namespace Terraria_Wiki.Services
                 byte[] imageBytes = asset?.Data;
                 if (imageBytes != null)
                 {
-                    //未来实现
+#if WINDOWS
+                    CopyImageToClipboardWindowsAsync(imageBytes);
+#endif
                 }
                 return null;
             };
@@ -254,6 +262,41 @@ namespace Terraria_Wiki.Services
             }
 #endif
         }
+
+        //复制图片到剪切板
+#if WINDOWS
+
+        public async Task CopyImageToClipboardWindowsAsync(byte[] imageBytes)
+        {
+            try
+            {
+
+                // 2. 创建 Windows 剪贴板数据包
+                var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+
+                dataPackage.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+
+                // 3. 将 byte[] 转为 Windows 随机访问流 (InMemoryRandomAccessStream)
+                var stream = new InMemoryRandomAccessStream();
+                await stream.WriteAsync(imageBytes.AsBuffer());
+                stream.Seek(0);
+
+                // 4. 设置剪贴板位图内容
+                var streamRef = RandomAccessStreamReference.CreateFromStream(stream);
+                dataPackage.SetBitmap(streamRef);
+
+                // 5. 写入系统剪贴板
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+
+                // 这一步很重要：刷新剪贴板，确保程序关闭后内容依然存在
+                Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"复制图片失败: {ex.Message}");
+            }
+        }
+#endif
 
     }
 }

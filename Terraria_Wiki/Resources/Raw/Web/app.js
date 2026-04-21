@@ -215,31 +215,47 @@ function changTheme(isDarkTheme) {
 
 function initContextMenu() {
     const contextMenu = document.getElementById('custom-context-menu');
+    if (!contextMenu) return; // 安全检查
+
     let rightClickTarget = null;
+    let rightClickSelectedText = "";
+
+    // --- 处理全局点击事件的具名函数 ---
+    function handleGlobalClick(e) {
+        // 如果点击的不是菜单内部，则关闭菜单
+        if (!contextMenu.contains(e.target)) {
+            hideMenu();
+        }
+    }
 
     // --- 提取公共的隐藏菜单方法 ---
     function hideMenu() {
         if (contextMenu.classList.contains('show-menu')) {
             contextMenu.classList.remove('show-menu');
+
+            // 💡 核心优化：菜单关闭时，立即注销所有高频监听器
             window.removeEventListener('scroll', hideMenu);
-        window.removeEventListener('wheel', hideMenu);
+            window.removeEventListener('wheel', hideMenu);
+            window.removeEventListener('resize', hideMenu);
+            document.removeEventListener('click', handleGlobalClick);
         }
     }
 
     // 1. 监听全局右键事件
     document.addEventListener('contextmenu', function (e) {
-        contextMenu.classList.add('show-menu');
         e.preventDefault();
         rightClickTarget = e.target;
+        rightClickSelectedText = window.getSelection().toString().trim();
+        // 显示菜单以获取尺寸
+        contextMenu.classList.add('show-menu');
 
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
-        let x = e.clientX;
-        let y = e.clientY;
-
-        contextMenu.classList.add('show-menu');
         const menuWidth = contextMenu.offsetWidth;
         const menuHeight = contextMenu.offsetHeight;
+
+        let x = e.clientX;
+        let y = e.clientY;
 
         // 边缘碰撞检测
         if (x + menuWidth > winWidth) x = winWidth - menuWidth - 5;
@@ -247,39 +263,44 @@ function initContextMenu() {
 
         contextMenu.style.left = `${x}px`;
         contextMenu.style.top = `${y}px`;
-        // 2. 任何点击（除了点击菜单本身）都会隐藏菜单
-        document.addEventListener('click', function (e) {
-            if (!contextMenu.contains(e.target)) {
-                hideMenu();
-            }
-        });
 
-        // --- 新增：捕捉用户的其他所有操作来隐藏菜单 ---
-        // 监听页面滚动
-        window.addEventListener('scroll', hideMenu, { passive: true });
-        // 监听鼠标滚轮 (即使页面没有滚动条，滑动滚轮也会触发)
-        window.addEventListener('wheel', hideMenu, { passive: true });
-        // 监听窗口大小改变
-        window.addEventListener('resize', hideMenu, { passive: true });
+        // 💡 核心优化：只有在菜单真正打开时，才挂载高频监听器
+        // 使用 setTimeout 是为了跳过当前的事件冒泡流，防止误触发 click 导致菜单瞬间关闭
+        setTimeout(() => {
+            window.addEventListener('scroll', hideMenu, { passive: true });
+            window.addEventListener('wheel', hideMenu, { passive: true });
+            window.addEventListener('resize', hideMenu, { passive: true });
+            document.addEventListener('click', handleGlobalClick);
+        }, 0);
+    });
 
-        // 3. 复制逻辑：判断选中的是文字还是图片
-        document.getElementById('menu-copy').addEventListener('click', () => {
-            const selectedText = window.getSelection().toString().trim();
+    // ==========================================
+    // 菜单按钮本身的点击逻辑 (保持绑定一次即可)
+    // ==========================================
 
-            if (selectedText) {
-                callCSharpAsync("CopyTextToClipboard", selectedText);
-                console.log("复制文字: " + selectedText);
+    // 3. 复制逻辑
+    const btnCopy = document.getElementById('menu-copy');
+    if (btnCopy) {
+        btnCopy.addEventListener('click', () => {
+
+            if (rightClickSelectedText) {
+                callCSharpAsync("CopyTextToClipboard", rightClickSelectedText);
+                //console.log("复制文字: " + rightClickSelectedText);
             }
             else if (rightClickTarget && rightClickTarget.tagName === 'IMG') {
-                callCSharpAsync("CopyImageToClipboard", rightClickTarget.src);
-                console.log("复制图片: " + rightClickTarget.src);
+                // 如果没有文字，再判断是不是图片
+                callCSharpAsync("CopyImageToClipboard", rightClickTarget.src.split('/').pop());
+                //console.log("复制图片: " + rightClickTarget.src.split('/').pop());
             }
 
-            hideMenu();
+            hideMenu(); // 调用 hideMenu 会自动清理那 4 个高频监听器
         });
+    }
 
-        // 4. 打开原文逻辑
-        document.getElementById('menu-open-source').addEventListener('click', () => {
+    // 4. 打开原文逻辑
+    const btnOpenSource = document.getElementById('menu-open-source');
+    if (btnOpenSource) {
+        btnOpenSource.addEventListener('click', () => {
             const aTag = rightClickTarget ? rightClickTarget.closest('a') : null;
             let targetUrl = '';
 
@@ -295,11 +316,9 @@ function initContextMenu() {
                 console.log("打开原文: " + targetUrl);
             }
 
-            hideMenu();
+            hideMenu(); // 调用 hideMenu 会自动清理那 4 个高频监听器
         });
-
-    });
-
+    }
 }
 
 // 初始化
