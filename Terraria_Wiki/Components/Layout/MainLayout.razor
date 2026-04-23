@@ -17,7 +17,7 @@
         <div class="iframe-container page-anim"
              style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
 
-            <iframe src="http://127.0.0.1:55000?theme=@iframeTheme"
+            <iframe src="@src"
                     class="wiki-frame" id="wiki-frame">
             </iframe>
         </div>
@@ -30,6 +30,8 @@
 @code {
 
     string iframeTheme;
+    string src;
+    bool isMobile;
 
     //刷新机制
     protected override void OnInitialized()
@@ -38,6 +40,8 @@
         AppState.OnChange += RefreshUI;
         AppState.OnShowAlert += HandleShowAlert;
         iframeTheme = ThemeService.GetIframeThemeState();
+        isMobile = DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS;
+        src = $"http://127.0.0.1:55000?theme={iframeTheme}&isMobile={isMobile}";
 
     }
 
@@ -79,6 +83,7 @@
             else
             {
                 await JS.InvokeVoidAsync("initHover", "True");
+
             }
 
             if (Application.Current?.Windows[0].Page is MainPage mainPage)

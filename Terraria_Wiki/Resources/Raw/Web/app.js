@@ -1,6 +1,7 @@
 // 1. 从网址中提取参数 (例如 ?theme=dark)
 const urlParams = new URLSearchParams(window.location.search);
 const initialTheme = urlParams.get('theme');
+const isMobile=urlParams.get('isMobile');
 
 // 2. 瞬间应用主题
 if (initialTheme === "dark") {
@@ -321,9 +322,9 @@ function initContextMenu() {
     }
 }
 
-// 初始化
-initContextMenu();
-
+if(isMobile){
+    initContextMenu();
+}
 
 
 
