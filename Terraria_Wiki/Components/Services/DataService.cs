@@ -992,16 +992,15 @@ namespace Terraria_Wiki.Services
             // 启动通用任务
             await RunBatchJobAsync(pageListPath, failedPageListPath, maxConcurrency, ProcessPageLine,
                 postWork: () => writer.Flush());
-            _log.Info("所有页面下载完毕");
+
             // 爬取完成后，清洗一下数据
-            _log.Info("正在处理重复数据");
             string tempFile = Path.Combine(_baseDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
             FileHelper.RemoveDuplicatesOptimized(resListPath, tempFile);
 
             // 替换原文件
             File.Delete(resListPath);
             File.Move(tempFile, resListPath, true);
-            _log.Info("重复数据处理完毕");
+            _log.Info("所有页面下载完毕");
 
         }
 

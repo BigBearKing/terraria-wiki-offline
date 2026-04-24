@@ -132,32 +132,124 @@
             }
         };
 
-        window.scrollToBottom = (elementId) => {
-            var element = document.getElementById(elementId);
-            if (!element) return;
+        // 全局状态管理，防止同一个面板被多次挂载管理器
+        window.swipeManagers = window.swipeManagers || {};
 
-            // 1. 计算当前距离底部的像素值
-            // 公式：总高度 - (卷去的高度 + 可视窗口高度)
-            var distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+        // 【第一层】专门负责监听屏幕尺寸，并决定什么时候挂载/卸载拖拽事件
+        window.setupResponsiveSwipe = function (elementId) {
+            // 防止重复初始化同一个元素
+            if (window.swipeManagers[elementId]) return;
 
-            var threshold = 100;
+            const mediaQuery = window.matchMedia('(max-width: 768px)');
+            let cleanupSwipeFn = null; // 用于保存卸载拖拽事件的函数
+            let isSwipeInitialized = false; // 状态标记：当前是否挂载了事件
 
-            // 3. 只有当用户“就在底部附近”时，才自动滚动
-            if (distanceToBottom < threshold) {
+            // 核心判断逻辑
+            const checkAndToggle = () => {
+                const panel = document.getElementById(elementId);
+                const isMobile = mediaQuery.matches;
 
-                // 立即滚动
-                element.scrollTop = element.scrollHeight;
+                // 💡 满足你的要求：屏幕 < 768 且 panel 存在 且 当前未挂载
+                if (isMobile && panel && !isSwipeInitialized) {
+                    cleanupSwipeFn = initSwipeLogic(panel);
+                    isSwipeInitialized = true;
+                    console.log(`[${elementId}] 切换至小屏：已挂载拖拽逻辑`);
+                }
+                // 如果屏幕变大，且当前已经挂载了事件
+                else if (!isMobile && isSwipeInitialized) {
+                    if (cleanupSwipeFn) {
+                        cleanupSwipeFn(); // 执行卸载
+                        cleanupSwipeFn = null;
+                    }
+                    isSwipeInitialized = false;
+                    console.log(`[${elementId}] 切换至大屏：已剥离拖拽逻辑`);
+                }
+            };
 
-                // 针对 Virtualize 的延迟再次滚动 (防止 DOM 还没画完)
-                window.requestAnimationFrame(() => {
-                    element.scrollTop = element.scrollHeight;
+            // 1. 刚打开网页时先检测一次
+            checkAndToggle();
+
+            // 2. 监听屏幕拉伸事件
+            mediaQuery.addEventListener('change', checkAndToggle);
+
+            // 存入全局，方便 Blazor 在组件销毁时调用彻底清理内存
+            window.swipeManagers[elementId] = {
+                dispose: () => {
+                    mediaQuery.removeEventListener('change', checkAndToggle);
+                    if (cleanupSwipeFn) cleanupSwipeFn();
+                    delete window.swipeManagers[elementId];
+                }
+            };
+        };
+
+
+        // 【第二层】纯粹的拖拽核心逻辑，不关心屏幕有多大
+        function initSwipeLogic(panel) {
+            let startY = 0, currentY = 0, isDragging = false;
+
+            const handlePointerDown = (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                isDragging = true;
+                startY = e.clientY;
+                currentY = startY;
+
+                panel.style.transition = 'none';
+                panel.setPointerCapture(e.pointerId);
+
+                document.addEventListener('pointermove', handlePointerMove);
+                document.addEventListener('pointerup', handlePointerUpOrCancel);
+                document.addEventListener('pointercancel', handlePointerUpOrCancel);
+                window.addEventListener('blur', handlePointerUpOrCancel);
+            };
+
+            const handlePointerMove = (e) => {
+                if (!isDragging) return;
+                currentY = e.clientY;
+                let deltaY = currentY - startY;
+                if (deltaY < 0) deltaY = 0;
+                panel.style.transform = `translateY(${deltaY}px)`;
+            };
+
+            const handlePointerUpOrCancel = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                try { panel.releasePointerCapture(e.pointerId); } catch (err) { }
+
+                // 清理临时事件
+                document.removeEventListener('pointermove', handlePointerMove);
+                document.removeEventListener('pointerup', handlePointerUpOrCancel);
+                document.removeEventListener('pointercancel', handlePointerUpOrCancel);
+                window.removeEventListener('blur', handlePointerUpOrCancel);
+
+                panel.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                const deltaY = currentY - startY;
+                const visibleHeight = window.innerHeight - panel.getBoundingClientRect().top;
+
+                if (deltaY > 150 || visibleHeight < 100) {
+                    panel.style.transform = `translateY(100%)`;
+
+                    // 通知 C# 销毁
                     setTimeout(() => {
-                        element.scrollTop = element.scrollHeight;
-                    }, 50);
-                });
-            }
-        }
+                        DotNet.invokeMethodAsync('Terraria_Wiki', 'CloseLogPanel');
+                    }, 300);
+                } else {
+                    panel.style.transform = `translateY(0)`;
+                }
+            };
 
+            // 绑定基础事件
+            panel.addEventListener('pointerdown', handlePointerDown);
+
+            // 💡 重点：函数返回一个“卸载器”，交给外层管理者调用
+            return function cleanup() {
+                panel.removeEventListener('pointerdown', handlePointerDown);
+                document.removeEventListener('pointermove', handlePointerMove);
+                document.removeEventListener('pointerup', handlePointerUpOrCancel);
+                document.removeEventListener('pointercancel', handlePointerUpOrCancel);
+                window.removeEventListener('blur', handlePointerUpOrCancel);
+                panel.style.transform = ''; // 清除拖拽留下的样式
+            };
+        }
 
     </script>
 

@@ -3,14 +3,15 @@
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
-<div class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
+<div id="log-panel" class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
+    <div class="drag-handle"></div>
     <div class="log-header">
         <div class="left-group">
             <span class="log-title">日志</span>
             <span class="log-info">@(AppState.ProcessingTaskId != 0 ? "当前任务：" + AppState.Tasks[AppState.ProcessingTaskId].Name : "")</span>
         </div>
 
-        <div class="close-btn button" @onclick="ClosePanel">
+        <div class="close-btn button" @onclick="CloseLogPanel">
             <Icon Name="dismiss" />
         </div>
     </div>
@@ -33,7 +34,7 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        AppState.OnChange += RefreshUI;
+        
         App.LogManager.OnLogAdded += RefreshUI;
     }
 
@@ -41,14 +42,15 @@
     {
         if (firstRender)
         {
-            // ✅ 关键 1：等待 50ms，让 Virtualize 有足够时间去计算高度并把 Div 渲染出来
-            await Task.Delay(30);
             
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("scrollToBottomImmediate", "log-container");
-            }
-            catch (Exception) { /* 忽略在组件销毁时偶尔触发的 JS 异常 */ }
+
+            await Task.Delay(30);
+
+            await JSRuntime.InvokeVoidAsync("scrollToBottomImmediate", "log-container");
+
+            await JSRuntime.InvokeVoidAsync("setupResponsiveSwipe", "log-panel");
+
+            
         }
     }
 
@@ -79,15 +81,17 @@
         });
         _isAutoScrolling = false;
     }
-    private void ClosePanel()
+
+    [JSInvokable]
+    public static void CloseLogPanel()
     {
-        AppState.LogPanelIsOpen = false;
+        App.AppStateManager?.LogPanelIsOpen = false;
     }
 
     public void Dispose()
     {
         App.LogManager.OnLogAdded -= RefreshUI;
-        AppState.OnChange -= RefreshUI;
+        //AppState.OnChange -= RefreshUI;
     }
 }
 
@@ -141,7 +145,11 @@
         z-index: 902;
     }
 
-    .left-group{
+    .drag-handle {
+        display: none;
+    }
+
+    .left-group {
         display: flex;
         gap: 12px;
         align-items: baseline;
@@ -208,6 +216,20 @@
         .log-container {
             /* 移动端缩小内边距，增加显示面积 */
             border: 8px solid transparent;
+        }
+
+        .drag-handle {
+            display: block;
+            width: 40px;
+            height: 5px;
+            background: #ccc;
+            border-radius: 3px;
+            position: fixed;
+            align-self: anchor-center;
+        }
+        /* 动画类：用于松手后的平滑过渡 */
+        .smooth-return {
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
     }
 </style>
