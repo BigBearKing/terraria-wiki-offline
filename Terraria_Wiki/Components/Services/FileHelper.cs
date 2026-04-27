@@ -214,40 +214,47 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         {
             const long MinValidSize = 1024; // 1KB
 
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            // 1. 拦截无效路径
+            if (string.IsNullOrEmpty(filePath))
                 return false;
 
+            // 2. 获取文件信息（先检查 Exists 可避免后续抛出异常）
             var fileInfo = new FileInfo(filePath);
+            if (!fileInfo.Exists || fileInfo.Length == 0)
+                return false;
 
-            // 大于 1KB 直接判定为有效
+            // 3. 大于 1KB 直接判定为有效
             if (fileInfo.Length > MinValidSize)
                 return true;
 
-            // ≤ 1KB 时才读取内容进行检查
-            if (fileInfo.Length == 0)
-                return false;
-
+            // 4. ≤ 1KB 时，流式读取检查真实内容
             try
             {
+                // 保持 FileShare.ReadWrite，允许读取其他程序正在打开/写入的文件
                 using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-                byte[] buffer = new byte[fileInfo.Length];
-                int bytesRead = fs.Read(buffer, 0, buffer.Length);
+                // 使用 StreamReader，它会自动检测并跳过文件最开头的 BOM 字节
+                using var reader = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
 
-                if (bytesRead == 0)
-                    return false;
+                int charCode;
+                // 逐个字符读取，而不是把整个文件加载到内存变字符串
+                while ((charCode = reader.Read()) != -1)
+                {
+                    char c = (char)charCode;
 
-                string content = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    // 检查：如果是非空白字符，且不是空字符(\0)，且不是 BOM 残留(\uFEFF)
+                    if (!char.IsWhiteSpace(c) && c != '\0' && c != '\uFEFF')
+                    {
+                        return true; // 只要发现哪怕一个有意义的字符，立刻退出并判定有效 (Early Exit)
+                    }
+                }
 
-                // 检查是否全是空白字符（空格、换行、制表符等）或 \0 空字符
-                bool isEmpty = string.IsNullOrWhiteSpace(content) ||
-                               content.All(c => c == '\0' || char.IsWhiteSpace(c));
-
-                return !isEmpty;   // 如果不是空的，则视为有效
+                // 读到文件末尾，全都是空白、\0 或 BOM，则视为无效
+                return false;
             }
             catch (Exception)
             {
-                // 读取失败时，保守处理：视为无效（防止异常导致误判）
+                // 捕获权限不足或 I/O 错误，保守处理视为无效
                 return false;
             }
         }

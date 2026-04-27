@@ -34,15 +34,15 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        
-        App.LogManager.OnLogAdded += RefreshUI;
+        AppState.OnChange += StateHasChanged;
+        App.LogManager.OnLogAdded += RefreshLog;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            
+
 
             await Task.Delay(30);
 
@@ -50,7 +50,7 @@
 
             await JSRuntime.InvokeVoidAsync("setupResponsiveSwipe", "log-panel");
 
-            
+
         }
     }
 
@@ -62,7 +62,7 @@
         return new ItemsProviderResult<string>(items, total);
     }
 
-    private async void RefreshUI()
+    private async void RefreshLog()
     {
         // 如果正在处理中，跳过
         if (_isAutoScrolling) return;
@@ -76,7 +76,7 @@
                 await _virtualize.RefreshDataAsync();
             }
             StateHasChanged();
-  
+
             await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
         });
         _isAutoScrolling = false;
@@ -90,8 +90,9 @@
 
     public void Dispose()
     {
-        App.LogManager.OnLogAdded -= RefreshUI;
-        //AppState.OnChange -= RefreshUI;
+        _ = JSRuntime.InvokeVoidAsync("swipeManagers.log-panel.dispose");
+        App.LogManager.OnLogAdded -= RefreshLog;
+        AppState.OnChange -= StateHasChanged;
     }
 }
 

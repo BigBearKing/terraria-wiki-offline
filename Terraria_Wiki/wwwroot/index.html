@@ -132,6 +132,32 @@
             }
         };
 
+        window.scrollToBottom = (elementId) => {
+            var element = document.getElementById(elementId);
+            if (!element) return;
+
+            // 1. 计算当前距离底部的像素值
+            // 公式：总高度 - (卷去的高度 + 可视窗口高度)
+            var distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+
+            var threshold = 100;
+
+            // 3. 只有当用户“就在底部附近”时，才自动滚动
+            if (distanceToBottom < threshold) {
+
+                // 立即滚动
+                element.scrollTop = element.scrollHeight;
+
+                // 针对 Virtualize 的延迟再次滚动 (防止 DOM 还没画完)
+                window.requestAnimationFrame(() => {
+                    element.scrollTop = element.scrollHeight;
+                    setTimeout(() => {
+                        element.scrollTop = element.scrollHeight;
+                    }, 50);
+                });
+            }
+        }
+
         // 全局状态管理，防止同一个面板被多次挂载管理器
         window.swipeManagers = window.swipeManagers || {};
 
