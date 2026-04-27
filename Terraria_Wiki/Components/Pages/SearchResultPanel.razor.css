@@ -81,10 +81,10 @@ body.has-hover .result-item:hover {
     .search-popup-panel {
         bottom: var(--header-height) !important;
         top: auto !important;
-        left: 0;
-        width: 100% !important;
+        left: 12px;
+        right: 12px;
+        width: calc(100% - 24px);
         max-height: 50vh;
-        border-radius: 12px 12px 0 0 !important;
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 

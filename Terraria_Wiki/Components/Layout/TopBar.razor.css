@@ -37,10 +37,10 @@ body.has-hover .action-btn:hover {
 }
 
 
-    .action-btn:active {
-        background-color: var(--pressed-bg);
-        color: var(--text-primary);
-    }
+.action-btn:active {
+    background-color: var(--pressed-bg);
+    color: var(--text-primary);
+}
 /* --- 2. 中间标题 (核心改动) --- */
 .page-title {
     flex: 1; /* ★ 关键：占据所有剩余空间 */
@@ -58,6 +58,7 @@ body.has-hover .action-btn:hover {
 /* --- 3. 右侧搜索框 (核心改动) --- */
 .search-wrapper {
     width: 260px; /* ★ 给定一个合适的宽度 */
+    height: 36px;
     position: relative;
     display: flex;
     align-items: center;
@@ -66,7 +67,8 @@ body.has-hover .action-btn:hover {
 
 .search-input {
     width: 100%;
-    padding: 8px 16px 8px 36px;
+    padding: 0 0 0 36px;
+    height: 100%;
     border-radius: 9999px;
     border: 1px solid transparent;
     color: var(--text-primary);
@@ -80,7 +82,6 @@ body.has-hover .action-btn:hover {
     .search-input:focus {
         background-color: var(--bg-color);
         border-color: var(--blue-primary);
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
 /* 图标定位 */
 .search-wrapper ::deep .search-icon {
@@ -90,4 +91,34 @@ body.has-hover .action-btn:hover {
     width: 16px;
     height: 16px;
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
+}
+
+@media (max-width: 768px) {
+
+    .search-wrapper {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        width: 36px;
+        background-color: transparent;
+        z-index: 901;
+        display: flex;
+        align-items: center;
+        transition: width 0.3s ease
+    }
+
+    .search-input {
+        padding: 0 0 0 36px;
+        box-shadow: 0 -2px 12px 2px rgba(0, 0, 0, 0.28);
+    }
+
+    .search-wrapper:focus-within {
+        width: calc(100% - 20px);
+
+    }
+
+    .page-title {
+        text-align: right;
+        padding-right: 16px;
+    }
 }
