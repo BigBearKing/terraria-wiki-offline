@@ -50,6 +50,26 @@
 
         };
 
+
+        window.initGlobalScreenListener = () => {
+            const mq = window.matchMedia('(max-width: 768px)');
+
+            // 定义一个统一的通知函数
+            const sendUpdate = (isSmall) => {
+                console.log("JS 正在通知 C#: ", isSmall); // 调试用
+                DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', isSmall);
+            };
+
+            // 监听变化事件
+            mq.addEventListener('change', (e) => {
+                sendUpdate(e.matches);
+            });
+
+            // 【核心修正】初始化时立刻手动执行一次！
+            // 确保 C# 在启动瞬间就能拿到状态
+            sendUpdate(mq.matches);
+        };
+
     </script>
 </head>
 
@@ -173,22 +193,20 @@
             // 核心判断逻辑
             const checkAndToggle = () => {
                 const panel = document.getElementById(elementId);
-                const isMobile = mediaQuery.matches;
+                const isSmallScreen = mediaQuery.matches;
 
                 // 💡 满足你的要求：屏幕 < 768 且 panel 存在 且 当前未挂载
-                if (isMobile && panel && !isSwipeInitialized) {
+                if (isSmallScreen && panel && !isSwipeInitialized) {
                     cleanupSwipeFn = initSwipeLogic(panel);
                     isSwipeInitialized = true;
-                    console.log(`[${elementId}] 切换至小屏：已挂载拖拽逻辑`);
                 }
                 // 如果屏幕变大，且当前已经挂载了事件
-                else if (!isMobile && isSwipeInitialized) {
+                else if (!isSmallScreen && isSwipeInitialized) {
                     if (cleanupSwipeFn) {
                         cleanupSwipeFn(); // 执行卸载
                         cleanupSwipeFn = null;
                     }
                     isSwipeInitialized = false;
-                    console.log(`[${elementId}] 切换至大屏：已剥离拖拽逻辑`);
                 }
             };
 

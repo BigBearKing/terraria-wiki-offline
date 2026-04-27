@@ -195,7 +195,10 @@ namespace Terraria_Wiki.Services
         {
             if (App.AppStateManager.CurrentPage == pageName)
                 return;
-
+            if (App.AppStateManager.IsSmallScreen)
+            {
+                App.AppStateManager.SidebarIsExpanded = false;
+            }
             App.AppStateManager.CurrentPage = pageName;
             _navManager.NavigateTo(App.AppStateManager.CurrentPage);
         }

@@ -322,7 +322,7 @@ function initContextMenu() {
     }
 }
 
-if(isMobile){
+if(isMobile==="False"){
     initContextMenu();
 }
 

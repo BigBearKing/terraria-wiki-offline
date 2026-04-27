@@ -85,6 +85,7 @@
                 await JS.InvokeVoidAsync("initHover", "True");
 
             }
+            _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
             {

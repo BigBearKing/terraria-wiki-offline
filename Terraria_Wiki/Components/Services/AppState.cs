@@ -25,6 +25,7 @@ public class AppState
     private string _currentWikiPage;
     private string _searchQuery = "";
     private bool _isPinned = false;
+    private bool _isSmallScreen = false;
     public readonly Dictionary<int, TaskConfig> Tasks = new()
     {
         { 1, new TaskConfig { Id = 1, Name = "检查软件更新", ProcessingText = "正在检查更新" } },
@@ -104,7 +105,7 @@ public class AppState
 
             _processingTaskId = value;
             OnChange?.Invoke();
-            if(value != 0)
+            if (value != 0)
             {
                 LogPanelIsOpen = true;
             }
@@ -152,5 +153,19 @@ public class AppState
         }
     }
 
+    public bool IsSmallScreen
+    {
+        get => _isSmallScreen;
+        set
+        {
+            _isSmallScreen = value;
+            OnChange?.Invoke();
+        }
+    }
 
+    [JSInvokable]
+    public static void OnScreenChanged(bool isSmall)
+    {
+        App.AppStateManager.IsSmallScreen = isSmall;
+    }
 }

@@ -653,14 +653,9 @@ namespace Terraria_Wiki.Services
                     int jsonLen = reader.ReadInt32();
                     string json = Encoding.UTF8.GetString(reader.ReadBytes(jsonLen));
                     Debug.Write(json);
-                    if (DeviceInfo.Platform == DevicePlatform.WinUI)
-                    {
-                        meta = JsonSerializer.Deserialize<WikiPackageInfo>(json, AppJsonContext.Custom.WikiPackageInfo);
-                    }
-                    else
-                    {
-                        meta = JsonSerializer.Deserialize<WikiPackageInfo>(json);
-                    }
+
+                    meta = JsonSerializer.Deserialize<WikiPackageInfo>(json, AppJsonContext.Custom.WikiPackageInfo);
+
 
                     if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
 
@@ -807,12 +802,12 @@ namespace Terraria_Wiki.Services
                 catch (HttpRequestException e)
                 {
                     if (++retryCount > _maxRetryAttempts) throw;
-                    _log.AppendLog($"请求失败: {e.Message} - 正在重试 ({retryCount}/{_maxRetryAttempts})...");
+                    _log.Error($"请求失败: {e.Message} - 正在重试 ({retryCount}/{_maxRetryAttempts})...");
                     await Task.Delay(1000);
                 }
             }
             writer.Flush();
-            _log.AppendLog($"获取完毕，共获取 {pagesCount} 个页面");
+            _log.Success($"获取完毕，共获取 {pagesCount} 个页面");
 
             return pagesCount;
         }

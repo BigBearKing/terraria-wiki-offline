@@ -161,17 +161,17 @@
     {
         if (AppState.CurrentPage != "home") return;
 
-        IframeBridge.CallJsAsync("ToTop", "");
+        _ = IframeBridge.CallJsAsync("ToTop", "");
     }
 
     private void WikiBackAsync()
     {
-        AppService.WikiBackAsync();
+        _ = AppService.WikiBackAsync();
     }
 
     private void WikiBackHomeAsync()
     {
-        AppService.WikiBackHomeAsync();
+        _ = AppService.WikiBackHomeAsync();
     }
 
     private async Task<bool> IsFavoritePageAsync()
@@ -274,7 +274,7 @@
 
     private bool ShouldShowPinButton()
     {
-        if (DeviceInfo.Platform == DevicePlatform.WinUI|| DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+        if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
         {
             return true;
         }
