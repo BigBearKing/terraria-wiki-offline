@@ -933,20 +933,20 @@ namespace Terraria_Wiki.Services
                         catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.NotFound)
                         {
                             // 如果遇到 404 (NotFound)，直接抛出异常，不进入下面的常规 Exception 重试
-                            _log.Info($"[Worker {workerId}] 资源不存在，放弃重试，不计入失败列表: {line}");
+                            _log.Info($"[线程 {workerId}] 资源不存在，放弃重试，不计入失败列表: {line}");
                             break;
                         }
                         catch (Exception)
                         {
                             if (++retry > _maxRetryAttempts) throw;
-                            _log.Error($"[Worker {workerId}] 失败重试 ({retry}/{_maxRetryAttempts}): {line}");
+                            _log.Error($"[线程 {workerId}] 失败重试 ({retry}/{_maxRetryAttempts}): {line}");
                             await Task.Delay(1000);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error($"[Worker {workerId}] 错误: {ex.Message}");
+                    _log.Error($"[线程 {workerId}] 错误: {ex.Message}");
                     await DataService.AppendFailedUrlAsync(failedPath, line);
                 }
             }
@@ -978,7 +978,7 @@ namespace Terraria_Wiki.Services
                 finally
                 {
                     int c = Interlocked.Increment(ref currentCount);
-                    _log.Info($"[Worker {workerId}] {c}/{totalCount} 完成页面: {page.Title}");
+                    _log.Info($"[线程 {workerId}] {c}/{totalCount} 完成页面: {page.Title}");
                 }
 
 
@@ -1022,11 +1022,11 @@ namespace Terraria_Wiki.Services
                     int c = Interlocked.Increment(ref currentCount);
                     if (changeData)
                     {
-                        _log.Info($"[Worker {workerId}] {c}/{totalCount} 完成资源: {fileName}");
+                        _log.Info($"[线程 {workerId}] {c}/{totalCount} 完成资源: {fileName}");
                     }
                     else
                     {
-                        _log.Info($"[Worker {workerId}] {c}/{totalCount} 跳过资源: {fileName}");
+                        _log.Info($"[线程 {workerId}] {c}/{totalCount} 跳过资源: {fileName}");
                     }
                 }
 

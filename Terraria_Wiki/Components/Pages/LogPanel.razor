@@ -20,7 +20,10 @@
                     ItemsProvider="LoadLogs"
                     Context="log"
                     OverscanCount="20">
-            <div class="log-line">@log</div>
+            @{
+                var parsedLog = ParseLogLine(log);
+            }
+            <div class="log-line @parsedLog.CssClass">@parsedLog.Text</div>
         </Virtualize>
     </div>
 </div>
@@ -80,6 +83,27 @@
             await JSRuntime.InvokeVoidAsync("scrollToBottom", "log-container");
         });
         _isAutoScrolling = false;
+    }
+
+    // 新增：解析日志类型，去掉标签并分配对应的 CSS 类名
+    private (string Text, string CssClass) ParseLogLine(string log)
+    {
+        if (string.IsNullOrWhiteSpace(log)) return (log, "");
+
+        if (log.Contains("[ERROR]"))
+        {
+            return (log.Replace("[ERROR]", "").Trim(), "type-error");
+        }
+        else if (log.Contains("[SUCCESS]"))
+        {
+            return (log.Replace("[SUCCESS]", "").Trim(), "type-success");
+        }
+        else if (log.Contains("[INFO]"))
+        {
+            return (log.Replace("[INFO]", "").Trim(), "");
+        }
+
+        return (log, "");
     }
 
     [JSInvokable]
@@ -198,6 +222,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+        .log-line.type-error {
+            color: var(--red-primary);
+        }
+
+        .log-line.type-success {
+            color: var(--green-primary);
+        }
 
     @@media (max-width: 768px) {
         .log-panel.expanded,

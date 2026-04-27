@@ -170,7 +170,14 @@
         flex-direction: column;
         gap: 4px;
         padding: 12px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
     }
+
+        .nav-items::-webkit-scrollbar {
+            display: none;
+        }
     /* 3. 通用导航项样式 (Header 和 NavItem 共用结构) */
     .nav-item {
         display: flex;
