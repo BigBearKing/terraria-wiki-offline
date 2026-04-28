@@ -17,26 +17,25 @@ namespace Terraria_Wiki
         public App(LocalWebServer webServer, ManagerDbService managerDb,   // 注入管理库
         ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService)
         {
-            InitializeComponent();
+
+            
             WebServer = webServer;
             ManagerDb = managerDb;
             ContentDb = contentDb;
             DataManager = dataService;
             LogManager = logService;
             AppStateManager = appState;
-#if ANDROID
-            MainPage = new MainPage();
-#endif
             ThemeService.InitTheme();
             _ = InitializeAsync();
-
-
+            InitializeComponent();
+            MainPage = new MainPage();
 
         }
 
 
         private async Task InitializeAsync()
         {
+            
             WebServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();
@@ -46,11 +45,11 @@ namespace Terraria_Wiki
 #if WINDOWS
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            Window window = new Window(new MainPage());
+            Window window = base.CreateWindow(activationState);
             window.Title = AppInfo.Current.Name;
 #if RELEASE
-            window.MinimumWidth = 800;
-            window.MinimumHeight = 600;
+            window.MinimumWidth = 400;
+            window.MinimumHeight = 300;
 #endif
             // 1. 恢复普通大小和位置（非最大化时的尺寸）
             RestoreWindowBounds(window);

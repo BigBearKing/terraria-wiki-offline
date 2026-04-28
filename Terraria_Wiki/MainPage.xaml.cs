@@ -12,9 +12,9 @@ namespace Terraria_Wiki
         public MainPage()
         {
             InitializeComponent();
+            bool isDark = App.AppStateManager.IsDarkTheme;
             //根据判断，瞬间给原生加载层上色
-
-            Application.Current.UserAppTheme = App.AppStateManager.IsDarkTheme ? AppTheme.Dark : AppTheme.Light;
+            Application.Current.UserAppTheme = isDark ? AppTheme.Dark : AppTheme.Light;
         }
         public void HideLoadingScreen()
         {
@@ -56,11 +56,11 @@ namespace Terraria_Wiki
             Dispatcher.Dispatch(async () =>
             {
                 _ = BackEventsService.BackEvents();
-
             });
 #endif
             return true;
         }
+
 #if ANDROID
         // 专门为 Android WebView 编写的按键拦截器
         private class WebViewBackInterceptor : Java.Lang.Object, Android.Views.View.IOnKeyListener
@@ -77,21 +77,18 @@ namespace Terraria_Wiki
             {
                 if (keyCode == Android.Views.Keycode.Back && e?.Action == Android.Views.KeyEventActions.Down)
                 {
-                    // 使用 Dispatcher 异步调度你的静态服务逻辑
-                    // 这样不会阻塞当前的物理按键事件分发线程
-                    _dispatcher.Dispatch(async () =>
+                    _dispatcher.Dispatch(() =>
                     {
-                        // 调用你的静态方法（因为是异步，所以加个 _ = 忽略返回值）
-                        _ = BackEventsService.BackEvents();
+                        
                     });
 
-                    return true;
+                    return true; // 表示拦截了按键事件
                 }
                 return false;
             }
         }
 #endif
-    }
 
+    }
 }
 

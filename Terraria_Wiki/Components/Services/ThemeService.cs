@@ -11,6 +11,8 @@ namespace Terraria_Wiki.Services
 
         public static string ContentTheme => Preferences.Default.Get("ContentTheme", "auto");
 
+        public static IJSRuntime JS;
+
 
 
         public static async Task SetAppThemeAsync(string value)
@@ -45,13 +47,19 @@ namespace Terraria_Wiki.Services
             else // auto 跟随系统
             {
                 // 使用 MAUI 原生 API 获取系统当前主题，瞬间完成！
-                isDark = Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
+                if(DeviceInfo.Platform == DevicePlatform.WinUI)
+                {
+                    isDark = Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
+                }
+                else
+                    isDark = AppInfo.Current.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
             }
 
             App.AppStateManager.IsDarkTheme = isDark;
         }
         public static async Task InitIframeThemeAsync(IJSRuntime JS)
         {
+            ThemeService.JS = JS;
             await JS.InvokeAsync<object>("initTheme", App.AppStateManager.IsDarkTheme ? "True" : "False");
         }
         public static string GetIframeThemeState()
@@ -62,6 +70,10 @@ namespace Terraria_Wiki.Services
                 return App.AppStateManager.IsDarkTheme ? "dark" : "light";
             }
             return "original";
+        }
+        public static async Task ToggleTheme()
+        {
+            App.AppStateManager.IsDarkTheme = await JS.InvokeAsync<bool>("toggleTheme", ContentTheme);
         }
 
     }

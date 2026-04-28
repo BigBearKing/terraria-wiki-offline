@@ -4,8 +4,12 @@
 @implements IDisposable
 
 <div id="log-panel" class="log-panel @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
-    <div class="drag-handle"></div>
+    <div class="drag-handle-container">
+        <div class="drag-handle"></div>
+    </div>
+    
     <div class="log-header">
+
         <div class="left-group">
             <span class="log-title">日志</span>
             <span class="log-info">@(AppState.ProcessingTaskId != 0 ? "当前任务：" + AppState.Tasks[AppState.ProcessingTaskId].Name : "")</span>
@@ -172,8 +176,16 @@
         z-index: 902;
     }
 
-    .drag-handle {
+    .drag-handle-container {
         display: none;
+    }
+
+    .drag-handle {
+        width: 40px;
+        height: 4px;
+        background: #ccc;
+        border-radius: 3px;
+        align-self: center;
     }
 
     .left-group {
@@ -247,7 +259,15 @@
             margin: 0;
             /* 如果有底栏 bottom-bar，可能需要考虑是否被完全覆盖 */
         }
-        
+
+        .drag-handle-container {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+        }
+        .log-header{
+            margin-top: -20px;
+        }
         .close-btn {
             display: none;
         }
@@ -255,16 +275,6 @@
         .log-container {
             /* 移动端缩小内边距，增加显示面积 */
             border: 8px solid transparent;
-        }
-
-        .drag-handle {
-            display: block;
-            width: 40px;
-            height: 5px;
-            background: #ccc;
-            border-radius: 3px;
-            position: fixed;
-            align-self: anchor-center;
         }
         /* 动画类：用于松手后的平滑过渡 */
         .smooth-return {

@@ -1,6 +1,7 @@
 ﻿@using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
+@inject IJSRuntime JS
 <header class="top-bar">
 
     <div class="actions-wrapper">
@@ -20,9 +21,9 @@
     <div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
 
 
-    <div class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
+    <div id="search-wrapper" class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
         <Icon class="search-icon" Name="search"></Icon>
-        <input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput" />
+        <input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput"/>
         @if (AppState.CurrentPage == "home")
         {
             <SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
@@ -287,4 +288,5 @@
             AppState.IsPinned = true;
         }
     }
+
 }

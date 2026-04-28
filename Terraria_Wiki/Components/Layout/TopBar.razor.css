@@ -96,15 +96,15 @@ body.has-hover .action-btn:hover {
 @media (max-width: 768px) {
 
     .search-wrapper {
-        position: fixed;
-        bottom: 10px;
+        position: absolute;
         right: 10px;
         width: 36px;
         background-color: transparent;
         z-index: 901;
         display: flex;
         align-items: center;
-        transition: width 0.3s ease
+        transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
+        bottom: 10px;
     }
 
     .search-input {
@@ -114,7 +114,6 @@ body.has-hover .action-btn:hover {
 
     .search-wrapper:focus-within {
         width: calc(100% - 20px);
-
     }
 
     .page-title {

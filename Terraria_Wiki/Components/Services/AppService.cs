@@ -1,5 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Terraria_Wiki.Models;
+using Microsoft.JSInterop;
+#if ANDROID
+using Terraria_Wiki.Platforms.Android;
+#endif
+
 
 #if WINDOWS
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -129,7 +134,12 @@ namespace Terraria_Wiki.Services
                 return null;
             };
         }
-        public static void Init(NavigationManager navManager) => _navManager = navManager;
+        public static void Init(NavigationManager navManager) 
+        { 
+            _navManager = navManager;
+
+        
+        }
 
 
         private static async Task SaveToHistoryAsync(string title)
@@ -300,6 +310,7 @@ namespace Terraria_Wiki.Services
             }
         }
 #endif
+
 
     }
 }

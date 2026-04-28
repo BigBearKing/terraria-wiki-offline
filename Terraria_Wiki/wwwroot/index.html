@@ -56,7 +56,6 @@
 
             // 定义一个统一的通知函数
             const sendUpdate = (isSmall) => {
-                console.log("JS 正在通知 C#: ", isSmall); // 调试用
                 DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', isSmall);
             };
 
@@ -69,6 +68,7 @@
             // 确保 C# 在启动瞬间就能拿到状态
             sendUpdate(mq.matches);
         };
+
 
     </script>
 </head>

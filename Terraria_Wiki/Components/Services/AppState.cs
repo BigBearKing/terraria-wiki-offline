@@ -4,7 +4,7 @@ namespace Terraria_Wiki.Services;
 
 public class AppState
 {
-    private static IJSRuntime? _js;
+    public static IJSRuntime? JS;
 
 
     public event Action? OnChange;
@@ -13,7 +13,7 @@ public class AppState
     public event Action<string, string>? OnShowAlert;
 
 
-    public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
+    public static void Init(IJSRuntime jsRuntime) => JS = jsRuntime;
     public string AppName { get; set; } = AppInfo.Current.Name;
 
     private string _currentPage = "home";
