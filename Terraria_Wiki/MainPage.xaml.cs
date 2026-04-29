@@ -79,7 +79,7 @@ namespace Terraria_Wiki
                 {
                     _dispatcher.Dispatch(() =>
                     {
-                        
+                        _ = BackEventsService.BackEvents();
                     });
 
                     return true; // 表示拦截了按键事件

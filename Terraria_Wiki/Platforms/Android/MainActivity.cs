@@ -1,6 +1,6 @@
 using Android.App;
-using Android.Content.PM;
 using Android.Content;
+using Android.Content.PM;
 using Android.OS;
 using AndroidX.Core.View;
 using Terraria_Wiki.Services;
@@ -55,7 +55,7 @@ namespace Terraria_Wiki
 
                 if (_appState.ProcessingTaskId != 0)
                 {
-                    // TaskId 有值，启动（或更新）通知栏
+                    _ = RequestNotificationPermissionAsync();
                     if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
                         StartForegroundService(intent);
                     else
@@ -69,7 +69,19 @@ namespace Terraria_Wiki
                 }
             });
         }
+        private static async Task RequestNotificationPermissionAsync()
+        {
 
+            PermissionStatus status = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
+
+            // 2. 如果还没有被授予权限
+            if (status != PermissionStatus.Granted)
+            {
+                // 3. 唤起系统弹窗，向用户正式请求权限
+                await Permissions.RequestAsync<Permissions.PostNotifications>();
+            }
+
+        }
         protected override void OnDestroy()
         {
             if (_appState != null)

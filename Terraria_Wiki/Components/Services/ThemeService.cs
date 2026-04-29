@@ -47,7 +47,7 @@ namespace Terraria_Wiki.Services
             else // auto 跟随系统
             {
                 // 使用 MAUI 原生 API 获取系统当前主题，瞬间完成！
-                if(DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
                     isDark = Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
                 }

@@ -43,12 +43,12 @@ public static class IframeBridge
 
     // 3. 供 JS 调用的入口 (必须是 Public Static)
     [JSInvokable]
-    public static async Task ReceiveMessage(string json)
+    public static async Task<int> ReceiveMessage(string json)
     {
 
         var msg = (JsMsg?)JsonSerializer.Deserialize(json, typeof(JsMsg), AppJsonContext.Custom);
 
-        if (msg == null) return;
+        if (msg == null) return 0;
 
         if (msg.Type == "res") // A. 这是 JS 给 C# 的返回值
         {
@@ -64,6 +64,7 @@ public static class IframeBridge
             // 发送返回值给 JS
             await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "res", id = msg.Id, data = result });
         }
+        return 0;
     }
 
 }

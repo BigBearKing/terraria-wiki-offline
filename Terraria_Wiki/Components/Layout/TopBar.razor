@@ -278,13 +278,13 @@
     {
         if (AppState.IsPinned)
         {
-            AppService.SetAlwaysOnTop(Application.Current.Windows[0], false);
+            WindowHelper.SetAlwaysOnTop(Application.Current.Windows[0], false);
             AppState.IsPinned = false;
 
         }
         else
         {
-            AppService.SetAlwaysOnTop(Application.Current.Windows[0], true);
+            WindowHelper.SetAlwaysOnTop(Application.Current.Windows[0], true);
             AppState.IsPinned = true;
         }
     }

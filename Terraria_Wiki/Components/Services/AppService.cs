@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Terraria_Wiki.Models;
-using Microsoft.JSInterop;
 #if ANDROID
 using Terraria_Wiki.Platforms.Android;
 #endif
@@ -134,11 +133,11 @@ namespace Terraria_Wiki.Services
                 return null;
             };
         }
-        public static void Init(NavigationManager navManager) 
-        { 
+        public static void Init(NavigationManager navManager)
+        {
             _navManager = navManager;
 
-        
+
         }
 
 
@@ -234,46 +233,6 @@ namespace Terraria_Wiki.Services
             book.ResourceCount = await wikiContent.GetCountAsync<WikiAsset>();
             book.DataSize = FileHelper.GetSizeBytes(wikiContent.DatabasePath);
             await wikiBook.SaveItemAsync(book);
-        }
-
-        //窗口置顶
-        public static void SetAlwaysOnTop(Window window, bool isAlwaysOnTop)
-        {
-            if (window?.Handler?.PlatformView == null) return;
-
-#if WINDOWS
-            // 获取 Windows 原生窗口实例
-            var nativeWindow = window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
-            if (nativeWindow != null)
-            {
-                // 通过 Win32 互操作获取 AppWindow
-                var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-                // 设置置顶属性
-                if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
-                {
-                    presenter.IsAlwaysOnTop = isAlwaysOnTop;
-                }
-            }
-#elif MACCATALYST
-            // 获取 Mac Catalyst 的底层 UIWindow
-            var nativeWindow = window.Handler.PlatformView as UIKit.UIWindow;
-            if (nativeWindow != null)
-            {
-                if (isAlwaysOnTop)
-                {
-                    // 将窗口层级调高（超过普通弹窗层级），实现置顶
-                    nativeWindow.WindowLevel = UIKit.UIWindowLevel.Alert + 1;
-                }
-                else
-                {
-                    // 恢复普通层级
-                    nativeWindow.WindowLevel = UIKit.UIWindowLevel.Normal;
-                }
-            }
-#endif
         }
 
         //复制图片到剪切板

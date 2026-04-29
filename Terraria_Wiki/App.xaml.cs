@@ -1,8 +1,6 @@
 ﻿using Terraria_Wiki.Models;
 using Terraria_Wiki.Services;
-#if WINDOWS
-using Microsoft.UI.Windowing;
-#endif
+using System.Runtime.InteropServices;
 
 namespace Terraria_Wiki
 {
@@ -14,11 +12,24 @@ namespace Terraria_Wiki
         public static DataService? DataManager { get; private set; }
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
-        public App(LocalWebServer webServer, ManagerDbService managerDb,   // 注入管理库
+
+#if WINDOWS
+        // 引入纯底层 Win32 API，AOT 绝对无法裁剪它们
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsZoomed(IntPtr hWnd); // 判断是否最大化
+
+        [DllImport("user32.dll")]
+        private static extern bool IsIconic(IntPtr hWnd); // 判断是否最小化
+
+        private const int SW_MAXIMIZE = 3; // 最大化指令
+#endif
+
+        public App(LocalWebServer webServer, ManagerDbService managerDb,
         ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService)
         {
-
-            
             WebServer = webServer;
             ManagerDb = managerDb;
             ContentDb = contentDb;
@@ -29,13 +40,10 @@ namespace Terraria_Wiki
             _ = InitializeAsync();
             InitializeComponent();
             MainPage = new MainPage();
-
         }
-
 
         private async Task InitializeAsync()
         {
-            
             WebServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();
@@ -51,59 +59,42 @@ namespace Terraria_Wiki
             window.MinimumWidth = 400;
             window.MinimumHeight = 300;
 #endif
-            // 1. 恢复普通大小和位置（非最大化时的尺寸）
-            RestoreWindowBounds(window);
+            // 1. 立即读取历史偏好
+            bool isMaximized = Preferences.Default.Get("IsMaximized", false);
+            double width = Preferences.Default.Get("WindowWidth", 1000.0);
+            double height = Preferences.Default.Get("WindowHeight", 650.0);
+            double x = Preferences.Default.Get("WindowX", 100.0);
+            double y = Preferences.Default.Get("WindowY", 100.0);
 
-            // 2. 窗口句柄（Handler）创建完成后，才能调用底层的 Windows API 去最大化
-            window.Created += OnWindowCreated;
+            window.Width = width;
+            window.Height = height;
+            window.X = x >= 0 ? x : 100;
+            window.Y = y >= 0 ? y : 100;
 
-            // 3. 窗口销毁前保存状态
-            window.Destroying += OnWindowDestroying;
-
-
-            return window;
-
-        }
-        private void RestoreWindowBounds(Window window)
-        {
-            if (Preferences.Default.ContainsKey("WindowWidth"))
+            // 2. 在 Handler 绑定后，直接用 Win32 API 暴力最大化
+            window.HandlerChanged += (s, e) =>
             {
-                window.Width = Preferences.Default.Get("WindowWidth", 1000.0);
-                window.Height = Preferences.Default.Get("WindowHeight", 650.0);
-
-                double x = Preferences.Default.Get("WindowX", 100.0);
-                double y = Preferences.Default.Get("WindowY", 100.0);
-
-                window.X = x >= 0 ? x : 100;
-                window.Y = y >= 0 ? y : 100;
-            }
-        }
-
-        private void OnWindowCreated(object? sender, EventArgs e)
-        {
-            if (sender is Window window)
-            {
-                // 获取 Windows 原生窗口对象
                 var nativeWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
-                if (nativeWindow != null)
+                if (nativeWindow != null && nativeWindow.AppWindow != null)
                 {
-                    // 获取 WinUI 3 的 AppWindow
-                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                    var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                    // 拿到真实的物理句柄 HWND
+                    IntPtr hwnd = (IntPtr)nativeWindow.AppWindow.Id.Value;
 
-                    // 控制窗口状态的 Presenter
-                    if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                    if (isMaximized && hwnd != IntPtr.Zero)
                     {
-                        // 读取是否最大化
-                        bool isMaximized = Preferences.Default.Get("IsMaximized", false);
-                        if (isMaximized)
+                        // 将指令扔给系统的消息队列，彻底绕过 MAUI 的布局覆盖
+                        nativeWindow.DispatcherQueue.TryEnqueue(() =>
                         {
-                            presenter.Maximize();
-                        }
+                            ShowWindow(hwnd, SW_MAXIMIZE);
+                        });
                     }
                 }
-            }
+            };
+
+            // 3. 注册销毁事件
+            window.Destroying += OnWindowDestroying;
+
+            return window;
         }
 
         private void OnWindowDestroying(object? sender, EventArgs e)
@@ -112,28 +103,26 @@ namespace Terraria_Wiki
             {
                 bool isMaximized = false;
                 var nativeWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
-                if (nativeWindow != null)
+
+                if (nativeWindow != null && nativeWindow.AppWindow != null)
                 {
-                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                    var appWindow = AppWindow.GetFromWindowId(windowId);
+                    IntPtr hwnd = (IntPtr)nativeWindow.AppWindow.Id.Value;
 
-                    if (appWindow.Presenter is OverlappedPresenter presenter)
+                    if (hwnd != IntPtr.Zero)
                     {
-                        // ★ 修改这里：使用 OverlappedPresenterState.Maximized
-                        isMaximized = presenter.State == OverlappedPresenterState.Maximized;
-                        Preferences.Default.Set("IsMaximized", isMaximized);
-
-                        // ★ 修改这里：使用 OverlappedPresenterState.Minimized
-                        if (presenter.State == OverlappedPresenterState.Minimized)
+                        // 使用 Win32 API 侦测窗口状态，彻底抛弃 OverlappedPresenter
+                        if (IsIconic(hwnd))
                         {
+                            // 如果是最小化状态关的，直接退出，不保存任何坐标
                             return;
                         }
+
+                        isMaximized = IsZoomed(hwnd);
+                        Preferences.Default.Set("IsMaximized", isMaximized);
                     }
                 }
 
-                // 只有在【非最大化】的情况下，才保存尺寸和坐标。
-                // 这样当你解除最大化时，窗口还能恢复到你之前调整的正常大小。
+                // 非最大化时保存尺寸
                 if (!isMaximized)
                 {
                     if (window.X < -1000 || window.Y < -1000) return;
@@ -147,5 +136,4 @@ namespace Terraria_Wiki
         }
 #endif
     }
-
 }
