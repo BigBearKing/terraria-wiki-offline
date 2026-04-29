@@ -93,15 +93,19 @@
 
 本项目使用了以下开源模块与技术：
 
+- [**官方中文泰拉瑞亚维基百科**](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki): 本应用的内容和数据结构来自泰拉瑞亚维基社区贡献者的编辑与维护。
+
 - [**.NET MAUI**](https://github.com/dotnet/maui) & [**Blazor**](https://dotnet.microsoft.com/en-us/apps/aspnet/web-apps/blazor): 跨平台 UI 与前端组件框架。
 
 - [**html-agility-pack**](https://github.com/zzzprojects/html-agility-pack): 页面数据清洗和操作。
 
 - [**sqlite-net**](https://github.com/praeclarum/sqlite-net): 本地数据库与数据持久化方案。
 
-- [**官方中文泰拉瑞亚维基百科**](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki): 本应用的内容和数据结构来自泰拉瑞亚维基社区贡献者的编辑与维护。
-
 - **[handy-scroll](https://amphiluke.github.io/handy-scroll)**: 页面宽列表滚动条处理。
+
+- **[Viewer.js](https://fengyuanchen.github.io/viewerjs/)**: 图片查看器。
+
+- **[Fluenticons](https://fluenticons.co/)**: 应用内图标来源。
 
   
 
@@ -112,6 +116,8 @@
 - 应用内使用的 Wiki 文本及图片数据遵循 [**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans) 协议分发。
 
 - 本应用客户端代码开源，免费提供，禁止用于商业牟利。
+
+- 本软件与 **wiki.gg** 或 **Re-logic** 均无任何关联，为个人爱好者开发。
 
   
 

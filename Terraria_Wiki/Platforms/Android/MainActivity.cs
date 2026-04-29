@@ -18,7 +18,7 @@ namespace Terraria_Wiki
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-
+            AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, true);
             // 恢复正常模式
             ResetToStandardMode();
             // 提取全局 AppState
