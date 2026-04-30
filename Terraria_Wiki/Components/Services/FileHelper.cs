@@ -33,7 +33,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// 导出文件（Windows 弹出文件夹选择，移动端/Mac 调用原生分享保存）
         /// </summary>
         /// <param name="sourceFilePath">要导出的源文件全路径（必须存在）</param>
-        public static async Task ExportFileMobileAsync(string sourceFilePath)
+        public static async Task ExportFileAppleAsync(string sourceFilePath)
         {
             if (string.IsNullOrEmpty(sourceFilePath) || !File.Exists(sourceFilePath))
             {
@@ -41,7 +41,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
                 return;
             }
 
-            // 移动端及 Mac 端：调用系统级的“分享/存储为”功能
+            // iOS 端及 Mac 端：调用系统级的“分享/存储为”功能
             await Share.Default.RequestAsync(new ShareFileRequest
             {
                 Title = "导出文件",
@@ -49,6 +49,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
             });
 
         }
+
 
 #if WINDOWS
         /// <summary>

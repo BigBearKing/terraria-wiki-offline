@@ -32,6 +32,26 @@ namespace Terraria_Wiki
             }
         }
 
+        protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult(requestCode, resultCode, data);
+
+            // 检查是不是我们刚才发起的保存文件请求 (请求码 4321)
+            if (requestCode == 4321)
+            {
+                // 如果用户点击了保存，并且返回了有效的数据
+                if (resultCode == Result.Ok && data?.Data != null)
+                {
+                    AndroidFileSaver.tcs?.TrySetResult(data.Data);
+                }
+                else
+                {
+                    // 用户取消了操作，返回 null
+                    AndroidFileSaver.tcs?.TrySetResult(null);
+                }
+            }
+        }
+
         private void ResetToStandardMode()
         {
             if (Window == null) return;

@@ -286,12 +286,10 @@ function initContextMenu() {
 
             if (rightClickSelectedText) {
                 callCSharpAsync("CopyTextToClipboard", rightClickSelectedText);
-                //console.log("复制文字: " + rightClickSelectedText);
             }
             else if (rightClickTarget && rightClickTarget.tagName === 'IMG') {
                 // 如果没有文字，再判断是不是图片
                 callCSharpAsync("CopyImageToClipboard", rightClickTarget.src.split('/').pop());
-                //console.log("复制图片: " + rightClickTarget.src.split('/').pop());
             }
 
             hideMenu(); // 调用 hideMenu 会自动清理那 4 个高频监听器
@@ -314,7 +312,6 @@ function initContextMenu() {
 
             if (targetUrl) {
                 callCSharpAsync("OpenExternalWebsite", targetUrl);
-                console.log("打开原文: " + targetUrl);
             }
 
             hideMenu(); // 调用 hideMenu 会自动清理那 4 个高频监听器
@@ -582,7 +579,6 @@ function refresh() {
 
         // 点击展开/折叠按钮
         toggleBtn.addEventListener('click', function () {
-            console.log('Toggle wiki header');
             wikiHeader.classList.toggle('collapsed');
         });
     }

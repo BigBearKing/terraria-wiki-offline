@@ -5,6 +5,7 @@
 		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
 		<SupportedCultures>zh-CN;en-US</SupportedCultures>
+		<NeutralLanguage>en-US</NeutralLanguage>
 		<!-- Note for MacCatalyst:
             The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
             When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
@@ -54,10 +55,13 @@
 		<DefaultLanguage>zh-cn</DefaultLanguage>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
 		<PublishAot>true</PublishAot>
 		<IsAotCompatible>true</IsAotCompatible>
 		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -79,7 +83,7 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
-	<ItemGroup Condition="$(TargetFramework.Contains('-windows'))">
+	<ItemGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
 		<RdXmlFile Include="rd.xml" />
 		<TrimmerRootAssembly Include="Terraria_Wiki" />
 		<TrimmerRootAssembly Include="SQLite-net" />

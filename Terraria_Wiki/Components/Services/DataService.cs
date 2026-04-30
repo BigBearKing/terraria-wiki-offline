@@ -496,18 +496,18 @@ namespace Terraria_Wiki.Services
                     Files = new List<FileMeta>()
                 };
 
-                // 3. 【必须在 UI 线程】获取导出路径
-                // 因为弹窗 UI 控件只能在主线程调用，绝对不能放进 Task.Run
+                // 3. 获取导出路径（准备阶段）
                 if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
 #if WINDOWS
-                    exportPath = await FileHelper.PickFolderWindowsAsync();
-                    if (exportPath == null) return; // 用户取消了选择
-                    finalPkgPath = Path.Combine(exportPath, exportFileName);
+            exportPath = await FileHelper.PickFolderWindowsAsync();
+            if (exportPath == null) return; // 用户取消了选择
+            finalPkgPath = Path.Combine(exportPath, exportFileName);
 #endif
                 }
-                else if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                else if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst || DeviceInfo.Platform == DevicePlatform.Android)
                 {
+                    // 【修改点 1】移动端 (包括安卓) 统一先输出到缓存目录
                     finalPkgPath = Path.Combine(FileSystem.CacheDirectory, exportFileName);
                 }
                 else
@@ -528,7 +528,7 @@ namespace Terraria_Wiki.Services
 
                     // 计算 MD5
                     _log.Info("正在计算文件元数据");
-                    using (var md5 = MD5.Create())
+                    using (var md5 = System.Security.Cryptography.MD5.Create())
                     {
                         foreach (var file in files)
                         {
@@ -545,14 +545,14 @@ namespace Terraria_Wiki.Services
                         }
                     }
 
-                    // 开始写入私有包
+                    // 开始写入私有包 (写入到缓存目录或Windows的指定目录)
                     _log.Info("正在生成导出包");
                     using var fsOut = new FileStream(finalPkgPath, FileMode.Create, FileAccess.Write, FileShare.None);
                     using var writer = new BinaryWriter(fsOut);
 
                     // 写入私有头标识和 JSON
                     writer.Write(Encoding.UTF8.GetBytes("WIKIDATA"));
-                    string json = JsonSerializer.Serialize(info, AppJsonContext.Custom.WikiPackageInfo);
+                    string json = System.Text.Json.JsonSerializer.Serialize(info, AppJsonContext.Custom.WikiPackageInfo);
                     byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                     writer.Write(jsonBytes.Length);
                     writer.Write(jsonBytes);
@@ -569,10 +569,37 @@ namespace Terraria_Wiki.Services
                 // 后台任务结束，回到 UI 线程
                 // ==========================================
 
-                // 5. 移动端/Mac端：调用系统分享弹窗 (UI 操作，需在主线程)
-                if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                // 5. 移动端/Mac端：处理刚刚生成的缓存文件 (UI 操作，需在主线程)
+                if (DeviceInfo.Platform == DevicePlatform.Android)
                 {
-                    await FileHelper.ExportFileMobileAsync(finalPkgPath);
+#if ANDROID
+                    // 【修改点 2】唤起 SAF 选择位置，将缓存包拷贝过去
+                    _log.Info("等待用户选择保存位置");
+                    // 注意：这里需要你保留之前写的 AndroidFileSaver 类
+                    var uri = await AndroidFileSaver.PickSaveLocationAsync(exportFileName, "application/octet-stream");
+                    if (uri != null)
+                    {
+                        // 使用流复制，避免包过大撑爆内存
+                        using var fsIn = File.OpenRead(finalPkgPath);
+                        var resolver = Android.App.Application.Context.ContentResolver;
+                        using var streamOut = resolver.OpenOutputStream(uri);
+                        if (streamOut != null)
+                        {
+                            await fsIn.CopyToAsync(streamOut);
+                            await streamOut.FlushAsync();
+                        }
+                    }
+                    else
+                    {
+                        _log.Info("用户取消了保存操作");
+                        App.AppStateManager?.ProcessingTaskId = 0;
+                        return; // 用户取消了，直接中断，不显示"导出成功"
+                    }
+#endif
+                }
+                else if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                {
+                    await FileHelper.ExportFileAppleAsync(finalPkgPath);
                 }
 
                 _log.Success($"数据导出成功: {finalPkgPath}");
@@ -591,7 +618,7 @@ namespace Terraria_Wiki.Services
                     try { File.Delete(tempDbPath); } catch { /* 忽略清理失败 */ }
                 }
 
-                // 如果是移动端，临时生成的包分享完后也要删掉防占用空间
+                // 如果是移动端，临时生成的包分享/拷贝完后也要删掉防占用空间
                 if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
                 {
                     _ = FileHelper.ClearAppCacheAsync();
