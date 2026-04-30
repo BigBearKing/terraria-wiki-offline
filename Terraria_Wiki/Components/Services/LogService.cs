@@ -219,29 +219,65 @@ namespace Terraria_Wiki.Services
             // 直接复制当前日志文件到指定位置，简单高效
             try
             {
-                string tempZipPath = Path.Combine(FileSystem.CacheDirectory, $"logs_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip");
+                string fileName = $"logs_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip";
+                string tempZipPath = Path.Combine(FileSystem.CacheDirectory, fileName);
+
                 FileHelper.CreateZipFromDirectory(_archiveFolderPath, tempZipPath);
                 await FileHelper.AddFilesToZip(tempZipPath, new[] { _activeLogPath });
 
-                if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
                 {
-                    await FileHelper.ExportFileMobileAsync(tempZipPath);
+                    // Apple 端依然走系统分享或原有的导出逻辑
+                    await FileHelper.ExportFileAppleAsync(tempZipPath);
                 }
-                else
+                else if (DeviceInfo.Platform == DevicePlatform.Android)
+                {
+#if ANDROID
+                    // 安卓端走 SAF 机制
+                    var uri = await AndroidFileSaver.PickSaveLocationAsync(fileName, "application/zip");
+                    if (uri != null)
+                    {
+                        using var fsIn = File.OpenRead(tempZipPath);
+                        var resolver = Android.App.Application.Context.ContentResolver;
+                        using var streamOut = resolver.OpenOutputStream(uri);
+                        if (streamOut != null)
+                        {
+                            await fsIn.CopyToAsync(streamOut);
+                            await streamOut.FlushAsync();
+                        }
+                    }
+                    else
+                    {
+                        // 用户取消了保存，直接退出，不显示成功提示
+                        return;
+                    }
+#endif
+                }
+                else if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
 #if WINDOWS
-                    string outputFolder = await FileHelper.PickFolderWindowsAsync();
-                    if (!Directory.Exists(outputFolder))
-                    {
-                        Directory.CreateDirectory(outputFolder);
-                    }
-                    string destinationPath = Path.Combine(outputFolder, Path.GetFileName(tempZipPath));
-                    File.Copy(tempZipPath, destinationPath, true);
+            string outputFolder = await FileHelper.PickFolderWindowsAsync();
+            if (string.IsNullOrEmpty(outputFolder)) 
+            {
+                return; // 优化：用户在 Windows 取消了选择，直接退出
+            }
+
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            string destinationPath = Path.Combine(outputFolder, Path.GetFileName(tempZipPath));
+            File.Copy(tempZipPath, destinationPath, true);
 #else
                     throw new PlatformNotSupportedException("当前平台不支持导出日志功能");
 #endif
                 }
-                App.AppStateManager.TriggerAlert("导出日志成功", Path.GetFileName(tempZipPath));
+                else
+                {
+                    throw new PlatformNotSupportedException("当前平台不支持导出日志功能");
+                }
+
+                App.AppStateManager.TriggerAlert("导出日志成功", fileName);
             }
             catch (Exception ex)
             {
@@ -250,10 +286,9 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
+                // 无论成功还是失败，最后都清理缓存目录，防止临时 zip 占用空间
                 await FileHelper.ClearAppCacheAsync();
-
             }
-
         }
 
         //删除日志
