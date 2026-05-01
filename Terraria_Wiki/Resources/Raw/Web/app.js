@@ -10,7 +10,31 @@ if (initialTheme === "dark") {
     changTheme('False');
 }
 
+//监听操作
+{
+// 向外层父窗口汇报交互
+    const notifyParent = () => {
+        window.parent.postMessage('iframe_user_active', '*');
+    };
 
+    // 监听来自外层 MAUI Blazor 的命令
+    window.addEventListener('message', (e) => {
+        // 安全起见，如果在真实环境可以把 '*' 换成允许的域名
+        
+        if (e.data === 'start_iframe_monitor') {
+            // 收到开启命令，挂载交互监听
+            window.addEventListener('pointerdown', notifyParent);
+            window.addEventListener('scroll', notifyParent, true);
+            window.addEventListener('keydown', notifyParent);
+        } 
+        else if (e.data === 'stop_iframe_monitor') {
+            // 收到关闭命令，卸载交互监听
+            window.removeEventListener('pointerdown', notifyParent);
+            window.removeEventListener('scroll', notifyParent, true);
+            window.removeEventListener('keydown', notifyParent);
+        }
+    });
+}
 
 /*!
 handy-scroll v2.0.6

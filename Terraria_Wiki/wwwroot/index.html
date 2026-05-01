@@ -302,39 +302,69 @@
         }
 
         //iOS防烧屏配置
-        function checkIsIOS() {
-            const userAgent = window.navigator.userAgent.toLowerCase();
-
-            // 判断常规的 iPhone, iPod 和老款 iPad
-            if (/iphone|ipod|ipad/.test(userAgent)) {
-                return true;
+        {
+            // 1. 判断系统
+            function checkIsIOS() {
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                if (/iphone|ipod|ipad/.test(userAgent)) return true;
+                if (userAgent.includes('mac') && navigator.maxTouchPoints && navigator.maxTouchPoints > 2) return true;
+                return false;
             }
 
-            // 判断运行在 Mac 模式下的新版 iPad (特征是 Mac 系统且支持多点触控)
-            if (userAgent.includes('mac') && navigator.maxTouchPoints && navigator.maxTouchPoints > 2) {
-                return true;
-            }
-
-            return false;
-        }
-
-        // 只有在当前系统是 iOS 时，才执行后面的逻辑
-        if (checkIsIOS()) {
             let debounceTimer;
 
-            function notifyInteraction() {
+            const notifyInteraction = () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
-                    DotNet.invokeMethodAsync('Terraria_Wiki', 'NotifyInteraction')
-                        .catch(err => { /* 忽略初始化阶段的报错 */ });
+                    DotNet.invokeMethodAsync('Terraria_Wiki', 'NotifyInteraction').catch(e => { });
                 }, 1000);
-            }
+            };
 
-            // 绑定事件
-            window.addEventListener('pointerdown', notifyInteraction);
-            window.addEventListener('pointermove', notifyInteraction);
-            window.addEventListener('keydown', notifyInteraction);
-            window.addEventListener('scroll', notifyInteraction, true);
+            // 独立出 iframe 消息处理函数，方便后续移除监听
+            const handleIframeMessage = (e) => {
+                if (e.data === 'iframe_user_active') {
+                    notifyInteraction(); // 收到 iframe 的汇报，重置 C# 计时器
+                }
+            };
+
+            window.startBurnInMonitoring = () => {
+                if (!checkIsIOS()) return;
+
+                // 1. 开启外层自身的监听
+                window.addEventListener('pointerdown', notifyInteraction);
+                window.addEventListener('pointermove', notifyInteraction);
+                window.addEventListener('keydown', notifyInteraction);
+                window.addEventListener('scroll', notifyInteraction, true);
+
+                // 2. 监听来自 iframe 的汇报
+                window.addEventListener('message', handleIframeMessage);
+
+                // 3. 找到 iframe 并向它下发“开始监听”的命令
+                const iframe = document.querySelector('iframe'); // 如果你有多个 iframe，建议加上 id 选择器，如 '#wiki-iframe'
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage('start_iframe_monitor', '*');
+                }
+            };
+
+            window.stopBurnInMonitoring = () => {
+                if (!checkIsIOS()) return;
+
+                // 1. 卸载外层自身的监听
+                window.removeEventListener('pointerdown', notifyInteraction);
+                window.removeEventListener('pointermove', notifyInteraction);
+                window.removeEventListener('keydown', notifyInteraction);
+                window.removeEventListener('scroll', notifyInteraction, true);
+
+                // 2. 卸载 iframe 消息的监听
+                window.removeEventListener('message', handleIframeMessage);
+                clearTimeout(debounceTimer);
+
+                // 3. 💡 找到 iframe 并向它下发“停止监听”的命令
+                const iframe = document.querySelector('iframe');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage('stop_iframe_monitor', '*');
+                }
+            };
         }
 
 
