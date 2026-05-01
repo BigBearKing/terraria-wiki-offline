@@ -28,12 +28,8 @@ namespace Terraria_Wiki
 #endif
 
         public App(LocalWebServer webServer, ManagerDbService managerDb,
-        ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService
-#if IOS
-        ,BurnInProtectionService burnInProtectionService)
-#else
-        )
-#endif
+                ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
+                IServiceProvider services)
         {
             WebServer = webServer;
             ManagerDb = managerDb;
@@ -41,14 +37,13 @@ namespace Terraria_Wiki
             DataManager = dataService;
             LogManager = logService;
             AppStateManager = appState;
+
             ThemeService.InitTheme();
             _ = InitializeAsync();
+
             InitializeComponent();
-#if IOS
-            MainPage = new MainPage(burnInProtectionService);
-#else
-            MainPage = new MainPage();
-#endif
+
+            MainPage = services.GetRequiredService<MainPage>();
         }
 
         private async Task InitializeAsync()

@@ -30,7 +30,7 @@ namespace Terraria_Wiki
 #if IOS
             builder.Services.AddSingleton<BurnInProtectionService>();
 #endif
-
+            builder.Services.AddTransient<MainPage>();
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();

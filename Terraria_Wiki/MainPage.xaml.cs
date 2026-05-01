@@ -13,16 +13,15 @@ namespace Terraria_Wiki
 #if IOS
         private readonly BurnInProtectionService _burnInService;
         private float _originalBrightness = 0.5f;
+#endif
 
 
-
+#if IOS
         public MainPage(BurnInProtectionService burnInService)
-        {
+#else
+        public MainPage() // Android/Windows 版本
 #endif
-#if !IOS
-        public MainPage()
         {
-#endif
             InitializeComponent();
             bool isDark = App.AppStateManager.IsDarkTheme;
             //根据判断，瞬间给原生加载层上色
