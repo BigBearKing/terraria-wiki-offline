@@ -4,6 +4,7 @@ using Android.Window;
 
 #endif
 using Terraria_Wiki.Services;
+using Microsoft.AspNetCore.Components.WebView;
 
 namespace Terraria_Wiki
 {
@@ -88,6 +89,17 @@ namespace Terraria_Wiki
             }
         }
 #endif
+
+        private void BlazorWebView_UrlLoading(object sender, UrlLoadingEventArgs e)
+        {
+            // 如果主机名是 127.0.0.1 ，强制在应用内打开
+            if (e.Url.Host == "127.0.0.1")
+            {
+                e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
+            }
+        }
+
+
 
     }
 }

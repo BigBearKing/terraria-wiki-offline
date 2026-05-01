@@ -5,7 +5,7 @@
              xmlns:components="clr-namespace:Terraria_Wiki.Components"
              x:Class="Terraria_Wiki.MainPage">
     <Grid>
-        <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html" StartPath="/home">
+        <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html" StartPath="/home" UrlLoading="BlazorWebView_UrlLoading">
             <BlazorWebView.RootComponents>
                 <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
             </BlazorWebView.RootComponents>

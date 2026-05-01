@@ -177,6 +177,13 @@ body {
     margin: 0 auto;
 }
 
+@supports (-webkit-touch-callout: none) {
+    .page-content {
+        /* 只有在 iOS 设备上，才会强制加上这段 padding，防止悬浮滚动条遮挡内容 */
+        padding: 0 24px 0 24px;
+    }
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -221,9 +228,9 @@ body.has-hover .button:hover {
     transition: none
 }
 
-    .button > * {
-        transition: inherit;
-    }
+.button > * {
+    transition: inherit;
+}
 
 
 /* ============================================================== */
