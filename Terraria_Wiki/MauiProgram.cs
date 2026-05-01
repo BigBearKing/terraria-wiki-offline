@@ -27,6 +27,9 @@ namespace Terraria_Wiki
             builder.Services.AddTransient<App>();
             builder.Services.AddMauiBlazorWebView();
 
+#if IOS
+            builder.Services.AddSingleton<BurnInProtectionService>();
+#endif
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

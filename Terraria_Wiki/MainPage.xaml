@@ -67,30 +67,28 @@
                 </VerticalStackLayout>
             </Frame>
         </Grid>
-        <OnPlatform x:TypeArguments="View">
-            <On Platform="iOS">
-                <Grid x:Name="BurnInProtectionOverlay"
-                    IsVisible="False"
-                    BackgroundColor="Black" 
-                    HorizontalOptions="Fill"
-                    VerticalOptions="Fill"
-                    InputTransparent="False"
-                    CascadeInputTransparent="False">
 
-                    <Grid.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnProtectionMaskTapped" />
-                    </Grid.GestureRecognizers>
+        <Grid x:Name="BurnInProtectionOverlay"
+            IsVisible="False"
+            BackgroundColor="Black" 
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill"
+            InputTransparent="False"
+            CascadeInputTransparent="False">
 
-                    <Label x:Name="FloatingText"
-                        Text="正在后台处理任务&#x0a;为防止烧屏已进入保护模式&#x0a;点击屏幕任意位置唤醒"
-                        FontSize="16"
-                        TextColor="#444444" 
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"
-                        HorizontalTextAlignment="Center" />
-                </Grid>
-            </On>
-        </OnPlatform>
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnProtectionMaskTapped" />
+            </Grid.GestureRecognizers>
+
+            <Label x:Name="FloatingText"
+                Text="正在后台处理任务&#x0a;为防止烧屏已进入保护模式&#x0a;点击屏幕任意位置唤醒"
+                FontSize="16"
+                TextColor="#444444" 
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                HorizontalTextAlignment="Center" />
+        </Grid>
+
 
 
     </Grid>

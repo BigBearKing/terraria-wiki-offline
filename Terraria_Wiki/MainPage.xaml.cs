@@ -13,9 +13,16 @@ namespace Terraria_Wiki
 #if IOS
         private readonly BurnInProtectionService _burnInService;
         private float _originalBrightness = 0.5f;
-#endif
+
+
+
         public MainPage(BurnInProtectionService burnInService)
         {
+#endif
+#if !IOS
+        public MainPage()
+        {
+#endif
             InitializeComponent();
             bool isDark = App.AppStateManager.IsDarkTheme;
             //根据判断，瞬间给原生加载层上色
@@ -143,6 +150,11 @@ namespace Terraria_Wiki
                 await FloatingText.TranslateTo(0, 60, 4000, Easing.SinInOut);
             }
             FloatingText.TranslationY = 0;
+        }
+#else
+        private void OnProtectionMaskTapped(object sender, TappedEventArgs e)
+        {
+
         }
 #endif
     }
