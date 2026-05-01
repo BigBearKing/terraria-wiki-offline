@@ -233,6 +233,13 @@
 
             const handlePointerDown = (e) => {
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                // 💡 重点新增：检查点击的目标元素
+                // 如果点击的是带有 'no-swipe' class 的元素，或者它的任何子元素，直接拦截
+                if (e.target.closest('.no-swipe')) {
+                    return; // 退出函数，不启动拖拽
+                }
+
                 isDragging = true;
                 startY = e.clientY;
                 currentY = startY;
@@ -284,16 +291,52 @@
             // 绑定基础事件
             panel.addEventListener('pointerdown', handlePointerDown);
 
-            // 💡 重点：函数返回一个“卸载器”，交给外层管理者调用
             return function cleanup() {
                 panel.removeEventListener('pointerdown', handlePointerDown);
                 document.removeEventListener('pointermove', handlePointerMove);
                 document.removeEventListener('pointerup', handlePointerUpOrCancel);
                 document.removeEventListener('pointercancel', handlePointerUpOrCancel);
                 window.removeEventListener('blur', handlePointerUpOrCancel);
-                panel.style.transform = ''; // 清除拖拽留下的样式
+                panel.style.transform = '';
             };
         }
+
+        //iOS防烧屏配置
+        function checkIsIOS() {
+            const userAgent = window.navigator.userAgent.toLowerCase();
+
+            // 判断常规的 iPhone, iPod 和老款 iPad
+            if (/iphone|ipod|ipad/.test(userAgent)) {
+                return true;
+            }
+
+            // 判断运行在 Mac 模式下的新版 iPad (特征是 Mac 系统且支持多点触控)
+            if (userAgent.includes('mac') && navigator.maxTouchPoints && navigator.maxTouchPoints > 2) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // 只有在当前系统是 iOS 时，才执行后面的逻辑
+        if (checkIsIOS()) {
+            let debounceTimer;
+
+            function notifyInteraction() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    DotNet.invokeMethodAsync('Terraria_Wiki', 'NotifyInteraction')
+                        .catch(err => { /* 忽略初始化阶段的报错 */ });
+                }, 1000);
+            }
+
+            // 绑定事件
+            window.addEventListener('pointerdown', notifyInteraction);
+            window.addEventListener('pointermove', notifyInteraction);
+            window.addEventListener('keydown', notifyInteraction);
+            window.addEventListener('scroll', notifyInteraction, true);
+        }
+
 
     </script>
 

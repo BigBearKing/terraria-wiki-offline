@@ -1,9 +1,10 @@
 ﻿
 .top-bar {
-    height: var(--header-height);
+    height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
     display: flex;
     align-items: center;
     padding: 0 8px; /* 两侧留点空隙 */
+    padding-top: env(safe-area-inset-top, 0px); /* 适配 iOS 刘海屏 */
     gap: 16px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
@@ -104,7 +105,7 @@ body.has-hover .action-btn:hover {
         display: flex;
         align-items: center;
         transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
-        bottom: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     }
 
     .search-input {

@@ -142,8 +142,8 @@
         transition: width 0.3s;
         overflow: hidden; /* 隐藏溢出的文字 */
         white-space: nowrap; /* 强制文字一行显示 */
-        -webkit-user-select: none;
-        user-select: none;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
         .sidebar.collapsed {

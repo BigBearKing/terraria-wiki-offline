@@ -10,12 +10,28 @@ namespace Terraria_Wiki
 {
     public partial class MainPage : ContentPage
     {
-        public MainPage()
+#if IOS
+        private readonly BurnInProtectionService _burnInService;
+        private float _originalBrightness = 0.5f;
+#endif
+        public MainPage(BurnInProtectionService burnInService)
         {
             InitializeComponent();
             bool isDark = App.AppStateManager.IsDarkTheme;
             //根据判断，瞬间给原生加载层上色
             Application.Current.UserAppTheme = isDark ? AppTheme.Dark : AppTheme.Light;
+#if IOS
+            _burnInService = burnInService;
+
+            // 订阅状态改变事件
+            _burnInService.OnStateChanged += (isActive) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    if (isActive) EnableProtectionUI(); else DisableProtectionUI();
+                });
+            };
+#endif
         }
         public void HideLoadingScreen()
         {
@@ -98,9 +114,37 @@ namespace Terraria_Wiki
                 e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
             }
         }
+#if IOS
+        private void EnableProtectionUI()
+        {
+            BurnInProtectionOverlay.IsVisible = true;
+            _originalBrightness = (float)UIKit.UIScreen.MainScreen.Brightness;
+            UIKit.UIScreen.MainScreen.Brightness = 0.0f; // 调到最暗
+            StartFloatingAnimation();
+        }
 
+        private void DisableProtectionUI()
+        {
+            UIKit.UIScreen.MainScreen.Brightness = _originalBrightness;
+            BurnInProtectionOverlay.IsVisible = false;
+            // 恢复亮度逻辑...
+        }
 
-
+        private void OnProtectionMaskTapped(object sender, TappedEventArgs e)
+        {
+            _burnInService.Deactivate();
+            _burnInService.ResetTimer();
+        }
+        private async void StartFloatingAnimation()
+        {
+            while (_burnInService.IsActive)
+            {
+                await FloatingText.TranslateTo(0, -60, 4000, Easing.SinInOut);
+                await FloatingText.TranslateTo(0, 60, 4000, Easing.SinInOut);
+            }
+            FloatingText.TranslationY = 0;
+        }
+#endif
     }
 }
 
