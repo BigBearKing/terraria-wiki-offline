@@ -35,6 +35,7 @@ public class BurnInProtectionService
         {
             // 任务开始了，自动启动防烧屏倒计时
             ResetTimer();
+            DeviceDisplay.Current.KeepScreenOn = true;
             AppState.JS?.InvokeVoidAsync("startBurnInMonitoring");
         }
         else
@@ -42,6 +43,7 @@ public class BurnInProtectionService
             // 任务结束了，彻底关闭防烧屏机制
             _idleTimer.Stop();
             Deactivate();
+            DeviceDisplay.Current.KeepScreenOn = false;
             AppState.JS?.InvokeVoidAsync("stopBurnInMonitoring");
         }
     }

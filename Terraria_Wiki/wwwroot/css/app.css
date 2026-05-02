@@ -22,6 +22,10 @@
     --blue-primary: rgba(0, 136, 255, 1);
     --blue-secondary: rgba(0, 136, 255, 0.6);
     --blue-tertiary: rgba(0, 136, 255, 0.16);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
 }
 /* --- 暗色模式 (Dark) --- */
 html.dark-theme {
@@ -135,7 +139,6 @@ body {
     flex: 1;
     width: 100%;
     min-height: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .iframe-container {
@@ -209,6 +212,7 @@ body {
     display: flex;
     flex-direction: column;
     scrollbar-gutter: stable;
+    padding: 12px 0 max(12px, var(--safe-bottom))
 }
 
 .button {
@@ -237,10 +241,6 @@ body.has-hover .button:hover {
 /* ============================================================== */
 /* 移动端专属适配 (屏幕宽度 <= 768px)                             */
 /* ============================================================== */
-/* 默认在 PC 端隐藏移动端元素 */
-.mobile-menu-btn {
-    display: none;
-}
 
 .sidebar-mask {
     display: none;

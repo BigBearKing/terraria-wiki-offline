@@ -5,130 +5,130 @@
 
 <div class="page-anim page-content">
 
-	<header class="page-header">
-		<span class="page-title">所有页面索引</span>
+    <header class="page-header">
+        <span class="page-title">所有页面索引</span>
 
-		<span class="sub-text">共找到 @totalPageCount 个页面</span>
-	</header>
+        <span class="sub-text">共找到 @totalPageCount 个页面</span>
+    </header>
 
-	<div class="list-container all-pages-list">
-		<Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="wikipage" OverscanCount="25">
-			<div class="list-item button" @onclick="() => AppService.OpenPageAsync(wikipage.Title)">
-				<span class="page-name">@wikipage.Title</span>
-				<span class="page-time">@wikipage.LastModified.ToString("yy-MM-dd HH:mm")</span>
-			</div>
-		</Virtualize>
-	</div>
+    <div class="list-container all-pages-list">
+        <Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="wikipage" OverscanCount="25">
+            <div class="list-item button" @onclick="() => AppService.OpenPageAsync(wikipage.Title)">
+                <span class="page-name">@wikipage.Title</span>
+                <span class="page-time">@wikipage.LastModified.ToString("yy-MM-dd HH:mm")</span>
+            </div>
+        </Virtualize>
+    </div>
 </div>
 
 @code {
-	private Virtualize<WikiPageSummary>? _virtualizeComponent;
+    private Virtualize<WikiPageSummary>? _virtualizeComponent;
 
-	private int totalPageCount = 0;
+    private int totalPageCount = 0;
 
-	protected override void OnInitialized()
-	{
-		//订阅 Topbar 传来的搜索事件
-		AppState.OnSearchQueryChanged += HandleSearchChanged;
-	}
+    protected override void OnInitialized()
+    {
+        //订阅 Topbar 传来的搜索事件
+        AppState.OnSearchQueryChanged += HandleSearchChanged;
+    }
 
-	public void Dispose()
-	{
-		AppState.OnSearchQueryChanged -= HandleSearchChanged;
-	}
+    public void Dispose()
+    {
+        AppState.OnSearchQueryChanged -= HandleSearchChanged;
+    }
 
 
-	protected override async Task OnInitializedAsync()
-	{
-		// 调用服务获取数量
-		totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
+    protected override async Task OnInitializedAsync()
+    {
+        // 调用服务获取数量
+        totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
 
-	}
+    }
 
-	private async ValueTask<ItemsProviderResult<WikiPageSummary>> LoadPages(ItemsProviderRequest request)
-	{
-		var query = AppState.SearchQuery?.Trim();
+    private async ValueTask<ItemsProviderResult<WikiPageSummary>> LoadPages(ItemsProviderRequest request)
+    {
+        var query = AppState.SearchQuery?.Trim();
 
-		if (string.IsNullOrEmpty(query))
-		{
-			// ================== 无搜索词：正常加载 ==================
-			totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
-			var items = await App.ContentDb.GetPageSummariesPagedAsync(request.StartIndex, request.Count);
+        if (string.IsNullOrEmpty(query))
+        {
+            // ================== 无搜索词：正常加载 ==================
+            totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
+            var items = await App.ContentDb.GetPageSummariesPagedAsync(request.StartIndex, request.Count);
 
-			StateHasChanged(); // 通知 UI 刷新标题处的数量
-			return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
-		}
-		else
-		{
-			// ================== 有搜索词：使用通用过滤加载 ==================
+            StateHasChanged(); // 通知 UI 刷新标题处的数量
+            return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
+        }
+        else
+        {
+            // ================== 有搜索词：使用通用过滤加载 ==================
 
-			// 1. 获取过滤后的总数
-			totalPageCount = await App.ContentDb.GetFilteredCountAsync(
-				tableName: "WikiPage",
-				searchColumn: "Title",
-				keyword: query);
+            // 1. 获取过滤后的总数
+            totalPageCount = await App.ContentDb.GetFilteredCountAsync(
+                tableName: "WikiPage",
+                searchColumn: "Title",
+                keyword: query);
 
-			// 2. 获取过滤后的分页数据 (只拿必要的列，避开庞大的 Content 列)
-			var items = await App.ContentDb.GetFilteredPagedAsync<WikiPageSummary>(
-				tableName: "WikiPage",              // 真实的表名
-				selectColumns: "Title, LastModified",// 只查询这两列，极大地降低内存开销！
-				searchColumn: "Title",               // 在 Title 里面模糊搜索
-				keyword: query,                      // 用户的输入
-				orderByColumn: "Title",       // 按修改时间排序
-				startIndex: request.StartIndex,
-				count: request.Count,
-				isDesc: false                        // 降序
-			);
+            // 2. 获取过滤后的分页数据 (只拿必要的列，避开庞大的 Content 列)
+            var items = await App.ContentDb.GetFilteredPagedAsync<WikiPageSummary>(
+                tableName: "WikiPage",              // 真实的表名
+                selectColumns: "Title, LastModified",// 只查询这两列，极大地降低内存开销！
+                searchColumn: "Title",               // 在 Title 里面模糊搜索
+                keyword: query,                      // 用户的输入
+                orderByColumn: "Title",       // 按修改时间排序
+                startIndex: request.StartIndex,
+                count: request.Count,
+                isDesc: false                        // 降序
+            );
 
-			StateHasChanged();
-			return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
-		}
-	}
+            StateHasChanged();
+            return new ItemsProviderResult<WikiPageSummary>(items, totalPageCount);
+        }
+    }
 
-	private async void HandleSearchChanged()
-	{
-		// 4. 当搜索词改变时，强制 Virtualize 丢弃当前数据，重新触发 LoadPages
-		await InvokeAsync(async () =>
-		{
-			if (_virtualizeComponent != null)
-			{
-				await _virtualizeComponent.RefreshDataAsync();
-				StateHasChanged();
-			}
-		});
-	}
+    private async void HandleSearchChanged()
+    {
+        // 4. 当搜索词改变时，强制 Virtualize 丢弃当前数据，重新触发 LoadPages
+        await InvokeAsync(async () =>
+        {
+            if (_virtualizeComponent != null)
+            {
+                await _virtualizeComponent.RefreshDataAsync();
+                StateHasChanged();
+            }
+        });
+    }
 
 
 }
 
 <style>
 
-	.all-pages-list {
-		gap: 2px;
-		padding: 0 0 12px;
-	}
-	/* 列表项样式 */
-	.list-item {
-		padding: 12px 12px;
-		border-radius: 12px;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
+    .all-pages-list {
+        padding-top: 0;
+        gap: 2px;
+    }
+    /* 列表项样式 */
+    .list-item {
+        padding: 12px 12px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
 
-	.page-name {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-weight: 500;
-	}
+    .page-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
 
-	.page-time {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		color: var(--text-secondary);
-		font-size: 0.8rem;
-	}
+    .page-time {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+    }
 </style>

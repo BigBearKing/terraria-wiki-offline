@@ -5,7 +5,7 @@
 <header class="top-bar">
 
     <div class="actions-wrapper">
-        <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none; padding: 0 12px; align-items: center;">
+        <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none;">
             <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
         </button>
         <button class="action-btn button" title="后退" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">

@@ -142,8 +142,7 @@
         transition: width 0.3s;
         overflow: hidden; /* 隐藏溢出的文字 */
         white-space: nowrap; /* 强制文字一行显示 */
-        padding-top: env(safe-area-inset-top, 0px);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: var(--safe-left)
     }
 
         .sidebar.collapsed {
@@ -158,7 +157,7 @@
     /* 2. 头部区域 */
     .sidebar-header {
         height: 50px; /* 和宽度保持一致，形成正方形感 */
-        margin: 4px 12px;
+        margin: max(4px, calc(var(--safe-top) - 10px)) 12px 4px 12px;
         display: flex;
         align-items: center;
         padding: 0;
@@ -250,7 +249,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
-        padding: 12px;
+        padding: 12px 12px max(12px, var(--safe-bottom)) 12px;
     }
 
     /* 定义旋转动作 */

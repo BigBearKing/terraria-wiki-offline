@@ -1,10 +1,8 @@
 ﻿
 .top-bar {
-    height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
     display: flex;
     align-items: center;
-    padding: 0 8px; /* 两侧留点空隙 */
-    padding-top: env(safe-area-inset-top, 0px); /* 适配 iOS 刘海屏 */
+    padding: max(6px, var(--safe-top)) 8px 6px 8px; /* 两侧留点空隙 */
     gap: 16px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
@@ -93,8 +91,25 @@ body.has-hover .action-btn:hover {
     height: 16px;
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
 }
+.mobile-menu-btn {
+    display: none;
+}
+
+    .mobile-menu-btn:hover {
+        background-color: transparent !important;
+    }
+
+    .mobile-menu-btn:active {
+        background-color: transparent !important;
+    }
 
 @media (max-width: 768px) {
+
+    .top-bar {
+        padding: max(6px, var(--safe-top)) 8px 6px 16px;
+    }
+
+
 
     .search-wrapper {
         position: absolute;
@@ -105,7 +120,7 @@ body.has-hover .action-btn:hover {
         display: flex;
         align-items: center;
         transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        bottom: max(10px, var(--safe-bottom));
     }
 
     .search-input {
