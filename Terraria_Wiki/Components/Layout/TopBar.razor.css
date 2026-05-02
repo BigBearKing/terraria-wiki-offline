@@ -2,7 +2,7 @@
 .top-bar {
     display: flex;
     align-items: center;
-    padding: max(6px, var(--safe-top)) 8px 6px 8px; /* 两侧留点空隙 */
+    padding: max(4px, calc(var(--safe-top) - 10px)) 8px 6px 8px; /* 两侧留点空隙 */
     gap: 16px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
