@@ -2,7 +2,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @inject IJSRuntime JS
-<header class="top-bar">
+<header class="top-bar" style="padding: max(6px, @(AppState.SafeAreaTop)px) 8px 6px 8px;">
 
     <div class="actions-wrapper">
         <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none;">

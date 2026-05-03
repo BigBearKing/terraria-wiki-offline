@@ -3,13 +3,13 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using AndroidX.Core.View;
+using Microsoft.AspNetCore.Components.WebView.Maui;
 using Terraria_Wiki.Services;
 
 namespace Terraria_Wiki
 {
     [Activity(Theme = "@style/Maui.SplashTheme",
               MainLauncher = true,
-              WindowSoftInputMode = Android.Views.SoftInput.AdjustResize,
               ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
@@ -18,9 +18,6 @@ namespace Terraria_Wiki
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, true);
-            // 恢复正常模式
-            ResetToStandardMode();
             // 提取全局 AppState
             _appState = IPlatformApplication.Current.Services.GetService<AppState>();
 
@@ -30,6 +27,7 @@ namespace Terraria_Wiki
                 // 你需要在这里订阅它。只要 TaskId 变化了，这个事件就会触发。
                 _appState.OnChange += CheckAndToggleProcessingService;
             }
+
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -52,19 +50,6 @@ namespace Terraria_Wiki
             }
         }
 
-        private void ResetToStandardMode()
-        {
-            if (Window == null) return;
-
-            // 1. 重要：设置为 true，意味着布局会自动避开状态栏和导航栏
-            WindowCompat.SetDecorFitsSystemWindows(Window, true);
-
-            // 2. 获取控制器
-            var controller = WindowCompat.GetInsetsController(Window, Window.DecorView);
-
-            // 3. 显示系统栏（状态栏 + 导航栏）
-            controller.Show(WindowInsetsCompat.Type.SystemBars());
-        }
 
         private void CheckAndToggleProcessingService()
         {
@@ -110,6 +95,10 @@ namespace Terraria_Wiki
             }
             base.OnDestroy();
         }
+
+
+
+
 
     }
 }

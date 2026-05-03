@@ -2,7 +2,6 @@
 .top-bar {
     display: flex;
     align-items: center;
-    padding: max(4px, calc(var(--safe-top) - 10px)) 8px 6px 8px; /* 两侧留点空隙 */
     gap: 16px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
@@ -105,10 +104,6 @@ body.has-hover .action-btn:hover {
 
 @media (max-width: 768px) {
 
-    .top-bar {
-        padding: max(6px, var(--safe-top)) 8px 6px 16px;
-    }
-
 
 
     .search-wrapper {
@@ -120,7 +115,7 @@ body.has-hover .action-btn:hover {
         display: flex;
         align-items: center;
         transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
-        bottom: max(10px, var(--safe-bottom));
+        bottom: 16px;
     }
 
     .search-input {

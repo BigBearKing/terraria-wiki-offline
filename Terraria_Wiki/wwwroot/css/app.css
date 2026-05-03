@@ -22,10 +22,6 @@
     --blue-primary: rgba(0, 136, 255, 1);
     --blue-secondary: rgba(0, 136, 255, 0.6);
     --blue-tertiary: rgba(0, 136, 255, 0.16);
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
 }
 /* --- 暗色模式 (Dark) --- */
 html.dark-theme {
@@ -212,7 +208,6 @@ body {
     display: flex;
     flex-direction: column;
     scrollbar-gutter: stable;
-    padding: 12px 0 max(12px, var(--safe-bottom))
 }
 
 .button {

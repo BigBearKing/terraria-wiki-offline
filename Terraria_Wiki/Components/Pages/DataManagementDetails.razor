@@ -10,7 +10,7 @@
         </div>
         <span class="page-title">@_selectedWiki?.Title</span>
     </div>
-    <div class="list-container detail-container">
+    <div class="list-container detail-container" style="padding: 0 0 max(12px, @(AppState.SafeAreaBottom)px);">
         @if (_selectedWiki != null)
         {
 
@@ -258,7 +258,6 @@
     .detail-container {
         display: flex;
         flex-direction: column;
-        padding-top:0;
         gap: 16px;
     }
 

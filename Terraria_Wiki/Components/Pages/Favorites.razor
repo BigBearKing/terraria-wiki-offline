@@ -9,7 +9,7 @@
 		<span class="page-title">收藏内容</span>
 		<span class="sub-text">共找到 @favoriteCount 个结果</span>
 	</header>
-	<div class="list-container favorite-list">
+	<div class="list-container favorite-list" style="padding: 0 0 max(12px, @(AppState.SafeAreaBottom)px);">
 		@if (favoriteCount == 0)
 		{
 			<div class="empty-state">
@@ -147,7 +147,6 @@
 
 	.favorite-list{
 		gap:8px;
-		padding-top:0;
 	}
 	.wiki-card {
 		display: flex;

@@ -1,8 +1,10 @@
 ﻿#if ANDROID
 using Android.Views;
 using Android.Window;
-
+using AndroidX.Core.View;
+using Microsoft.Maui.Devices;
 #endif
+
 using Terraria_Wiki.Services;
 using Microsoft.AspNetCore.Components.WebView;
 
@@ -38,6 +40,24 @@ namespace Terraria_Wiki
                 });
             };
 #endif
+            this.Loaded += MainPage_Loaded;
+            DeviceDisplay.Current.MainDisplayInfoChanged += Current_MainDisplayInfoChanged;
+
+        }
+
+
+        private void MainPage_Loaded(object sender, EventArgs e)
+        {
+            UpdateSafeAreaToWeb();
+        }
+        private void Current_MainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
+        {
+            // 稍微延迟一下，等待安卓底层的 Insets 刷新完毕再读取
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await Task.Delay(50);
+                UpdateSafeAreaToWeb();
+            });
         }
         public void HideLoadingScreen()
         {
@@ -156,6 +176,67 @@ namespace Terraria_Wiki
 
         }
 #endif
+
+        private void UpdateSafeAreaToWeb()
+        {
+#if ANDROID
+            // 1. 正确获取 Android 的 Window 对象
+            var window = Platform.CurrentActivity?.Window;
+            var decorView = window?.DecorView;
+
+            if (decorView == null) return;
+
+            // 2. 读取安全区
+            var insets = ViewCompat.GetRootWindowInsets(decorView);
+            if (insets != null)
+            {
+                var statusInsets = insets.GetInsets(WindowInsetsCompat.Type.StatusBars());
+                var navInsets = insets.GetInsets(WindowInsetsCompat.Type.NavigationBars());
+                var cutoutInsets = insets.GetInsets(WindowInsetsCompat.Type.DisplayCutout());
+
+                // 获取屏幕密度进行换算
+                var density = DeviceDisplay.Current.MainDisplayInfo.Density;
+                if (density <= 0) density = 1; // 防止除以0
+
+                double topDp = Math.Max(statusInsets.Top, cutoutInsets.Top) / density;
+                double bottomDp = navInsets.Bottom / density;
+                // 横屏时的刘海会变成 Left 或 Right
+                double leftDp = cutoutInsets.Left / density;
+                double rightDp = Math.Max(navInsets.Right, cutoutInsets.Right) / density;
+
+                // 3. 注入给前端 CSS 变量
+                System.Diagnostics.Debug.WriteLine($"安全区 - 上: {topDp}dp, 下: {bottomDp}dp");
+                System.Diagnostics.Debug.WriteLine($"安全区 - 左: {leftDp}dp, 右: {rightDp}dp");
+                App.AppStateManager.SafeAreaTop = topDp;
+                App.AppStateManager.SafeAreaBottom = bottomDp;
+                App.AppStateManager.SafeAreaLeft = leftDp;
+                App.AppStateManager.SafeAreaRight = rightDp;
+            }
+#elif IOS
+            // 1. 获取 iOS 当前的 UIViewController
+            var viewController = Platform.GetCurrentUIViewController();
+            var view = viewController?.View;
+
+            if (view != null)
+            {
+                // 2. 直接读取 iOS 的 SafeAreaInsets
+                var insets = view.SafeAreaInsets;
+
+                // 重点注意：iOS 的返回值已经是逻辑像素 (Points/DP) 了！
+                // 绝对不能像 Android 那样再去除非以屏幕密度 (Density)，直接用即可！
+                double topDp = insets.Top;
+                double bottomDp = insets.Bottom;
+                double leftDp = insets.Left;
+                double rightDp = insets.Right;
+
+                App.AppStateManager.SafeAreaTop = topDp;
+                App.AppStateManager.SafeAreaBottom = bottomDp;
+                App.AppStateManager.SafeAreaLeft = leftDp;
+                App.AppStateManager.SafeAreaRight = rightDp;
+            }
+#endif
+        }
+
     }
 }
 

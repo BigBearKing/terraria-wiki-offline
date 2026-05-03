@@ -26,6 +26,10 @@ public class AppState
     private string _searchQuery = "";
     private bool _isPinned = false;
     private bool _isSmallScreen = false;
+    private double _safeAreaTop = 0;
+    private double _safeAreaBottom = 0;
+    private double _safeAreaLeft = 0;
+    private double _safeAreaRight = 0;
     public readonly Dictionary<int, TaskConfig> Tasks = new()
     {
         { 1, new TaskConfig { Id = 1, Name = "检查软件更新", ProcessingText = "正在检查更新" } },
@@ -168,4 +172,42 @@ public class AppState
     {
         App.AppStateManager.IsSmallScreen = isSmall;
     }
+
+    public double SafeAreaTop
+    {
+        get => _safeAreaTop;
+        set
+        {
+            _safeAreaTop = value;
+            OnChange?.Invoke();
+        }
+    }
+    public double SafeAreaBottom
+    {
+        get => _safeAreaBottom;
+        set
+        {
+            _safeAreaBottom = value;
+            OnChange?.Invoke();
+        }
+    }
+    public double SafeAreaLeft
+    {
+        get => _safeAreaLeft;
+        set
+        {
+            _safeAreaLeft = value;
+            OnChange?.Invoke();
+        }
+    }
+    public double SafeAreaRight
+    {
+        get => _safeAreaRight;
+        set
+        {
+            _safeAreaRight = value;
+            OnChange?.Invoke();
+        }
+    }
+
 }
