@@ -2,6 +2,7 @@ using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
+using Android.Views;
 using AndroidX.Core.View;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 using Terraria_Wiki.Services;
@@ -28,6 +29,7 @@ namespace Terraria_Wiki
                 _appState.OnChange += CheckAndToggleProcessingService;
             }
 
+
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -51,29 +53,31 @@ namespace Terraria_Wiki
         }
 
 
-        private void CheckAndToggleProcessingService()
+        private async void CheckAndToggleProcessingService()
         {
-            // 必须切回主线程操作 Android Context
-            MainThread.BeginInvokeOnMainThread(() =>
+            if (_appState.ProcessingTaskId != 0)
             {
-                var intent = new Intent(this, typeof(Platforms.Android.ProcessingService));
+                await RequestNotificationPermissionAsync();
 
-                if (_appState.ProcessingTaskId != 0)
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    _ = RequestNotificationPermissionAsync();
+                    var intent = new Intent(this, typeof(Platforms.Android.ProcessingService));
                     if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
                         StartForegroundService(intent);
                     else
                         StartService(intent);
-                }
-                else
+                });
+            }
+            else
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    // TaskId 归零，发一个空 intent 过去，Service 内部判断 == 0 后会自我销毁
-                    // 或者直接调用 StopService(intent);
+                    var intent = new Intent(this, typeof(Platforms.Android.ProcessingService));
                     StopService(intent);
-                }
-            });
+                });
+            }
         }
+
         private static async Task RequestNotificationPermissionAsync()
         {
 

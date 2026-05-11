@@ -2,7 +2,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @inject IJSRuntime JS
-<header class="top-bar" style="padding: max(6px, @(AppState.SafeAreaTop)px) 8px 6px 8px;">
+<header class="top-bar">
 
     <div class="actions-wrapper">
         <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none;">
@@ -72,7 +72,6 @@
     {
         AppState.OnChange += RefreshUI;
         AppState.OnCurrentPageChanged += HandlePageChanged;
-
     }
 
     public void Dispose()
@@ -81,6 +80,7 @@
         AppState.OnCurrentPageChanged -= HandlePageChanged;
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
+
     }
 
     private async void RefreshUI()
@@ -288,5 +288,14 @@
             AppState.IsPinned = true;
         }
     }
+
+    private void HandleKeyboardHeightChanged(double keyboardHeightDp)
+    {
+        InvokeAsync(async () =>
+                {
+                    await JS.InvokeVoidAsync("updateKeyboardHeight", keyboardHeightDp);
+                });
+    }
+
 
 }

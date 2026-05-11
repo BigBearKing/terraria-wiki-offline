@@ -69,7 +69,21 @@
             sendUpdate(mq.matches);
         };
 
-
+        window.setSafeAreaTop = (top) => {
+            document.documentElement.style.setProperty('--safe-area-top', top + 'px');
+        };
+        window.setSafeAreaBottom = (bottom) => {
+            document.documentElement.style.setProperty('--safe-area-bottom', bottom + 'px');
+        };
+        window.setSafeAreaLeft = (left) => {
+            document.documentElement.style.setProperty('--safe-area-left', left + 'px');
+        };
+        window.setSafeAreaRight = (right) => {
+            document.documentElement.style.setProperty('--safe-area-right', right + 'px');
+        };
+        window.setGlobalKeyboardHeight = (height) => {
+            document.documentElement.style.setProperty('--global-keyboard-offset', height + 'px');
+        };
     </script>
 </head>
 

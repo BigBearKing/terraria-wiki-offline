@@ -6,6 +6,7 @@
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
+    padding: max(6px, var(--safe-area-top)) 8px 6px 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */
@@ -115,7 +116,7 @@ body.has-hover .action-btn:hover {
         display: flex;
         align-items: center;
         transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
-        bottom: 16px;
+        bottom: max(16px, calc(var(--safe-area-bottom) + var(--global-keyboard-offset)));
     }
 
     .search-input {

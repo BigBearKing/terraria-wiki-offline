@@ -5,7 +5,7 @@
         <span class="page-title">应用偏好设置</span>
     </header>
 
-    <div class="list-container setting-list" style="padding: 12px 0 max(12px, @(AppState.SafeAreaBottom)px);">
+    <div class="list-container setting-list">
 
         <div class="category-card">
             <span class="category-title">个性化</span>
@@ -381,6 +381,7 @@
 
     .setting-list {
         gap: 12px;
+        padding: 12px 0 max(12px, var(--safe-area-bottom));
     }
     /* --- 设置面板专属样式 --- */
     .category-card {

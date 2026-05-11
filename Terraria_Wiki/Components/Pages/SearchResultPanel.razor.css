@@ -79,12 +79,12 @@ body.has-hover .result-item:hover {
 @media(max-width:768px) {
     /* 搜索面板必须向上弹出 */
     .search-popup-panel {
-        bottom: var(--header-height) !important;
+        bottom: max(56px, calc(var(--safe-area-bottom) + var(--global-keyboard-offset) + 40px)) !important;
         top: auto !important;
         left: 12px;
         right: 12px;
         width: calc(100% - 24px);
-        max-height: 50vh;
+        max-height: 48vh;
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 

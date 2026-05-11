@@ -179,7 +179,7 @@ public class AppState
         set
         {
             _safeAreaTop = value;
-            OnChange?.Invoke();
+            JS?.InvokeVoidAsync("setSafeAreaTop", value);
         }
     }
     public double SafeAreaBottom
@@ -188,7 +188,7 @@ public class AppState
         set
         {
             _safeAreaBottom = value;
-            OnChange?.Invoke();
+            JS?.InvokeVoidAsync("setSafeAreaBottom", value);
         }
     }
     public double SafeAreaLeft
@@ -197,7 +197,7 @@ public class AppState
         set
         {
             _safeAreaLeft = value;
-            OnChange?.Invoke();
+            JS?.InvokeVoidAsync("setSafeAreaLeft", value);
         }
     }
     public double SafeAreaRight
@@ -206,7 +206,7 @@ public class AppState
         set
         {
             _safeAreaRight = value;
-            OnChange?.Invoke();
+            JS?.InvokeVoidAsync("setSafeAreaRight", value);
         }
     }
 

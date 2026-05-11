@@ -4,9 +4,9 @@
 @using Terraria_Wiki.Services
 <div class="sidebar-mask @(AppState.SidebarIsExpanded ? "show" : "")" @onclick="CloseSidebar"></div>
 
-<div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")" style="margin-left: @(AppState.SafeAreaLeft)px; padding-top: @(AppState.SafeAreaTop)px">
+<div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
 
-    <div class="sidebar-header" @onclick="ToggleSidebar" style="margin: max(4px, calc(@(AppState.SafeAreaTop)px)) 12px 4px 12px;">
+    <div class="sidebar-header" @onclick="ToggleSidebar">
         <div class="icon-container">
             <img src="images/logo.svg" alt="App Logo" class="app-icon" />
         </div>
@@ -61,7 +61,7 @@
 
     </nav>
 
-    <div class="sidebar-footer" style="padding: 12px 12px max(12px, @(AppState.SafeAreaBottom)px) 12px;">
+    <div class="sidebar-footer">
         <button class="nav-item button" @onclick="ToggleLogPanel">
             <div class="icon-container @(AppState.ProcessingTaskId != 0 ? "rotating" : "")" style=" @(AppState.ProcessingTaskId != 0 ? "color:var(--blue-primary)" : "")">
                 <Icon Name="sync"> </Icon>
@@ -142,6 +142,8 @@
         transition: width 0.3s;
         overflow: hidden; /* 隐藏溢出的文字 */
         white-space: nowrap; /* 强制文字一行显示 */
+        margin-left: var(--safe-area-left);
+        padding-top: var(--safe-area-top);
     }
 
         .sidebar.collapsed {
@@ -160,6 +162,7 @@
         align-items: center;
         padding: 0;
         cursor: pointer;
+        margin: max(4px, var(--safe-area-top)) 12px 4px 12px;
     }
 
     .nav-items {
@@ -247,6 +250,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        padding: 12px 12px max(12px, var(--safe-area-bottom)) 12px;
     }
 
     /* 定义旋转动作 */

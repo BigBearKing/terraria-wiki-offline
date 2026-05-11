@@ -17,7 +17,6 @@ namespace Terraria_Wiki
         private float _originalBrightness = 0.5f;
 #endif
 
-
 #if IOS
         public MainPage(BurnInProtectionService burnInService)
 #else
@@ -42,7 +41,6 @@ namespace Terraria_Wiki
 #endif
             this.Loaded += MainPage_Loaded;
             DeviceDisplay.Current.MainDisplayInfoChanged += Current_MainDisplayInfoChanged;
-
         }
 
 
@@ -236,6 +234,25 @@ namespace Terraria_Wiki
             }
 #endif
         }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+#if ANDROID
+            // 页面展示时，开启监听，并传入当前的 ContentPage (this)
+            KeyboardService.Default.Start();
+#endif
+        }
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+#if ANDROID
+            // 页面离开时务必注销监听，防止内存泄漏
+            KeyboardService.Default.Stop();
+#endif
+        }
+
 
     }
 }

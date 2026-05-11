@@ -10,7 +10,7 @@
 		<span class="clear-btn sub-text" @onclick="ClearHistory">清空历史</span>
 	</header>
 
-	<div class="list-container timeline history-list" style="padding: 0 0 max(12px, @(AppState.SafeAreaBottom)px);">
+	<div class="list-container timeline history-list">
 
 		<Virtualize @ref="_virtualizeComponent" ItemsProvider="LoadPages" Context="entry" OverscanCount="10">
 			<ItemContent>
@@ -165,6 +165,7 @@
 <style>
 	.history-list{
 		gap:4px;
+		padding: 0 0 max(12px, var(--safe-area-bottom));
 	}
 	.clear-btn {
 		background: transparent;

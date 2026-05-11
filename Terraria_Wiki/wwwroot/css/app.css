@@ -22,6 +22,11 @@
     --blue-primary: rgba(0, 136, 255, 1);
     --blue-secondary: rgba(0, 136, 255, 0.6);
     --blue-tertiary: rgba(0, 136, 255, 0.16);
+    --safe-area-top: 0px;
+    --safe-area-bottom: 0px;
+    --safe-area-left: 0px;
+    --safe-area-right: 0px;
+    --global-keyboard-offset: 0px;
 }
 /* --- 暗色模式 (Dark) --- */
 html.dark-theme {

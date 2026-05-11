@@ -12,7 +12,7 @@
 		<span class="page-title">Wiki数据管理</span>
 	</header>
 
-	<div class="list-container wiki-card-list" style="padding: 12px 0 max(12px, @(AppState.SafeAreaBottom)px)">
+	<div class="list-container wiki-card-list">
 		@* === 视图 1：Wiki 列表选择 === *@
 
 		@if (_wikiBookList != null)
@@ -76,6 +76,7 @@
 
 	.wiki-card-list{
 		gap:12px;
+		padding: 12px 0 max(12px, var(--safe-area-bottom));
 	}
 	/* 布局微调 */
 

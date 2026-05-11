@@ -69,6 +69,10 @@
             if(DeviceInfo.Platform==DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
             {
                 await JS.InvokeVoidAsync("initHover", "False");
+                await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);
+                await JS.InvokeVoidAsync("setSafeAreaBottom", AppState.SafeAreaBottom);
+                await JS.InvokeVoidAsync("setSafeAreaLeft", AppState.SafeAreaLeft);
+                await JS.InvokeVoidAsync("setSafeAreaRight", AppState.SafeAreaRight);
             }
             else
             {
