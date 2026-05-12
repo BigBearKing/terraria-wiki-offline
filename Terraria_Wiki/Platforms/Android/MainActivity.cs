@@ -29,6 +29,24 @@ namespace Terraria_Wiki
                 _appState.OnChange += CheckAndToggleProcessingService;
             }
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
+            WindowCompat.SetDecorFitsSystemWindows(Window, false);
+
+            if (Window != null)
+            {
+                // 2. 强制将状态栏和导航栏的背景颜色设置为透明
+                Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
+                Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
+            }
+
+            // 3. 处理图标文字的颜色（和之前一样）
+            var windowInsetsController = WindowCompat.GetInsetsController(Window, Window.DecorView);
+            if (windowInsetsController != null)
+            {
+                // true = 深色文字/图标，false = 白色文字/图标
+                windowInsetsController.AppearanceLightStatusBars = true;
+                windowInsetsController.AppearanceLightNavigationBars = true;
+
+            }
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)

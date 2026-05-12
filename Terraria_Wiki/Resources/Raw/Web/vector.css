@@ -613,7 +613,9 @@ div.thumbinner {
 
     code {
         border-radius: 2px;
-        padding: 1px 4px
+        padding: 1px 4px;
+        overflow-wrap: break-word;
+        word-break: break-all;
     }
 
     pre,

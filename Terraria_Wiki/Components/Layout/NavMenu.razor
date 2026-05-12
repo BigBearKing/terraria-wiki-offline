@@ -143,7 +143,8 @@
         overflow: hidden; /* 隐藏溢出的文字 */
         white-space: nowrap; /* 强制文字一行显示 */
         margin-left: var(--safe-area-left);
-        padding-top: var(--safe-area-top);
+        padding-top: max(4px, var(--safe-area-top));
+        box-shadow: calc(-1 * var(--safe-area-left)) 0 0 0 var(--bg-color-secondary);
     }
 
         .sidebar.collapsed {
@@ -162,7 +163,7 @@
         align-items: center;
         padding: 0;
         cursor: pointer;
-        margin: max(4px, var(--safe-area-top)) 12px 4px 12px;
+        margin: 0 12px 4px 12px;
     }
 
     .nav-items {

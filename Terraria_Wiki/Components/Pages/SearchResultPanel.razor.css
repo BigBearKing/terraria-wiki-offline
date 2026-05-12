@@ -1,7 +1,7 @@
 ﻿/* 遮罩层：铺满整个屏幕，拦截点击事件 */
 .search-overlay {
     position: fixed;
-    top: var(--header-height);
+    top: calc(var(--header-height) + max(6px, calc(var(--safe-area-top) + 2px)) );
     left: 0;
     width: 100vw;
     height: 100vh;
@@ -16,7 +16,7 @@
 /* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
-    top: calc(var(--header-height) + 4px);
+    top: calc(var(--header-height) + max(6px, calc(var(--safe-area-top) + 2px)) );
     right: 8px;
     width: 500px;
     max-height: 50vh;

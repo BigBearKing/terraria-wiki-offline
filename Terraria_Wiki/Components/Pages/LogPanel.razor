@@ -152,12 +152,12 @@
     }
 
     .log-panel.expanded {
-        left: calc(var(--sidebar-width-expanded) + 8px);
+        left: calc(var(--sidebar-width-expanded) + 8px + var(--safe-area-left));
         width: 40vw;
     }
 
     .log-panel.collapsed {
-        left: calc(var(--sidebar-width-collapsed) + 8px);
+        left: calc(var(--sidebar-width-collapsed) + 8px + var(--safe-area-left));
         width: 50vw;
     }
 

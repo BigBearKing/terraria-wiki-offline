@@ -6,7 +6,7 @@
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
-    padding: max(6px, var(--safe-area-top)) 8px 6px 8px;
+    padding: max(6px, calc(var(--safe-area-top) + 2px)) 8px 6px 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */
