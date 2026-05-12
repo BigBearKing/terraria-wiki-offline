@@ -75,12 +75,10 @@ html, body {
     -webkit-user-select: none;
     -webkit-user-drag: none;
     /* 3. 强制页面高度固定，不产生溢出滚动 */
-    height: 100%;
+    height: 100vh;
     overflow: hidden;
     position: relative;
-    /* 4. 针对 iOS 的特殊回弹禁用（如果以后要跑 iOS） */
-    -webkit-overflow-scrolling: auto;
-    -webkit-tap-highlight-color: transparent;
+
 }
 
 /* 全局基础样式 */
