@@ -28,7 +28,7 @@ jobs:
     - name: Setup .NET 10.0 (Pinned Version)
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.203'
+        dotnet-version: '10.0.202'
 
     # 【改动点 2】：动态生成 global.json
     # 这一步非常关键，它强制项目使用指定的 SDK 版本，防止后续执行 workload install 时
@@ -37,7 +37,7 @@ jobs:
       run: |
         echo '{
           "sdk": {
-            "version": "10.0.203"
+            "version": "10.0.202"
           }
         }' > global.json
         echo "✅ Created global.json to lock .NET version:"
