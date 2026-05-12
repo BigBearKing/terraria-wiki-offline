@@ -11,10 +11,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Xcode 26.3
+    - name: Setup Xcode 26.4
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.3'   # 保持使用 26.3 不变
+        xcode-version: '26.4'   # 如果报错，可改为 '26.2' 或 'latest-stable'
 
     - name: Verify Xcode Version
       run: |
@@ -22,26 +22,10 @@ jobs:
         xcodebuild -version
         echo "✅ Xcode version confirmed"
 
-    # 【改动点 1】：将 '10.0.x' 替换为确切的旧版本号（例如 10.0.100）
-    # 注：如果 10.0.100 报错找不到，请去你之前成功运行的 Action 日志里，
-    # 看看当时 Setup .NET 这一步实际安装的具体版本号是多少，填入此处。
-    - name: Setup .NET 10.0 (Pinned Version)
+    - name: Setup .NET 10.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.202'
-
-    # 【改动点 2】：动态生成 global.json
-    # 这一步非常关键，它强制项目使用指定的 SDK 版本，防止后续执行 workload install 时
-    # 自动去拉取要求 Xcode 26.4 的最新版 iOS workload manifest。
-    - name: Create global.json to Lock SDK and Workload
-      run: |
-        echo '{
-          "sdk": {
-            "version": "10.0.202"
-          }
-        }' > global.json
-        echo "✅ Created global.json to lock .NET version:"
-        cat global.json
+        dotnet-version: '10.0.x'
 
     - name: Install MAUI Workloads
       run: dotnet workload install maui --ignore-failed-sources
