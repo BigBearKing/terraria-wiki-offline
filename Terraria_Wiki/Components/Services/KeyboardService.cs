@@ -1,13 +1,19 @@
 ﻿using System;
+using Microsoft.JSInterop;
+using Microsoft.Maui.ApplicationModel;
+
 #if ANDROID
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Core.View;
-using Microsoft.JSInterop;
-using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices;
+#endif
+
+#if IOS
+using Foundation;
+using UIKit;
 #endif
 
 namespace Terraria_Wiki.Services;
@@ -20,19 +26,31 @@ public class KeyboardService
     public static KeyboardService Default { get; } = new KeyboardService();
     private KeyboardService() { }
 
+    // ==========================================
+    // 双端共用：防抖与 JS 调用
+    // ==========================================
+    private double _lastHeightDp = -1;
+
+    internal void InvokeJS(double heightDp)
+    {
+        // 防抖：防止重复发送相同的高度导致 JS 卡顿
+        if (Math.Abs(_lastHeightDp - heightDp) < 0.5) return;
+        _lastHeightDp = heightDp;
+
+        AppState.JS?.InvokeVoidAsync("setGlobalKeyboardHeight", heightDp);
+    }
+
 #if ANDROID
     private Android.Views.View _parentView;
-
-    // Android 11+ 专用
     private KeyboardInsetsListener _insetsListener;
     private KeyboardAnimationCallback _animationCallback;
-
-    // 幽灵窗口专用 (Android 10 及以下)
     private Android.Views.View _popupView;
     private PopupWindow _popupWindow;
+#endif
 
-    // 防抖状态
-    private double _lastHeightDp = -1;
+#if IOS
+    private NSObject _keyboardShowObserver;
+    private NSObject _keyboardHideObserver;
 #endif
 
     public void Start()
@@ -43,7 +61,6 @@ public class KeyboardService
 
         _parentView = activity.Window.DecorView.FindViewById(Android.Resource.Id.Content) ?? activity.Window.DecorView;
 
-        // 【运行时判断】：不再使用错误的 #if ANDROID30_0_OR_GREATER 宏
         if (OperatingSystem.IsAndroidVersionAtLeast(30))
         {
             StartModernEngine();
@@ -52,6 +69,13 @@ public class KeyboardService
         {
             StartGhostWindowEngine(activity);
         }
+#endif
+
+#if IOS
+        // iOS 监听键盘弹出和改变大小的通知
+        _keyboardShowObserver = NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillShowNotification, OnKeyboardChanged);
+        // iOS 监听键盘收起的通知
+        _keyboardHideObserver = NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillHideNotification, OnKeyboardHidden);
 #endif
     }
 
@@ -68,7 +92,6 @@ public class KeyboardService
         }
         else
         {
-            // 清理幽灵窗口
             if (_popupView?.ViewTreeObserver != null && _popupView.ViewTreeObserver.IsAlive)
             {
                 _popupView.ViewTreeObserver.RemoveOnGlobalLayoutListener(this);
@@ -84,20 +107,51 @@ public class KeyboardService
         _parentView = null;
         _insetsListener = null;
         _animationCallback = null;
-        _lastHeightDp = -1; // 重置防抖状态
 #endif
+
+#if IOS
+        // 注销 iOS 通知监听，防止内存泄漏
+        if (_keyboardShowObserver != null)
+        {
+            NSNotificationCenter.DefaultCenter.RemoveObserver(_keyboardShowObserver);
+            _keyboardShowObserver = null;
+        }
+        if (_keyboardHideObserver != null)
+        {
+            NSNotificationCenter.DefaultCenter.RemoveObserver(_keyboardHideObserver);
+            _keyboardHideObserver = null;
+        }
+#endif
+
+        _lastHeightDp = -1; // 重置防抖状态
     }
+
+#if IOS
+    // ==========================================
+    // 引擎 3: iOS 原生通知方案
+    // ==========================================
+    private void OnKeyboardChanged(NSNotification notification)
+    {
+        // 从系统通知字典中安全提取键盘结束时的 Frame (包含高宽和位置信息)
+        if (notification.UserInfo != null && 
+            notification.UserInfo.TryGetValue(UIKeyboard.FrameEndUserInfoKey, out var frameValue))
+        {
+            var frame = ((NSValue)frameValue).CGRectValue;
+            
+            // 注意：iOS 的 CGRect 值已经是逻辑点(pt)了，等同于 CSS 的 px (或 Android 的 dp)
+            // 所以直接传 Height 即可，千万不要再除以屏幕密度！
+            InvokeJS(frame.Height);
+        }
+    }
+
+    private void OnKeyboardHidden(NSNotification notification)
+    {
+        // 键盘收起时，高度归零
+        InvokeJS(0);
+    }
+#endif
 
 #if ANDROID
-    internal void InvokeJS(double heightDp)
-    {
-        // 防抖：防止重复发送相同的高度导致 JS 卡顿
-        if (Math.Abs(_lastHeightDp - heightDp) < 0.5) return;
-        _lastHeightDp = heightDp;
-
-        AppState.JS?.InvokeVoidAsync("setGlobalKeyboardHeight", heightDp);
-    }
-
     // ==========================================
     // 引擎 1: Android 11+ (现代无延迟方案)
     // ==========================================
@@ -156,7 +210,6 @@ public class KeyboardService
     {
         _popupView = new Android.Views.View(activity);
 
-        // 依然按照你的要求，创建宽度为 0 的透明窗口
         _popupWindow = new PopupWindow(_popupView, 0, ViewGroup.LayoutParams.MatchParent);
         _popupWindow.SetBackgroundDrawable(new ColorDrawable(Android.Graphics.Color.Transparent));
 
@@ -181,14 +234,10 @@ public class KeyboardService
         Android.Graphics.Rect r = new Android.Graphics.Rect();
         _popupView.GetWindowVisibleDisplayFrame(r);
 
-        // 按照你原本的计算逻辑测量挤压高度
         int overlapPixels = _parentView.Height - r.Bottom;
-
         double density = DeviceDisplay.Current.MainDisplayInfo.Density;
         double targetHeightDp = overlapPixels / density;
 
-        // 这里我稍微加了一个极小值过滤(>10)，防止全面屏手势条的轻微抖动误判
-        // 并且通过 InvokeJS 统一发送，享受防抖红利
         if (targetHeightDp > 10)
         {
             InvokeJS(targetHeightDp);

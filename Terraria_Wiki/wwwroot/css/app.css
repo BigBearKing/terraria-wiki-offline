@@ -75,7 +75,7 @@ html, body {
     -webkit-user-select: none;
     -webkit-user-drag: none;
     /* 3. 强制页面高度固定，不产生溢出滚动 */
-    height: 100vh;
+    height: 100lvh;
     overflow: hidden;
     position: relative;
 
