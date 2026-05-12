@@ -30,7 +30,10 @@ namespace Terraria_Wiki
             }
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
-
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.P) // Android 9.0+
+            {
+                Window.Attributes.LayoutInDisplayCutoutMode = LayoutInDisplayCutoutMode.ShortEdges;
+            }
             if (Window != null)
             {
                 // 2. 强制将状态栏和导航栏的背景颜色设置为透明
