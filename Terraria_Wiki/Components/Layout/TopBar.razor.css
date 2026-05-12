@@ -91,6 +91,7 @@ body.has-hover .action-btn:hover {
     height: 16px;
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
 }
+
 .mobile-menu-btn {
     display: none;
 }
@@ -105,7 +106,10 @@ body.has-hover .action-btn:hover {
 
 @media (max-width: 768px) {
 
-
+    .top-bar {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
 
     .search-wrapper {
         position: absolute;
@@ -115,7 +119,7 @@ body.has-hover .action-btn:hover {
         z-index: 901;
         display: flex;
         align-items: center;
-        transition: width 0.3s ease,bottom 0.2s ease-out, transform 0.2s ease-out;
+        transition: width 0.3s ease,bottom 0.1s ease-out, transform 0.2s ease-out;
         bottom: max(16px, calc(var(--safe-area-bottom) + var(--global-keyboard-offset)));
     }
 
@@ -130,6 +134,5 @@ body.has-hover .action-btn:hover {
 
     .page-title {
         text-align: right;
-        padding-right: 16px;
     }
 }

@@ -28,8 +28,7 @@ namespace Terraria_Wiki
                 // 你需要在这里订阅它。只要 TaskId 变化了，这个事件就会触发。
                 _appState.OnChange += CheckAndToggleProcessingService;
             }
-
-
+            Window.SetSoftInputMode(SoftInput.AdjustNothing);
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
