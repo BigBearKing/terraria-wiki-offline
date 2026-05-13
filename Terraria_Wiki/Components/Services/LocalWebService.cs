@@ -7,7 +7,7 @@ namespace Terraria_Wiki.Services
 {
     public class LocalWebServer
     {
-        private readonly HttpListener _listener;
+        private HttpListener _listener;
         private readonly ContentDbService _dbService;
         private readonly string _prefix;
         private bool _shouldShowImages = false;
@@ -25,14 +25,45 @@ namespace Terraria_Wiki.Services
 
         public async Task Start()
         {
-            if (!_listener.IsListening)
+            // 如果监听器为空或未在运行，则重新创建并启动
+            if (_listener == null || !_listener.IsListening)
             {
-                _listener.Start();
-                Task.Run(ListenLoop);
-                Debug.WriteLine($"[Web Server] Started at {_prefix}");
+                _listener = new HttpListener();
+                _listener.Prefixes.Add(_prefix);
+
+                try
+                {
+                    _listener.Start();
+                    Task.Run(ListenLoop);
+                    Debug.WriteLine($"[Web Server] Started at {_prefix}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Web Server Start Error] {ex.Message}");
+                    // 端口可能还没完全释放 (TIME_WAIT)，这里可以做个重试机制
+                }
             }
+
             var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
             _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
+        }
+
+        public void Stop()
+        {
+            if (_listener != null && _listener.IsListening)
+            {
+                try
+                {
+                    _listener.Stop();
+                    _listener.Close();
+                }
+                catch { /* 忽略关闭时的异常 */ }
+                finally
+                {
+                    _listener = null; // 设为空，保证下次 Resume 时能重新创建
+                    Debug.WriteLine("[Web Server] Stopped.");
+                }
+            }
         }
         public async Task Refresh()
         {
@@ -40,14 +71,6 @@ namespace Terraria_Wiki.Services
             _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
 
-        public void Stop()
-        {
-            if (_listener.IsListening)
-            {
-                _listener.Stop();
-                _listener.Close();
-            }
-        }
 
         private async Task ListenLoop()
         {

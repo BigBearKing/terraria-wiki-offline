@@ -55,6 +55,7 @@ namespace Terraria_Wiki
                 };
             });
 #endif
+
             builder.Services.AddTransient<MainPage>();
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

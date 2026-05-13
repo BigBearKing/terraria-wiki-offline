@@ -3,7 +3,7 @@
     /* --- 默认：白色极简 (Light) --- */
     --sidebar-width-collapsed: 72px;
     --sidebar-width-expanded: 200px;
-    --header-height: 48px;
+    --header-height: calc(max(6px, calc(var(--safe-area-top) + 2px)) + 42px);
     --bg-color: #ffffff;
     --bg-color-secondary: #f6f6f6;
     --text-primary: #111827;
@@ -27,6 +27,7 @@
     --safe-area-left: 0px;
     --safe-area-right: 0px;
     --global-keyboard-offset: 0px;
+    --search-wrapper-bottom: max(16px, var(--safe-area-bottom), calc(var(--global-keyboard-offset) + 4px));
 }
 /* --- 暗色模式 (Dark) --- */
 html.dark-theme {
@@ -78,6 +79,8 @@ html, body {
     height: 100lvh;
     overflow: hidden;
     position: relative;
+    /* 防止移动端点击出现高亮背景块 */
+    -webkit-tap-highlight-color: transparent;
 
 }
 

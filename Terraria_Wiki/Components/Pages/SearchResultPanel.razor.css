@@ -1,7 +1,7 @@
 ﻿/* 遮罩层：铺满整个屏幕，拦截点击事件 */
 .search-overlay {
     position: fixed;
-    top: calc(var(--header-height) + max(6px, calc(var(--safe-area-top) + 2px)) );
+    top: var(--header-height);
     left: 0;
     width: 100vw;
     height: 100vh;
@@ -16,8 +16,8 @@
 /* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
-    top: calc(var(--header-height) + max(6px, calc(var(--safe-area-top) + 2px)) );
-    right: 8px;
+    top: calc(var(--header-height) + 4px);
+    right: 10px;
     width: 500px;
     max-height: 50vh;
     overflow-y: auto;
@@ -79,7 +79,7 @@ body.has-hover .result-item:hover {
 @media(max-width:768px) {
     /* 搜索面板必须向上弹出 */
     .search-popup-panel {
-        bottom: max(56px, calc(var(--safe-area-bottom) + var(--global-keyboard-offset) + 40px)) !important;
+        bottom: max(56px, calc(var(--search-wrapper-bottom) + 40px)) !important;
         top: auto !important;
         left: 12px;
         right: 12px;

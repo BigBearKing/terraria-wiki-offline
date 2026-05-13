@@ -108,7 +108,7 @@
 
     /* 1. 基础宽度 - 稍微收窄一点，显得更精致 */
     ::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
         height: 6px;
     }
 
@@ -121,10 +121,8 @@
     ::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0.3);
         /* 使用通用半透明灰色 */
-        border-radius: 10px;
+        border-radius: 999px;
         /* 重点：增加一个透明边框，配合 content-box 实现滑块变窄的效果 */
-        border: 1px solid transparent;
-        background-clip: content-box;
         transition: background-color 0.2s;
     }
 

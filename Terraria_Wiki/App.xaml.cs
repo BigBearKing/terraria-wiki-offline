@@ -54,6 +54,7 @@ namespace Terraria_Wiki
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
         }
 
+
 #if WINDOWS
         protected override Window CreateWindow(IActivationState? activationState)
         {
@@ -139,5 +140,33 @@ namespace Terraria_Wiki
             }
         }
 #endif
+#if ANDROID || IOS
+        protected override Window CreateWindow(IActivationState? activationState)
+        {
+            Window window = base.CreateWindow(activationState);
+
+            // 应用即将进入后台 (失去焦点)
+            window.Deactivated += (s, e) =>
+            {
+                WebServer.Stop();
+            };
+
+            // 应用回到前台 (恢复焦点)
+            window.Resumed += async (s, e) =>
+            {
+                await WebServer.Start();
+            };
+
+            // 应用刚启动时也可以确保开启
+            window.Created += async (s, e) =>
+            {
+                await WebServer.Start();
+            };
+
+            return window;
+        }
+
+#endif
+
     }
 }
