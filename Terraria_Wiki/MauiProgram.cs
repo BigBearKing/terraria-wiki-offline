@@ -28,6 +28,7 @@ namespace Terraria_Wiki
             builder.Services.AddMauiBlazorWebView();
 
 #if IOS
+            Microsoft.Maui.Platform.KeyboardAutoManagerScroll.Disconnect();
             builder.Services.AddSingleton<BurnInProtectionService>();
             Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("DisableKeyboardAutoScroll", (handler, view) =>
             {
