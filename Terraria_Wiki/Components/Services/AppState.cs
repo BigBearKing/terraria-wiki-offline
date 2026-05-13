@@ -97,6 +97,17 @@ public class AppState
 
             _isDarkTheme = value;
             OnChange?.Invoke();
+#if ANDROID
+
+            // 获取当前 Activity 并转换为 MainActivity
+            var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MainActivity;
+
+            // 确保在主线程执行 UI 相关操作
+            activity?.RunOnUiThread(() =>
+            {
+                activity.ChangeStatusBarColor();
+            });
+#endif
 
         }
     }

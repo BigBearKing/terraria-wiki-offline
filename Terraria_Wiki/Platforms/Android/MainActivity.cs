@@ -29,6 +29,7 @@ namespace Terraria_Wiki
                 _appState.OnChange += CheckAndToggleProcessingService;
             }
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
+            AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, false);
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
             if (Build.VERSION.SdkInt >= BuildVersionCodes.P) // Android 9.0+
             {
@@ -40,18 +41,22 @@ namespace Terraria_Wiki
                 Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
                 Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
             }
+            ChangeStatusBarColor();
 
+
+        }
+        public void ChangeStatusBarColor()
+        {
             // 3. 处理图标文字的颜色（和之前一样）
             var windowInsetsController = WindowCompat.GetInsetsController(Window, Window.DecorView);
             if (windowInsetsController != null)
             {
                 // true = 深色文字/图标，false = 白色文字/图标
-                windowInsetsController.AppearanceLightStatusBars = true;
-                windowInsetsController.AppearanceLightNavigationBars = true;
+                windowInsetsController.AppearanceLightStatusBars = !App.AppStateManager.IsDarkTheme;
+                windowInsetsController.AppearanceLightNavigationBars = !App.AppStateManager.IsDarkTheme;
 
             }
         }
-
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);

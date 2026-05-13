@@ -64,7 +64,7 @@ html.is-switching-theme *::before,
 html.is-switching-theme *::after {
     /* 强制所有属性使用 0.3s 过渡 */
     pointer-events: none;
-    transition: background-color 0.35s,color 0.35s !important;
+    transition: background-color 0.35s ease,color 0.35s ease !important;
 }
 
 /*手机版适配*/
