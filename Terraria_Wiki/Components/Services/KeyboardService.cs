@@ -73,10 +73,10 @@ public class KeyboardService
 
 #if IOS
         // iOS 监听键盘弹出和改变大小的通知
-        _keyboardShowObserver = NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillShowNotification, OnKeyboardChanged);
-        // iOS 监听键盘收起的通知
+        _keyboardShowObserver = NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillChangeFrameNotification, OnKeyboardChanged);
         _keyboardHideObserver = NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillHideNotification, OnKeyboardHidden);
 #endif
+
     }
 
     public void Stop()
