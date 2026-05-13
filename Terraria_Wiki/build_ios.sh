@@ -4,7 +4,7 @@
 PROJECT_NAME="Terraria_Wiki"                     # 你的项目名称
 CSPROJ_PATH="./Terraria_Wiki.csproj" # .csproj 的相对路径
 FRAMEWORK="net10.0-ios"                         # 目标框架
-CONFIG="Debug"                                  # 使用 Debug 模式以便 Safari 调试
+CONFIG="Release"                                  # 使用 Debug 模式以便 Safari 调试
 OUTPUT_DIR="bin/$CONFIG/$FRAMEWORK/ios-arm64"
 DESKTOP_PATH="$HOME/Desktop"
 IPA_NAME="${PROJECT_NAME}_Unsigned.ipa"
