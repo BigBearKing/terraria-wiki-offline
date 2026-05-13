@@ -33,9 +33,6 @@ namespace Terraria_Wiki
             {
                 var webView = handler.PlatformView; // 底层的 WKWebView
 
-                // 1. 关闭 iOS 原生滚动
-                webView.ScrollView.ScrollEnabled = false;
-
                 // 2. 禁止 iOS 系统自动给 WebView 增加内边距来躲避键盘
                 webView.ScrollView.ContentInsetAdjustmentBehavior = UIKit.UIScrollViewContentInsetAdjustmentBehavior.Never;
             });
