@@ -1,7 +1,9 @@
 ﻿using Foundation;
 using UIKit;
+using System;
+using ObjCRuntime;
 
-namespace Terraria_Wiki;
+namespace Terraria_Wiki; // 注意替换成你自己的命名空间
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate
@@ -10,22 +12,33 @@ public class AppDelegate : MauiUIApplicationDelegate
 
     public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions)
     {
-        var result = base.FinishedLaunching(application, launchOptions);
+        // 1. 在最早的时机切断 MAUI 官方的键盘推挤逻辑
+        Microsoft.Maui.Platform.KeyboardAutoManagerScroll.Disconnect();
 
-        // 强行关闭 iOS 自动推挤键盘的行为
-        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("KeyboardDisable", (handler, view) =>
-        {
-#if IOS
-            // 如果你引用了 IQKeyboardManager 等第三方库，这里可以禁用。
-            // MAUI 默认的一些滚动行为也会在这里被接管。
-            // 确保 WebView 的 ScrollView 属性不自动适应 ContentInset
-            if (handler.PlatformView is UITextField textField)
-            {
-                // 可选针对特定输入框的处理
-            }
-#endif
-        });
 
-        return result;
+        // 强行监听键盘弹出，把被推上去的根视图硬拽回来
+        NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillShowNotification, OnKeyboardWillShow);
+
+        return base.FinishedLaunching(application, launchOptions);
     }
+
+    private void OnKeyboardWillShow(NSNotification notification)
+    {
+        // 延迟一点点执行，等 iOS 把页面推上去之后，我们再把它拉下来
+        Device.BeginInvokeOnMainThread(() =>
+        {
+            var window = UIApplication.SharedApplication.Delegate?.GetWindow();
+            if (window?.RootViewController?.View != null)
+            {
+                var view = window.RootViewController.View;
+
+                // 如果发现整个视图被系统往上推了 (Y坐标变成了负数)
+                if (view.Frame.Y < 0)
+                {
+                    view.Frame = new CoreGraphics.CGRect(view.Frame.X, 0, view.Frame.Width, view.Frame.Height);
+                }
+            }
+        });
+    }
+
 }

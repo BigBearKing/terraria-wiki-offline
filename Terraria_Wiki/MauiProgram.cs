@@ -28,15 +28,7 @@ namespace Terraria_Wiki
             builder.Services.AddMauiBlazorWebView();
 
 #if IOS
-            Microsoft.Maui.Platform.KeyboardAutoManagerScroll.Disconnect();
             builder.Services.AddSingleton<BurnInProtectionService>();
-            Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("DisableKeyboardAutoScroll", (handler, view) =>
-            {
-                var webView = handler.PlatformView; // 底层的 WKWebView
-
-                // 2. 禁止 iOS 系统自动给 WebView 增加内边距来躲避键盘
-                webView.ScrollView.ContentInsetAdjustmentBehavior = UIKit.UIScrollViewContentInsetAdjustmentBehavior.Never;
-            });
 #endif
 
             builder.Services.AddTransient<MainPage>();
