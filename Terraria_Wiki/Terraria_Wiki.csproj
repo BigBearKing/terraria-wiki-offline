@@ -103,11 +103,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Remove="Resources\Raw\Languages\en-us.json" />
+	  <Content Remove="Resources\Raw\Languages\zh-cn.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.80" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.80" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 
 	</ItemGroup>

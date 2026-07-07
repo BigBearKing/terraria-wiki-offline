@@ -12,6 +12,7 @@ namespace Terraria_Wiki
         public static DataService? DataManager { get; private set; }
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
+        public static LocalizationService? Localization { get; private set; }
 
 #if WINDOWS
         // 引入纯底层 Win32 API，AOT 绝对无法裁剪它们
@@ -29,6 +30,7 @@ namespace Terraria_Wiki
 
         public App(LocalWebServer webServer, ManagerDbService managerDb,
                 ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
+                LocalizationService localizationService,
                 IServiceProvider services)
         {
             WebServer = webServer;
@@ -37,6 +39,7 @@ namespace Terraria_Wiki
             DataManager = dataService;
             LogManager = logService;
             AppStateManager = appState;
+            Localization = localizationService;
 
             ThemeService.InitTheme();
             _ = InitializeAsync();
@@ -48,6 +51,7 @@ namespace Terraria_Wiki
 
         private async Task InitializeAsync()
         {
+            await Localization!.InitializeAsync();
             WebServer.Start();
             await ManagerDb.Init();
             await ContentDb.Init();

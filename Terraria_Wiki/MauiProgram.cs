@@ -24,6 +24,7 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<DataService>();
             builder.Services.AddSingleton<AppService>();
+            builder.Services.AddSingleton<LocalizationService>();
             builder.Services.AddTransient<App>();
             builder.Services.AddMauiBlazorWebView();
 
