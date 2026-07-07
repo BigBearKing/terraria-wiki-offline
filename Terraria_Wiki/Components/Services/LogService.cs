@@ -23,11 +23,13 @@ namespace Terraria_Wiki.Services
         private readonly Channel<string> _logQueue;
         private readonly Task _processTask;
         private readonly CancellationTokenSource _cts = new();
+        private readonly LocalizationService _loc;
 
         public event Action OnLogAdded;
 
-        public LogService()
+        public LogService(LocalizationService localizationService)
         {
+            _loc = localizationService;
             var basePath = FileSystem.AppDataDirectory;
             _archiveFolderPath = Path.Combine(basePath, "LogHistory");
             _activeLogPath = Path.Combine(basePath, "current_session.log");
@@ -67,7 +69,7 @@ namespace Terraria_Wiki.Services
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"归档失败: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine(_loc.Get("LogService.ArchiveFailed", ex.Message));
                     }
                 }
             }
@@ -269,20 +271,20 @@ namespace Terraria_Wiki.Services
             string destinationPath = Path.Combine(outputFolder, Path.GetFileName(tempZipPath));
             File.Copy(tempZipPath, destinationPath, true);
 #else
-                    throw new PlatformNotSupportedException("当前平台不支持导出日志功能");
+                    throw new PlatformNotSupportedException(_loc.Get("LogService.PlatformNotSupported"));
 #endif
                 }
                 else
                 {
-                    throw new PlatformNotSupportedException("当前平台不支持导出日志功能");
+                    throw new PlatformNotSupportedException(_loc.Get("LogService.PlatformNotSupported"));
                 }
 
-                App.AppStateManager.TriggerAlert("导出日志成功", fileName);
+                App.AppStateManager.TriggerAlert(_loc.Get("LogService.ExportSuccess"), fileName);
             }
             catch (Exception ex)
             {
-                App.AppStateManager.TriggerAlert("导出日志失败", $"{ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"导出日志失败: {ex.Message}");
+                App.AppStateManager.TriggerAlert(_loc.Get("LogService.ExportFailed"), $"{ex.Message}");
+                System.Diagnostics.Debug.WriteLine(_loc.Get("LogService.ExportFailedWithError", ex.Message));
             }
             finally
             {
@@ -296,7 +298,7 @@ namespace Terraria_Wiki.Services
         {
 
             FileHelper.ClearDirectory(_archiveFolderPath);
-            App.AppStateManager.TriggerAlert("提示", "日志已清除");
+            App.AppStateManager.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("LogService.LogCleared"));
         }
     }
 }

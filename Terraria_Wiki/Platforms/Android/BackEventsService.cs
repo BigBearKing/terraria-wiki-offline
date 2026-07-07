@@ -73,7 +73,7 @@ namespace Terraria_Wiki.Services
             // 2. 弹出 Android 原生 Toast 提示
             Android.Widget.Toast.MakeText(
                 Android.App.Application.Context,
-                "再按一次退出应用",
+                App.Localization!.Get("BackEventsService.PressAgain"),
                 Android.Widget.ToastLength.Short
             )?.Show();
         }

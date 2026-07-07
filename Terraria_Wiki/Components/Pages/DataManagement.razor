@@ -9,7 +9,7 @@
 <div class="page-anim page-content">
 
 	<header class="page-header">
-		<span class="page-title">Wiki数据管理</span>
+		<span class="page-title">@Loc.Get("DataManagement.Title")</span>
 	</header>
 
 	<div class="list-container wiki-card-list">
@@ -28,7 +28,7 @@
 						<div class="manage-card-title">@wiki.Title</div>
 						<div class="manage-card-desc">@wiki.Description</div>
 						<div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
-							@(wiki.IsPageDownloaded ? "已安装" : "未安装")
+							@(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
 						</div>
 					</div>
 					<Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
@@ -45,9 +45,22 @@
 	private List<WikiBook> _wikiBookList;
 
 
+	protected override void OnInitialized()
+	{
+		AppState.OnChange += RefreshUI;
+		Loc.OnChange += RefreshUI;
+	}
+
+	public void Dispose()
+	{
+		AppState.OnChange -= RefreshUI;
+		Loc.OnChange -= RefreshUI;
+	}
+
+	private void RefreshUI() => InvokeAsync(StateHasChanged);
+
 	protected override async Task OnInitializedAsync()
 	{
-
 		_wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
 	}
 
@@ -55,7 +68,7 @@
 	{
 		if (item.Id != 1)
 		{
-			Application.Current.Windows[0].Page.DisplayAlertAsync("提示", "尚未实现其他 Wiki 的数据管理页面", "确定");
+			Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagement.NotImplemented"), Loc.Get("Common.OK"));
 			System.Diagnostics.Debug.WriteLine("尚未实现其他 Wiki 的数据管理页面");
 		}
 		else

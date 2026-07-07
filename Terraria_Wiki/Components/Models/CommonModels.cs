@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Terraria_Wiki.Services;
 namespace Terraria_Wiki.Models;
 
 public class WikiPageSummary
@@ -136,7 +137,13 @@ public class AssetMetadata
 
 public class TaskConfig
 {
-    public int Id { get; set; }             // 任务ID
-    public string Name { get; set; }        // 操作名称（按钮默认文字）
-    public string ProcessingText { get; set; } // 按钮正在运行时的文字
+    public int Id { get; set; }
+    public string NameKey { get; set; }
+    public string ProcessingTextKey { get; set; }
+
+    public string GetName(LocalizationService loc) =>
+        string.IsNullOrEmpty(NameKey) ? "" : loc.Get(NameKey);
+
+    public string GetProcessingText(LocalizationService loc) =>
+        string.IsNullOrEmpty(ProcessingTextKey) ? "" : loc.Get(ProcessingTextKey);
 }

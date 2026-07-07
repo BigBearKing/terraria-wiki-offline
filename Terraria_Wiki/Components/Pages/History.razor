@@ -6,8 +6,8 @@
 <div class="page-anim page-content">
 
 	<header class="page-header">
-		<span class="page-title">浏览历史</span>
-		<span class="clear-btn sub-text" @onclick="ClearHistory">清空历史</span>
+		<span class="page-title">@Loc.Get("History.Title")</span>
+		<span class="clear-btn sub-text" @onclick="ClearHistory">@Loc.Get("History.ClearHistory")</span>
 	</header>
 
 	<div class="list-container timeline history-list">
@@ -43,12 +43,16 @@
 	{
 		//订阅 Topbar 传来的搜索事件
 		AppState.OnSearchQueryChanged += HandleSearchChanged;
+		Loc.OnChange += RefreshUI;
 	}
 
 	public void Dispose()
 	{
 		AppState.OnSearchQueryChanged -= HandleSearchChanged;
+		Loc.OnChange -= RefreshUI;
 	}
+
+	private void RefreshUI() => InvokeAsync(StateHasChanged);
 
 	private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
 	{
@@ -129,15 +133,15 @@
 
 	private string GetDateLabel(DateTime dt)
 	{
-		if (dt.Date == DateTime.Today) return "今天";
-		if (dt.Date == DateTime.Today.AddDays(-1)) return "昨天";
-		return dt.ToString("M月d日");
+		if (dt.Date == DateTime.Today) return Loc.Get("History.Today");
+		if (dt.Date == DateTime.Today.AddDays(-1)) return Loc.Get("History.Yesterday");
+		return dt.ToString(Loc.Get("History.DateFormat"));
 	}
 
 	//清空历史
 	private async void ClearHistory()
 	{
-		bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync("提示", "确认清空历史记录吗？", "确定","取消");
+		bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("History.ConfirmClear"), Loc.Get("Common.OK"),Loc.Get("Common.Cancel"));
 		if (isConfirmed)
 		{
 			await App.ContentDb.DeleteItemsAsync<WikiHistory>();

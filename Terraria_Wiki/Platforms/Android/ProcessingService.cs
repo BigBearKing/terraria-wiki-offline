@@ -37,8 +37,8 @@ public class ProcessingService : Service
 
         // 2. TaskId 不是 0，显示极其简单的通知栏（无进度条）
         var notification = new NotificationCompat.Builder(this, ChannelId)
-            .SetContentTitle("正在处理任务")
-            .SetContentText($"当前任务：{appState.Tasks[appState.ProcessingTaskId].Name}")
+            .SetContentTitle(App.Localization?.Get("ProcessingService.ProcessingTask") ?? "Processing")
+            .SetContentText(App.Localization?.Get("ProcessingService.CurrentTask", appState.Tasks[appState.ProcessingTaskId].GetName(App.Localization!)) ?? "")
             .SetSmallIcon(Resource.Mipmap.appicon) // 确保你有这个图标
             .SetOngoing(true) // 禁止用户手动划掉
             .Build();
@@ -61,7 +61,7 @@ public class ProcessingService : Service
         var notificationManager = (NotificationManager)GetSystemService(NotificationService);
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
         {
-            var channel = new NotificationChannel(ChannelId, "后台处理状态", NotificationImportance.Low);
+            var channel = new NotificationChannel(ChannelId, App.Localization?.Get("ProcessingService.BackgroundStatus") ?? "Background", NotificationImportance.Low);
             notificationManager.CreateNotificationChannel(channel);
         }
     }

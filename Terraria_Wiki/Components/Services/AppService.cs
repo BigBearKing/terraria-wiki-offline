@@ -35,7 +35,7 @@ namespace Terraria_Wiki.Services
                 }
                 else
                 {
-                    App.AppStateManager.TriggerAlert("提示", "页面不存在");
+                    App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.PageNotFound"));
                     return null;
 
                 }
@@ -47,7 +47,7 @@ namespace Terraria_Wiki.Services
                     WikiPageStringTime result = new WikiPageStringTime();
                     result.Title = page.Title;
                     result.Content = page.Content;
-                    result.LastModified = page.LastModified.ToString("yyyy年MM月dd日 HH:mm");
+                    result.LastModified = page.LastModified.ToString(App.Localization!.Get("AppService.DateFormat"));
                     App.AppStateManager.CurrentWikiPage = page.Title;
                     if (page.Title != "Terraria Wiki")
                         Task.Run(async () => await SaveToHistoryAsync(page.Title));
@@ -108,7 +108,7 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    App.AppStateManager.TriggerAlert("提示", $"无法打开链接: {ex.Message}");
+                    App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.CannotOpenLink", ex.Message));
                 }
                 return null;
             };
@@ -165,7 +165,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                App.AppStateManager.TriggerAlert("提示", "这已经是首页");
+                App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.AlreadyHome"));
             }
 
         }
@@ -181,7 +181,7 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                App.AppStateManager.TriggerAlert("提示", "这已经是首页");
+                App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.AlreadyHome"));
             }
 
         }

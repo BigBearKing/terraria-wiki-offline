@@ -2,41 +2,53 @@
 @using Terraria_Wiki.Services
 <div class="page-anim page-content">
     <header class="page-header">
-        <span class="page-title">应用偏好设置</span>
+        <span class="page-title">@Loc.Get("Settings.Title")</span>
     </header>
 
     <div class="list-container setting-list">
 
         <div class="category-card">
-            <span class="category-title">个性化</span>
+            <span class="category-title">@Loc.Get("Settings.Personalization")</span>
 
             <div class="setting-item">
                 <div class="setting-info">
-                    <span class="setting-name">默认颜色主题</span>
+                    <span class="setting-name">@Loc.Get("Common.Language")</span>
+                </div>
+                <select class="modern-select" @bind="SelectedLanguage">
+                    @foreach (var lang in LocalizationService.SupportedLanguages)
+                    {
+                        <option value="@lang.Code">@lang.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">@Loc.Get("Settings.DefaultColorTheme")</span>
                 </div>
                 <select class="modern-select" @bind="AppTheme">
-                    <option value="auto">跟随系统</option>
-                    <option value="light">浅色模式</option>
-                    <option value="dark">深色模式</option>
+                    <option value="auto">@Loc.Get("Settings.FollowSystem")</option>
+                    <option value="light">@Loc.Get("Settings.LightMode")</option>
+                    <option value="dark">@Loc.Get("Settings.DarkMode")</option>
                 </select>
             </div>
             <div class="setting-item">
                 <div class="setting-info">
-                    <span class="setting-name">内容颜色主题</span>
+                    <span class="setting-name">@Loc.Get("Settings.ContentColorTheme")</span>
                 </div>
                 <select class="modern-select" @bind="ContentTheme">
-                    <option value="auto">跟随界面</option>
-                    <option value="original">Wiki原版</option>
+                    <option value="auto">@Loc.Get("Settings.FollowUI")</option>
+                    <option value="original">@Loc.Get("Settings.WikiOriginal")</option>
                 </select>
             </div>
         </div>
 
         <div class="category-card">
-            <span class="category-title">快捷键</span>
+            <span class="category-title">@Loc.Get("Settings.Shortcuts")</span>
             <div class="setting-item">
                 <div class="setting-info">
-                    <span class="setting-name">侧键返回</span>
-                    <span class="setting-desc">按鼠标侧键返回上一页</span>
+                    <span class="setting-name">@Loc.Get("Settings.SideButtonBack")</span>
+                    <span class="setting-desc">@Loc.Get("Settings.SideButtonBackDesc")</span>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" @bind="IsSideButtonBack">
@@ -46,14 +58,14 @@
             </div>
 
             <div class="category-card">
-                <span class="category-title">搜索</span>
+                <span class="category-title">@Loc.Get("Common.Search")</span>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">最大搜索数量</span>
+                        <span class="setting-name">@Loc.Get("Settings.MaxSearchCount")</span>
                     </div>
                     <select class="modern-select" @bind="MaxSearchItemCount">
                         <option value="25">25</option>
-                        <option value="50">50（默认）</option>
+                        <option value="50">@Loc.Get("Settings.Default50")</option>
                         <option value="75">75</option>
                         <option value="100">100</option>
                     </select>
@@ -61,39 +73,39 @@
             </div>
 
             <div class="category-card">
-                <span class="category-title">下载</span>
+                <span class="category-title">@Loc.Get("Common.Download")</span>
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">页面下载线程数</span>
+                        <span class="setting-name">@Loc.Get("Settings.PageDownloadThreads")</span>
                     </div>
                     <select class="modern-select" @bind="PageConcurrency">
                         <option value="1">1</option>
-                        <option value="2">2（默认）</option>
+                        <option value="2">@Loc.Get("Settings.Default2")</option>
                         <option value="3">3</option>
                     </select>
                 </div>
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">资源下载线程数</span>
+                        <span class="setting-name">@Loc.Get("Settings.AssetDownloadThreads")</span>
                     </div>
                     <select class="modern-select" @bind="ResConcurrency">
                         <option value="1">1</option>
                         <option value="5">5</option>
-                        <option value="10">10（默认）</option>
+                        <option value="10">@Loc.Get("Settings.Default10")</option>
                         <option value="15">15</option>
                         <option value="20">20</option>
                     </select>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">错误重试次数</span>
+                        <span class="setting-name">@Loc.Get("Settings.ErrorRetryCount")</span>
                     </div>
                     <select class="modern-select" @bind="MaxRetryAttempts">
-                        <option value="0">不重试</option>
+                        <option value="0">@Loc.Get("Settings.NoRetry")</option>
                         <option value="1">1</option>
-                        <option value="5">5（默认）</option>
+                        <option value="5">@Loc.Get("Settings.Default5")</option>
                         <option value="10">10</option>
                         <option value="15">15</option>
                         <option value="20">20</option>
@@ -101,72 +113,72 @@
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">清理失败列表</span>
-                        <span class="setting-desc">删除当前Wiki所有失败记录</span>
+                        <span class="setting-name">@Loc.Get("Settings.ClearFailedList")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ClearFailedListDesc")</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ClearFailedList)">
-                        清理
+                        @Loc.Get("Settings.ClearFailedList")
                     </button>
                 </div>
 
             </div>
             <div class="category-card">
-                <span class="category-title">数据库</span>
+                <span class="category-title">@Loc.Get("Settings.Database")</span>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">导出数据</span>
-                        <span class="setting-desc">导出当前数据到本地文件</span>
+                        <span class="setting-name">@Loc.Get("Settings.ExportData")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ExportDataDesc")</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ExportData)">
-                    @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].ProcessingText : "导出")
+                    @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].GetProcessingText(Loc) : Loc.Get("Common.Export"))
                     </button>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">导入数据</span>
-                        <span class="setting-desc">从本地文件导入数据库</span>
+                        <span class="setting-name">@Loc.Get("Settings.ImportData")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ImportDataDesc")</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ImportData)">
-                    @(AppState.ProcessingTaskId == 10 ? AppState.Tasks[10].ProcessingText : "选择文件")
+                    @(AppState.ProcessingTaskId == 10 ? AppState.Tasks[10].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
                     </button>
                 </div>
             </div>
             <div class="category-card">
-                <span class="category-title">日志</span>
+                <span class="category-title">@Loc.Get("Common.Log")</span>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">导出日志</span>
-                        <span class="setting-desc">导出当前日志到本地文件</span>
+                        <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(ExportLog)">
-                        导出
+                        @Loc.Get("Common.Export")
                     </button>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">删除日志</span>
-                        <span class="setting-desc">删除本地日志文件</span>
+                        <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(DeleteLog)">
-                        删除
+                        @Loc.Get("Settings.DeleteLog")
                     </button>
                 </div>
             </div>
             <div class="category-card">
-                <span class="category-title">关于</span>
+                <span class="category-title">@Loc.Get("Settings.About")</span>
 
                 <div class="setting-item">
                     <div class="setting-info" @onclick="OnVersionLabelClicked">
-                        <span class="setting-name">当前版本</span>
+                        <span class="setting-name">@Loc.Get("Common.Version")</span>
                         <span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
                     </div>
                     <button class="button setting-btn" @onclick="() => RunSafe(CheckUpdateCommand)">
-                    @(AppState.ProcessingTaskId == 1 ? AppState.Tasks[1].ProcessingText : "检查更新")
+                    @(AppState.ProcessingTaskId == 1 ? AppState.Tasks[1].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
                     </button>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">作者</span>
+                        <span class="setting-name">@Loc.Get("Settings.Author")</span>
                         <span class="setting-desc">@Author</span>
                     </div>
                     <button class="button setting-btn" @onclick="GotoGithub">
@@ -182,16 +194,27 @@
     protected override void OnInitialized()
     {
         AppState.OnChange += RefreshUI;
+        Loc.OnChange += RefreshUI;
     }
 
     public void Dispose()
     {
         AppState.OnChange -= RefreshUI;
+        Loc.OnChange -= RefreshUI;
     }
 
     private void RefreshUI()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private string SelectedLanguage
+    {
+        get => Loc.CurrentLanguage;
+        set
+        {
+            _ = Loc.SetLanguageAsync(value);
+        }
     }
 
     private string AppTheme
@@ -267,7 +290,7 @@
         // 统一检查
         if (AppState.ProcessingTaskId != 0)
         {
-            AppState.TriggerAlert("提示", "请稍后，正在处理任务");
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.PleaseWait"));
             return;
         }
         await action();
@@ -288,7 +311,7 @@
 
     private async Task DeleteLog()
     {
-        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync("确认删除", "此操作将永久删除日志文件，无法恢复。确定要继续吗？", "确定", "取消");
+        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmDeleteLog"), Loc.Get("Settings.ConfirmDeleteLogDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (confirm)
         {
             App.LogManager?.DeleteLogs();
@@ -308,10 +331,10 @@
             {
                 // 发现新版本，弹出提示框
                 bool wantsToUpdate = await Application.Current.Windows[0].Page.DisplayAlertAsync(
-                    $"发现新版本: v{result.LatestVersion}",
-                    $"更新内容：\n{result.ReleaseNotes}",
-                    "前往下载",
-                    "以后再说");
+                    Loc.Get("Settings.NewVersionFound", result.LatestVersion),
+                    Loc.Get("Settings.ReleaseNotes", result.ReleaseNotes),
+                    Loc.Get("Settings.GoToDownload"),
+                    Loc.Get("Settings.Later"));
 
                 if (wantsToUpdate)
                 {
@@ -322,13 +345,13 @@
             else
             {
 
-                AppState.TriggerAlert("提示", "当前已是最新版本");
+                AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.AlreadyLatest"));
             }
         }
         catch (Exception e)
         {
 
-            AppState.TriggerAlert("提示", $"检查失败：\n{e.Message}");
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.CheckFailed", e.Message));
         }
         finally
         {
@@ -345,7 +368,7 @@
 
     private async Task ClearFailedList()
     {
-        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync("确认清理", "此操作将删除所有下载失败的记录，无法恢复。确定要继续吗？", "确定", "取消");
+        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmCleanup"), Loc.Get("Settings.ConfirmCleanupDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (confirm)
         {
             App.DataManager.ClearFailedList();

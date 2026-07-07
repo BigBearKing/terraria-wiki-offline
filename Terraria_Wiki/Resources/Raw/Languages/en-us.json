@@ -1,5 +1,6 @@
 {
   "strings": {
+    "Common.Language": "Language",
     "Common.OK": "OK",
     "Common.Cancel": "Cancel",
     "Common.Notice": "Notice",
@@ -69,7 +70,7 @@
     "History.ClearHistory": "Clear History",
     "History.Today": "Today",
     "History.Yesterday": "Yesterday",
-    "History.DateFormat": "MMM dd",
+    "History.DateFormat": "MM/dd",
     "History.ConfirmClear": "Confirm clearing history?",
 
     "LogPanel.Title": "Log",
@@ -77,6 +78,7 @@
 
     "SearchResultPanel.Searching": "Searching...",
     "SearchResultPanel.NotFound": "No results found for @query",
+    "SearchResultPanel.RedirectTo": "Redirect to",
 
     "Settings.Title": "App Preferences",
     "Settings.Personalization": "Personalization",

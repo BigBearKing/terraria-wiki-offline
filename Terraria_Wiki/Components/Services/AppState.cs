@@ -32,20 +32,20 @@ public class AppState
     private double _safeAreaRight = 0;
     public readonly Dictionary<int, TaskConfig> Tasks = new()
     {
-        { 1, new TaskConfig { Id = 1, Name = "检查软件更新", ProcessingText = "正在检查更新" } },
-        { 2, new TaskConfig { Id = 2, Name = "下载所有页面", ProcessingText = "正在下载" } },
-        { 3, new TaskConfig { Id = 3, Name = "下载所有资源", ProcessingText = "正在下载" } },
-        { 4, new TaskConfig { Id = 4, Name = "更新数据", ProcessingText = "正在更新" } },
-        { 5, new TaskConfig { Id = 5, Name = "清理未用资源", ProcessingText = "正在清理" }  },
-        { 6, new TaskConfig { Id = 6, Name = "删除图片资源", ProcessingText = "正在删除" }   },
-        { 7, new TaskConfig { Id = 7, Name = "重试失败任务", ProcessingText = "正在重试" } },
-        { 8, new TaskConfig { Id = 8, Name = "删除数据", ProcessingText = "正在删除" }  },
-        { 9, new TaskConfig { Id = 9, Name = "导出数据", ProcessingText = "正在导出" }   },
-        { 10, new TaskConfig { Id = 10, Name = "导入数据", ProcessingText = "正在导入" }  },
-        { 11, new TaskConfig { Id = 11, Name = " ", ProcessingText = " " }  },
-        { 12, new TaskConfig { Id = 12, Name = " ", ProcessingText = " " }  },
-        { 13, new TaskConfig { Id = 13, Name = " ", ProcessingText = " " }  },
-        { 14, new TaskConfig { Id = 14, Name = " ", ProcessingText = " " }  }
+        { 1, new TaskConfig { Id = 1, NameKey = "AppState.CheckUpdate", ProcessingTextKey = "AppState.CheckingUpdate" } },
+        { 2, new TaskConfig { Id = 2, NameKey = "AppState.DownloadAllPages", ProcessingTextKey = "AppState.Downloading" } },
+        { 3, new TaskConfig { Id = 3, NameKey = "AppState.DownloadAllAssets", ProcessingTextKey = "AppState.Downloading" } },
+        { 4, new TaskConfig { Id = 4, NameKey = "AppState.UpdateData", ProcessingTextKey = "AppState.Updating" } },
+        { 5, new TaskConfig { Id = 5, NameKey = "AppState.CleanUnusedAssets", ProcessingTextKey = "AppState.Cleaning" }  },
+        { 6, new TaskConfig { Id = 6, NameKey = "AppState.DeleteAssets", ProcessingTextKey = "AppState.Deleting" }   },
+        { 7, new TaskConfig { Id = 7, NameKey = "AppState.RetryFailed", ProcessingTextKey = "AppState.Retrying" } },
+        { 8, new TaskConfig { Id = 8, NameKey = "AppState.DeleteData", ProcessingTextKey = "AppState.Deleting" }  },
+        { 9, new TaskConfig { Id = 9, NameKey = "AppState.ExportData", ProcessingTextKey = "AppState.Exporting" }   },
+        { 10, new TaskConfig { Id = 10, NameKey = "AppState.ImportData", ProcessingTextKey = "AppState.Importing" }  },
+        { 11, new TaskConfig { Id = 11, NameKey = "", ProcessingTextKey = "" }  },
+        { 12, new TaskConfig { Id = 12, NameKey = "", ProcessingTextKey = "" }  },
+        { 13, new TaskConfig { Id = 13, NameKey = "", ProcessingTextKey = "" }  },
+        { 14, new TaskConfig { Id = 14, NameKey = "", ProcessingTextKey = "" }  }
     };
 
     public AppState()

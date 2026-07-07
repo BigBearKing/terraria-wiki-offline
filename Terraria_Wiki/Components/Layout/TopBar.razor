@@ -5,16 +5,16 @@
 <header class="top-bar">
 
     <div class="actions-wrapper">
-        <button class="action-btn button mobile-menu-btn" title="菜单" @onclick="OpenMobileSidebar" style="display:none;">
+        <button class="action-btn button mobile-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar" style="display:none;">
             <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
         </button>
-        <button class="action-btn button" title="后退" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
+        <button class="action-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
             <Icon Name="arrow-left" Size="20"></Icon>
         </button>
-        <button class="action-btn button" title="主页" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
+        <button class="action-btn button" title="@App.Localization!.Get("Common.Home")" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
             <Icon Name="home" Size="20"></Icon>
         </button>
-        <button class="action-btn button" title="收藏" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
+        <button class="action-btn button" title="@App.Localization!.Get("Common.Favorites")" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
             <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
         </button>
     </div>
@@ -32,7 +32,7 @@
 
 
     <div class="actions-wrapper" style="display:@(ShouldShowPinButton() ? "" : "none")">
-        <button class="action-btn button" title="置顶" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "");" @onclick="TogglePinStateAsync">
+        <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "");" @onclick="TogglePinStateAsync">
             <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
         </button>
     </div>
@@ -72,12 +72,14 @@
     {
         AppState.OnChange += RefreshUI;
         AppState.OnCurrentPageChanged += HandlePageChanged;
+        App.Localization!.OnChange += RefreshUI;
     }
 
     public void Dispose()
     {
         AppState.OnChange -= RefreshUI;
         AppState.OnCurrentPageChanged -= HandlePageChanged;
+        App.Localization!.OnChange -= RefreshUI;
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
 
@@ -108,11 +110,11 @@
         return AppState.CurrentPage switch
         {
             "home" => GetWikiTitle(),
-            "favorites" => "收藏",
-            "history" => "历史",
-            "all-pages" => "页面",
-            var p when p == "data" || p.StartsWith("data/") => "数据",
-            "settings" => "设置",
+            "favorites" => App.Localization!.Get("Common.Favorites"),
+            "history" => App.Localization!.Get("Common.History"),
+            "all-pages" => App.Localization!.Get("Common.Pages"),
+            var p when p == "data" || p.StartsWith("data/") => App.Localization!.Get("Common.Data"),
+            "settings" => App.Localization!.Get("Common.Settings"),
             _ => ""
         };
     }
@@ -121,8 +123,8 @@
     {
         return AppState.CurrentPage switch
         {
-            "home" => "输入关键词搜索...",
-            _ => "匹配标题"
+            "home" => App.Localization!.Get("TopBar.SearchPlaceholder"),
+            _ => App.Localization!.Get("TopBar.MatchTitle")
         };
     }
 

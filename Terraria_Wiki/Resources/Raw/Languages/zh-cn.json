@@ -1,5 +1,6 @@
 {
   "strings": {
+    "Common.Language": "语言",
     "Common.OK": "确定",
     "Common.Cancel": "取消",
     "Common.Notice": "提示",
@@ -77,6 +78,7 @@
 
     "SearchResultPanel.Searching": "正在搜索...",
     "SearchResultPanel.NotFound": "未找到关于 @query 的内容",
+    "SearchResultPanel.RedirectTo": "跳转至",
 
     "Settings.Title": "应用偏好设置",
     "Settings.Personalization": "个性化",

@@ -6,9 +6,9 @@
 <div class="page-anim page-content">
 
     <header class="page-header">
-        <span class="page-title">所有页面索引</span>
+        <span class="page-title">@Loc.Get("AllPages.Index")</span>
 
-        <span class="sub-text">共找到 @totalPageCount 个页面</span>
+        <span class="sub-text">@Loc.Get("AllPages.FoundCount", totalPageCount)</span>
     </header>
 
     <div class="list-container all-pages-list">
@@ -30,11 +30,13 @@
     {
         //订阅 Topbar 传来的搜索事件
         AppState.OnSearchQueryChanged += HandleSearchChanged;
+        Loc.OnChange += StateHasChanged;
     }
 
     public void Dispose()
     {
         AppState.OnSearchQueryChanged -= HandleSearchChanged;
+        Loc.OnChange -= StateHasChanged;
     }
 
 

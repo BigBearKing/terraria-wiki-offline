@@ -11,8 +11,8 @@
     <div class="log-header">
 
         <div class="left-group">
-            <span class="log-title">日志</span>
-            <span class="log-info">@(AppState.ProcessingTaskId != 0 ? "当前任务：" + AppState.Tasks[AppState.ProcessingTaskId].Name : "")</span>
+            <span class="log-title">@Loc.Get("Common.Log")</span>
+            <span class="log-info">@(AppState.ProcessingTaskId != 0 ? Loc.Get("LogPanel.CurrentTask") + AppState.Tasks[AppState.ProcessingTaskId].GetName(Loc) : "")</span>
         </div>
 
         <div class="close-btn button" @onclick="CloseLogPanel">
