@@ -1,7 +1,7 @@
 # extract_chinese.ps1
 # 扫描项目中所有源文件，提取中文字符串，生成国际化 JSON 文件
 
-$projectRoot = "C:\Users\BBK\source\repos\MAUI\Terraria_Wiki"
+$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $outputJson = Join-Path $projectRoot "i18n_strings.json"
 
 # 要扫描的文件扩展名

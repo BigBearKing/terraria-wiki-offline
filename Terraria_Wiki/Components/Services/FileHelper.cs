@@ -10,12 +10,13 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// <param name="title">弹窗标题</param>
         /// <param name="types">文件类型限制（传 null 则允许所有文件）</param>
         /// <returns>返回可读取的本地绝对路径。如果用户取消则返回 null。</returns>
-        public static async Task<string> ImportFileAsync(string title = "请选择文件", FilePickerFileType types = null)
+        public static async Task<string> ImportFileAsync(string title = null, FilePickerFileType types = null)
         {
+            var titleText = title ?? App.Localization?.Get("FileHelper.SelectFile") ?? "请选择文件";
 
             var options = new PickOptions
             {
-                PickerTitle = title,
+                PickerTitle = titleText,
                 FileTypes = types
             };
 
@@ -37,14 +38,14 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         {
             if (string.IsNullOrEmpty(sourceFilePath) || !File.Exists(sourceFilePath))
             {
-                System.Diagnostics.Debug.WriteLine("导出失败：源文件不存在。");
+                System.Diagnostics.Debug.WriteLine(App.Localization?.Get("FileHelper.ExportFailedNotExist") ?? "导出失败：源文件不存在。");
                 return;
             }
 
             // iOS 端及 Mac 端：调用系统级的“分享/存储为”功能
             await Share.Default.RequestAsync(new ShareFileRequest
             {
-                Title = "导出文件",
+                Title = App.Localization?.Get("FileHelper.ExportFile") ?? "导出文件",
                 File = new ShareFile(sourceFilePath)
             });
 
@@ -122,11 +123,11 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
                         }
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"[缓存清理] 完成！共释放空间: {freedSpace / 1024 / 1024} MB");
+                    System.Diagnostics.Debug.WriteLine(App.Localization?.Get("FileHelper.CacheCleanComplete", freedSpace / 1024 / 1024) ?? $"[缓存清理] 完成！共释放空间: {freedSpace / 1024 / 1024} MB");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[缓存清理] 发生严重错误: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine(App.Localization?.Get("FileHelper.CacheCleanError", ex.Message) ?? $"[缓存清理] 发生严重错误: {ex.Message}");
                 }
             });
 

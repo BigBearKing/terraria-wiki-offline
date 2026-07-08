@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
@@ -57,11 +57,11 @@ namespace Terraria_Wiki.Services
             App.AppStateManager?.ProcessingTaskId = 2;
             if (isAll)
             {
-                _log.Info(_loc.Get("DataService.DownloadAllPagesAndAssets"));
+                _log.Info(_loc.Get("DataService.Log.DownloadAllPagesAndAssets"));
             }
             else
             {
-                _log.Info(_loc.Get("DataService.DownloadPagesOnly"));
+                _log.Info(_loc.Get("DataService.Log.DownloadPagesOnly"));
             }
 
             try
@@ -93,21 +93,21 @@ namespace Terraria_Wiki.Services
                 await AppService.WikiRefreshAsync();
                 if (isAll)
                 {
-                    _log.Success(_loc.Get("DataService.AllPagesAndAssetsCompleted"));
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.AllPagesAndAssetsCompleted"));
+                    _log.Success(_loc.Get("DataService.Log.AllPagesAndAssetsCompleted"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllPagesAndAssetsCompleted"));
                 }
                 else
                 {
-                    _log.Success(_loc.Get("DataService.PagesDownloadCompleted"));
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.PagesDownloadCompleted"));
+                    _log.Success(_loc.Get("DataService.Log.PagesDownloadCompleted"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.PagesDownloadCompleted"));
                 }
 
 
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ErrorWithMessage", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ErrorWithMessage", ex.Message));
 
 
             }
@@ -122,7 +122,7 @@ namespace Terraria_Wiki.Services
         {
             // 1. 锁定状态
             App.AppStateManager?.ProcessingTaskId = 3;
-            _log.Info(_loc.Get("DataService.DownloadAllAssets"));
+            _log.Info(_loc.Get("DataService.Log.DownloadAllAssets"));
 
             try
             {
@@ -131,8 +131,8 @@ namespace Terraria_Wiki.Services
                 // 2. 检查文件有效性
                 if (!FileHelper.IsFileValid(_resListPath))
                 {
-                    _log.Error(_loc.Get("DataService.AssetListInvalid"));
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.AssetListInvalid"));
+                    _log.Error(_loc.Get("DataService.Log.AssetListInvalid"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AssetListInvalid"));
                     // 直接 return 即可，下方的 finally 块会自动接管并重置状态
                     return;
                 }
@@ -149,14 +149,14 @@ namespace Terraria_Wiki.Services
                 CleanUpTempFile();
                 await App.WebServer.Refresh();
                 await AppService.WikiRefreshAsync();
-                _log.Success(_loc.Get("DataService.AllAssetsCompleted"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.AllAssetsCompleted"));
+                _log.Success(_loc.Get("DataService.Log.AllAssetsCompleted"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllAssetsCompleted"));
 
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ErrorWithMessage", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ErrorWithMessage", ex.Message));
 
             }
             finally
@@ -172,11 +172,11 @@ namespace Terraria_Wiki.Services
             App.AppStateManager?.ProcessingTaskId = 4;
             if (isAll)
             {
-                _log.Info(_loc.Get("DataService.UpdateAllPagesAndAssets"));
+                _log.Info(_loc.Get("DataService.Log.UpdateAllPagesAndAssets"));
             }
             else
             {
-                _log.Info(_loc.Get("DataService.UpdatePagesOnly"));
+                _log.Info(_loc.Get("DataService.Log.UpdatePagesOnly"));
             }
             try
             {
@@ -187,10 +187,10 @@ namespace Terraria_Wiki.Services
 
                 //检查是否有要更新的页面
                 int updateCount = await CheckUpdatePage();
-                _log.Success(_loc.Get("DataService.UpdateListReady", updateCount));
+                _log.Success(_loc.Get("DataService.Log.UpdateListReady", updateCount));
                 if (updateCount == 0)
                 {
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.NoPagesNeedUpdate"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.NoPagesNeedUpdate"));
                     return;
                 }
 
@@ -215,20 +215,20 @@ namespace Terraria_Wiki.Services
                 CleanUpTempFile();
                 if (isAll)
                 {
-                    _log.Success(_loc.Get("DataService.AllPagesAndAssetsUpdated"));
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.AllPagesAndAssetsUpdated"));
+                    _log.Success(_loc.Get("DataService.Log.AllPagesAndAssetsUpdated"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllPagesAndAssetsUpdated"));
                 }
                 else
                 {
-                    _log.Success(_loc.Get("DataService.PagesUpdateCompleted"));
-                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.PagesUpdateCompleted"));
+                    _log.Success(_loc.Get("DataService.Log.PagesUpdateCompleted"));
+                    App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.PagesUpdateCompleted"));
                 }
 
             }
             catch (Exception e)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), e);
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ErrorWithMessage", e.Message));
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), e);
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ErrorWithMessage", e.Message));
             }
             finally
             {
@@ -287,18 +287,18 @@ namespace Terraria_Wiki.Services
         public async Task CleanUpResAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 5;
-            _log.Info(_loc.Get("DataService.CleanUnusedAssetsStart"));
+            _log.Info(_loc.Get("DataService.Log.CleanUnusedAssetsStart"));
             try
             {
                 await App.ContentDb.VacuumDatabaseAsync();
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                _log.Success(_loc.Get("DataService.CleanUnusedAssetsCompleted"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.CleanUnusedAssetsCompleted"));
+                _log.Success(_loc.Get("DataService.Log.CleanUnusedAssetsCompleted"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.CleanUnusedAssetsCompleted"));
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ErrorWithMessage", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ErrorWithMessage", ex.Message));
             }
             finally
             {
@@ -312,7 +312,7 @@ namespace Terraria_Wiki.Services
         public async Task DeleteResAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 6;
-            _log.Info(_loc.Get("DataService.DeleteAssetsStart"));
+            _log.Info(_loc.Get("DataService.Log.DeleteAssetsStart"));
             try
             {
                 await App.ContentDb.DeleteItemsAsync<WikiAsset>();
@@ -322,14 +322,14 @@ namespace Terraria_Wiki.Services
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 await AppService.WikiRefreshAsync();
                 await App.WebServer.Refresh();
-                _log.Success(_loc.Get("DataService.DeleteAssetsCompleted"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.DeleteAssetsCompleted"));
+                _log.Success(_loc.Get("DataService.Log.DeleteAssetsCompleted"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DeleteAssetsCompleted"));
 
             }
             catch (Exception ex)
 
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), ex.Message);
             }
             finally
@@ -367,7 +367,7 @@ namespace Terraria_Wiki.Services
 
                 if (FileHelper.IsFileValid(_failedPageListPath))
                 {
-                    _log.Info(_loc.Get("DataService.RetryFailedPages"));
+                    _log.Info(_loc.Get("DataService.Log.RetryFailedPages"));
                     await StartDownloadPagesAsync(_failedPageListPath, _failedResListPath, _tempFailedPageListPath, 1);
                     await FileHelper.AppendFileAsync(_failedResListPath, _resListPath);
                     string tempFile = Path.Combine(_baseDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
@@ -380,19 +380,19 @@ namespace Terraria_Wiki.Services
 
                 if (FileHelper.IsFileValid(_failedResListPath) && isAll == true)
                 {
-                    _log.Info(_loc.Get("DataService.RetryFailedAssets"));
+                    _log.Info(_loc.Get("DataService.Log.RetryFailedAssets"));
                     await StartDownloadResAsync(_failedResListPath, _tempFailedResListPath, 1, false);
                     await FileHelper.AppendFileAsync(_tempFailedResListPath, _failedResListPath);
                 }
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 CleanUpTempFile();
-                _log.Success(_loc.Get("DataService.RetryCompleted"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.RetryCompleted"));
+                _log.Success(_loc.Get("DataService.Log.RetryCompleted"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.RetryCompleted"));
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ErrorWithMessage", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ErrorWithMessage", ex.Message));
             }
             finally
             {
@@ -406,22 +406,22 @@ namespace Terraria_Wiki.Services
             if (File.Exists(_failedPageListPath))
             {
                 File.Delete(_failedPageListPath);
-                _log.Info(_loc.Get("DataService.FailedPagesCleared"));
+                _log.Info(_loc.Get("DataService.Log.FailedPagesCleared"));
 
             }
             if (File.Exists(_failedResListPath))
             {
                 File.Delete(_failedResListPath);
-                _log.Info(_loc.Get("DataService.FailedAssetsCleared"));
+                _log.Info(_loc.Get("DataService.Log.FailedAssetsCleared"));
             }
-            App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.FailedListCleared"));
+            App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.FailedListCleared"));
 
         }
         //删除文件夹
         public async Task DeleteDatabase()
         {
             App.AppStateManager?.ProcessingTaskId = 8;
-            _log.Info(_loc.Get("DataService.DeletingDatabase"));
+            _log.Info(_loc.Get("DataService.Log.DeletingDatabase"));
             try
             {
                 await App.ContentDb.CloseConnection();
@@ -434,12 +434,12 @@ namespace Terraria_Wiki.Services
                 await App.ContentDb.ReconnectAsync();
                 await AppService.WikiRefreshAsync();
                 await App.WebServer.Refresh();
-                _log.Success(_loc.Get("DataService.DatabaseDeleted"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.DatabaseDeleted"));
+                _log.Success(_loc.Get("DataService.Log.DatabaseDeleted"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DatabaseDeleted"));
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ErrorOccurred"), ex);
+                _log.Error(_loc.Get("DataService.Log.ErrorOccurred"), ex);
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), ex.Message);
             }
             finally
@@ -459,7 +459,7 @@ namespace Terraria_Wiki.Services
         public async Task ExportData()
         {
             App.AppStateManager?.ProcessingTaskId = 9;
-            _log.Info(_loc.Get("DataService.ExportDataStart"));
+            _log.Info(_loc.Get("DataService.Log.ExportDataStart"));
             string exportPath = null;
             string finalPkgPath = null;
 
@@ -470,7 +470,7 @@ namespace Terraria_Wiki.Services
 
             if (!File.Exists(originalDbPath))
             {
-                _log.Error(_loc.Get("DataService.NoDatabaseFile"));
+                _log.Error(_loc.Get("DataService.Log.NoDatabaseFile"));
                 App.AppStateManager?.ProcessingTaskId = 0;
                 return;
             }
@@ -478,14 +478,14 @@ namespace Terraria_Wiki.Services
             try
             {
                 // 1. 在线备份数据库 (SQLite API 本身支持异步，留在 UI 线程即可)
-                _log.Info(_loc.Get("DataService.BackingUpDatabase"));
+                _log.Info(_loc.Get("DataService.Log.BackingUpDatabase"));
                 var conn = App.ContentDb.GetConnection();
                 await Task.Run(async () =>
                 {
                     await conn.BackupAsync(tempDbPath);
                 });
                 // 2. 准备基础数据
-                _log.Info(_loc.Get("DataService.StartPackaging"));
+                _log.Info(_loc.Get("DataService.Log.StartPackaging"));
                 var wikibook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
                 var info = new WikiPackageInfo
                 {
@@ -529,7 +529,7 @@ namespace Terraria_Wiki.Services
                     ).ToList();
 
                     // 计算 MD5
-                    _log.Info(_loc.Get("DataService.CalculatingMetadata"));
+                    _log.Info(_loc.Get("DataService.Log.CalculatingMetadata"));
                     using (var md5 = System.Security.Cryptography.MD5.Create())
                     {
                         foreach (var file in files)
@@ -548,7 +548,7 @@ namespace Terraria_Wiki.Services
                     }
 
                     // 开始写入私有包 (写入到缓存目录或Windows的指定目录)
-                    _log.Info(_loc.Get("DataService.GeneratingPackage"));
+                    _log.Info(_loc.Get("DataService.Log.GeneratingPackage"));
                     using var fsOut = new FileStream(finalPkgPath, FileMode.Create, FileAccess.Write, FileShare.None);
                     using var writer = new BinaryWriter(fsOut);
 
@@ -576,7 +576,7 @@ namespace Terraria_Wiki.Services
                 {
 #if ANDROID
                     // 【修改点 2】唤起 SAF 选择位置，将缓存包拷贝过去
-                    _log.Info(_loc.Get("DataService.WaitingForSaveLocation"));
+                    _log.Info(_loc.Get("DataService.Log.WaitingForSaveLocation"));
                     // 注意：这里需要你保留之前写的 AndroidFileSaver 类
                     var uri = await AndroidFileSaver.PickSaveLocationAsync(exportFileName, "application/octet-stream");
                     if (uri != null)
@@ -593,7 +593,7 @@ namespace Terraria_Wiki.Services
                     }
                     else
                     {
-                        _log.Info(_loc.Get("DataService.UserCancelledSave"));
+                        _log.Info(_loc.Get("DataService.Log.UserCancelledSave"));
                         App.AppStateManager?.ProcessingTaskId = 0;
                         return; // 用户取消了，直接中断，不显示"导出成功"
                     }
@@ -604,13 +604,13 @@ namespace Terraria_Wiki.Services
                     await FileHelper.ExportFileAppleAsync(finalPkgPath);
                 }
 
-                _log.Success(_loc.Get("DataService.ExportSuccess", finalPkgPath));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.ExportSuccessShort"));
+                _log.Success(_loc.Get("DataService.Log.ExportSuccess", finalPkgPath));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ExportSuccessShort"));
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ExportFailed", ex.Message));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ExportFailed", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ExportFailed", ex.Message));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.Log.ExportFailed", ex.Message));
             }
             finally
             {
@@ -634,7 +634,7 @@ namespace Terraria_Wiki.Services
         public async Task ImportData()
         {
             App.AppStateManager?.ProcessingTaskId = 10;
-            _log.Info(_loc.Get("DataService.ImportDataStart"));
+            _log.Info(_loc.Get("DataService.Log.ImportDataStart"));
             string filePath = null;
 
             try
@@ -650,11 +650,11 @@ namespace Terraria_Wiki.Services
 
                 if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
-                    filePath = await FileHelper.ImportFileAsync("请选择导入包", customFileType);
+                    filePath = await FileHelper.ImportFileAsync(_loc.Get("DataService.Log.SelectImportPackage"), customFileType);
                 }
                 else
                 {
-                    filePath = await FileHelper.ImportFileAsync("请选择导入包");
+                    filePath = await FileHelper.ImportFileAsync(_loc.Get("DataService.Log.SelectImportPackage"));
                 }
 
                 if (string.IsNullOrEmpty(filePath)) return;
@@ -671,7 +671,7 @@ namespace Terraria_Wiki.Services
                     using var reader = new BinaryReader(fsIn);
 
                     // 1. 校验私有头
-                    _log.Info(_loc.Get("DataService.ValidatingImportFormat"));
+                    _log.Info(_loc.Get("DataService.Log.ValidatingImportFormat"));
                     byte[] headerBytes = reader.ReadBytes(8);
                     if (Encoding.UTF8.GetString(headerBytes) != "WIKIDATA")
                     {
@@ -689,7 +689,7 @@ namespace Terraria_Wiki.Services
                     if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
 
                     // 3. 逐个提取文件并实时校验 MD5
-                    _log.Info(_loc.Get("DataService.ExtractingAndVerifying"));
+                    _log.Info(_loc.Get("DataService.Log.ExtractingAndVerifying"));
                     using var md5 = MD5.Create();
                     byte[] buffer = new byte[1024 * 1024];
 
@@ -725,7 +725,7 @@ namespace Terraria_Wiki.Services
                     }
                 });
                 // 【关键】把耗时的本地文件夹删除和移动也放进后台线程
-                _log.Info(_loc.Get("DataService.ReplacingLocalFiles"));
+                _log.Info(_loc.Get("DataService.Log.ReplacingLocalFiles"));
                 await App.ContentDb.CloseConnection();
                 await Task.Run(() =>
                 {
@@ -740,7 +740,7 @@ namespace Terraria_Wiki.Services
 
                 // 从这里开始，Task.Run 结束，代码又回到了 UI 线程
                 // 以下是数据库操作（它们本身已经是真正的异步了，不需要包裹在 Task.Run 里）
-                _log.Info(_loc.Get("DataService.UpdatingDatabase"));
+                _log.Info(_loc.Get("DataService.Log.UpdatingDatabase"));
 
 
                 WikiBook wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(meta.Id);
@@ -754,13 +754,13 @@ namespace Terraria_Wiki.Services
                 await AppService.WikiRefreshAsync();
                 await App.WebServer.Refresh();
 
-                _log.Success(_loc.Get("DataService.ImportSuccess"));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.ImportSuccess"));
+                _log.Success(_loc.Get("DataService.Log.ImportSuccess"));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ImportSuccess"));
             }
             catch (Exception ex)
             {
-                _log.Error(_loc.Get("DataService.ImportFailed", ex.Message));
-                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.ImportFailed", ex.Message));
+                _log.Error(_loc.Get("DataService.Log.ImportFailed", ex.Message));
+                App.AppStateManager?.TriggerAlert(_loc.Get("Common.Error"), _loc.Get("DataService.Log.ImportFailed", ex.Message));
             }
             finally
             {
@@ -781,7 +781,7 @@ namespace Terraria_Wiki.Services
         // ================= 核心功能 1: 获取页面清单 =================
         private async Task<int> GetWikiPagesListAsync()
         {
-            _log.Info(_loc.Get("DataService.FetchingPageList"));
+            _log.Info(_loc.Get("DataService.Log.FetchingPageList"));
             var writer = new BatchLineWriter(_pageListPath, 200);
             string? gapContinue = null;
             int pagesCount = 0;
@@ -792,7 +792,7 @@ namespace Terraria_Wiki.Services
             while (true) // 逻辑未变，简化循环写法
             {
                 string currentUrl = currentBaseUrl + (string.IsNullOrEmpty(gapContinue) ? "" : $"&gapcontinue={Uri.EscapeDataString(gapContinue)}");
-                _log.Info(_loc.Get("DataService.PagesFetched", pagesCount));
+                _log.Info(_loc.Get("DataService.Log.PagesFetched", pagesCount));
 
                 try
                 {
@@ -831,12 +831,12 @@ namespace Terraria_Wiki.Services
                 catch (HttpRequestException e)
                 {
                     if (++retryCount > _maxRetryAttempts) throw;
-                    _log.Error(_loc.Get("DataService.RequestFailedRetrying", e.Message, retryCount, _maxRetryAttempts));
+                    _log.Error(_loc.Get("DataService.Log.RequestFailedRetrying", e.Message, retryCount, _maxRetryAttempts));
                     await Task.Delay(1000);
                 }
             }
             writer.Flush();
-            _log.Success(_loc.Get("DataService.FetchCompleted", pagesCount));
+            _log.Success(_loc.Get("DataService.Log.FetchCompleted", pagesCount));
 
             return pagesCount;
         }
@@ -846,7 +846,7 @@ namespace Terraria_Wiki.Services
             string nextUrl = RedirectStartUrl;
             int pageCount = 1;
             int totalRedirects = 0;
-            _log.Info(_loc.Get("DataService.FetchingRedirects"));
+            _log.Info(_loc.Get("DataService.Log.FetchingRedirects"));
             while (!string.IsNullOrEmpty(nextUrl))
             {
                 int retry = 0;
@@ -862,7 +862,7 @@ namespace Terraria_Wiki.Services
 
                         if (listItems == null)
                         {
-                            _log.Error(_loc.Get("DataService.NoDataOnPage"));
+                            _log.Error(_loc.Get("DataService.Log.NoDataOnPage"));
                             break;
                         }
 
@@ -881,7 +881,7 @@ namespace Terraria_Wiki.Services
                             }
                         }
                         await App.ContentDb.SaveItemsAsync(wikiRedirects);
-                        _log.Info(_loc.Get("DataService.PageParsed", pageCount));
+                        _log.Info(_loc.Get("DataService.Log.PageParsed", pageCount));
                         var nextLinkNode = doc.DocumentNode.SelectSingleNode("//a[@class='mw-nextlink']");
 
                         if (nextLinkNode != null)
@@ -892,7 +892,7 @@ namespace Terraria_Wiki.Services
                         }
                         else
                         {
-                            _log.Success(_loc.Get("DataService.RedirectsFetched", totalRedirects));
+                            _log.Success(_loc.Get("DataService.Log.RedirectsFetched", totalRedirects));
                             nextUrl = null;
                             break;
                         }
@@ -902,11 +902,11 @@ namespace Terraria_Wiki.Services
                     {
                         if (++retry > _maxRetryAttempts)
                         {
-                            _log.Error(_loc.Get("DataService.RedirectsFetchFailed", _maxRetryAttempts, ex.Message));
+                            _log.Error(_loc.Get("DataService.Log.RedirectsFetchFailed", _maxRetryAttempts, ex.Message));
                             nextUrl = null; // 停止整个大循环
                             throw; // 继续抛出异常到外层，触发整体失败逻辑
                         }
-                        _log.Error(_loc.Get("DataService.RedirectsFetchError", retry, _maxRetryAttempts));
+                        _log.Error(_loc.Get("DataService.Log.RedirectsFetchError", retry, _maxRetryAttempts));
                         await Task.Delay(1000); // 间隔1秒
                     }
                 }
@@ -919,7 +919,7 @@ namespace Terraria_Wiki.Services
         private async Task RunBatchJobAsync(string inputPath, string failedPath, int concurrency, Func<int, string, Task> itemProcessor, Action? preWork = null, Action? postWork = null)
         {
 
-            _log.Info(_loc.Get("DataService.TaskStart", concurrency));
+            _log.Info(_loc.Get("DataService.Log.TaskStart", concurrency));
 
             // ================= 修改开始 =================
             // 使用 using 确保任务结束时执行 Dispose()，从而执行最后一次文件截断
@@ -962,20 +962,20 @@ namespace Terraria_Wiki.Services
                         catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.NotFound)
                         {
                             // 如果遇到 404 (NotFound)，直接抛出异常，不进入下面的常规 Exception 重试
-                            _log.Info(_loc.Get("DataService.ResourceNotFound", workerId, line));
+                            _log.Info(_loc.Get("DataService.Log.ResourceNotFound", workerId, line));
                             break;
                         }
                         catch (Exception)
                         {
                             if (++retry > _maxRetryAttempts) throw;
-                            _log.Error(_loc.Get("DataService.RetryingFailed", workerId, retry, _maxRetryAttempts, line));
+                            _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, line));
                             await Task.Delay(1000);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(_loc.Get("DataService.WorkerError", workerId, ex.Message));
+                    _log.Error(_loc.Get("DataService.Log.WorkerError", workerId, ex.Message));
                     await DataService.AppendFailedUrlAsync(failedPath, line);
                 }
             }
@@ -991,7 +991,7 @@ namespace Terraria_Wiki.Services
             {
                 totalCount = File.ReadLines(pageListPath).Count();
             }
-            _log.Info(_loc.Get("DataService.DownloadPagesStart", totalCount));
+            _log.Info(_loc.Get("DataService.Log.DownloadPagesStart", totalCount));
             // 定义如何处理单行数据
 
 
@@ -1007,7 +1007,7 @@ namespace Terraria_Wiki.Services
                 finally
                 {
                     int c = Interlocked.Increment(ref currentCount);
-                    _log.Info(_loc.Get("DataService.PageCompleted", workerId, c, totalCount, page.Title));
+                    _log.Info(_loc.Get("DataService.Log.PageCompleted", workerId, c, totalCount, page.Title));
                 }
 
 
@@ -1024,7 +1024,7 @@ namespace Terraria_Wiki.Services
             // 替换原文件
             File.Delete(resListPath);
             File.Move(tempFile, resListPath, true);
-            _log.Info(_loc.Get("DataService.AllPagesCompleted"));
+            _log.Info(_loc.Get("DataService.Log.AllPagesCompleted"));
 
         }
 
@@ -1037,7 +1037,7 @@ namespace Terraria_Wiki.Services
             {
                 totalCount = File.ReadLines(resListPath).Count();
             }
-            _log.Info(_loc.Get("DataService.DownloadAssetsStart", totalCount));
+            _log.Info(_loc.Get("DataService.Log.DownloadAssetsStart", totalCount));
             async Task ProcessResLine(int workerId, string url)
             {
                 bool changeData = false;
@@ -1051,11 +1051,11 @@ namespace Terraria_Wiki.Services
                     int c = Interlocked.Increment(ref currentCount);
                     if (changeData)
                     {
-                        _log.Info(_loc.Get("DataService.AssetCompleted", workerId, c, totalCount, fileName));
+                        _log.Info(_loc.Get("DataService.Log.AssetCompleted", workerId, c, totalCount, fileName));
                     }
                     else
                     {
-                        _log.Info(_loc.Get("DataService.AssetSkipped", workerId, c, totalCount, fileName));
+                        _log.Info(_loc.Get("DataService.Log.AssetSkipped", workerId, c, totalCount, fileName));
                     }
                 }
 
@@ -1071,7 +1071,7 @@ namespace Terraria_Wiki.Services
                 await RunBatchJobAsync(resListPath, failedResListPath, maxConcurrency, ProcessResLine);
             }
 
-            _log.Info(_loc.Get("DataService.AssetsDownloadCompleted"));
+            _log.Info(_loc.Get("DataService.Log.AssetsDownloadCompleted"));
         }
 
 
@@ -1275,7 +1275,7 @@ namespace Terraria_Wiki.Services
         //清理临时文件
         private void CleanUpTempFile()
         {
-            _log.Info(_loc.Get("DataService.CleaningTempFiles"));
+            _log.Info(_loc.Get("DataService.Log.CleaningTempFiles"));
             if (File.Exists(_pageListPath))
             {
                 File.Delete(_pageListPath);
