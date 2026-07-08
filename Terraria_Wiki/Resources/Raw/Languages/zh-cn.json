@@ -39,6 +39,8 @@
     "DataManagement.Installed": "已安装",
     "DataManagement.NotInstalled": "未安装",
     "DataManagement.NotImplemented": "尚未实现其他 Wiki 的数据管理页面",
+    "DataManagement.SwitchWikiTitle": "切换 Wiki",
+    "DataManagement.SwitchWikiDesc": "切换到 {0}？应用将重新启动。",
 
     "DataManagementDetails.NoData": "尚未获取数据",
     "DataManagementDetails.DownloadRequired": "你需要下载基础数据包和资源文件才能离线浏览此 Wiki",

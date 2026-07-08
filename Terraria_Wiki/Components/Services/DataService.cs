@@ -15,25 +15,28 @@ namespace Terraria_Wiki.Services
     {
         // ================= 配置与常量 =================
         private const string UserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
-        private const string JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()";
-        private const string BaseApiUrl = "https://terraria.wiki.gg/zh/api.php";
-        private const string BaseGuideApiUrl = "https://terraria.wiki.gg/zh/api.php?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace=10000&gapfilterredir=nonredirects&gaplimit=max";
-        private const string BaseUrl = "https://terraria.wiki.gg";
-        private const string RedirectStartUrl = "/zh/wiki/Special:ListRedirects?limit=5000";
 
-
-        private static readonly string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
         private static readonly string _tempDir = Path.Combine(FileSystem.AppDataDirectory, "Temp");
         private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
-        private static readonly string _resListPath = Path.Combine(_baseDir, "res.txt");
-        private static readonly string _tempResListPath = Path.Combine(_baseDir, "temp_res.txt");
-        private static readonly string _pageListPath = Path.Combine(_baseDir, "pages.txt");
-        private static readonly string _failedPageListPath = Path.Combine(_baseDir, "failed_pages.txt");
-        private static readonly string _tempFailedPageListPath = Path.Combine(_baseDir, "temp_failed_pages.txt");
-        private static readonly string _failedResListPath = Path.Combine(_baseDir, "failed_res.txt");
-        private static readonly string _tempFailedResListPath = Path.Combine(_baseDir, "temp_failed_res.txt");
-        private static readonly string _updatePageListPath = Path.Combine(_baseDir, "update_pages.txt");
-        private static readonly string _updateResListPath = Path.Combine(_baseDir, "update_res.txt");
+
+        private string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
+        private string _resListPath = "";
+        private string _tempResListPath = "";
+        private string _pageListPath = "";
+        private string _failedPageListPath = "";
+        private string _tempFailedPageListPath = "";
+        private string _failedResListPath = "";
+        private string _tempFailedResListPath = "";
+        private string _updatePageListPath = "";
+        private string _updateResListPath = "";
+
+        // 从 WikiBook 加载的 Wiki 源配置
+        private string _baseApiUrl;
+        private string _baseUrl;
+        private string _redirectStartUrl;
+        private int _mainNamespace;
+        private List<int> _additionalNamespaces = [];
+        private string _junkXPath;
         // ================= 事件与状态 =================
         private readonly LogService _log;
         private readonly LocalizationService _loc;
@@ -70,7 +73,7 @@ namespace Terraria_Wiki.Services
 
                 await GetWikiRedirectsListAsync();
                 await GetWikiPagesListAsync();
-                var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var book = App.AppStateManager.ActiveWikiBook;
                 if (isAll)
                 {
                     await StartDownloadPagesAsync(_pageListPath, _resListPath, _failedPageListPath, _pageConcurrency);
@@ -141,7 +144,7 @@ namespace Terraria_Wiki.Services
                 await StartDownloadResAsync(_resListPath, _failedResListPath, _resConcurrency);
 
                 // 4. 更新数据库状态
-                var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var book = App.AppStateManager.ActiveWikiBook;
                 book.IsResourceDownloaded = true;
                 await App.ManagerDb.SaveItemAsync(book);
 
@@ -208,7 +211,7 @@ namespace Terraria_Wiki.Services
                 FileHelper.RemoveDuplicatesOptimized(_resListPath, tempFile);
                 File.Delete(_resListPath);
                 File.Move(tempFile, _resListPath, true);
-                var book = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var book = App.AppStateManager.ActiveWikiBook;
                 book.UpdateTime = DateTime.Now;
                 await App.ManagerDb.SaveItemAsync(book);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
@@ -316,7 +319,7 @@ namespace Terraria_Wiki.Services
             try
             {
                 await App.ContentDb.DeleteItemsAsync<WikiAsset>();
-                var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var wikiBook = App.AppStateManager.ActiveWikiBook;
                 wikiBook.IsResourceDownloaded = false;
                 await App.ManagerDb.SaveItemAsync(wikiBook);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
@@ -361,7 +364,7 @@ namespace Terraria_Wiki.Services
             try
             {
                 bool isAll = true;
-                var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var wikiBook = App.AppStateManager.ActiveWikiBook;
                 if (!wikiBook.IsResourceDownloaded) isAll = false;
                 await InitializeSettings();
 
@@ -429,7 +432,7 @@ namespace Terraria_Wiki.Services
                 {
                     DeleteDataFolder();
                 });
-                await App.ManagerDb.DeleteItemAsync<WikiBook>(1);
+                await App.ManagerDb.DeleteItemAsync<WikiBook>(App.AppStateManager.ActiveWikiBookId);
                 await App.ManagerDb.Init(true);
                 await App.ContentDb.ReconnectAsync();
                 await AppService.WikiRefreshAsync();
@@ -448,7 +451,7 @@ namespace Terraria_Wiki.Services
             }
 
         }
-        public static void DeleteDataFolder()
+        public void DeleteDataFolder()
         {
             if (Directory.Exists(_baseDir))
                 Directory.Delete(_baseDir, true);
@@ -486,7 +489,7 @@ namespace Terraria_Wiki.Services
                 });
                 // 2. 准备基础数据
                 _log.Info(_loc.Get("DataService.Log.StartPackaging"));
-                var wikibook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+                var wikibook = App.AppStateManager.ActiveWikiBook;
                 var info = new WikiPackageInfo
                 {
                     Id = 1,
@@ -783,58 +786,57 @@ namespace Terraria_Wiki.Services
         {
             _log.Info(_loc.Get("DataService.Log.FetchingPageList"));
             var writer = new BatchLineWriter(_pageListPath, 200);
-            string? gapContinue = null;
             int pagesCount = 0;
-            int retryCount = 0;
-            bool isGuideMode = false;
-            string currentBaseUrl = BaseApiUrl + "?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace=0&gapfilterredir=nonredirects&gaplimit=max";
 
-            while (true) // 逻辑未变，简化循环写法
+            // 将所有需要爬取的命名空间放入队列：主命名空间 + 额外命名空间
+            var namespaceQueue = new Queue<int>();
+            namespaceQueue.Enqueue(_mainNamespace);
+            foreach (var ns in _additionalNamespaces)
+                namespaceQueue.Enqueue(ns);
+
+            while (namespaceQueue.Count > 0)
             {
-                string currentUrl = currentBaseUrl + (string.IsNullOrEmpty(gapContinue) ? "" : $"&gapcontinue={Uri.EscapeDataString(gapContinue)}");
-                _log.Info(_loc.Get("DataService.Log.PagesFetched", pagesCount));
+                int currentNs = namespaceQueue.Dequeue();
+                string? gapContinue = null;
+                int retryCount = 0;
+                string currentBaseUrl = $"{_baseApiUrl}?action=query&format=json&prop=info&inprop=url&generator=allpages&gapnamespace={currentNs}&gapfilterredir=nonredirects&gaplimit=max";
 
-                try
+                while (true)
                 {
-                    string jsonResponse = await _httpClient.GetStringAsync(currentUrl);
-                    retryCount = 0; // 成功重置
+                    string currentUrl = currentBaseUrl + (string.IsNullOrEmpty(gapContinue) ? "" : $"&gapcontinue={Uri.EscapeDataString(gapContinue)}");
+                    _log.Info(_loc.Get("DataService.Log.PagesFetched", pagesCount));
 
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var rawData = JsonSerializer.Deserialize(jsonResponse, AppJsonContext.Custom.RawResponse);
-
-                    if (rawData?.Query?.Pages != null)
+                    try
                     {
-                        foreach (var page in rawData.Query.Pages.Values)
-                        {
-                            writer.Add($"{page.Title}|{page.Touched}");
-                            pagesCount++;
-                        }
-                    }
+                        string jsonResponse = await _httpClient.GetStringAsync(currentUrl);
+                        retryCount = 0;
 
-                    if (string.IsNullOrEmpty(rawData?.Continue?.GapContinue))
-                    {
-                        if (!isGuideMode)
-                        {
-                            isGuideMode = true;
-                            gapContinue = null;
-                            currentBaseUrl = BaseGuideApiUrl;
-                            continue;
-                        }
-                        else
-                        {
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        var rawData = JsonSerializer.Deserialize(jsonResponse, AppJsonContext.Custom.RawResponse);
 
+                        if (rawData?.Query?.Pages != null)
+                        {
+                            foreach (var page in rawData.Query.Pages.Values)
+                            {
+                                writer.Add($"{page.Title}|{page.Touched}");
+                                pagesCount++;
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(rawData?.Continue?.GapContinue))
                             break;
-                        }
+
+                        gapContinue = rawData?.Continue?.GapContinue;
                     }
-                    gapContinue = rawData?.Continue?.GapContinue;
-                }
-                catch (HttpRequestException e)
-                {
-                    if (++retryCount > _maxRetryAttempts) throw;
-                    _log.Error(_loc.Get("DataService.Log.RequestFailedRetrying", e.Message, retryCount, _maxRetryAttempts));
-                    await Task.Delay(1000);
+                    catch (HttpRequestException e)
+                    {
+                        if (++retryCount > _maxRetryAttempts) throw;
+                        _log.Error(_loc.Get("DataService.Log.RequestFailedRetrying", e.Message, retryCount, _maxRetryAttempts));
+                        await Task.Delay(1000);
+                    }
                 }
             }
+
             writer.Flush();
             _log.Success(_loc.Get("DataService.Log.FetchCompleted", pagesCount));
 
@@ -843,7 +845,7 @@ namespace Terraria_Wiki.Services
 
         private async Task GetWikiRedirectsListAsync()
         {
-            string nextUrl = RedirectStartUrl;
+            string nextUrl = _redirectStartUrl;
             int pageCount = 1;
             int totalRedirects = 0;
             _log.Info(_loc.Get("DataService.Log.FetchingRedirects"));
@@ -854,7 +856,7 @@ namespace Terraria_Wiki.Services
                 {
                     try
                     {
-                        string fullUrl = BaseUrl + nextUrl;
+                        string fullUrl = _baseUrl + nextUrl;
                         string html = await _httpClient.GetStringAsync(fullUrl);
                         var doc = new HtmlDocument();
                         doc.LoadHtml(html);
@@ -1079,7 +1081,7 @@ namespace Terraria_Wiki.Services
 
         private async Task DownloadAndSavePageToDbAsync(PageInfo pageInfo, BatchLineWriter writer)
         {
-            var pageUrl = BaseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
+            var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
 
             string xml = await _httpClient.GetStringAsync(pageUrl);
 
@@ -1113,7 +1115,8 @@ namespace Terraria_Wiki.Services
 
         private void CleanJunkElements(HtmlNode node)
         {
-            node.SelectNodes(JunkXPath)?.ToList().ForEach(n => n.Remove());
+            if (!string.IsNullOrEmpty(_junkXPath))
+                node.SelectNodes(_junkXPath)?.ToList().ForEach(n => n.Remove());
         }
 
         private void ProcessAnchorLinks(HtmlNode node)
@@ -1163,7 +1166,7 @@ namespace Terraria_Wiki.Services
                 string src = n.Attributes["src"].Value;
 
                 // 补全 URL
-                if (!src.Contains("https://")) src = "https://terraria.wiki.gg" + src;
+                if (!src.Contains("https://")) src = _baseUrl + src;
 
                 // 还原缩略图
                 src = Regex.Replace(src, @"/thumb/(.*?)/.*", "/$1");
@@ -1267,9 +1270,33 @@ namespace Terraria_Wiki.Services
                 Preferences.Default.Set("PageConcurrency", 2);
             }
             _resConcurrency = Preferences.Default.Get("ResConcurrency", 10);
+
+            // 从 WikiBook 加载 Wiki 源配置（含 DataFolder，必须在路径使用前加载）
+            var book = App.AppStateManager.ActiveWikiBook;
+            _baseApiUrl = book.ApiBaseUrl;
+            _baseUrl = book.PageBaseUrl;
+            _redirectStartUrl = book.RedirectListUrl;
+            _mainNamespace = book.MainNamespace;
+            _additionalNamespaces = string.IsNullOrEmpty(book.AdditionalNamespaces)
+                ? []
+                : book.AdditionalNamespaces.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse).ToList();
+            _junkXPath = book.JunkXPath;
+
+            // 根据 DataFolder 设置数据目录和所有文件路径
+            _baseDir = Path.Combine(FileSystem.AppDataDirectory, book.DataFolder);
+            _resListPath = Path.Combine(_baseDir, "res.txt");
+            _tempResListPath = Path.Combine(_baseDir, "temp_res.txt");
+            _pageListPath = Path.Combine(_baseDir, "pages.txt");
+            _failedPageListPath = Path.Combine(_baseDir, "failed_pages.txt");
+            _tempFailedPageListPath = Path.Combine(_baseDir, "temp_failed_pages.txt");
+            _failedResListPath = Path.Combine(_baseDir, "failed_res.txt");
+            _tempFailedResListPath = Path.Combine(_baseDir, "temp_failed_res.txt");
+            _updatePageListPath = Path.Combine(_baseDir, "update_pages.txt");
+            _updateResListPath = Path.Combine(_baseDir, "update_res.txt");
+
             if (!Directory.Exists(_baseDir)) Directory.CreateDirectory(_baseDir);
             CleanUpTempFile();
-
         }
 
         //清理临时文件

@@ -52,9 +52,22 @@ namespace Terraria_Wiki
         private async Task InitializeAsync()
         {
             await Localization!.InitializeAsync();
-            WebServer.Start();
             await ManagerDb.Init();
-            await ContentDb.Init();
+            // 根据活跃 WikiBook 的 DataFolder 切换 ContentDb 到正确路径，并缓存到 AppState
+            var activeBook = await ManagerDb.GetItemAsync<WikiBook>(AppStateManager.ActiveWikiBookId);
+            AppStateManager.ActiveWikiBook = activeBook;
+
+            // 执行旧版数据迁移（通过判断旧文件是否存在决定是否执行）
+            var upgradeHandler = new LegacyUpgradeHandler();
+            await upgradeHandler.RunAsync(activeBook);
+
+            if (activeBook != null)
+            {
+                var contentDbPath = Path.Combine(FileSystem.AppDataDirectory, activeBook.DataFolder, "data.db");
+                await ContentDb.SwitchDatabaseAsync(contentDbPath);
+            }
+            WebServer.Start();
+            await ContentDb.Init(false, activeBook);
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
         }
 

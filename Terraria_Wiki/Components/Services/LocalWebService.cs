@@ -44,7 +44,7 @@ namespace Terraria_Wiki.Services
                 }
             }
 
-            var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+            var wikiBook = App.AppStateManager.ActiveWikiBook;
             _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
 
@@ -67,7 +67,7 @@ namespace Terraria_Wiki.Services
         }
         public async Task Refresh()
         {
-            var wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(1);
+            var wikiBook = App.AppStateManager.ActiveWikiBook;
             _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
 

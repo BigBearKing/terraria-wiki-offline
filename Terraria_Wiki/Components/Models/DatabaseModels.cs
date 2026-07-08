@@ -21,7 +21,25 @@ public class WikiBook
 
     public DateTime UpdateTime { get; set; }
 
-
+    // ================= Wiki 源配置 =================
+    // 完整的 API 地址，例如 "https://terraria.wiki.gg/zh/api.php"
+    public string ApiBaseUrl { get; set; }
+    // 页面根域名，例如 "https://terraria.wiki.gg"
+    public string PageBaseUrl { get; set; }
+    // 重定向列表相对路径，例如 "/zh/wiki/Special:ListRedirects?limit=5000"
+    public string RedirectListUrl { get; set; }
+    // 主命名空间 ID（通常为 0）
+    public int MainNamespace { get; set; }
+    // 额外命名空间 ID，逗号分隔，例如 "10000,10002"（terraria.wiki.gg 指南为 10000）
+    public string AdditionalNamespaces { get; set; }
+    // XPath 表达式，用于清理不需要的 HTML 元素
+    public string JunkXPath { get; set; }
+    // 数据文件夹名（相对于 AppDataDirectory），例如 "Terraria_Wiki_zh"，存放 .db 及下载的资源
+    public string DataFolder { get; set; }
+    // 默认页面内容，下载数据前展示给用户
+    public string DefaultPageContent { get; set; }
+    // 默认页面标题（即 wiki 首页的 Page 主键），例如 "Terraria Wiki"
+    public string DefaultPageTitle { get; set; }
 }
 
 public class WikiPage

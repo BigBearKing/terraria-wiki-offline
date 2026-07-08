@@ -227,12 +227,13 @@ namespace Terraria_Wiki.Services
         //刷新数据库
         public static async Task RefreshWikiBookAsync(DatabaseService wikiBook, DatabaseService wikiContent)
         {
-            var book = await wikiBook.GetItemAsync<WikiBook>(1);
+            var book = await wikiBook.GetItemAsync<WikiBook>(App.AppStateManager.ActiveWikiBookId);
             book.PageCount = await wikiContent.GetCountAsync<WikiPage>();
             book.RedirectCount = await wikiContent.GetCountAsync<WikiRedirect>();
             book.ResourceCount = await wikiContent.GetCountAsync<WikiAsset>();
             book.DataSize = FileHelper.GetSizeBytes(wikiContent.DatabasePath);
             await wikiBook.SaveItemAsync(book);
+            App.AppStateManager.ActiveWikiBook = book; // 回写缓存
         }
 
         //复制图片到剪切板

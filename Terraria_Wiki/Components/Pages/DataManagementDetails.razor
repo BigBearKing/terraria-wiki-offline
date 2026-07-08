@@ -17,7 +17,7 @@
             @* --- 状态 A：已下载 (显示数据大小、更新按钮、页面列表) --- *@
             <div class="title-placeholder">
                 <div class="placeholder-icon">
-                    <img src="images/@_selectedWiki.Title.Replace(" ", "_")/logo.png" style="
+                    <img src="images/@_selectedWiki.DataFolder/logo.png" style="
                     height: 85px;object-fit: contain;" />
                 </div>
                 <h3>@(_selectedWiki.IsPageDownloaded? _selectedWiki.Title : Loc.Get("DataManagementDetails.NoData"))</h3>

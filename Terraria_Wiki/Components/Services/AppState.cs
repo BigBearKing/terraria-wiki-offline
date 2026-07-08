@@ -23,6 +23,8 @@ public class AppState
     private int _processingTaskId = 0;
 
     private string _currentWikiPage;
+    private int _activeWikiBookId = Preferences.Default.Get("ActiveWikiBookId", 1);
+    private WikiBook? _activeWikiBook;
     private string _searchQuery = "";
     private bool _isPinned = false;
     private bool _isSmallScreen = false;
@@ -135,6 +137,28 @@ public class AppState
             _currentWikiPage = value;
             OnChange?.Invoke();
 
+        }
+    }
+
+    public int ActiveWikiBookId
+    {
+        get => _activeWikiBookId;
+        set
+        {
+            _activeWikiBookId = value;
+            Preferences.Default.Set("ActiveWikiBookId", value);
+            _activeWikiBook = null; // 切换 wiki 时清缓存，下次访问时重新加载
+            OnChange?.Invoke();
+        }
+    }
+
+    public WikiBook? ActiveWikiBook
+    {
+        get => _activeWikiBook;
+        set
+        {
+            _activeWikiBook = value;
+            OnChange?.Invoke();
         }
     }
 

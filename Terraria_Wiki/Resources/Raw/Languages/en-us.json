@@ -39,6 +39,8 @@
     "DataManagement.Installed": "Installed",
     "DataManagement.NotInstalled": "Not Installed",
     "DataManagement.NotImplemented": "Data management page for other Wikis is not yet implemented",
+    "DataManagement.SwitchWikiTitle": "Switch Wiki",
+    "DataManagement.SwitchWikiDesc": "Switch to {0}? The app will restart.",
 
     "DataManagementDetails.NoData": "No data fetched yet",
     "DataManagementDetails.DownloadRequired": "You need to download the basic data package and resource files to browse this Wiki offline",

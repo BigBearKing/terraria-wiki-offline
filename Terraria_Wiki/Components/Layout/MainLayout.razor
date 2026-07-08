@@ -81,8 +81,10 @@
             }
             _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
+            
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
             {
+                await Task.Delay(100);
                 mainPage.HideLoadingScreen();
 
             }

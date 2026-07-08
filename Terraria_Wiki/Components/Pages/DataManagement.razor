@@ -19,9 +19,9 @@
 		{
 			@foreach (var wiki in _wikiBookList)
 			{
-				<div class="manage-card button" @onclick="() => NavigateTo(wiki)">
+				<div class="manage-card button @(wiki.Id == AppState.ActiveWikiBookId ? "active-card" : "")" @onclick="() => OnCardClicked(wiki)">
 					<div class="manage-card-icon">
-						<img src="images/@wiki.Title.Replace(" ", "_")/logo.png" style="width: 48px;
+						<img src="images/@wiki.DataFolder/logo.png" style="width: 48px;
 						height: 48px;object-fit: contain;" />
 					</div>
 					<div class="manage-card-info">
@@ -64,19 +64,28 @@
 		_wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
 	}
 
-	private void NavigateTo(WikiBook item)
+	private async Task OnCardClicked(WikiBook item)
 	{
-		if (item.Id != 1)
+		if (item.Id == AppState.ActiveWikiBookId)
 		{
-			Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagement.NotImplemented"), Loc.Get("Common.OK"));
-			System.Diagnostics.Debug.WriteLine("尚未实现其他 Wiki 的数据管理页面");
-		}
-		else
-		{
+			// 当前已选择的 Wiki → 直接进入详情
 			AppState.CurrentPage = "data/" + item.Id;
 			NavManager.NavigateTo(AppState.CurrentPage);
+			return;
 		}
 
+		// 非当前 Wiki → 弹窗确认切换
+		bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
+			Loc.Get("DataManagement.SwitchWikiTitle"),
+			Loc.Get("DataManagement.SwitchWikiDesc", item.Title),
+			Loc.Get("Common.OK"),
+			Loc.Get("Common.Cancel"));
+
+		if (confirm)
+		{
+			Preferences.Default.Set("ActiveWikiBookId", item.Id);
+			AppService.RestartApp();
+		}
 	}
 
 
@@ -156,4 +165,7 @@
 		color: var(--text-secondary);
 	}
 
+	.active-card{
+		background-color: var(--blue-tertiary);
+	}
 </style>

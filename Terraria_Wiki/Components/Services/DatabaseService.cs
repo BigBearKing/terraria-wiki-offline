@@ -30,16 +30,15 @@ public class DatabaseService
     }
 
     // 1. 初始化：这里必须列出所有需要用到的表
-    public async Task Init(bool force = false)
+    public async Task Init(bool force = false, WikiBook? seedBook = null)
     {
-        if (_initialized && !force) return; // 如果已经初始化过且不强制，直接跳过
+        if (_initialized && !force) return;
         await _db.ExecuteScalarAsync<string>("PRAGMA journal_mode = WAL;");
-        // 在这里把所有表都建好
-
 
         if (Mode == DbMode.Manager)
         {
             await _db.CreateTableAsync<WikiBook>();
+            await MigrateWikiBookColumnsAsync();
             await SeedWikiBooksAsync();
 
         }
@@ -52,7 +51,7 @@ public class DatabaseService
             await _db.CreateTableAsync<WikiFavorite>();
             await _db.CreateTableAsync<WikiAsset>();
             await InitFtsTableAsync();
-            await SeedWikiPageAsync();
+            await SeedWikiPageAsync(seedBook);
         }
 
         _initialized = true;
@@ -80,6 +79,23 @@ public class DatabaseService
         await _db.ExecuteScalarAsync<string>("PRAGMA journal_mode = DELETE;");
         await _db.CloseAsync();
     }
+
+    public async Task SwitchDatabaseAsync(string newDbPath)
+    {
+        if (_db != null)
+        {
+            await _db.CloseAsync();
+            _db = null;
+        }
+        _initialized = false;
+        DatabasePath = newDbPath;
+        string dir = Path.GetDirectoryName(newDbPath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache;
+        _db = new SQLiteAsyncConnection(DatabasePath, flags);
+    }
+
     public async Task ReconnectAsync()
     {
         // 1. 重置初始化状态
@@ -111,6 +127,36 @@ public class DatabaseService
         File.Delete(DatabasePath);
     }
 
+    private async Task MigrateWikiBookColumnsAsync()
+    {
+        // 为旧版 WikiBook 表补上新增的列（SQLite 的 ALTER TABLE 只支持 ADD COLUMN）
+        var newColumns = new Dictionary<string, string>
+        {
+            ["ApiBaseUrl"] = "TEXT",
+            ["PageBaseUrl"] = "TEXT",
+            ["RedirectListUrl"] = "TEXT",
+            ["MainNamespace"] = "INTEGER DEFAULT 0",
+            ["GuideNamespace"] = "INTEGER DEFAULT 0",
+            ["AdditionalNamespaces"] = "TEXT",
+            ["JunkXPath"] = "TEXT",
+            ["DataFolder"] = "TEXT",
+            ["DefaultPageContent"] = "TEXT",
+            ["DefaultPageTitle"] = "TEXT",
+        };
+
+        foreach (var (colName, colType) in newColumns)
+        {
+            try
+            {
+                await _db.ExecuteAsync($"ALTER TABLE WikiBook ADD COLUMN {colName} {colType};");
+            }
+            catch
+            {
+                // 列已存在则忽略
+            }
+        }
+    }
+
     private async Task SeedWikiBooksAsync()
     {
         // 第一步：准备好你所有的“默认数据”清单
@@ -119,18 +165,36 @@ public class DatabaseService
         new WikiBook
         {
             Id=1,
-            Title = "Terraria Wiki",
+            Title = "泰拉瑞亚官方百科",
             Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
+            ApiBaseUrl = "https://terraria.wiki.gg/zh/api.php",
+            PageBaseUrl = "https://terraria.wiki.gg",
+            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "10000",
+            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()",
+            DataFolder = "Terraria_Wiki_zh",
+            DefaultPageContent = "请先下载数据",
+            DefaultPageTitle = "Terraria Wiki",
         },
         new WikiBook
         {
             Id=2,
-            Title = "Calamity Wiki",
+            Title = "灾厄百科",
             Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
+            ApiBaseUrl = "",
+            PageBaseUrl = "",
+            RedirectListUrl = "",
+            MainNamespace = 0,
+            AdditionalNamespaces = "",
+            JunkXPath = "",
+            DataFolder = "Calamity_Wiki_zh",
+            DefaultPageContent = "请先下载数据",
+            DefaultPageTitle = "Calamity Wiki",
         }
     };
 
@@ -148,20 +212,47 @@ public class DatabaseService
         {
             await _db.InsertAllAsync(missingBooks);
         }
+
+        // 第五步：比对种子数据，如果任何一个 seed 字段不匹配则强行覆盖
+        var defaultDict = defaultWikiBooks.ToDictionary(b => b.Id);
+        foreach (var existing in existingBooks)
+        {
+            if (!defaultDict.TryGetValue(existing.Id, out var def)) continue;
+
+            bool needsUpdate = false;
+
+            if (existing.Title != def.Title) { existing.Title = def.Title; needsUpdate = true; }
+            if (existing.Description != def.Description) { existing.Description = def.Description; needsUpdate = true; }
+            if (existing.ApiBaseUrl != def.ApiBaseUrl) { existing.ApiBaseUrl = def.ApiBaseUrl; needsUpdate = true; }
+            if (existing.PageBaseUrl != def.PageBaseUrl) { existing.PageBaseUrl = def.PageBaseUrl; needsUpdate = true; }
+            if (existing.RedirectListUrl != def.RedirectListUrl) { existing.RedirectListUrl = def.RedirectListUrl; needsUpdate = true; }
+            if (existing.MainNamespace != def.MainNamespace) { existing.MainNamespace = def.MainNamespace; needsUpdate = true; }
+            if (existing.AdditionalNamespaces != def.AdditionalNamespaces) { existing.AdditionalNamespaces = def.AdditionalNamespaces; needsUpdate = true; }
+            if (existing.JunkXPath != def.JunkXPath) { existing.JunkXPath = def.JunkXPath; needsUpdate = true; }
+            if (existing.DataFolder != def.DataFolder) { existing.DataFolder = def.DataFolder; needsUpdate = true; }
+            if (existing.DefaultPageContent != def.DefaultPageContent) { existing.DefaultPageContent = def.DefaultPageContent; needsUpdate = true; }
+            if (existing.DefaultPageTitle != def.DefaultPageTitle) { existing.DefaultPageTitle = def.DefaultPageTitle; needsUpdate = true; }
+
+            if (needsUpdate)
+            {
+                await _db.UpdateAsync(existing);
+            }
+        }
     }
 
-    private async Task SeedWikiPageAsync()
+    private async Task SeedWikiPageAsync(WikiBook? seedBook = null)
     {
         var count = await _db.Table<WikiPage>().CountAsync();
-        if (count == 0)
+        if (count == 0 && seedBook != null)
         {
-            var defaultPage = new WikiPage();
-            defaultPage.Title = "Terraria Wiki";
-            defaultPage.Content = "请先下载数据";
-            defaultPage.LastModified = DateTime.Now;
+            var defaultPage = new WikiPage
+            {
+                Title = seedBook.DefaultPageTitle ?? seedBook.Title,
+                Content = seedBook.DefaultPageContent ?? "请先下载数据",
+                LastModified = DateTime.Now,
+            };
             await _db.InsertAsync(defaultPage);
         }
-
     }
     // 2.1 通用功能：更新或插入 (InsertOrReplace) - 推荐用这个
     // 如果主键存在就更新，不存在就插入
