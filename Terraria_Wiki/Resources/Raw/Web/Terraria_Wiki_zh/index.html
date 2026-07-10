@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh" class="client-js">
+
+<head>
+    <meta charset="UTF-8" />
+    <script type="module" src="app.js"></script>
+    <link rel="stylesheet" href="vector.css" />
+    <link rel="stylesheet" href="common.css" />
+    <link rel="stylesheet" href="Nunito.css" />
+    <link rel="stylesheet" href="theme/dark.css" />
+    <link rel="stylesheet" href="theme/light.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terraria Wiki</title>
+    <script type="module" src="viewer/viewer.min.js" defer></script>
+    <link rel="stylesheet" href="viewer/viewer.min.css" />
+</head>
+
+
+<body class="content-size-expanded">
+
+    <!-- 内容 -->
+    <div class="content-wrapper">
+        <div id="p-logo" role="banner">
+            <a class="mw-wiki-logo"></a>
+        </div>
+        <div id="mw-head-base" class="noprint"></div>
+
+        <div id="mw-head"></div>
+        <!-- 内容 -->
+        <div id="content" class="mw-body box-row-m" role="main">
+            <div class="content-body">
+                <main id="main-content">
+                    <a id="top"></a>
+                    <h1 id="firstHeading" class="firstHeading mw-first-heading" style="display: none;" lang="zh-Hans-CN"
+                        dir="ltr"></h1>
+                    <div id="bodyContent" class="vector-body">
+                        <div id="contentSub" lang="zh-Hans-CN" dir="ltr"></div>
+                        <div id="mw-content-text" class="mw-body-content">
+                            <!-- xxx -->
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- 尾部 -->
+
+        <footer id="footer" class="mw-footer" lang="zh-Hans-CN" dir="ltr">
+            <ul id="footer-info">
+                <li id="footer-info-lastmod"></li>
+                <li id="footer-info-copyright">
+                    <div class="wikigg-copyright-box">2022 年 03 月 14 日之前创建的页面改编自Fandom Terraria
+                        Wiki。<br>除非另有说明，页面内容受<a class="external" rel="nofollow">知识共享署名-非商业性使用-相同方式共享 4.0
+                            许可协议</a>约束。</div>
+                </li>
+            </ul>
+
+            <ul id="footer-icons" class="noprint">
+                <li id="footer-copyrightico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/CC-BY-NC-SA.svg" alt="知识共享署名-非商业性使用-相同方式共享 4.0 许可协议" height="31"
+                            width="88" loading="lazy" data-theme="light"></a>
+                </li>
+                <li id="footer-poweredbyico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88"
+                            height="31" loading="lazy" data-theme="light"></a>
+                </li>
+                <li id="footer-partofico"><a
+                        class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img
+                            src="./images/main/Network_footer.svg" alt="Part of wiki.gg" height="31" width="88"
+                            loading="lazy" data-theme="light"></a></li>
+            </ul>
+
+        </footer>
+    </div>
+
+    <div id="loading-mask"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; cursor: wait;">
+    </div>
+
+    <div id="custom-context-menu" class="hidden-menu">
+        <div class="menu-item" id="menu-copy">复制</div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" id="menu-open-source">打开原文</div>
+    </div>
+
+</body>
+<style>
+    body {
+        padding-right: 0 !important;
+    }
+
+    /* 覆盖 Viewer.js 全局的形变/缩放动画速度 */
+    .viewer-transition {
+        transition: all 0.15s !important;
+        /* 默认通常是 0.3s，数值越小越快 */
+    }
+
+    /* 覆盖 Viewer.js 背景和遮罩层的淡入淡出速度 */
+    .viewer-fade {
+        transition: opacity 0.15s !important;
+    }
+
+    .mclist {
+        overflow-y: hidden;
+    }
+
+    /* 1. 基础宽度 - 稍微收窄一点，显得更精致 */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* 2. 轨道 - 保持完全透明 */
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* 3. 滑块 - 使用半透明色，确保在深色/浅色背景下都能“透”出来 */
+    ::-webkit-scrollbar-thumb {
+        background-color: rgba(128, 128, 128, 0.3);
+        /* 使用通用半透明灰色 */
+        border-radius: 999px;
+        /* 重点：增加一个透明边框，配合 content-box 实现滑块变窄的效果 */
+        transition: background-color 0.2s;
+    }
+
+    /* 4. 悬停状态 - 宽度不变，但颜色加深，增加互动反馈 */
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(128, 128, 128, 0.5);
+    }
+
+    /* 自定义右键菜单基础样式 */
+    #custom-context-menu {
+        position: fixed;
+        /* 使用 fixed 定位，因为坐标是基于视窗的 */
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 100000;
+        /* 必须极高，盖住放大图片的蒙版 */
+        min-width: 140px;
+        padding: 6px 0;
+        display: none;
+        /* 默认隐藏 */
+        font-family: inherit;
+    }
+
+    /* 显示菜单的状态 */
+    #custom-context-menu.show-menu {
+        display: block;
+    }
+
+    /* 菜单项样式 */
+    .menu-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        transition: background-color 0.1s;
+    }
+
+    .menu-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    /* 菜单分割线 */
+    .menu-divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 4px 0;
+    }
+
+    /* ---- 适配你代码里的深色模式 (dark theme) ---- */
+    html.dark #custom-context-menu {
+        background: #2b2b2b;
+        border-color: #444;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    html.dark .menu-item {
+        color: #eee;
+    }
+
+    html.dark .menu-item:hover {
+        background-color: #3a3a3a;
+    }
+
+    html.dark .menu-divider {
+        background-color: #444;
+    }
+</style>
+
+</html>

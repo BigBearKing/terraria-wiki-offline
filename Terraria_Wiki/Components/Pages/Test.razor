@@ -2,6 +2,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @using System.Net
+@using LuYao.TlsClient
 <h3>Test</h3>
 
 <button class="button" @onclick="ShowAlert">ShowAlert</button>
@@ -57,8 +58,16 @@
                 existingAsset = await App.ContentDb.GetItemAsync<WikiAsset>(fileName);
             }
 
-            // 2. 构造 HTTP 请求
-            using var request = new HttpRequestMessage(HttpMethod.Get, fileUrl);
+            // 2. 构造 TLS 请求
+            using var tls = new TlsClient
+            {
+                TLSClientIdentifier = ClientIdentifiers.Chrome_131,
+                FollowRedirect = true,
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+            var req = tls.CreateRequest();
+            req.RequestUrl = fileUrl;
+            req.RequestMethod = "HEAD";
 
             string logMessage = $"正在测试文件: {fileName}";
 
@@ -66,7 +75,7 @@
             if (existingAsset != null && existingAsset.LastModified.HasValue)
             {
                 var localTimeUtc = DateTime.SpecifyKind(existingAsset.LastModified.Value, DateTimeKind.Utc);
-                request.Headers.IfModifiedSince = new DateTimeOffset(localTimeUtc);
+                req.Headers["If-Modified-Since"] = new DateTimeOffset(localTimeUtc).ToString("R");
                 App.LogManager.Info($"📍 本地记录存在，最后修改时间: {localTimeUtc} (UTC)");
             }
             else
@@ -74,25 +83,27 @@
                 App.LogManager.Info($"📍 本地无此文件记录或无时间戳，预期行为：必须下载。");
             }
 
-            // 3. 发送请求（仅读取头部，不下载 Body，极速测试）
-            using var response = await App.DataManager.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            // 3. 发送请求（HEAD，仅读取头部，极速测试）
+            var resp = await Task.Run(() => tls.Request(req));
 
             // 4. 解析结果
-            if (response.StatusCode == HttpStatusCode.NotModified)
+            if (resp.Status == 304)
             {
                 App.LogManager.Info("✅ 测试结果：【不需要更新】 (服务器返回 304 Not Modified)");
 
             }
-            else if (response.StatusCode == HttpStatusCode.OK)
+            else if (resp.Status == 200)
             {
                 // 如果返回 200，抓取一下服务器的最新时间看看
-                DateTime? remoteTime = response.Content.Headers.LastModified?.UtcDateTime;
-                App.LogManager.Info($"🔄 测试结果：【需要更新】 (服务器返回 200 OK)\n服务器文件的最新时间为: {remoteTime?.ToString() ?? "未知"}");
+                string remoteTime = "未知";
+                if (resp.Headers != null && resp.Headers.TryGetValue("Last-Modified", out var lm) && lm.Count > 0)
+                    remoteTime = lm[0];
+                App.LogManager.Info($"🔄 测试结果：【需要更新】 (服务器返回 200 OK)\n服务器文件的最新时间为: {remoteTime}");
 
             }
             else
             {
-                App.LogManager.Info($"⚠️ 测试结果：【异常状态】 服务器返回了 {response.StatusCode}");
+                App.LogManager.Info($"⚠️ 测试结果：【异常状态】 服务器返回了 {resp.Status}");
 
             }
         }

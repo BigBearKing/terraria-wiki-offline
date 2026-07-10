@@ -10,7 +10,6 @@ namespace Terraria_Wiki.Services
         private HttpListener _listener;
         private readonly ContentDbService _dbService;
         private readonly string _prefix;
-        private bool _shouldShowImages = false;
 
         // 构造函数注入数据库服务
         public LocalWebServer(ContentDbService dbService)
@@ -44,11 +43,9 @@ namespace Terraria_Wiki.Services
                 }
             }
 
-            var wikiBook = App.AppStateManager.ActiveWikiBook;
-            _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
-        }
+            }
 
-        public void Stop()
+            public void Stop()
         {
             if (_listener != null && _listener.IsListening)
             {
@@ -64,11 +61,6 @@ namespace Terraria_Wiki.Services
                     Debug.WriteLine("[Web Server] Stopped.");
                 }
             }
-        }
-        public async Task Refresh()
-        {
-            var wikiBook = App.AppStateManager.ActiveWikiBook;
-            _shouldShowImages = wikiBook?.IsResourceDownloaded ?? false;
         }
 
 
@@ -119,28 +111,7 @@ namespace Terraria_Wiki.Services
 
                     // 提取文件名: "/src/sword.png" -> "sword.png"
                     string fileName = path.Substring(5);
-                    WikiAsset asset;
-                    if (_shouldShowImages)
-                    {
-                        asset = await _dbService.GetItemAsync<WikiAsset>(fileName);
-                    }
-                    else
-                    {
-                        asset = new WikiAsset
-                        {
-                            FileName = fileName,
-                            MimeType = GetMimeType(fileName)
-                        };
-                        if (asset.MimeType == "image/svg+xml")
-                        {
-                            asset.Data = Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>");
-                        }
-                        else
-                        {
-                            asset.Data = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
-                        }
-                    }
-
+                    var asset = await _dbService.GetItemAsync<WikiAsset>(fileName);
 
                     if (asset != null)
                     {
@@ -149,8 +120,15 @@ namespace Terraria_Wiki.Services
                     }
                     else
                     {
-                        statusCode = 404; // 数据库里没找到
-                        Debug.WriteLine($"[DB 404] {fileName}");
+                        contentType = GetMimeType(fileName);
+                        if (contentType == "image/svg+xml")
+                        {
+                            buffer = Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>");
+                        }
+                        else
+                        {
+                            buffer = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+                        }
                     }
                 }
                 // ==========================================
@@ -162,7 +140,7 @@ namespace Terraria_Wiki.Services
                     if (path == "/") path = "/index.html";
                     // 拼接 Resources/Raw 下的路径
                     // 假设你的 HTML 文件放在 Resources/Raw/Web 文件夹下
-                    string assetPath = "Web" + path;
+                    string assetPath = "Web/" + App.AppStateManager.ActiveWikiBook.DataFolder + path;
 
                     if (await FileSystem.AppPackageFileExistsAsync(assetPath))
                     {

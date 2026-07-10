@@ -1,0 +1,825 @@
+/* 转载须注明来自灾厄中文Wiki，否则视为侵权处理 */
+/* 背景 */
+/*@media (min-width: 768px){
+  #wiki-outer-body.huiji-css-hook{
+    background:url(https://calamity.huijiwiki.com/wiki/File:%E6%B5%8B%E8%AF%95.png);
+    background-attachment: fixed;
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+  }
+}
+*/
+/* 强行定义这一块。
+.tabber .richtab ul > li::marker { 
+    content: "•";
+}
+.tabber .richtab ul ul > li::marker {
+    content: "◦"  !important;
+}*/
+ 
+.TemplateAsyncLoad {
+    display: none;
+}
+ 
+.mw-collapsible-content .template-loading-hint {
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px dashed #a2a9b1;
+    text-align: center;
+}
+ 
+hr {
+    border: 0;               
+    height: 1px;             
+    background: #000000;      
+    margin: 20px 0;         
+}
+/* Diagram模块，用于图表（合成树）模板 */
+table.diagram{
+	border-spacing: 0;
+	background: transparent;
+}
+table.diagram tr{
+	height: 1px;
+	text-align: center;
+}
+table.diagram td.l{
+	border-style: none;
+	border-width: 1px;
+	border-color: var(--diagram-color);	
+	padding: 0.5em;
+}
+table.diagram td.n{
+	padding: 0;
+}
+table.diagram td.db{
+	border-bottom-style: dashed;
+}
+table.diagram td.dr{
+	border-right-style: dashed;
+}
+table.diagram td.sb{
+	border-bottom-style: solid;
+}
+table.diagram td.sr{
+	border-right-style: solid;
+}
+table.diagram td.nb{
+	border-bottom-style: solid;
+	border-bottom-color: transparent;	
+}
+table.diagram td.nr{
+	border-right-style: solid;
+	border-right-color: transparent;	
+}
+ 
+table.diagram td.cf{
+	position: relative;
+}
+table.diagram td.cf:after{
+	content: "";
+	display: block;
+	position: absolute;
+	width: 0.9px;
+	height: 1px;
+	border-bottom: 1px solid var(--diagram-color);
+	right: 0;
+	bottom: 0;
+}
+ 
+.diagram-box{
+	border-width: 2px;
+	border-style: solid;
+	border-color: var(--diagram-box-color);	
+	border-radius: 7px;
+	padding: 0.25em 0.5em; 
+}
+ 
+table.diagram td.无边框{
+	border: none;
+}
+ 
+table.diagram td.制作站{
+	border: none;
+	padding: 2px 0;
+}
+ 
+.crafting-tree{
+	overflow: auto;
+	padding: 0.5em 0;
+    transform-origin: top left;
+}
+ 
+.crafting-tree .diagram{
+	white-space: nowrap;
+}
+ 
+/*wukhastur：下面是我不知道干什么但是应该有用的 */
+ 
+.infobox ~ .version-history {
+	float: left;          
+	width: auto;
+	clear: none;          
+}
+ 
+.infobox ~ .version-history:after {
+	content: "";
+	display: table;
+	clear: both;         
+}
+ 
+.version-history{text-align: center;
+	width: auto;
+	clear: both;
+    display: table;
+}
+ 
+ 
+ 
+.table_body {
+    border-radius: 5px;
+    border: 1px #A0522D solid;
+    background: #FF9D6F !important;
+    margin-bottom: 5px;
+    color: #8B0000 !important;
+}
+ 
+.infobox_body {
+    border-radius: 5px;
+    border: 1px #A0522D solid;
+    float: right;
+    clear: right;
+    background: #FF9D6F !important;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #8B0000 !important;
+    border-spacing: 0 7px;
+}
+ 
+.infobox_body td:first-child {
+    padding-right: 10px; 
+    text-align: right;
+}
+ 
+.infobox_head {
+    background: #D2691E;
+    padding: 3px 1em;
+    font-weight: bold;
+    text-align: center;
+    font-size: 110%;
+    color: #8B0000;
+}
+ 
+.main {
+    border: 1px solid #000000;
+    background: #FF9D6F;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #8B0000;
+}
+ 
+.doubleborder {
+    border-collapse: collapse;
+    border-top: 5px double #553300;
+    border-bottom: 5px double #553300;
+}
+ 
+/*跳转锚点偏移和着色*/
+html {
+	scroll-padding-top: 80px;
+	scroll-behavior: smooth;
+}
+.anchor-highlight {
+	animation: highlightFade 3s forwards;
+	padding: 0.5em; 
+}
+@keyframes highlightFade {
+	0% { 
+		background-color: rgba(255, 0, 0, 1);
+		}
+	100% {
+		background-color: rgba(255, 0, 0, 0);
+		}
+}
+ 
+/*附属模组boss流程顺序*/
+.bossorder {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: minmax(1.5em, auto);
+    gap: 0.5em;
+    width: 100%;
+    text-align: center;
+    align-items: center;
+    justify-items: center;
+}
+ 
+.bossorder_header {
+    grid-row: 1;
+    min-height: 1.5em;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+ 
+.bossorder_container {
+	display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+ 
+.bossorder_item {
+    min-height: 1.5em;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+ 
+div#xflip {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    width: auto;
+    height: auto;
+}
+ 
+div#yflip {
+    transform: rotateX(180deg);
+    -webkit-transform: rotateX(180deg);
+    -moz-transform: rotateX(180deg);
+    width: auto;
+    height: auto;
+}
+ 
+div#test {
+    width: 100px;
+    height: 100px;
+    -webkit-transition: width 2s, height 2s, -webkit-transform 2s;
+}
+ 
+div#test:hover {
+    width: 200px;
+    height: 200px;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+}
+ 
+/* 文文 */
+div#aya {
+    color: springgreen;
+    -webkit-transition: color 10s, transform 10s;
+}
+ 
+div#aya:hover {
+    color: deepskyblue;
+    -webkit-transform: rotate(5400deg);
+}
+ 
+div#dc {
+    background: rgb(254, 222, 173);
+    animation: dc 2s;
+    -webkit-animation: dc 2s;
+}
+ 
+@keyframes dc {
+    0% {
+        transform: translate(0px, 0px)
+    }
+ 
+    25% {
+        transform: translate(400px, 400px)
+    }
+ 
+    50% {
+        transform: translate(400px, 0px)
+    }
+ 
+    75% {
+        transform: translate(0px, 400px)
+    }
+ 
+    100% {
+        transform: translate(0px, 0px)
+    }
+}
+ 
+@-webkit-keyframes dc {
+    0% {
+        transform: translate(0px, 0px)
+    }
+ 
+    25% {
+        transform: translate(400px, 0px)
+    }
+ 
+    50% {
+        transform: translate(400px, 400px)
+    }
+ 
+    75% {
+        transform: translate(0px, 400px)
+    }
+ 
+    100% {
+        transform: translate(0px, 0px)
+    }
+}
+ 
+div#aya:hover {
+    color: deepskyblue;
+    -webkit-transform: rotate(5400deg);
+}
+ 
+/* 露米娅 */
+.mainpage #WikiaArticle iframe {
+    display: none;
+}
+ 
+span.yyc a.external,
+span.yyc a.external:visited,
+span.yyc a.extiw,
+span.yyc a.extiw:visited {
+    color: #252525;
+    transition: all .14s linear 0s;
+}
+ 
+.yyc,
+.yyc a,
+a .yyc,
+.yyc a.new {
+    background-color: #252525;
+    color: #252525;
+    text-shadow: none;
+    transition: all .14s linear 0s;
+}
+ 
+body:not(.yyc_toggle_on) .yyc:hover,
+body:not(.yyc_toggle_on) .yyc:active,
+body:not(.yyc_toggle_on) .yyc.off {
+    background-color: rgba(100, 100, 100, 0.3);
+    transition: all .14s linear 0s;
+}
+ 
+body:not(.yyc_toggle_on) .yyc:hover a,
+body:not(.yyc_toggle_on) a:hover .yyc,
+body:not(.yyc_toggle_on) .yyc.off a,
+body:not(.yyc_toggle_on) a:hover .yyc.off {
+    color: #006cb0;
+    background-color: rgba(180, 180, 180, 0.3);
+    transition: all .14s linear 0s;
+}
+ 
+body:not(.yyc_toggle_on) .yyc.off .new,
+body:not(.yyc_toggle_on) .yyc.off .new:hover,
+body:not(.yyc_toggle_on) .new:hover .yyc.off,
+body:not(.yyc_toggle_on) .yyc.off .new,
+body:not(.yyc_toggle_on) .yyc.off .new:hover,
+body:not(.yyc_toggle_on) .new:hover .yyc.off {
+    color: #BA0000;
+    background-color: rgba(100, 100, 100, 0.3);
+    transition: all .14s linear 0s;
+}
+ 
+a.external.text::after {
+    display: none;
+}
+ 
+aside#WikiaRailWrapper {
+    width: 20%;
+}
+ 
+/* Main */
+div.box-sy {
+    margin-left: -8px;
+    margin-right: -8px;
+    overflow: hidden;
+}
+ 
+div.box-icon {
+    width: auto;
+    float: left;
+}
+ 
+/* 转载自英文灾厄Wiki 
+Allows limiting TOCs to generate links for only header levels 
+below a limit, for instance only level-3 (=== ===) and below.
+   Use [[Template:Toc limit]] */
+.toclimit-2 .toclevel-1 ul,
+.toclimit-3 .toclevel-2 ul,
+.toclimit-4 .toclevel-3 ul,
+.toclimit-5 .toclevel-4 ul,
+.toclimit-6 .toclevel-5 ul,
+.toclimit-7 .toclevel-6 ul {
+    display: none !important;
+}
+ 
+/* 转载自英文灾厄Wiki  
+  DPL Tables */
+ 
+/* History */
+.history-collapsible .mw-collapsible-toggle {
+    float:left;
+}
+ 
+ 
+ 
+/* Template:History & Template:Version History */
+.mw-collapsible.history{
+	display: flex;
+	flex-direction: column;
+}
+.mw-collapsible.history .mw-collapsible-toggle{
+	float: none;
+	order: 2;
+	align-self: flex-start;	
+}
+.mw-collapsible.history .mw-collapsible-toggle::before,
+.mw-collapsible.history .mw-collapsible-toggle::after{
+	display: none;
+}
+.history_section_hat_note{
+	display: flex;
+}
+.history_section_hat_note .history_page_link{
+	margin-left: 6px;
+	order: 2;
+	flex: 0 0 auto;
+}
+.history_section_hat_note .history_page_link::before{
+	content: "[";
+}
+.history_section_hat_note .history_page_link::after{
+	content: "]";
+}
+.history_section_hat_note .note-text{
+	font-style: italic;
+	flex: 1 1 auto;
+}
+ 
+#dpl-table {
+    text-align: center;
+}
+ 
+#dpl-table td:first-child {
+    text-align: left;
+}
+ 
+#dpl-table td:last-child {
+    text-align: right;
+}
+ 
+#dpl-table th {
+    line-height: 1.25;
+}
+ 
+.text-red{
+	color:#fe9b9b;
+}
+ 
+.text-green{
+	color:#00d400;
+}
+ 
+.tr-tooltip{
+	color:#fff;
+	background:#3f4197CC;
+	padding:20px 20px 20px 20px;
+	width:344px;
+}
+ 
+.img-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+ 
+.n-notification-container{
+	display: none;
+}
+ 
+/*wukhastur：下面是我知道干什么的，我尽量做了备注*/
+/*用于表格边框*/
+table {
+    border-collapse: separate;
+}
+ 
+/*首页板块主体*/
+table.mainbody {
+    background: #FF9D6F;
+    margin-bottom: 5px;
+    color: #8B0000;
+    border-radius: 5px;
+}
+ 
+div.mainbody {
+    font-size: 85%;
+    background: #FF9D6F;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #8B0000;
+    border: 1px #A0522D solid;
+}
+ 
+/*首页单元格图片*/
+.boxitems {
+  width: 25px;
+  height: 25px;
+  display: inline-block;
+    padding: 0  !important;
+    margin:0  !important;
+     text-align: center !important;
+}
+ 
+.boxitems img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  padding: 0  !important;
+    margin:0  !important;
+     text-align: center !important;
+}
+ 
+/*首页板块标题*/
+th.mainhead,
+div.mainhead {
+    background: #D2691E;
+    padding: 5px 1em;
+    font-weight: bold;
+    text-align: center;
+    font-size: 120%;
+    color: #8B0000;
+    border-radius: 5px;
+    border: 1px #A0522D solid;
+}
+ 
+/*主页板块内容*/
+table.calamityinfo {
+    margin: 1em 1em 1em 0;
+    -moz-border-radius: .7em;
+    -webkit-border-radius: .7em;
+    border-radius: .7em;
+    margin: 0 auto;
+    background: #FF9D6F;
+    color: #8B0000;
+    padding: 0.2em 0.4em;
+    width: 100%;
+}
+ 
+.calamityinfo td {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0.2em;
+    font-size: 90%;
+    text-align: left;
+}
+ 
+.calamityinfo div {
+    padding-left: 1em;
+    padding-bottom: 0.2em;
+    font-size: 90%;
+    text-align: left;
+}
+ 
+.calamityinfo th {
+    background: #FFDAB9;
+    color: #063B5E;
+    text-align: center;
+    padding: 0.2em;
+}
+ 
+.calamityinfo caption {
+    font-weight: bold;
+}
+ 
+/*常用表格，与calamitas完全相同*/
+table.calamity {
+    margin:0;
+    background: #FFF8DC;
+    border: 1px #A0522D solid;
+    padding: 0;
+    -moz-border-radius: .0em;
+    -webkit-border-radius: .0em;
+    border-radius: .0em;
+}
+ 
+.calamity {
+    margin:0;
+    background: #FFF8DC;
+    border: 1px #A0522D solid;
+    padding: 0;
+    -moz-border-radius: .0em;
+    -webkit-border-radius: .0em;
+    border-radius: .0em;
+}
+ 
+.calamity.mw-collapsible {
+    padding-top: .0em; 
+}
+ 
+.calamity th,
+.calamity td {
+    padding: 0.2em;
+    border-collapse: collapse;
+    border: .7px solid #CCCCCC;
+}
+ 
+.calamity th {
+    background: #FFDAB9;
+    color: #063B5E;
+    text-align: center;
+}
+ 
+.calamity caption {
+    font-weight: bold;
+}
+ 
+/*常用表格，与calamity完全相同*/
+table.calamitas {
+    margin:0;
+    background: #FFF8DC;
+    border: 1px #A0522D solid;
+    padding: 0;
+    -moz-border-radius: .0em;
+    -webkit-border-radius: .0em;
+    border-radius: .0em;
+    width: 100%;
+}
+ 
+.calamitas th,
+.calamitas td {
+    padding: 0.2em;
+    border-collapse: collapse;
+    border: .7px solid #CCCCCC;
+}
+ 
+.calamitas th {
+    background: #FFDAB9;
+    color: #063B5E;
+    text-align: center;
+}
+ 
+.calamitas caption {
+    font-weight: bold;
+}
+ 
+/*ajax表格*/
+table.calamityajax {
+    margin:0;
+    background: #FFF8DC;
+    border: 1px #A0522D solid;
+    -moz-border-radius: .0em;
+    -webkit-border-radius: .0em;
+    border-radius: .0em;
+    text-align: left;
+}
+ 
+.calamityajax {
+    margin:0;
+    background: #FFF8DC;
+    border: 1px #A0522D solid;
+    -moz-border-radius: .0em;
+    -webkit-border-radius: .0em;
+    border-radius: .0em;
+}
+ 
+.calamityajax.mw-collapsible {
+    padding-top: .0em; 
+}
+ 
+.calamityajax th,
+.calamityajax td {
+    border-collapse: collapse;
+    border: .7px solid #CCCCCC;
+}
+ 
+.calamityajax th {
+    background: #FFDAB9;
+    color: #063B5E;
+    text-align: left;
+}
+ 
+.calamityajax caption {
+    font-weight: bold;
+}
+ 
+ 
+/*灾劫的稀有度*/
+.catalyst-crystal {
+    width: 82px;
+    height: 50px;
+    background: url('https://huiji-public.huijistatic.com/calamity/uploads/e/e6/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
+    background-size: cover;
+}
+ 
+.catalyst-rainbow {
+    width: 200px;
+    height: 50px;
+    background: url('https://huiji-public.huijistatic.com/calamity/uploads/6/6f/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E5%BD%A9%E8%99%B9%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
+    background-size: cover;
+}
+ 
+.catalyst-blazing {
+    width: 200px;
+    height: 50px;
+    background: url('https://huiji-public.huijistatic.com/calamity/uploads/f/f2/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E7%83%88%E7%84%B0%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
+    background-size: cover;
+}
+ 
+/* 用于电脑手机需要不同排版的情景，比如首页和装备推荐 */
+.desktop-template {
+    display: block;
+}
+.mobile-template {
+    display: none;
+}
+ 
+@media screen and (max-width: 768px) {
+    .desktop-template {
+        display: none;
+    }
+    .mobile-template {
+        display: block;
+    }
+}
+ 
+/* 用于装备推荐 */
+.guidetitle{
+	text-align: center;
+	line-height: 30px;
+	height: 30px;
+	background-color: #D2691E;
+	border: solid #A0522D;
+	border-width: 1px 0;
+	color: #8B0000;
+}
+ 
+.guidecontent{
+	padding: 7px;
+}
+ 
+@media (max-width: 767px){
+    .guidebottom{
+    	display:block;
+    	width:100%;
+    }
+    .guideblock{
+    	background: #FF9D6F;
+    	border: solid #A0522D;
+    	border-width: 0 1px 1px;
+    }
+}
+@media (min-width: 768px){
+    .guidebottom{
+    	width: 100%;
+    	display: table;
+    	border-collapse: separate;
+    }
+    .guideblock{
+    	display:table-cell;
+    	background: #FF9D6F;
+    	border: solid #A0522D;
+    	border-width: 0 1px 1px;
+    	flex: 0 1 auto;
+		min-width: 20vw;
+    }
+}
+ 
+/* 用于richtab的标题 */
+/* 未激活的标签 - 淡黄色背景 */
+.tabber-filter-item {
+  background: #FFDAB9  !important;
+  border-radius:20px/50% !important;
+  overflow: hidden;
+}
+ 
+/* 激活的标签 - 橙色背景 */
+.tabber-filter-item.active {
+  background: #D2691E  !important;
+  border-radius:20px/50% !important;
+  overflow: hidden;
+}
+ 
+/* 确保 <a> 标签继承父级背景色 */
+.tabber-filter-item a {
+  background: inherit !important;
+  color: #333 !important; /* 可自定义文字颜色 */
+}
+ 
+/*用于MediaWiki:Edittools，即编辑栏下方的一键输入*/
+#mw-edittools-charinsert a{
+	width: auto;
+	margin: 0 0.5em;
+}

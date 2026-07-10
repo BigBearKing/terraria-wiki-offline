@@ -25,7 +25,7 @@ public class WikiBook
     // 完整的 API 地址，例如 "https://terraria.wiki.gg/zh/api.php"
     public string ApiBaseUrl { get; set; }
     // 页面根域名，例如 "https://terraria.wiki.gg"
-    public string PageBaseUrl { get; set; }
+    public string BaseUrl { get; set; }
     // 重定向列表相对路径，例如 "/zh/wiki/Special:ListRedirects?limit=5000"
     public string RedirectListUrl { get; set; }
     // 主命名空间 ID（通常为 0）

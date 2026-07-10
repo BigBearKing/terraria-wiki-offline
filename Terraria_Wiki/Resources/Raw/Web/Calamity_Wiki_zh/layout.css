@@ -1,0 +1,72 @@
+/* ============================================================
+   layout.css — 目录栏 + 内容栏 左右布局
+   (目录样式由 vector.css 负责)
+   ============================================================ */
+
+/* 主内容区域：flex 布局，目录在左，文章在右 */
+#content.row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+/* 目录侧边栏：固定宽度，sticky 悬浮不滚动 */
+#toc.toc-sidebar {
+    flex: 0 0 220px;
+    width: 220px;
+    max-width: 220px;
+    min-width: 0;
+    position: sticky;
+    top: 10px;
+    align-self: flex-start;
+    max-height: calc(100vh - 20px);
+    display: block;
+}
+
+/* 文章内容区：占据剩余空间 */
+#content > article {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 24px;
+}
+
+/* 隐藏目录栏 (无内容时) */
+#toc.toc-sidebar.toc-hidden {
+    display: none !important;
+}
+
+/* 目录栏隐藏后，文章内容占满 */
+#toc.toc-sidebar.toc-hidden + article {
+    padding-left: 0;
+}
+
+/* h3 子列表默认隐藏，由 JS 根据滚动位置展开 */
+#toc.toc-sidebar .toc-ul-wrap ul ul {
+    display: none;
+}
+
+/* 当前可见区域的 h3 子列表展开 */
+#toc.toc-sidebar .toc-ul-wrap ul ul.toc-sub-visible {
+    display: block;
+}
+
+/* 移动端：目录栏放到文章上方 */
+@media screen and (max-width: 768px) {
+    #content.row {
+        flex-direction: column;
+    }
+
+    #toc.toc-sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 100%;
+        position: static;
+        max-height: none;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    #content > article {
+        padding-left: 0;
+    }
+}

@@ -49,7 +49,7 @@ namespace Terraria_Wiki.Services
                     result.Content = page.Content;
                     result.LastModified = page.LastModified.ToString(App.Localization!.Get("AppService.DateFormat"));
                     App.AppStateManager.CurrentWikiPage = page.Title;
-                    if (page.Title != "Terraria Wiki")
+                    if (page.Title != App.AppStateManager.ActiveWikiBook.DefaultPageTitle)
                         Task.Run(async () => await SaveToHistoryAsync(page.Title));
 
 

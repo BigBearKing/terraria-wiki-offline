@@ -119,13 +119,12 @@ public class AppState
         get => _processingTaskId;
         set
         {
-
             _processingTaskId = value;
-            OnChange?.Invoke();
             if (value != 0)
             {
-                LogPanelIsOpen = true;
+                _logPanelIsOpen = true;
             }
+            OnChange?.Invoke();
         }
     }
 

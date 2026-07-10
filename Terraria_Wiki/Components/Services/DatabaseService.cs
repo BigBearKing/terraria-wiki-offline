@@ -170,7 +170,7 @@ public class DatabaseService
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
             ApiBaseUrl = "https://terraria.wiki.gg/zh/api.php",
-            PageBaseUrl = "https://terraria.wiki.gg",
+            BaseUrl = "https://terraria.wiki.gg",
             RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "10000",
@@ -186,16 +186,33 @@ public class DatabaseService
             Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
-            ApiBaseUrl = "",
-            PageBaseUrl = "",
-            RedirectListUrl = "",
+            BaseUrl = "https://calamity.huijiwiki.com",
+            ApiBaseUrl = "https://calamity.huijiwiki.com/api.php",
+            RedirectListUrl = "/wiki/%E7%89%B9%E6%AE%8A:%E9%87%8D%E5%AE%9A%E5%90%91%E9%A1%B5%E5%88%97%E8%A1%A8?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "",
-            JunkXPath = "",
+            JunkXPath = "//span[@class='mw-editsection']",
             DataFolder = "Calamity_Wiki_zh",
             DefaultPageContent = "请先下载数据",
-            DefaultPageTitle = "Calamity Wiki",
-        }
+            DefaultPageTitle = "首页",
+        },
+        new WikiBook
+        {
+            Id=3,
+            Title = "Terraria Wiki",
+            Description = "Terraria is a land of adventure! A land of mystery! A land that's yours to shape, defend, and enjoy. Your options in Terraria are limitless. Are you an action gamer with an itchy trigger finger? A master builder? A collector? An explorer? There's something for everyone.",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://terraria.wiki.gg/api.php",
+            BaseUrl = "https://terraria.wiki.gg",
+            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "10000",
+            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()",
+            DataFolder = "Terraria_Wiki_en",
+            DefaultPageContent = "please download data first",
+            DefaultPageTitle = "Terraria Wiki",
+        },
     };
 
         // 第二步：查询当前数据库里已经存在的数据
@@ -223,8 +240,8 @@ public class DatabaseService
 
             if (existing.Title != def.Title) { existing.Title = def.Title; needsUpdate = true; }
             if (existing.Description != def.Description) { existing.Description = def.Description; needsUpdate = true; }
+            if (existing.BaseUrl != def.BaseUrl) { existing.BaseUrl = def.BaseUrl; needsUpdate = true; }
             if (existing.ApiBaseUrl != def.ApiBaseUrl) { existing.ApiBaseUrl = def.ApiBaseUrl; needsUpdate = true; }
-            if (existing.PageBaseUrl != def.PageBaseUrl) { existing.PageBaseUrl = def.PageBaseUrl; needsUpdate = true; }
             if (existing.RedirectListUrl != def.RedirectListUrl) { existing.RedirectListUrl = def.RedirectListUrl; needsUpdate = true; }
             if (existing.MainNamespace != def.MainNamespace) { existing.MainNamespace = def.MainNamespace; needsUpdate = true; }
             if (existing.AdditionalNamespaces != def.AdditionalNamespaces) { existing.AdditionalNamespaces = def.AdditionalNamespaces; needsUpdate = true; }
@@ -242,14 +259,14 @@ public class DatabaseService
 
     private async Task SeedWikiPageAsync(WikiBook? seedBook = null)
     {
-        var count = await _db.Table<WikiPage>().CountAsync();
-        if (count == 0 && seedBook != null)
+        var defaultTitle = seedBook?.DefaultPageTitle ?? seedBook?.Title;
+        if (seedBook != null && defaultTitle != null && !await ItemExistsAsync<WikiPage>(defaultTitle))
         {
             var defaultPage = new WikiPage
             {
                 Title = seedBook.DefaultPageTitle ?? seedBook.Title,
                 Content = seedBook.DefaultPageContent ?? "请先下载数据",
-                LastModified = DateTime.Now,
+                LastModified = DateTime.UnixEpoch,
             };
             await _db.InsertAsync(defaultPage);
         }

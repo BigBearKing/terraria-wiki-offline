@@ -1,4 +1,5 @@
 using HtmlAgilityPack;
+using LuYao.TlsClient;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
@@ -14,10 +15,49 @@ namespace Terraria_Wiki.Services
     public class DataService
     {
         // ================= 配置与常量 =================
-        private const string UserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
-
         private static readonly string _tempDir = Path.Combine(FileSystem.AppDataDirectory, "Temp");
-        private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
+
+        /// <summary>Go 原生 TLS 库，伪造 Chrome 131 指纹绕过 Cloudflare</summary>
+        private static readonly TlsClient _tlsClient = new()
+        {
+            TLSClientIdentifier = ClientIdentifiers.Chrome_131,
+            FollowRedirect = true,
+            Timeout = TimeSpan.FromSeconds(15)
+        };
+
+        private static readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+        private static readonly HttpClient _resHttpClient = new()
+        {
+            Timeout = TimeSpan.FromSeconds(150)
+        };
+
+        /// <summary>将含中文等非 ASCII 字符的 IRI 转为标准 URI 编码</summary>
+        private static string EncodeUrl(string url)
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return uri.AbsoluteUri;
+
+            return Uri.EscapeUriString(url);
+        }
+
+        private static async Task<string> GetStringWithTlsAsync(string url)
+        {
+            url = EncodeUrl(url);
+            var req = _tlsClient.CreateRequest();
+            req.RequestUrl = url;
+            req.RequestMethod = "GET";
+            req.Headers["User-Agent"] = _userAgent;
+            req.Headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+            req.Headers["Accept-Language"] = "zh-CN,zh;q=0.9";
+
+            var resp = await Task.Run(() => _tlsClient.Request(req));
+
+            if (resp.Status < 200 || resp.Status >= 300)
+                throw new HttpRequestException($"TLS request failed with status {resp.Status} for {url}", null, (HttpStatusCode)resp.Status);
+
+            return resp.Body;
+        }
 
         private string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
         private string _resListPath = "";
@@ -44,10 +84,8 @@ namespace Terraria_Wiki.Services
         private int _pageConcurrency;
         private int _resConcurrency;
 
-        public HttpClient HttpClient => _httpClient;
         public DataService(LogService logService, LocalizationService localizationService)
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
             _log = logService;
             _loc = localizationService;
         }
@@ -150,7 +188,6 @@ namespace Terraria_Wiki.Services
 
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 CleanUpTempFile();
-                await App.WebServer.Refresh();
                 await AppService.WikiRefreshAsync();
                 _log.Success(_loc.Get("DataService.Log.AllAssetsCompleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllAssetsCompleted"));
@@ -324,7 +361,6 @@ namespace Terraria_Wiki.Services
                 await App.ManagerDb.SaveItemAsync(wikiBook);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 await AppService.WikiRefreshAsync();
-                await App.WebServer.Refresh();
                 _log.Success(_loc.Get("DataService.Log.DeleteAssetsCompleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DeleteAssetsCompleted"));
 
@@ -436,7 +472,6 @@ namespace Terraria_Wiki.Services
                 await App.ManagerDb.Init(true);
                 await App.ContentDb.ReconnectAsync();
                 await AppService.WikiRefreshAsync();
-                await App.WebServer.Refresh();
                 _log.Success(_loc.Get("DataService.Log.DatabaseDeleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DatabaseDeleted"));
             }
@@ -755,7 +790,6 @@ namespace Terraria_Wiki.Services
                 await App.ContentDb.ReconnectAsync();
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 await AppService.WikiRefreshAsync();
-                await App.WebServer.Refresh();
 
                 _log.Success(_loc.Get("DataService.Log.ImportSuccess"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ImportSuccess"));
@@ -787,6 +821,7 @@ namespace Terraria_Wiki.Services
             _log.Info(_loc.Get("DataService.Log.FetchingPageList"));
             var writer = new BatchLineWriter(_pageListPath, 200);
             int pagesCount = 0;
+            bool firstBatch = true;
 
             // 将所有需要爬取的命名空间放入队列：主命名空间 + 额外命名空间
             var namespaceQueue = new Queue<int>();
@@ -808,7 +843,7 @@ namespace Terraria_Wiki.Services
 
                     try
                     {
-                        string jsonResponse = await _httpClient.GetStringAsync(currentUrl);
+                        string jsonResponse = await GetStringWithTlsAsync(currentUrl);
                         retryCount = 0;
 
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -816,10 +851,18 @@ namespace Terraria_Wiki.Services
 
                         if (rawData?.Query?.Pages != null)
                         {
+                            int batchCount = 0;
                             foreach (var page in rawData.Query.Pages.Values)
                             {
                                 writer.Add($"{page.Title}|{page.Touched}");
                                 pagesCount++;
+                                batchCount++;
+                            }
+
+                            if (firstBatch)
+                            {
+                                firstBatch = false;
+                                _log.Info(_loc.Get("DataService.Log.FirstBatchSize", batchCount));
                             }
                         }
 
@@ -857,7 +900,7 @@ namespace Terraria_Wiki.Services
                     try
                     {
                         string fullUrl = _baseUrl + nextUrl;
-                        string html = await _httpClient.GetStringAsync(fullUrl);
+                        string html = await GetStringWithTlsAsync(fullUrl);
                         var doc = new HtmlDocument();
                         doc.LoadHtml(html);
                         var listItems = doc.DocumentNode.SelectNodes("//div[@class='mw-spcontent']//ol/li");
@@ -905,16 +948,15 @@ namespace Terraria_Wiki.Services
                         if (++retry > _maxRetryAttempts)
                         {
                             _log.Error(_loc.Get("DataService.Log.RedirectsFetchFailed", _maxRetryAttempts, ex.Message));
-                            nextUrl = null; // 停止整个大循环
-                            throw; // 继续抛出异常到外层，触发整体失败逻辑
+                            nextUrl = null;
+                            throw;
                         }
                         _log.Error(_loc.Get("DataService.Log.RedirectsFetchError", retry, _maxRetryAttempts));
-                        await Task.Delay(1000); // 间隔1秒
+                        await Task.Delay(1000);
                     }
                 }
 
             }
-
         }
         // ================= 核心功能 2: 批量任务调度器 =================
 
@@ -1081,9 +1123,19 @@ namespace Terraria_Wiki.Services
 
         private async Task DownloadAndSavePageToDbAsync(PageInfo pageInfo, BatchLineWriter writer)
         {
+            // 如果本地已存在该页面且最后修改时间一致，则跳过下载
+            if (await App.ContentDb.ItemExistsAsync<WikiPage>(pageInfo.Title))
+            {
+                var existingPage = await App.ContentDb.GetItemAsync<WikiPage>(pageInfo.Title);
+                if (existingPage.LastModified == pageInfo.LastModified)
+                {
+                    return;
+                }
+            }
+
             var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
 
-            string xml = await _httpClient.GetStringAsync(pageUrl);
+            string xml = await GetStringWithTlsAsync(pageUrl);
 
             var xmldoc = XDocument.Parse(xml);
 
@@ -1169,8 +1221,13 @@ namespace Terraria_Wiki.Services
                 if (!src.Contains("https://")) src = _baseUrl + src;
 
                 // 还原缩略图
-                src = Regex.Replace(src, @"/thumb/(.*?)/.*", "/$1");
+                src = Regex.Replace(src, @"/thumb/(.+)/[^/]+$", "/$1");
                 src = DataService.CleanUpUrl(src);
+
+                // 灰机 wiki 的缩略图域名与原图域名不同，需要切换
+                if (App.AppStateManager?.ActiveWikiBookId == 2)
+                    src = src.Replace("huiji-thumb", "huiji-public");
+
                 // 写入文件
                 writer.Add(src);
                 string htmlSrc = Uri.EscapeDataString(DataService.GetFileNameFromUrl(src));
@@ -1226,7 +1283,7 @@ namespace Terraria_Wiki.Services
             }
 
             // 3. 发送请求
-            using var response = await _httpClient.SendAsync(request);
+            using var response = await _resHttpClient.SendAsync(request);
 
             // ================= 核心更新逻辑 =================
             // 4. 如果服务器返回 304 Not Modified，说明云端资源未更改，无需重新下载耗费流量和性能
@@ -1274,7 +1331,7 @@ namespace Terraria_Wiki.Services
             // 从 WikiBook 加载 Wiki 源配置（含 DataFolder，必须在路径使用前加载）
             var book = App.AppStateManager.ActiveWikiBook;
             _baseApiUrl = book.ApiBaseUrl;
-            _baseUrl = book.PageBaseUrl;
+            _baseUrl = book.BaseUrl;
             _redirectStartUrl = book.RedirectListUrl;
             _mainNamespace = book.MainNamespace;
             _additionalNamespaces = string.IsNullOrEmpty(book.AdditionalNamespaces)

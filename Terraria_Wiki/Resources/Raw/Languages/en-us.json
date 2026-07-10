@@ -219,6 +219,7 @@
     "DataService.Log.ImportFailed": "Data import failed: {ex.Message}",
     "DataService.Log.FetchingPageList": "Starting to fetch page list",
     "DataService.Log.PagesFetched": "{pagesCount} fetched",
+    "DataService.Log.FirstBatchSize": "First batch returned {batchCount} pages, site max per request is this value",
     "DataService.Log.RequestFailedRetrying": "Request failed: {e.Message} - Retrying ({retryCount}/{_maxRetryAttempts})...",
     "DataService.Log.FetchCompleted": "Fetch completed, {pagesCount} pages obtained",
     "DataService.Log.FetchingRedirects": "Starting to fetch redirect list",

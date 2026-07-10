@@ -219,6 +219,7 @@
     "DataService.Log.ImportFailed": "数据导入失败: {ex.Message}",
     "DataService.Log.FetchingPageList": "开始获取页面清单",
     "DataService.Log.PagesFetched": "{pagesCount} 条已获取",
+    "DataService.Log.FirstBatchSize": "首次请求返回 {batchCount} 条，站点单次最大返回量为此值",
     "DataService.Log.RequestFailedRetrying": "请求失败: {e.Message} - 正在重试 ({retryCount}/{_maxRetryAttempts})...",
     "DataService.Log.FetchCompleted": "获取完毕，共获取 {pagesCount} 个页面",
     "DataService.Log.FetchingRedirects": "开始获取重定向列表",
