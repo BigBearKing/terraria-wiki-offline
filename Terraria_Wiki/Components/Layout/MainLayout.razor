@@ -9,7 +9,7 @@
     <NavMenu />
     @if (AppState.LogPanelIsOpen)
     {
-        <LogPanel/>
+        <LogPanel />
     }
     <main class="main-area">
 
@@ -66,7 +66,7 @@
             IframeBridge.Init(JS);
             AppService.Init(NavManager);
             await ThemeService.InitIframeThemeAsync(JS);
-            if(DeviceInfo.Platform==DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
+            if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
             {
                 await JS.InvokeVoidAsync("initHover", "False");
                 await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);
@@ -81,13 +81,22 @@
             }
             _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
-            
+            await App.DataManager.InitializeSettings();
+
+            // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
+
+            var upgradeHandler = new LegacyUpgradeHandler();
+            await upgradeHandler.MigrateAnchorDataWikiAsync(AppState.ActiveWikiBook);
+
+
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
             {
                 await Task.Delay(100);
                 mainPage.HideLoadingScreen();
 
             }
+
+
 
         }
         await base.OnAfterRenderAsync(firstRender);

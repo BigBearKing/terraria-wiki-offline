@@ -1,3 +1,4 @@
+using HtmlAgilityPack;
 using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services;
@@ -21,10 +22,6 @@ public class LegacyUpgradeHandler
     public async Task RunAsync(WikiBook activeBook)
     {
         await RenameDataFolderAsync(activeBook);
-
-        // 未来升级：判断旧数据特征存在则执行
-        // if (File.Exists(Path.Combine(_appDataDir, "old_config.json")))
-        //     await MigrateOldConfigAsync();
     }
 
     /// <summary>
@@ -56,5 +53,67 @@ public class LegacyUpgradeHandler
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 检测旧版数据：如果默认页面的 <a> 标签没有 data-wiki 属性，
+    /// 则为所有页面的 <a> 标签添加 data-wiki，值取自原有的 title 属性。
+    /// </summary>
+    public async Task MigrateAnchorDataWikiAsync(WikiBook activeBook)
+    {
+        var defaultPage = await App.ContentDb.GetItemAsync<WikiPage>(activeBook.DefaultPageTitle);
+        if (defaultPage == null) return;
+
+        // 默认页没有 <a> 标签（如占位内容"请先下载数据"），说明还没下载过数据，无需迁移
+        if (!defaultPage.Content.Contains("<a ", StringComparison.OrdinalIgnoreCase)) return;
+
+        // 已有 <a> 标签且含 data-wiki，说明已是新版数据
+        if (defaultPage.Content.Contains("data-wiki")) return;
+
+        MainPage? mainPage = null;
+        if (Application.Current?.Windows[0].Page is MainPage mp)
+        {
+            mainPage = mp;
+            mainPage.ShowLoadingPopup("更新旧版数据库", "正在更新旧版数据库，请稍候...");
+        }
+
+        try
+        {
+            var titles = await App.ContentDb.GetAllPrimaryKeysAsync<WikiPage>();
+            var doc = new HtmlDocument();
+            int processed = 0;
+
+            foreach (var title in titles)
+            {
+                var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
+                if (page == null) continue;
+
+                doc.LoadHtml(page.Content);
+                var anchors = doc.DocumentNode.SelectNodes("//a[@title]");
+                if (anchors != null)
+                {
+                    foreach (var a in anchors)
+                    {
+                        string titleAttr = a.GetAttributeValue("title", "");
+                        if (!string.IsNullOrEmpty(titleAttr))
+                            a.SetAttributeValue("data-wiki", titleAttr);
+                    }
+                    page.Content = doc.DocumentNode.OuterHtml;
+                    await App.ContentDb.SaveItemAsync(page);
+                }
+
+                processed++;
+                if (processed % 50 == 0)
+                    mainPage?.ShowLoadingPopup("更新旧版数据库", $"正在更新旧版数据库，请稍候... ({processed}/{titles.Count})");
+            }
+
+            mainPage?.ShowLoadingPopup("更新旧版数据库", $"更新完成，共处理 {processed} 个页面");
+            await Task.Delay(1500);
+            await AppService.WikiRefreshAsync();
+        }
+        finally
+        {
+            mainPage?.HideLoadingPopup();
+        }
     }
 }

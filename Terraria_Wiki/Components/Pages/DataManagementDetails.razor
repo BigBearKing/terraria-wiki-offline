@@ -57,10 +57,11 @@
                         @(AppState.ProcessingTaskId == 4 ? AppState.Tasks[4].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.CheckUpdate"))
                     </div>
 
-                    <div class="primary-btn btn-green" @onclick="() => RunSafe(CleanUpRes)">
-                        <Icon Name="clean" Size="16" />
-                        @(AppState.ProcessingTaskId == 5 ? AppState.Tasks[5].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.CleanUnusedAssets"))
+                    <div class="primary-btn btn-green" @onclick="() => RunSafe(ExportData)">
+                        <Icon Name="export" Size="16" />
+                        @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.ExportData"))
                     </div>
+
                     @if (_selectedWiki.IsResourceDownloaded)
                     {
                         <div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteRes)">
@@ -127,14 +128,25 @@
         Loc.OnChange += RefreshUI;
     }
 
+    private int _lastTaskId;
+
     public void Dispose()
     {
         AppState.OnChange -= RefreshUI;
         Loc.OnChange -= RefreshUI;
     }
 
-    private void RefreshUI()
+    private async void RefreshUI()
     {
+        // 任务刚完成（ProcessingTaskId 从非零切回 0），刷新页面数据
+        if (_lastTaskId != 0 && AppState.ProcessingTaskId == 0)
+        {
+            _lastTaskId = 0;
+            _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+            await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+            _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+        }
+        _lastTaskId = AppState.ProcessingTaskId;
         InvokeAsync(StateHasChanged);
     }
 
@@ -143,7 +155,9 @@
         AppState.CurrentPage = "data";
         NavManager.NavigateTo(AppState.CurrentPage);
     }
+
     private WikiBook _selectedWiki;
+
     protected override async Task OnInitializedAsync()
     {
         base.OnInitializedAsync();
@@ -185,7 +199,7 @@
         _ = App.DataManager.DownloadDataAsync(true);
 
     }
-	
+
     private async Task DownloadPages()
     {
 
@@ -214,14 +228,17 @@
 
     }
 
+    private async Task ExportData()
+    {
+        _ = App.DataManager?.ExportData(WikiId);
+    }
+
     private async Task DeleteRes()
     {
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.ConfirmDeleteAssets"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (isConfirmed)
         {
-            _ = App.DataManager.DeleteResAsync();
-            BackToList();
-            
+            _ = App.DataManager.DeleteResAsync();         
 
         }
     }

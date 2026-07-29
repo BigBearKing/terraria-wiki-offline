@@ -38,8 +38,8 @@
 		<ApplicationId>com.bigbearking.terrariawiki</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.3.0</ApplicationDisplayVersion>
-		<ApplicationVersion>3</ApplicationVersion>
+		<ApplicationDisplayVersion>0.4.0</ApplicationDisplayVersion>
+		<ApplicationVersion>4</ApplicationVersion>
 		<Company>BigBearKingdom</Company>
 
 		<Authors>BigBearKing</Authors>

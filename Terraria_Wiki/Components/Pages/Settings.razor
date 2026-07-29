@@ -124,15 +124,7 @@
             </div>
             <div class="category-card">
                 <span class="category-title">@Loc.Get("Settings.Database")</span>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">@Loc.Get("Settings.ExportData")</span>
-                        <span class="setting-desc">@Loc.Get("Settings.ExportDataDesc")</span>
-                    </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(ExportData)">
-                    @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].GetProcessingText(Loc) : Loc.Get("Common.Export"))
-                    </button>
-                </div>
+
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">@Loc.Get("Settings.ImportData")</span>
@@ -295,10 +287,7 @@
         }
         await action();
     }
-    private async Task ExportData()
-    {
-        _ = App.DataManager?.ExportData();
-    }
+
     private async Task ImportData()
     {
         _ = App.DataManager?.ImportData();

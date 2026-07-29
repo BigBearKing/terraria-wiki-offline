@@ -26,21 +26,32 @@ namespace Terraria_Wiki.Services
         };
 
         private static readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+        private static readonly string _crawlerUserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
 
-        private static readonly HttpClient _resHttpClient = new()
+        /// <summary>通用 HTTP 客户端，用于非 TLS 场景的所有 GET 请求和资源下载</summary>
+        private static readonly HttpClient _httpClient = new()
         {
             Timeout = TimeSpan.FromSeconds(150)
         };
 
+        static DataService()
+        {
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_crawlerUserAgent);
+        }
+
         /// <summary>将含中文等非 ASCII 字符的 IRI 转为标准 URI 编码</summary>
         private static string EncodeUrl(string url)
         {
+            if (string.IsNullOrEmpty(url)) return string.Empty;
+
+            // 现代 .NET 的 Uri 解析器非常智能，会自动对完整 URL 中的空格、中文等进行标准的 RFC 3986 转义
             if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return uri.AbsoluteUri;
 
-            return Uri.EscapeUriString(url);
+            // 如果走到这里，说明传入的字符串根本不是一个完整的绝对 URL
+            // 最佳实践：抛出异常拒绝脏数据，或者根据业务返回 string.Empty / 原字符串
+            throw new ArgumentException("输入的字符串不是合法的完整绝对 URL", nameof(url));
         }
-
         private static async Task<string> GetStringWithTlsAsync(string url)
         {
             url = EncodeUrl(url);
@@ -59,16 +70,36 @@ namespace Terraria_Wiki.Services
             return resp.Body;
         }
 
-        private string _baseDir = Path.Combine(FileSystem.AppDataDirectory, "Terraria_Wiki");
-        private string _resListPath = "";
-        private string _tempResListPath = "";
-        private string _pageListPath = "";
-        private string _failedPageListPath = "";
-        private string _tempFailedPageListPath = "";
-        private string _failedResListPath = "";
-        private string _tempFailedResListPath = "";
-        private string _updatePageListPath = "";
-        private string _updateResListPath = "";
+        private static async Task<string> GetStringWithHttpClientAsync(string url)
+        {
+            url = EncodeUrl(url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+            using var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        /// <summary>根据当前 WikiBook 的 Id 自动选择 TLS 或普通 HTTP 客户端</summary>
+        private async Task<string> GetStringAsync(string url)
+        {
+            if (App.AppStateManager?.ActiveWikiBook?.Id == 2)
+                return await GetStringWithTlsAsync(url);
+
+            return await GetStringWithHttpClientAsync(url);
+        }
+
+        private string _baseDir;
+        private string _currentDataDir;
+        private string _resListPath;
+        private string _tempResListPath;
+        private string _pageListPath;
+        private string _failedPageListPath;
+        private string _tempFailedPageListPath;
+        private string _failedResListPath;
+        private string _tempFailedResListPath;
+        private string _updatePageListPath;
+        private string _updateResListPath;
 
         // 从 WikiBook 加载的 Wiki 源配置
         private string _baseApiUrl;
@@ -88,6 +119,7 @@ namespace Terraria_Wiki.Services
         {
             _log = logService;
             _loc = localizationService;
+            
         }
 
 
@@ -244,7 +276,7 @@ namespace Terraria_Wiki.Services
                     await StartDownloadPagesAsync(_updatePageListPath, _updateResListPath, _failedPageListPath, _pageConcurrency);
                 }
                 await FileHelper.AppendFileAsync(_updateResListPath, _resListPath);
-                string tempFile = Path.Combine(_baseDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                string tempFile = Path.Combine(_currentDataDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
                 FileHelper.RemoveDuplicatesOptimized(_resListPath, tempFile);
                 File.Delete(_resListPath);
                 File.Move(tempFile, _resListPath, true);
@@ -409,11 +441,12 @@ namespace Terraria_Wiki.Services
                     _log.Info(_loc.Get("DataService.Log.RetryFailedPages"));
                     await StartDownloadPagesAsync(_failedPageListPath, _failedResListPath, _tempFailedPageListPath, 1);
                     await FileHelper.AppendFileAsync(_failedResListPath, _resListPath);
-                    string tempFile = Path.Combine(_baseDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                    string tempFile = Path.Combine(_currentDataDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
                     FileHelper.RemoveDuplicatesOptimized(_resListPath, tempFile);
                     File.Delete(_resListPath);
                     File.Move(tempFile, _resListPath, true);
-                    await FileHelper.AppendFileAsync(_tempFailedPageListPath, _failedPageListPath);
+                    // 用本次仍失败的条目替换旧失败列表，成功的条目自动清除
+                    ReplaceFailedList(_tempFailedPageListPath, _failedPageListPath);
 
                 }
 
@@ -421,7 +454,8 @@ namespace Terraria_Wiki.Services
                 {
                     _log.Info(_loc.Get("DataService.Log.RetryFailedAssets"));
                     await StartDownloadResAsync(_failedResListPath, _tempFailedResListPath, 1, false);
-                    await FileHelper.AppendFileAsync(_tempFailedResListPath, _failedResListPath);
+                    // 用本次仍失败的条目替换旧失败列表，成功的条目自动清除
+                    ReplaceFailedList(_tempFailedResListPath, _failedResListPath);
                 }
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 CleanUpTempFile();
@@ -488,23 +522,23 @@ namespace Terraria_Wiki.Services
         }
         public void DeleteDataFolder()
         {
-            if (Directory.Exists(_baseDir))
-                Directory.Delete(_baseDir, true);
+            if (Directory.Exists(_currentDataDir))
+                Directory.Delete(_currentDataDir, true);
         }
 
 
         //导出数据
-        public async Task ExportData()
+        public async Task ExportData(int selectedWikiId)
         {
             App.AppStateManager?.ProcessingTaskId = 9;
             _log.Info(_loc.Get("DataService.Log.ExportDataStart"));
-            string exportPath = null;
+            await InitializeSettings();
             string finalPkgPath = null;
 
             // --- 准备工作 ---
             string originalDbPath = App.ContentDb.DatabasePath;
             string tempDbPath = Path.Combine(FileSystem.CacheDirectory, "temp_export.db");
-            string exportFileName = Path.GetFileName(_baseDir) + ".pkg";
+            string exportFileName ="default.pkg";
 
             if (!File.Exists(originalDbPath))
             {
@@ -524,10 +558,10 @@ namespace Terraria_Wiki.Services
                 });
                 // 2. 准备基础数据
                 _log.Info(_loc.Get("DataService.Log.StartPackaging"));
-                var wikibook = App.AppStateManager.ActiveWikiBook;
+                var wikibook = await App.ManagerDb.GetItemAsync<WikiBook>(selectedWikiId);
                 var info = new WikiPackageInfo
                 {
-                    Id = 1,
+                    Id = wikibook.Id,
                     Title = wikibook.Title,
                     IsPageDownloaded = wikibook.IsPageDownloaded,
                     IsResourceDownloaded = wikibook.IsResourceDownloaded,
@@ -535,14 +569,14 @@ namespace Terraria_Wiki.Services
                     AppVersion = AppInfo.Current.VersionString,
                     Files = new List<FileMeta>()
                 };
-
+                exportFileName = wikibook.Title + ".pkg";
                 // 3. 获取导出路径（准备阶段）
                 if (DeviceInfo.Platform == DevicePlatform.WinUI)
                 {
 #if WINDOWS
-            exportPath = await FileHelper.PickFolderWindowsAsync();
-            if (exportPath == null) return; // 用户取消了选择
-            finalPkgPath = Path.Combine(exportPath, exportFileName);
+                    string exportPath = await FileHelper.PickFolderWindowsAsync();
+                    if (exportPath == null) return; // 用户取消了选择
+                    finalPkgPath = Path.Combine(exportPath, exportFileName);
 #endif
                 }
                 else if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst || DeviceInfo.Platform == DevicePlatform.Android)
@@ -561,7 +595,7 @@ namespace Terraria_Wiki.Services
                 await Task.Run(async () =>
                 {
                     // 获取所有文件
-                    var files = Directory.GetFiles(_baseDir, "*.*", SearchOption.AllDirectories).Where(f =>
+                    var files = Directory.GetFiles(_currentDataDir, "*.*", SearchOption.AllDirectories).Where(f =>
                         !f.EndsWith(".db-shm", StringComparison.OrdinalIgnoreCase) &&
                         !f.EndsWith(".db-wal", StringComparison.OrdinalIgnoreCase)
                     ).ToList();
@@ -578,7 +612,7 @@ namespace Terraria_Wiki.Services
 
                             info.Files.Add(new FileMeta
                             {
-                                RelativePath = Path.GetRelativePath(_baseDir, file),
+                                RelativePath = Path.GetRelativePath(_currentDataDir, file),
                                 Size = fs.Length,
                                 MD5 = Convert.ToHexStringLower(hashBytes)
                             });
@@ -674,7 +708,7 @@ namespace Terraria_Wiki.Services
             App.AppStateManager?.ProcessingTaskId = 10;
             _log.Info(_loc.Get("DataService.Log.ImportDataStart"));
             string filePath = null;
-
+            await InitializeSettings();
             try
             {
                 var customFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
@@ -698,11 +732,9 @@ namespace Terraria_Wiki.Services
                 if (string.IsNullOrEmpty(filePath)) return;
 
 
-                // ====== 核心修改开始 ======
-                // 声明一个变量，用来把后台线程解析出的 meta 数据传递给外面的 UI 线程
+                // ====== 第一步：读取头部和元数据（轻量操作） ======
                 WikiPackageInfo meta = null;
 
-                // 使用 Task.Run 把所有耗时的同步 I/O 和 CPU 计算全部扔到后台线程池！
                 await Task.Run(() =>
                 {
                     using var fsIn = new FileStream(filePath, FileMode.Open, FileAccess.Read);
@@ -722,7 +754,39 @@ namespace Terraria_Wiki.Services
                     Debug.Write(json);
 
                     meta = JsonSerializer.Deserialize<WikiPackageInfo>(json, AppJsonContext.Custom.WikiPackageInfo);
+                });
 
+                // ====== 版本检查：旧版包需要提示并执行迁移 ======
+                bool needMigration = false;
+                if (meta.AppVersion != null && Version.TryParse(meta.AppVersion, out var pkgVersion) && pkgVersion < new Version(0, 4))
+                {
+                    var currentPage = Application.Current?.Windows[0].Page;
+                    if (currentPage != null)
+                    {
+                        bool confirm = await currentPage.DisplayAlertAsync(
+                            _loc.Get("DataService.Log.ImportOldVersionTitle"),
+                            _loc.Get("DataService.Log.ImportOldVersionDesc", meta.AppVersion, AppInfo.Current.VersionString),
+                            _loc.Get("Common.OK"),
+                            _loc.Get("Common.Cancel"));
+                        if (!confirm)
+                        {
+                            App.AppStateManager?.ProcessingTaskId = 0;
+                            return;
+                        }
+                    }
+                    needMigration = true;
+                }
+
+                // ====== 第二步：提取并校验文件（耗时操作） ======
+                await Task.Run(() =>
+                {
+                    using var fsIn = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                    using var reader = new BinaryReader(fsIn);
+
+                    // 跳过头部和元数据 JSON
+                    reader.ReadBytes(8); // header
+                    int jsonLen = reader.ReadInt32();
+                    reader.ReadBytes(jsonLen); // skip JSON
 
                     if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
 
@@ -764,15 +828,51 @@ namespace Terraria_Wiki.Services
                 });
                 // 【关键】把耗时的本地文件夹删除和移动也放进后台线程
                 _log.Info(_loc.Get("DataService.Log.ReplacingLocalFiles"));
-                await App.ContentDb.CloseConnection();
-                await Task.Run(() =>
+                WikiBook wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(meta.Id);
+                if (meta.Id == App.AppStateManager.ActiveWikiBookId)
                 {
-                    if (Directory.Exists(_baseDir))
+                    await App.ContentDb.CloseConnection();
+                    await Task.Run(() =>
                     {
-                        Directory.Delete(_baseDir, true); // 现在文件没被锁了，删得干干净净！
-                    }
-                    Directory.Move(_tempDir, _baseDir);
-                });
+                        if (Directory.Exists(_currentDataDir))
+                        {
+                            Directory.Delete(_currentDataDir, true);
+                        }
+                        Directory.Move(_tempDir, _currentDataDir);
+
+                        // 旧版包数据库文件重命名为 data.db
+                        string oldDbPath = Path.Combine(_currentDataDir, "Terraria_Wiki.db");
+                        string newDbPath = Path.Combine(_currentDataDir, "data.db");
+                        if (File.Exists(oldDbPath))
+                        {
+                            File.Delete(newDbPath);
+                            File.Move(oldDbPath, newDbPath);
+                        }
+                    });
+                }
+                else
+                {
+                    await Task.Run(() =>
+                    {
+                        string targetDir = Path.Combine(_baseDir, wikiBook.DataFolder);
+                        if (Directory.Exists(targetDir))
+                        {
+                            Directory.Delete(targetDir, true);
+                        }
+                        Directory.Move(_tempDir, targetDir);
+
+                        // 旧版包数据库文件重命名为 data.db
+                        string oldDbPath = Path.Combine(targetDir, "Terraria_Wiki.db");
+                        string newDbPath = Path.Combine(targetDir, "data.db");
+                        if (File.Exists(oldDbPath))
+                        {
+                            File.Delete(newDbPath);
+                            File.Move(oldDbPath, newDbPath);
+                        }
+                    });
+                }
+                
+
 
                 // ====== 核心修改结束 ======
 
@@ -781,15 +881,25 @@ namespace Terraria_Wiki.Services
                 _log.Info(_loc.Get("DataService.Log.UpdatingDatabase"));
 
 
-                WikiBook wikiBook = await App.ManagerDb.GetItemAsync<WikiBook>(meta.Id);
+                
                 wikiBook.IsPageDownloaded = meta.IsPageDownloaded;
                 wikiBook.IsResourceDownloaded = meta.IsResourceDownloaded;
                 wikiBook.UpdateTime = meta.UpdateTime;
 
                 await App.ManagerDb.SaveItemAsync(wikiBook);
-                await App.ContentDb.ReconnectAsync();
-                await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                await AppService.WikiRefreshAsync();
+                if(meta.Id == App.AppStateManager.ActiveWikiBookId)
+                {
+                    await App.ContentDb.ReconnectAsync();
+                    await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+                    await AppService.WikiRefreshAsync();
+                }
+
+                // 旧版包迁移：为 <a> 标签添加 data-wiki 属性
+                if (needMigration && meta.Id == App.AppStateManager.ActiveWikiBookId)
+                {
+                    var upgradeHandler = new LegacyUpgradeHandler();
+                    await upgradeHandler.MigrateAnchorDataWikiAsync(App.AppStateManager.ActiveWikiBook);
+                }
 
                 _log.Success(_loc.Get("DataService.Log.ImportSuccess"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.ImportSuccess"));
@@ -843,7 +953,7 @@ namespace Terraria_Wiki.Services
 
                     try
                     {
-                        string jsonResponse = await GetStringWithTlsAsync(currentUrl);
+                        string jsonResponse = await GetStringAsync(currentUrl);
                         retryCount = 0;
 
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -900,7 +1010,7 @@ namespace Terraria_Wiki.Services
                     try
                     {
                         string fullUrl = _baseUrl + nextUrl;
-                        string html = await GetStringWithTlsAsync(fullUrl);
+                        string html = await GetStringAsync(fullUrl);
                         var doc = new HtmlDocument();
                         doc.LoadHtml(html);
                         var listItems = doc.DocumentNode.SelectNodes("//div[@class='mw-spcontent']//ol/li");
@@ -1062,12 +1172,15 @@ namespace Terraria_Wiki.Services
                 postWork: () => writer.Flush());
 
             // 爬取完成后，清洗一下数据
-            string tempFile = Path.Combine(_baseDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-            FileHelper.RemoveDuplicatesOptimized(resListPath, tempFile);
+            if (File.Exists(resListPath))
+            {
+                string tempFile = Path.Combine(_currentDataDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                FileHelper.RemoveDuplicatesOptimized(resListPath, tempFile);
 
-            // 替换原文件
-            File.Delete(resListPath);
-            File.Move(tempFile, resListPath, true);
+                // 替换原文件
+                File.Delete(resListPath);
+                File.Move(tempFile, resListPath, true);
+            }
             _log.Info(_loc.Get("DataService.Log.AllPagesCompleted"));
 
         }
@@ -1135,7 +1248,7 @@ namespace Terraria_Wiki.Services
 
             var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
 
-            string xml = await GetStringWithTlsAsync(pageUrl);
+            string xml = await GetStringAsync(pageUrl);
 
             var xmldoc = XDocument.Parse(xml);
 
@@ -1173,14 +1286,36 @@ namespace Terraria_Wiki.Services
 
         private void ProcessAnchorLinks(HtmlNode node)
         {
-            node.SelectNodes("//a[@href and @title]")?.ToList().ForEach(n =>
+            node.SelectNodes("//a[@href]")?.ToList().ForEach(n =>
             {
                 string href = n.Attributes["href"].Value;
+
+                // 外部链接保留原样，不处理
+                if (href.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    href.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                // 提取锚点部分
+                string? anchor = null;
                 int hashIndex = href.IndexOf('#');
                 if (hashIndex >= 0)
                 {
-                    n.SetAttributeValue("title", n.GetAttributeValue("title", "") + href.Substring(hashIndex));
+                    anchor = href.Substring(hashIndex + 1);
+                    href = href.Substring(0, hashIndex);
                 }
+
+                // 从 href 最后一个 / 后面提取页面标题并 URL 解码
+                int lastSlash = href.LastIndexOf('/');
+                string rawTitle = lastSlash >= 0 ? href.Substring(lastSlash + 1) : href;
+                string pageTitle = Uri.UnescapeDataString(rawTitle);
+
+                if (!string.IsNullOrEmpty(pageTitle))
+                {
+                    string wikiValue = anchor != null ? pageTitle + "#" + anchor : pageTitle;
+                    wikiValue = wikiValue.Replace('_', ' ');
+                    n.SetAttributeValue("data-wiki", wikiValue);
+                }
+
                 n.Attributes.Remove("href");
             });
         }
@@ -1283,7 +1418,7 @@ namespace Terraria_Wiki.Services
             }
 
             // 3. 发送请求
-            using var response = await _resHttpClient.SendAsync(request);
+            using var response = await _httpClient.SendAsync(request);
 
             // ================= 核心更新逻辑 =================
             // 4. 如果服务器返回 304 Not Modified，说明云端资源未更改，无需重新下载耗费流量和性能
@@ -1317,7 +1452,7 @@ namespace Terraria_Wiki.Services
         // ================= 辅助工具方法 =================
 
         //更新成员变量
-        private async Task InitializeSettings()
+        public async Task InitializeSettings()
         {
             _maxRetryAttempts = Preferences.Default.Get("MaxRetryAttempts", 5);
             _pageConcurrency = Preferences.Default.Get("PageConcurrency", 2);
@@ -1341,18 +1476,19 @@ namespace Terraria_Wiki.Services
             _junkXPath = book.JunkXPath;
 
             // 根据 DataFolder 设置数据目录和所有文件路径
-            _baseDir = Path.Combine(FileSystem.AppDataDirectory, book.DataFolder);
-            _resListPath = Path.Combine(_baseDir, "res.txt");
-            _tempResListPath = Path.Combine(_baseDir, "temp_res.txt");
-            _pageListPath = Path.Combine(_baseDir, "pages.txt");
-            _failedPageListPath = Path.Combine(_baseDir, "failed_pages.txt");
-            _tempFailedPageListPath = Path.Combine(_baseDir, "temp_failed_pages.txt");
-            _failedResListPath = Path.Combine(_baseDir, "failed_res.txt");
-            _tempFailedResListPath = Path.Combine(_baseDir, "temp_failed_res.txt");
-            _updatePageListPath = Path.Combine(_baseDir, "update_pages.txt");
-            _updateResListPath = Path.Combine(_baseDir, "update_res.txt");
+            _baseDir = FileSystem.AppDataDirectory;
+            _currentDataDir= Path.Combine(_baseDir, book.DataFolder);
+            _resListPath = Path.Combine(_currentDataDir, "res.txt");
+            _tempResListPath = Path.Combine(_currentDataDir, "temp_res.txt");
+            _pageListPath = Path.Combine(_currentDataDir, "pages.txt");
+            _failedPageListPath = Path.Combine(_currentDataDir, "failed_pages.txt");
+            _tempFailedPageListPath = Path.Combine(_currentDataDir, "temp_failed_pages.txt");
+            _failedResListPath = Path.Combine(_currentDataDir, "failed_res.txt");
+            _tempFailedResListPath = Path.Combine(_currentDataDir, "temp_failed_res.txt");
+            _updatePageListPath = Path.Combine(_currentDataDir, "update_pages.txt");
+            _updateResListPath = Path.Combine(_currentDataDir, "update_res.txt");
 
-            if (!Directory.Exists(_baseDir)) Directory.CreateDirectory(_baseDir);
+            if (!Directory.Exists(_currentDataDir)) Directory.CreateDirectory(_currentDataDir);
             CleanUpTempFile();
         }
 
@@ -1407,6 +1543,20 @@ namespace Terraria_Wiki.Services
         private static async Task AppendFailedUrlAsync(string path, string url)
         {
             await File.AppendAllLinesAsync(path, [url]);
+        }
+
+        // 用临时失败列表替换旧失败列表：如果临时文件有内容则替换，否则直接删除旧文件
+        private static void ReplaceFailedList(string tempPath, string targetPath)
+        {
+            if (FileHelper.IsFileValid(tempPath))
+            {
+                File.Delete(targetPath);
+                File.Move(tempPath, targetPath);
+            }
+            else
+            {
+                File.Delete(targetPath);
+            }
         }
 
 

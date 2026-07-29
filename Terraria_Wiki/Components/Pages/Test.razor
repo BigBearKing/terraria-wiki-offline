@@ -3,10 +3,12 @@
 @using Terraria_Wiki.Models
 @using System.Net
 @using LuYao.TlsClient
+@using HtmlAgilityPack
 <h3>Test</h3>
 
 <button class="button" @onclick="ShowAlert">ShowAlert</button>
 <button class="button" @onclick="PrintAssetInfo">PrintAssetInfo</button>
+<button class="button" @onclick="FixDataWikiUnderscoreAsync">Fix data-wiki Underscore</button>
 <div style="display:flex">
     <input type="text" @bind="fileUrl" placeholder="输入文件 URL" style="flex:1; margin-right:10px;" />
     <button class="button" @onclick="() => TestAssetUpdateLogicAsync(fileUrl)">Test Asset Update</button>
@@ -110,6 +112,60 @@
         catch (Exception ex)
         {
             App.LogManager.Info($"❌ 测试失败，发生错误: {ex.Message}");
+        }
+    }
+
+    private async Task FixDataWikiUnderscoreAsync()
+    {
+        (Application.Current.MainPage as MainPage)?.ShowLoadingPopup("修复 data-wiki", "正在读取所有页面...");
+
+        try
+        {
+            var titles = await App.ContentDb.GetAllPrimaryKeysAsync<WikiPage>();
+            var doc = new HtmlDocument();
+            int fixedCount = 0;
+            int processed = 0;
+
+            foreach (var title in titles)
+            {
+                var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
+                if (page == null) continue;
+
+                doc.LoadHtml(page.Content);
+                var anchors = doc.DocumentNode.SelectNodes("//a[@data-wiki]");
+                if (anchors != null)
+                {
+                    bool changed = false;
+                    foreach (var a in anchors)
+                    {
+                        string wikiValue = a.GetAttributeValue("data-wiki", "");
+                        if (wikiValue.Contains('_'))
+                        {
+                            a.SetAttributeValue("data-wiki", wikiValue.Replace('_', ' '));
+                            changed = true;
+                        }
+                    }
+
+                    if (changed)
+                    {
+                        page.Content = doc.DocumentNode.OuterHtml;
+                        await App.ContentDb.SaveItemAsync(page);
+                        fixedCount++;
+                    }
+                }
+
+                processed++;
+                if (processed % 50 == 0)
+                    (Application.Current.MainPage as MainPage)?.ShowLoadingPopup("修复 data-wiki", $"正在处理... ({processed}/{titles.Count})");
+            }
+
+            (Application.Current.MainPage as MainPage)?.ShowLoadingPopup("修复 data-wiki", $"完成！共处理 {processed} 个页面，修复 {fixedCount} 个页面");
+            await Task.Delay(1500);
+            await AppService.WikiRefreshAsync();
+        }
+        finally
+        {
+            (Application.Current.MainPage as MainPage)?.HideLoadingPopup();
         }
     }
 

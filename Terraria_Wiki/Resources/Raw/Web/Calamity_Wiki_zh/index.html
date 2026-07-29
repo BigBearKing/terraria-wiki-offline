@@ -15,27 +15,28 @@
   <link rel="stylesheet" href="viewer/viewer.min.css" />
 </head>
 
-<body class="skin-huiji-dragonhide mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-首页 rootpage-首页 skin-HuijiDragonhide action-view skin--responsive">
+<body
+  class="skin-huiji-dragonhide mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject skin-HuijiDragonhide action-view skin--responsive">
 
   <div id="wrapper">
     <div id="wiki-outer-body" class="huiji-css-hook" role="main">
-      <div id="wiki-body" class="container wiki-body">
-        <main id="content" class="row">
+      <div id="wiki-logo">
+        <img src="./images/main/logo.png" alt="灾厄中文维基" />
+      </div>
+      <div id="wiki-body" class="container wiki-body" style="border-radius: 8px;">
+        <main id="content" class="row" style="padding-top: 16px;">
           <aside class="col-md-2 hidden-sm hidden-xs hidden-print toc-sidebar" role="complementary navigation" id="toc">
             <div class="toc-ul-wrap">
-              <ul class="hidden-sm hidden-xs hidden-print nav nav-list affix-top" data-spy="affix">
-                
-                <li class="active"><a href="#firstHeading">回到顶部</a></li>
-              </ul>
+              <ul class="nav nav-list"></ul>
             </div>
           </aside>
-          <article class="col-sm-12 wiki-body-section" role="main">
+          <article class="col-md-10 col-sm-12 wiki-body-section" role="main">
             <header id="firstHeading" class="page-header">
               <h1 id="firstHeading-h1"></h1>
             </header>
             <section id="bodyContent" class="body">
               <div id="mw-content-text" class="mw-body-content mw-content-ltr" lang="zh-Hans" dir="ltr">
-                这是一个测试文件
+
               </div>
             </section>
           </article>
@@ -76,6 +77,111 @@
 <style>
   a {
     cursor: pointer;
+  }
+
+  body {
+    padding-right: 0 !important;
+  }
+
+  /* 覆盖 Viewer.js 全局的形变/缩放动画速度 */
+  .viewer-transition {
+    transition: all 0.15s !important;
+    /* 默认通常是 0.3s，数值越小越快 */
+  }
+
+  /* 覆盖 Viewer.js 背景和遮罩层的淡入淡出速度 */
+  .viewer-fade {
+    transition: opacity 0.15s !important;
+  }
+
+  .mclist {
+    overflow-y: hidden;
+  }
+
+  /* 1. 基础宽度 - 稍微收窄一点，显得更精致 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* 2. 轨道 - 保持完全透明 */
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* 3. 滑块 - 使用半透明色，确保在深色/浅色背景下都能“透”出来 */
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.3);
+    /* 使用通用半透明灰色 */
+    border-radius: 999px;
+    /* 重点：增加一个透明边框，配合 content-box 实现滑块变窄的效果 */
+    transition: background-color 0.2s;
+  }
+
+  /* 4. 悬停状态 - 宽度不变，但颜色加深，增加互动反馈 */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(128, 128, 128, 0.5);
+  }
+
+  /* 自定义右键菜单基础样式 */
+  #custom-context-menu {
+    position: fixed;
+    /* 使用 fixed 定位，因为坐标是基于视窗的 */
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100000;
+    /* 必须极高，盖住放大图片的蒙版 */
+    min-width: 140px;
+    padding: 6px 0;
+    display: none;
+    /* 默认隐藏 */
+    font-family: inherit;
+  }
+
+  /* 显示菜单的状态 */
+  #custom-context-menu.show-menu {
+    display: block;
+  }
+
+  /* 菜单项样式 */
+  .menu-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.1s;
+  }
+
+  .menu-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  /* 菜单分割线 */
+  .menu-divider {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 4px 0;
+  }
+
+  /* ---- 适配你代码里的深色模式 (dark theme) ---- */
+  html.dark #custom-context-menu {
+    background: #2b2b2b;
+    border-color: #444;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  html.dark .menu-item {
+    color: #eee;
+  }
+
+  html.dark .menu-item:hover {
+    background-color: #3a3a3a;
+  }
+
+  html.dark .menu-divider {
+    background-color: #444;
   }
 </style>
 

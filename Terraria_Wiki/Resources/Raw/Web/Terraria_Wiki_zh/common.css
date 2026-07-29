@@ -401,6 +401,134 @@ hr.incell-border {
   vertical-align: bottom;
 }
 
+/*********************************************************************************************************************
+* Semantically-correct horizontal lists (for Module:Navbox, and they're more machine-readable than {{*}}-formatting) *
+**********************************************************************************************************************/
+.hlist dl,
+.hlist ol,
+.hlist ul {
+  margin: 0;
+  padding: 0;
+}
+/* Display list items inline */
+.hlist dd,
+.hlist dt,
+.hlist li {
+  /*
+   * don't trust the note that says margin doesn't work with inline
+   * removing margin: 0 makes dds have margins again
+   * We also want to reset margin-right in Minerva
+   */
+  margin: 0;
+  display: inline;
+}
+/* Display requested top-level lists inline */
+.hlist.inline,
+.hlist.inline dl,
+.hlist.inline ol,
+.hlist.inline ul,
+.hlist dl dl,
+.hlist dl ol,
+.hlist dl ul,
+.hlist ol dl,
+.hlist ol ol,
+.hlist ol ul,
+.hlist ul dl,
+.hlist ul ol,
+.hlist ul ul {
+  display: inline;
+}
+/* Hide empty list items */
+.hlist .mw-empty-li {
+  display: none;
+}
+/* TODO: :not() can maybe be used here to remove the later rule. naive test
+ * seems to work. more testing needed. like so: */
+.hlist dt:not(:last-child)::after {
+  content: ": ";
+}
+.hlist dd:not(:last-child)::after,
+.hlist li:not(:last-child)::after {
+  /* "space, Middle Dot, space"
+  We use unicode numbers instead of the raw characters due to a Firefox encoding bug on unicode characters.
+  The space is also encoded because raw spaces combined with a unicode number strips the spaces under some conditions such as single-line lists */
+  /* content: "\20\00B7\20"; font-weight: bold; */
+  /* "space &nbsp; • &nbsp; space"
+        There may (and likely) be an extra whitespace between <li>s,
+        therefore we have to use a space character as last character of this sequence.
+        By this way, the last space and the next whitespce will collapse as a single space,
+        to make the whitespace on both sides of the middle dot the same width.
+     */
+  content: "  •  ";
+  font-weight: inherit;
+}
+/* Add parentheses around nested lists */
+.hlist dd ol::before,
+.hlist dd ul::before,
+.hlist dd dl::before,
+.hlist dt ol::before,
+.hlist dt ul::before,
+.hlist dt dl::before,
+.hlist li ol::before,
+.hlist li ul::before,
+.hlist li dl::before {
+  content: " (";
+  font-weight: inherit;
+}
+.hlist dd ol::after,
+.hlist dd ul::after,
+.hlist dd dl::after,
+.hlist dt ol::after,
+.hlist dt ul::after,
+.hlist dt dl::after,
+.hlist li ol::after,
+.hlist li ul::after,
+.hlist li dl::after {
+  content: ")";
+  font-weight: inherit;
+}
+/* Put ordinals in front of ordered list items */
+.hlist ol {
+  counter-reset: listitem;
+}
+.hlist ol > li {
+  counter-increment: listitem;
+}
+.hlist ol > li::before {
+  content: " " counter(listitem) ". ";
+}
+/* Prevent double separator when a li contains a nested ul/ol */
+.hlist li:not(:last-child):has(ul)::after,
+.hlist li:not(:last-child):has(ol)::after,
+.hlist li:not(:last-child):has(dl)::after {
+  content: none;
+}
+/* Re-add the separator after the closing parenthesis of the nested list */
+.hlist li:not(:last-child) ul::after,
+.hlist li:not(:last-child) ol::after,
+.hlist li:not(:last-child) dl::after {
+  content: ")  •  ";
+}
+/* Allow nested lists to wrap onto new lines */
+.hlist li ul,
+.hlist li ol,
+.hlist li dl {
+  white-space: normal;
+}
+.hlist li ul li,
+.hlist li ol li,
+.hlist li dl li {
+  white-space: normal;
+}
+/* Progressive enhancement:
+ * try to make the dot always follow the list item in same line
+ */
+.hlist :is(li, dt, dd):not(:has(:is(li, dt, dd))) {
+  display: inline-block;
+}
+/********************************************
+* End semantically-correct horizontal lists *
+*********************************************/
 
 /***********************************************************************************************************
  * interface layout and styles for widgets outside of content box
@@ -611,6 +739,24 @@ body > .content-wrapper
   min-height: 20em;
 }
 
+/********* Catlinks *********/
+/* "Categories:" box at the bottom of the page */
+/* overwriting styles from here:
+ * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+/refs/heads/REL1_43/resources/src/mediawiki.skinning/interface.category.less */
+.catlinks {
+  border-color: var(--theme-border-color);
+  border-radius: var(--theme-widget-border-radius);
+  background: var(--theme-background);
+  padding: 6px 12px;
+  margin: var(--layout-padding-y) 0 0 0;
+}
+.catlinks li {
+  border-left-color: var(--theme-border-color-accent);
+}
+/* Small font-size for hidden categories */
+#mw-hidden-catlinks {
+  font-size: var(--font-size-s);
+}
 
 /****** #footer (copyright info) ******/
 #footer {
@@ -3158,6 +3304,812 @@ table.diagram td.diagram-box > img:first-child {
 }
 .infocard.biome .main-heading + div > .box .dotlist li {
   margin-top: 2px;
+}
+
+	
+/********* [[Template:Navbox]] *********/
+/**** new navbox: RANGER ****/
+.ranger-navbox {
+  --navbox-background: var(--wiki-content-background-color); /* for entire navbox */
+  --navbox-margin: 0.5em auto;
+  --navbox-padding: 4px;
+  --navbox-gap: 3px; /* when using zero-value, it must be 0px */
+  --navbox-outer-border-color: var(--wiki-content-border-color--accent);
+  --navbox-outer-border-width: 1px;
+  --navbox-outer-border-style: solid;
+  --navbox-outer-border-radius: 0px;
+  --navbox-font-size: calc(1em - 2px);
+  --navbox-title-color: var(--wiki-accent-label-color);
+  --navbox-title-font-size: calc(125%);
+  --navbox-title-background: var(--wiki-accent-color);
+  --navbox-title-icon-color: var(--wiki-accent-label-color);
+  --navbox-title-link-color: var(--navbox-title-color);
+  --navbox-title-link-color--visited: var(--navbox-title-link-color);
+  --navbox-title-link-color--hover: var(--wiki-accent-link-color);
+  --navbox-title-redlink-color: var(--navbox-title-link-color);
+  --navbox-title-link-decoration: underline solid;
+  --navbox-title-redlink-decoration: underline wavy;
+  --navbox-title-padding--y: 0.5em;
+  --navbox-above-background: color-mix(in srgb, var(--wiki-content-text-color) 15%, transparent);
+  --navbox-above-color: var(--wiki-content-text-color);
+  --navbox-above-padding: var(--navbox-list-padding);
+  --navbox-below-background: var(--navbox-above-background);
+  --navbox-below-color: var(--navbox-above-color);
+  --navbox-below-padding: var(--navbox-above-padding);
+  --navbox-header-color: var(--navbox-title-color);
+  --navbox-header-font-size: calc(110%);
+  --navbox-header-background: var(--navbox-title-background);
+  --navbox-header-icon-color: var(--navbox-title-icon-color);
+  --navbox-header-link-color: var(--navbox-title-link-color);
+  --navbox-header-link-color--visited: var(--navbox-title-link-color--visited);
+  --navbox-header-link-color--hover: var(--navbox-title-link-color--hover);
+  --navbox-header-redlink-color: var(--navbox-title-redlink-color);
+  --navbox-header-link-decoration: var(--navbox-title-link-decoration);
+  --navbox-header-redlink-decoration: var(--navbox-title-redlink-decoration);
+  --navbox-header-padding--y: 0.3em;
+  --navbox-subheader-font-size: calc(100%);
+  --navbox-subheader-padding--y: calc(var(--navbox-header-padding--y)/2);
+  --navbox-list-background: color-mix(in srgb, var(--wiki-content-text-color) 5%, transparent);
+  --navbox-list-background--striped: color-mix(in srgb, var(--wiki-content-text-color) 8%, transparent);
+  --navbox-list-color: var(--wiki-content-text-color);
+  --navbox-list-padding: 0.25em 0.5em;
+  /* --navbox-group-* also apply to .ranger-subgroup */
+  --navbox-group-text-align: left;
+  --navbox-group-text-align--mobile: left; /* only for mobile view */
+  --navbox-group-background: color-mix(in srgb, var(--wiki-accent-color) 20%, transparent);
+  --navbox-group-color: var(--wiki-content-text-color);
+  --navbox-group-padding: var(--navbox-list-padding);
+  --navbox-tree-line-color: color-mix(in srgb, var(--wiki-accent-color) 30%, transparent);
+  --navbox-tree-line-width: 2px;
+  --navbox-tree-indent: 1em;
+  --navbox-tree-line-indent: 0.5em;
+  --navbox-tree-line-spacing: var(--navbox-gap);
+  --icon-chevron-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='icon icon-tabler icon-tabler-chevron-down' width='24' height='24' viewBox='0 0 24 24' stroke-width='2' stroke='currentColor' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'%3E%3C/path%3E%3Cpath d='M6 9l6 6l6 -6'%3E%3C/path%3E%3C/svg%3E");
+  --icon-metalinks: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='icon icon-tabler icon-tabler-edit' width='24' height='24' viewBox='0 0 24 24' stroke-width='2' stroke='currentColor' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'%3E%3C/path%3E%3Cpath d='M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1'%3E%3C/path%3E%3Cpath d='M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z'%3E%3C/path%3E%3Cpath d='M16 5l3 3'%3E%3C/path%3E%3C/svg%3E");
+  --navbox-icon-offset--x: 0.5rem; /* should be an absolute length (rem-based or px-based) */
+}
+.ranger-navbox.no-underline-title-links {
+  --navbox-title-link-color: var(--wiki-accent-link-color);
+  --navbox-title-link-decoration: none;
+  --navbox-title-redlink-decoration: none;
+}
+.ranger-navbox.noborder,
+.ranger-navbox.no-border {
+  --navbox-padding: 0px;
+  --navbox-outer-border-width: 0px;
+}
+/******************************
+* Fallback for older browsers *
+*******************************/
+@supports not (color: color-mix(in srgb, #000, transparent)) {
+  .ranger-navbox {
+    --navbox-above-background: var(--wiki-content-background-color--secondary);
+    --navbox-list-background: transparent;
+    --navbox-list-background--striped: var(--wiki-content-background-color--secondary);
+    --navbox-group-background: var(--wiki-content-background-color--secondary);
+    --navbox-tree-line-color: var(--wiki-content-background-color--secondary);
+  }
+  .ranger-navbox.pill,
+  .ranger-navbox.pill-mobile {
+    --navbox-pill-background: var(--wiki-content-background-color--secondary);
+    --navbox-list-background--striped: transparent;
+    --navbox-pill-selflink-background: var(--wiki-content-background-color--secondary);
+  }
+}
+/***************
+* End fallback *
+****************/
+/** as of Module:navbox version 1.2.5 **/
+.ranger-navbox {
+  border-color: var(--navbox-outer-border-color);
+  border-style: var(--navbox-outer-border-style);
+  border-width: var(--navbox-outer-border-width);
+  border-radius: var(--navbox-outer-border-radius);
+  padding: var(--navbox-padding);
+  font-size: var(--navbox-font-size);
+  margin: var(--navbox-margin);
+  background: var(--navbox-background);
+  line-height: 1.5;
+  clear: both;
+}
+.ranger-navbox * {
+  border: 0;
+}
+.ranger-navbox .center * {
+  margin-left: unset;
+  margin-right: unset;
+}
+.ranger-navbox,
+.ranger-navbox .ranger-section,
+.ranger-navbox .ranger-listbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--navbox-gap);
+}
+.ranger-navbox .ranger-title,
+.ranger-navbox .ranger-header {
+  text-align: center;
+  min-height: 1.5em;
+  position: relative;
+  z-index: 0;
+  font-weight: bold;
+}
+.ranger-navbox .ranger-title {
+  color: var(--navbox-title-color);
+  background: var(--navbox-title-background);
+  font-size: var(--navbox-title-font-size);
+  padding: var(--navbox-title-padding--y) calc(1.5em + var(--navbox-icon-offset--x)); /* left and right padding equal to the size and position of the edit/collapse buttons */
+}
+.ranger-navbox .ranger-title a,
+.ranger-navbox .ranger-title a:visited,
+.ranger-navbox .ranger-title a:hover,
+.ranger-navbox .ranger-title a.external,
+.ranger-navbox .ranger-title a.external:visited,
+.ranger-navbox .ranger-title a.external:hover {
+  text-decoration: var(--navbox-title-link-decoration);
+}
+.ranger-navbox .ranger-title a.new,
+.ranger-navbox .ranger-title a.new:visited {
+  text-decoration: var(--navbox-title-redlink-decoration);
+}
+.ranger-navbox .ranger-title a,
+.ranger-navbox .ranger-title a.external,
+.ranger-navbox .ranger-title a.external:visited {
+  color: var(--navbox-title-link-color);
+}
+.ranger-navbox .ranger-title a:visited {
+  color: var(--navbox-title-link-color--visited);
+}
+.ranger-navbox .ranger-title a.new,
+.ranger-navbox .ranger-title a.new:visited {
+  color: var(--navbox-title-redlink-color);
+}
+.ranger-navbox .ranger-title a:hover,
+.ranger-navbox .ranger-title a:visited:hover,
+.ranger-navbox .ranger-title a.external:hover,
+.ranger-navbox .ranger-title a.external:visited:hover {
+  color: var(--navbox-title-link-color--hover);
+}
+.ranger-navbox .ranger-header {
+  color: var(--navbox-header-color);
+  background: var(--navbox-header-background);
+  font-size: var(--navbox-header-font-size);
+  padding: var(--navbox-header-padding--y) calc(1.5em + var(--navbox-icon-offset--x)); /* left and right padding equal to the size and position of the edit/collapse buttons */
+}
+.ranger-navbox .ranger-sublist .ranger-header {
+  font-size: var(--navbox-subheader-font-size);
+  padding: var(--navbox-subheader-padding--y) calc(1.5em + var(--navbox-icon-offset--x)); /* left and right padding equal to the size and position of the edit/collapse buttons */
+}
+.ranger-navbox .ranger-header a,
+.ranger-navbox .ranger-header a:visited,
+.ranger-navbox .ranger-header a:hover,
+.ranger-navbox .ranger-header a.external,
+.ranger-navbox .ranger-header a.external:visited,
+.ranger-navbox .ranger-header a.external:hover {
+  text-decoration: var(--navbox-header-link-decoration);
+}
+.ranger-navbox .ranger-header a.new,
+.ranger-navbox .ranger-header a.new:visited {
+  text-decoration: var(--navbox-header-redlink-decoration);
+}
+.ranger-navbox .ranger-header a,
+.ranger-navbox .ranger-header a.external,
+.ranger-navbox .ranger-header a.external:visited {
+  color: var(--navbox-header-link-color);
+}
+.ranger-navbox .ranger-header a:visited {
+  color: var(--navbox-header-link-color--visited);
+}
+.ranger-navbox .ranger-header a.new,
+.ranger-navbox .ranger-header a.new:visited {
+  color: var(--navbox-header-redlink-color);
+}
+.ranger-navbox .ranger-header a:hover,
+.ranger-navbox .ranger-header a:visited:hover,
+.ranger-navbox .ranger-header a.external:hover,
+.ranger-navbox .ranger-header a.external:visited:hover {
+  color: var(--navbox-header-link-color--hover);
+}
+.ranger-navbox .ranger-meta {
+  font-size: var(--navbox-title-font-size);
+  position: absolute;
+  left: var(--navbox-icon-offset--x);
+  top: calc(var(--navbox-title-padding--y) + 0.08em); /* 0.08em: vertial offset tweak based on the icon graph */
+  display: block;
+}
+.ranger-navbox .ranger-meta .nv {
+  --mask: var(--icon-metalinks);
+  display: block;
+  width: 0.84em; /* based on the icon graph */
+  height: 0.84em;
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  background-color: var(--navbox-title-icon-color);
+}
+.ranger-navbox .ranger-meta .nv > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.ranger-navbox .ranger-meta .nv > a > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.ranger-navbox .ranger-meta:has(.mw-selflink) {
+  display: none;
+}
+.ranger-navbox,
+.ranger-navbox .ranger-section {
+  position: relative;
+}
+.ranger .mw-collapsible-toggle-placeholder {
+  display: none;
+}
+.ranger-navbox .ranger-title > .ranger-title-text,
+.ranger-navbox .ranger-header > .ranger-header-text {
+  pointer-events: none;
+}
+.ranger-navbox .ranger-title > .ranger-title-text a,
+.ranger-navbox .ranger-header > .ranger-header-text a {
+  pointer-events: auto;
+}
+.ranger-navbox .ranger-title > .mw-collapsible-toggle,
+.ranger-navbox .ranger-header > .mw-collapsible-toggle {
+  --mask: var(--icon-chevron-down);
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-title > .mw-collapsible-toggle,
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-header > .mw-collapsible-toggle {
+  width: 1.5em;
+  height: 1.5em;
+  right: var(--navbox-icon-offset--x);
+}
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-title > .mw-collapsible-toggle {
+  top: var(--navbox-title-padding--y);
+}
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-header > .mw-collapsible-toggle {
+  top: var(--navbox-header-padding--y);
+}
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-sublist .ranger-header > .mw-collapsible-toggle {
+  top: var(--navbox-subheader-padding--y);
+}
+.ranger-navbox .ranger-title > .mw-collapsible-toggle::before,
+.ranger-navbox .ranger-header > .mw-collapsible-toggle::before {
+  content: "";
+  display: block;
+  width: 1.5em;
+  height: 1.5em;
+  position: absolute;
+  right: var(--navbox-icon-offset--x);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  background-color: var(--navbox-title-icon-color);
+  transform: scaleY(-1);
+}
+.ranger-navbox .ranger-title > .mw-collapsible-toggle::before {
+  top: var(--navbox-title-padding--y);
+}
+.ranger-navbox .ranger-header > .mw-collapsible-toggle::before {
+  top: var(--navbox-header-padding--y);
+}
+.ranger-navbox .ranger-sublist .ranger-header > .mw-collapsible-toggle::before {
+  top: var(--navbox-subheader-padding--y);
+}
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-title > .mw-collapsible-toggle::before,
+.ranger-navbox.small-collapsible-toggle-click-area .ranger-header > .mw-collapsible-toggle::before {
+  top: 0;
+  right: 0;
+}
+.ranger-navbox .ranger-header > .mw-collapsible-toggle::before {
+  background-color: var(--navbox-header-icon-color);
+}
+.ranger-navbox .ranger-title > .mw-collapsible-toggle.mw-collapsible-toggle-collapsed::before,
+.ranger-navbox .ranger-header > .mw-collapsible-toggle.mw-collapsible-toggle-collapsed::before {
+  transform: none;
+}
+.ranger-navbox .ranger-title > .mw-collapsible-toggle *,
+.ranger-navbox .ranger-title > .mw-collapsible-toggle::after,
+.ranger-navbox .ranger-header > .mw-collapsible-toggle *,
+.ranger-navbox .ranger-header > .mw-collapsible-toggle::after {
+  display: none;
+}
+.ranger-navbox .ranger-list {
+  width: unset;
+  padding: var(--navbox-list-padding);
+}
+.ranger-navbox .ranger-above {
+  background: var(--navbox-above-background);
+  color: var(--navbox-above-color);
+  padding: var(--navbox-above-padding);
+  width: unset;
+}
+.ranger-navbox .ranger-below {
+  background: var(--navbox-below-background);
+  color: var(--navbox-below-color);
+  padding: var(--navbox-below-padding);
+  width: unset;
+}
+.ranger-navbox .ranger-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--navbox-gap);
+}
+.ranger-navbox .ranger-section-body {
+  display: grid;
+  gap: var(--navbox-gap);
+  grid-template-columns: auto minmax(0, 1fr);
+}
+/* gap fix for collapsed content */
+.ranger-navbox [class^=ranger-][hidden=until-found] {
+  margin-top: calc(0px - var(--navbox-gap)) !important;
+}
+.ranger-navbox .ranger-row {
+  display: contents;
+}
+.ranger-navbox .ranger-group,
+.ranger-navbox .ranger-subgroup {
+  text-align: var(--navbox-group-text-align);
+  font-weight: bold;
+  background: var(--navbox-group-background);
+  color: var(--navbox-group-color);
+  padding: var(--navbox-group-padding);
+  width: unset;
+}
+/* for desktop view */
+.ranger-navbox.group-align-left .ranger-group,
+.ranger-navbox.group-align-left .ranger-subgroup {
+  --navbox-group-text-align: left;
+}
+.ranger-navbox.group-align-center .ranger-group,
+.ranger-navbox.group-align-center .ranger-subgroup {
+  --navbox-group-text-align: center;
+}
+.ranger-navbox.group-align-right .ranger-group,
+.ranger-navbox.group-align-right .ranger-subgroup {
+  --navbox-group-text-align: right;
+}
+/* for mobile view */
+.ranger-navbox.mobile-group-align-left .ranger-group,
+.ranger-navbox.mobile-group-align-left .ranger-subgroup {
+  --navbox-group-text-align--mobile: left;
+}
+.ranger-navbox.mobile-group-align-center .ranger-group,
+.ranger-navbox.mobile-group-align-center .ranger-subgroup {
+  --navbox-group-text-align--mobile: center;
+}
+.ranger-navbox.mobile-group-align-right .ranger-group,
+.ranger-navbox.mobile-group-align-right .ranger-subgroup {
+  --navbox-group-text-align--mobile: right;
+}
+/* for desktop view */
+.ranger-navbox.list-align-left .ranger-listbox {
+  --navbox-list-text-align: left;
+}
+.ranger-navbox.list-align-center .ranger-listbox {
+  --navbox-list-text-align: center;
+}
+.ranger-navbox.list-align-right .ranger-listbox {
+  --navbox-list-text-align: right;
+}
+/* for mobile view */
+.ranger-navbox.mobile-list-align-left .ranger-listbox {
+  --navbox-list-text-align--mobile: left;
+}
+.ranger-navbox.mobile-list-align-center .ranger-listbox {
+  --navbox-list-text-align--mobile: center;
+}
+.ranger-navbox.mobile-list-align-right .ranger-listbox {
+  --navbox-list-text-align--mobile: right;
+}
+.ranger-navbox .ranger-listbox > .ranger-wrap {
+  text-align: var(--navbox-list-text-align);
+  background: var(--navbox-list-background);
+  color: var(--navbox-list-color);
+  flex-grow: 1;
+}
+.ranger-navbox .ranger-sublist {
+  flex-grow: var(--count);
+}
+.ranger-navbox .ranger-listbox:first-child { /* A list-n without group-n */
+  grid-column-end: span 2;
+}
+.ranger-navbox .ranger-group,
+.ranger-navbox .ranger-subgroup,
+.ranger-navbox .ranger-listbox > .ranger-wrap {
+  display: grid;
+  justify-items: stretch;
+  align-items: center;
+}
+.ranger-navbox.striped-even .ranger-even,
+.ranger-navbox.striped-odd .ranger-odd {
+  background: var(--navbox-list-background--striped);
+}
+/* make links use full line height (larger click box)*/
+.ranger-navbox .hlist a {
+  display: inline-block;
+}
+.ranger-navbox .align-left,
+.ranger-navbox .alignleft {
+  text-align: left;
+}
+.ranger-navbox .align-center,
+.ranger-navbox .aligncenter {
+  text-align: center;
+}
+.ranger-navbox .align-right,
+.ranger-navbox .alignright {
+  text-align: right;
+}
+/* responsive */
+@media screen and (max-width: 720px) {
+  .ranger-navbox .ranger-section-body,
+  .ranger-navbox .ranger-sublist {
+    display: flex;
+    flex-flow: column;
+  }
+  .ranger-navbox .ranger-row {
+    display: block;
+  }
+  .ranger-navbox .ranger-group + .ranger-listbox > .ranger-sublist:first-child,
+  .ranger-navbox .ranger-subgroup + .ranger-listbox > .ranger-sublist:first-child {
+    margin-top: var(--navbox-gap);
+  }
+  .ranger-navbox .ranger-listbox.empty {
+    display: none;
+  }
+  .ranger-navbox .ranger-group,
+  .ranger-navbox .ranger-subgroup {
+    text-align: var(--navbox-group-text-align--mobile, left);
+    max-width: unset !important;
+  }
+  .ranger-navbox .ranger-group > *,
+  .ranger-navbox .ranger-subgroup > * {
+    max-width: unset !important;
+  }
+  .ranger-navbox .ranger-sublist {
+    padding-left: var(--navbox-tree-indent);
+    margin-left: var(--navbox-tree-line-indent);
+  }
+  .ranger-navbox .ranger-subgroup,
+  .ranger-navbox .ranger-listbox {
+    position: relative;
+  }
+  .ranger-navbox .ranger-group br,
+  .ranger-navbox .ranger-subgroup br {
+    display: none;
+  }
+  .ranger-navbox .ranger-listbox > .ranger-wrap {
+    text-align: var(--navbox-list-text-align--mobile, left);
+  }
+  .ranger-navbox .ranger-sublist > .ranger-section > .ranger-header {
+    margin-left: calc(0px - var(--navbox-tree-indent) - var(--navbox-tree-line-indent));
+  }
+  .ranger-navbox .ranger-sublist .ranger-row > ::before {
+    position: absolute;
+    left: calc(0px - var(--navbox-tree-indent));
+    top: 0;
+    width: var(--navbox-tree-line-width);
+    height: 100%;
+    content: "";
+    display: block;
+    background-color: var(--navbox-tree-line-color);
+  }
+  .ranger-navbox .ranger-sublist .ranger-row > .ranger-listbox::before,
+  .ranger-navbox .ranger-row.empty-list > .ranger-subgroup::before {
+    height: calc(100% + var(--navbox-gap));
+  }
+  .ranger-navbox .ranger-sublist .ranger-row:last-child > ::before {
+    display: none;
+  }
+  .ranger-navbox .ranger-sublist .ranger-row:last-child > :first-child::before {
+    display: block;
+    height: calc(50% + var(--navbox-tree-line-width) / 2);
+  }
+  .ranger-navbox .ranger-subgroup::after,
+  .ranger-navbox .ranger-row .ranger-row.empty-group > .ranger-listbox > .ranger-wrap::after {
+    position: absolute;
+    left: calc(0px - var(--navbox-tree-indent) + var(--navbox-tree-line-width));
+    width: calc(var(--navbox-tree-indent) - var(--navbox-tree-line-spacing) - var(--navbox-tree-line-width));
+    height: var(--navbox-tree-line-width);
+    content: "";
+    background-color: var(--navbox-tree-line-color);
+  }
+  /* increase height for links */
+  .ranger-navbox .hlist {
+    line-height: 2;
+  }
+}
+/*********************
+* End Template:Navbox*
+**********************/
+/* tweak RANGER for terraria wiki */
+.ranger-navbox {
+  --navbox-padding: 6px;
+  --navbox-outer-border-color: var(--theme-box-border-color);
+  --navbox-outer-border-radius: var(--theme-box-border-radius);
+  --navbox-group-text-align: right;
+  --navbox-font-size: calc(1em);
+  --navbox-title-color: var(--theme-heading-color);
+  --navbox-title-font-size: calc(1em + 4px);
+  --navbox-title-icon-color: var(--theme-icon-color-link);
+  --navbox-title-link-color: var(--theme-link-color);
+  --navbox-title-link-color--visited: var(--theme-link-color-visited);
+  --navbox-title-link-color--hover: var(--theme-link-color-hover);
+  --navbox-title-redlink-color: var(--theme-link-color-redlink);
+  --navbox-above-background: var(--theme-text-background-color-highlight);
+  --navbox-above-color: var(--theme-text-color);
+  --navbox-header-font-size: calc(1em + 2px);
+  --navbox-header-padding--y: 0.25em;
+  --navbox-title-background: var(--theme-highlight-background);
+  --navbox-list-background: none;
+  --navbox-list-background--striped: rgba(var(--theme-text-color--rgb), 0.08);
+  --navbox-list-color: var(--theme-text-color);
+  --navbox-group-background: var(--theme-box-background);
+  --navbox-group-color: var(--theme-text-color);
+}
+.ranger-navbox.no-underline-title-links {
+  --navbox-title-link-color: var(--theme-link-color);
+}
+.ranger-navbox .ranger-title,
+.ranger-navbox .ranger-header,
+.ranger-navbox .ranger-sublist .ranger-header {
+  padding-left: 7px;
+  text-align: left;
+}
+.ranger-navbox .ranger-meta {
+  left: unset;
+  right: 0.5rem;
+}
+.ranger-navbox .mw-collapsible-toggle + .ranger-meta {
+  right: 2.875rem;
+}
+/*increase spacing between lines for {{item}}*/
+.ranger-navbox .ranger-list .i {
+  margin: 2px auto;
+}
+/**** old navbox: may be still used on language wikis ****/
+/* subtemplates:
+ * [[Template:Navbox/end]]
+ * [[Template:Navbox/h1]]
+ * [[Template:Navbox/h2]]
+ * [[Template:Navbox/start]]
+ * [[Template:Navbox/v.d.e]]
+ */
+.navbox {
+  background: var(--theme-highlight-background);
+  background-size: 100%;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--theme-box-border-color-inner);
+  border-radius: var(--theme-box-border-radius-inner);
+  box-sizing: border-box;
+  padding: 6px;
+  margin: 0.5em auto;
+  width: 100%;
+  max-width: 1800px;
+  position: relative;
+  clear: both;
+}
+.navbox .i {
+  padding: 1px 0;
+}
+.navbox > .header {
+  background: var(--theme-highlight-background);
+  background-size: 100%;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--theme-box-border-color-inner);
+  border-radius: var(--theme-box-border-radius-inner);
+  text-align: left;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 2;
+  min-height: 1em;
+  padding: 4px 70px 4px 6px;
+}
+.navbox > .vde {
+  position: absolute;
+  right: 10px;
+  top: calc(2rem + 2px);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--theme-text-color-note);
+}
+.navbox .table > div > .title,
+.navbox .table > div > .h1,
+.navbox .table > div > .h2 {
+  background: var(--theme-highlight-background);
+  background-size: 100%;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--theme-box-border-color-inner);
+  border-radius: var(--theme-box-border-radius-inner);
+}
+.navbox > .mw-collapsible-toggle {
+  position: absolute;
+  line-height: 1;
+  right: 10px;
+  top: 10px;
+  font-size: 12px;
+}
+.navbox > .mw-collapsible-toggle > .mw-collapsible-bracket {
+  display: none;
+}
+.navbox > .mw-collapsible-toggle:before {
+  content: "";
+  vertical-align: middle;
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  transform: rotate(45deg);
+  position: relative;
+  left: -3px;
+  border-left: 2px solid var(--theme-link-color);
+  border-top: 2px solid var(--theme-link-color);
+  border-right: 0;
+  border-bottom: 0;
+  top: 1px;
+}
+.navbox > .mw-collapsible-toggle:after {
+  content: "";
+}
+.navbox > .mw-collapsible-toggle.mw-collapsible-toggle-collapsed:before {
+  border-left: 0;
+  border-top: 0;
+  border-right: 2px solid var(--theme-link-color);
+  border-bottom: 2px solid var(--theme-link-color);
+  top: -2px;
+}
+.navbox > .content {
+  text-align: left;
+  padding: 6px 6px 0;
+}
+.navbox > .content .dotlist + .dotlist {
+  margin-top: 0.5em;
+}
+.navbox > .content > .dotlist + .dotlist {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--theme-body-text-color--hover);
+}
+.navbox .navbox {
+  /* nested navbox */
+  border: 0;
+  padding: 0;
+  width: auto;
+  margin: 0 -6px 6px -6px;
+}
+.navbox .navbox:last-child {
+  margin: 0 -6px;
+}
+.navbox .navbox > .header {
+  font-size: 14px;
+  padding: 0 64px 0 6px;
+}
+.navbox .navbox > .mw-collapsible-toggle {
+  right: 4px;
+  top: 4px;
+  font-size: 10px;
+}
+.navbox .navbox > .mw-collapsible-toggle:before {
+  width: 3px;
+  height: 3px;
+  border-left: 1px solid var(--theme-link-color);
+  border-top: 1px solid var(--theme-link-color);
+  border-right: 0;
+  border-bottom: 0;
+  top: 1px;
+}
+.navbox .navbox > .mw-collapsible-toggle.mw-collapsible-toggle-collapsed:before {
+  border-left: 0;
+  border-top: 0;
+  border-right: 1px solid var(--theme-link-color);
+  border-bottom: 1px solid var(--theme-link-color);
+  top: -1px;
+}
+.navbox .h1 {
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
+  line-height: 1.5;
+}
+.navbox .h1::after {
+  content: "";
+  display: block;
+  margin: auto auto auto 0;
+  width: 5em;
+  height: 0;
+  border-bottom: 2px solid var(--theme-box-border-color);
+}
+.navbox .h1 + .h2 {
+  margin-top: 0.5em;
+}
+.navbox .table > div:first-child .h1,
+.navbox .content > .h1:first-child {
+  margin-top: auto;
+}
+.navbox .h2 {
+  font-weight: bold;
+  line-height: 1.5;
+  margin-top: 0.25em;
+  font-size: 12px;
+}
+.navbox .h2 + .h3 {
+  margin-top: 0.5em;
+}
+.navbox .h3 {
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1.5;
+}
+@media (max-width: 599px) {
+  .navbox .table > div > .title::after,
+  .navbox .table > .dotlist > .title::after {
+    content: ":";
+    margin-right: 0.25em;
+  }
+}
+@media (min-width: 600px) {
+  .navbox .table {
+    display: table;
+    text-align: left;
+    margin: -5px -7px -1px -7px;
+  }
+  .navbox .table > div {
+    display: table-row;
+  }
+  .navbox .table > div > * {
+    display: table-cell;
+    padding: 4px 7px;
+    vertical-align: middle;
+    box-shadow: inset 0 0 0 1px var(--theme-page-background-color);
+  }
+  .navbox .table > div > .title,
+  .navbox .table > div > .h1,
+  .navbox .table > div > .h2 {
+    background: var(--theme-highlight-background);
+    text-align: right;
+    line-height: 1.1;
+    /*width: max-content;*/
+  }
+  .navbox .table > div > .title .eil,
+  .navbox .table > div > .h1 .eil,
+  .navbox .table > div > .h2 .eil {
+    white-space: normal;
+  }
+  .navbox .table > div > .title::after,
+  .navbox .table > div > .h1::after {
+    display: none;
+  }
+  .navbox .table .table {
+    display: table;
+    padding: 0;
+    margin: 0 -1px 0 0;
+  }
+  .navbox .table .cell {
+    padding: 0;
+  }
+  .navbox .table .cell > .dotlist {
+    padding: 4px 7px;
+  }
 }
 
 /********* [[Template:Coin]] *********/

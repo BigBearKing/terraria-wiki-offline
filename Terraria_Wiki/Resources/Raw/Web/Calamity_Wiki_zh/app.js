@@ -36,14 +36,6 @@ if (initialTheme === "dark") {
     });
 }
 
-/*!
-handy-scroll v2.0.6
-https://amphiluke.github.io/handy-scroll/
-(c) 2026 Amphiluke
-*/
-const t = new CSSStyleSheet; t.replaceSync(':host{bottom:0;min-height:17px;overflow:auto;position:fixed}.strut{height:1px;overflow:hidden;pointer-events:none;&:before{content:" "}}:host,.strut{font-size:1px;line-height:0;margin:0;padding:0}:host(:state(latent)){clip-path:inset(100%);.strut:before{content:"  "}}:host([viewport]:not([hidden])){display:block}:host([viewport]:not(:state(latent))){position:sticky}'); let e = t => `Attribute ‘${t}’ must reference a valid container ‘id’`; class i extends HTMLElement { static get observedAttributes() { return ["owner", "viewport", "hidden"] } #t = null; #e = null; #i = null; #s = null; #h = null; #n = null; #o = !0; #l = !0; get owner() { return this.getAttribute("owner") } set owner(t) { this.setAttribute("owner", t) } get viewport() { return this.getAttribute("viewport") } set viewport(t) { this.setAttribute("viewport", t) } get #r() { return this.#t.states.has("latent") } set #r(t) { this.#t.states[t ? "add" : "delete"]("latent") } constructor() { super(); let e = this.attachShadow({ mode: "open" }); e.adoptedStyleSheets = [t], this.#s = document.createElement("div"), this.#s.classList.add("strut"), e.appendChild(this.#s), this.#t = this.attachInternals() } connectedCallback() { this.#d(), this.#a(), this.#c(), this.#u(), this.update() } disconnectedCallback() { this.#w(), this.#p(), this.#i = this.#e = null } attributeChangedCallback(t) { if (this.#h) { if ("hidden" === t) return void (this.hasAttribute("hidden") || this.update()); "owner" === t ? this.#d() : "viewport" === t && this.#a(), this.#w(), this.#p(), this.#c(), this.#u(), this.update() } } #d() { let t = this.getAttribute("owner"); if (this.#i = document.getElementById(t), !this.#i) throw new DOMException(e("owner")) } #a() { if (!this.hasAttribute("viewport")) return void (this.#e = window); let t = this.getAttribute("viewport"); if (this.#e = document.getElementById(t), !this.#e) throw new DOMException(e("viewport")) } #c() { this.#h = new AbortController; let t = { signal: this.#h.signal }; this.#e.addEventListener("scroll", () => this.#f(), t), this.#e === window && this.#e.addEventListener("resize", () => this.update(), t), this.addEventListener("scroll", () => { this.#o && !this.#r && this.#g(), this.#o = !0 }, t), this.#i.addEventListener("scroll", () => { this.#l && this.#v(), this.#l = !0 }, t), this.#i.addEventListener("focusin", () => { setTimeout(() => { this.isConnected && this.#v() }, 0) }, t) } #w() { this.#h?.abort(), this.#h = null } #u() { this.#e !== window && (this.#n = new ResizeObserver(([t]) => { t.contentBoxSize?.[0]?.inlineSize && this.update() }), this.#n.observe(this.#e)) } #p() { this.#n?.disconnect(), this.#n = null } #g() { let { scrollLeft: t } = this; this.#i.scrollLeft !== t && (this.#l = !1, this.#i.scrollLeft = t) } #v() { let { scrollLeft: t } = this.#i; this.scrollLeft !== t && (this.#o = !1, this.scrollLeft = t) } #f() { let t = this.scrollWidth <= this.offsetWidth; if (!t) { let e = this.#i.getBoundingClientRect(), i = this.#e === window ? window.innerHeight || document.documentElement.clientHeight : this.#e.getBoundingClientRect().bottom; t = e.bottom <= i || e.top > i } this.#r !== t && (this.#r = t) } update() { let { clientWidth: t, scrollWidth: e } = this.#i, { style: i } = this; i.width = `${t}px`, this.#e === window && (i.left = `${this.#i.getBoundingClientRect().left}px`), this.#s.style.width = `${e}px`, e > t && (i.height = this.offsetHeight - this.clientHeight + 1 + "px"), this.#v(), this.#f() } } customElements.define("handy-scroll", i); export { i as default };
-
-
 
 window.pageTitle = null; // 当前页面标题，初始为空
 const handlers = {}; // 存 JS 方法
@@ -121,15 +113,21 @@ document.addEventListener('click', function (e) {
             openThumb(targetLink);
             return;
         }
-        const title = targetLink.getAttribute('title');
+                // 如果是 <a class="image" data-wiki="File:..."> 内含 <img>，直接打开图片
+        if (targetLink.classList.contains('image') && targetLink.querySelector('img')) {
+            e.preventDefault();
+            openThumb(targetLink);
+            return;
+        }
+        const wikiTitle = targetLink.getAttribute('data-wiki');
         const href = targetLink.getAttribute('href') || '';
         if (href.startsWith('http')) {
             e.preventDefault();
             callCSharpAsync("OpenExternalWebsite", href);
             return;
         }
-        if (title && !href) {
-            gotoPage(title);
+        if (wikiTitle && !href) {
+            gotoPage(wikiTitle);
         }
     }
 });
@@ -190,11 +188,9 @@ async function redirect(title) {
     document.getElementById("firstHeading-h1").textContent = result.title;
     document.getElementById("mw-content-text").innerHTML = result.content;
     document.getElementById("footer-info-lastmod").textContent = "此页面最后编辑于 " + result.lastModified;
-    if (title == "Terraria Wiki") {
-        document.body.classList.add("rootpage-Terraria_Wiki");
+    if (title == "首页") {
         document.getElementById("firstHeading").setAttribute("style", "display:none");
     } else {
-        document.body.classList.remove("rootpage-Terraria_Wiki");
         document.getElementById("firstHeading").removeAttribute("style");
     }
     refresh();
@@ -330,8 +326,8 @@ function initContextMenu() {
             if (aTag && aTag.href && aTag.href.startsWith('http')) {
                 targetUrl = aTag.href;
             } else {
-                const title = window.pageTitle || "Terraria Wiki";
-                targetUrl = "https://terraria.wiki.gg/zh/wiki/" + encodeURIComponent(title.replace(/ /g, "_"));
+                const title = window.pageTitle || "首页";
+                targetUrl = "https://calamity.huijiwiki.com/wiki/" + encodeURIComponent(title.replace(/ /g, "_"));
             }
 
             if (targetUrl) {
@@ -349,101 +345,185 @@ if(isMobile==="False"){
 
 
 
-function refresh() {
+// ============================================================
+// ScrollSpy — Bootstrap 3.2.0 兼容纯 JS 实现
+// 作用：根据页面滚动位置，自动高亮侧边栏目录的当前章节
+// 用法：new ScrollSpy(document.body, { target: '#toc .toc-ul-wrap', offset: 10 })
+// ============================================================
+class ScrollSpy {
+    constructor(element, options) {
+        // body 上初始化时实际监听 window
+        this.$scrollElement = element === document.body ? window : element;
+        this.options = Object.assign({ offset: 10 }, options);
+        // 选择器：target 容器内 .nav li > a
+        this.selector = (this.options.target || '') + ' .nav li > a';
+        this.offsets = [];
+        this.targets = [];
+        this.activeTarget = null;
+        this.scrollHeight = 0;
 
-    // ============================================================
-    // 1 & 2. Handle Wide Tables (宽表格处理 + 滚动条)
-    // 原理：检测表格宽度，如果超出容器，就包裹一个 div 让它横向滚动
-    // ============================================================
+        this._process = this.process.bind(this);
+        this.$scrollElement.addEventListener('scroll', this._process, { passive: true });
+        this.refresh();
+        this.process();
+    }
 
-    function initHandyScrollForTables(containerSelector = '#bodyContent') {
-        const TABLE_WIDE_CLASS = 'table-wide';
-        const TABLE_WIDE_INNER_CLASS = 'table-wide-inner';
+    getScrollHeight() {
+        return Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+        );
+    }
 
-        // 防抖函数
-        const debounce = (func, wait) => {
-            let timeout;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        };
+    refresh() {
+        const self = this;
+        const offsetBase = this.$scrollElement === window ? 0 : this.$scrollElement.scrollTop;
 
-        const processWideTables = () => {
-            const containerEl = document.querySelector(containerSelector);
-            if (!containerEl) return;
+        this.offsets = [];
+        this.targets = [];
+        this.scrollHeight = this.getScrollHeight();
 
-            const tables = containerEl.querySelectorAll('table');
-            if (tables.length === 0) return;
+        // 遍历目录中所有 a[href^=#]，找到对应页面标题元素，记录其 top offset
+        const targetList = [];
+        const links = document.querySelectorAll(this.selector);
 
-            tables.forEach((table) => {
-                if (!table._originalContainer) {
-                    table._originalContainer = table.parentNode;
-                }
-                const originalContainer = table._originalContainer;
-                if (!originalContainer) return;
+        links.forEach(function (link) {
+            const href = link.getAttribute('href');
+            if (!href || !/^#./.test(href)) return;
+            const targetEl = document.querySelector(href);
+            // 只考虑可见的标题元素
+            if (!targetEl || targetEl.offsetParent === null) return;
 
-                // 检查是否已包装
-                const isWrapped = table.parentNode && table.parentNode.classList.contains(TABLE_WIDE_INNER_CLASS);
-                const innerBox = isWrapped ? table.parentNode : null;
-                const outerBox = isWrapped ? innerBox.parentNode : null;
+            const rect = targetEl.getBoundingClientRect();
+            const top = rect.top + (self.$scrollElement === window ? window.pageYOffset : self.$scrollElement.scrollTop) + offsetBase;
+            targetList.push([top, href]);
+        });
 
-                // 测量宽度
-                const overwide = table.getBoundingClientRect().width > originalContainer.getBoundingClientRect().width;
+        // 按 offset 从小到大排序
+        targetList.sort(function (a, b) { return a[0] - b[0]; });
+        targetList.forEach(function (item) {
+            self.offsets.push(item[0]);
+            self.targets.push(item[1]);
+        });
+    }
 
-                if (isWrapped) {
-                    if (overwide) {
-                        // 表格依然过宽：找到对应的 custom element 并调用官方的 .update()
-                        const handyComponent = outerBox.querySelector('handy-scroll');
-                        if (handyComponent && typeof handyComponent.update === 'function') {
-                            handyComponent.update();
-                        }
-                    } else {
-                        // 宽度足够了，不需要滚动条：解包并移除 custom element
-                        outerBox.parentNode.insertBefore(table, outerBox);
-                        outerBox.remove();
-                    }
-                } else {
-                    if (overwide) {
-                        // 需要生成滚动条：创建包装层和自定义标签
-                        const newOuter = document.createElement('div');
-                        newOuter.className = TABLE_WIDE_CLASS;
+    process() {
+        const scrollTop = (this.$scrollElement === window ? window.pageYOffset : this.$scrollElement.scrollTop) + this.options.offset;
+        const scrollHeight = this.getScrollHeight();
+        const maxScroll = this.options.offset + scrollHeight - (this.$scrollElement === window ? window.innerHeight : this.$scrollElement.clientHeight);
 
-                        const newInner = document.createElement('div');
-                        newInner.className = TABLE_WIDE_INNER_CLASS;
+        if (this.scrollHeight !== scrollHeight) this.refresh();
 
-                        // Web Component 需要通过 ID 来绑定目标容器
-                        // 我们给内层容器生成一个唯一的 ID
-                        const uniqueId = 'scroll-inner-' + Math.random().toString(36).substring(2, 9);
-                        newInner.id = uniqueId;
+        const offsets = this.offsets;
+        const targets = this.targets;
+        let i;
 
-                        // 组装 DOM
-                        table.parentNode.insertBefore(newOuter, table);
-                        newInner.appendChild(table);
-                        newOuter.appendChild(newInner);
+        // 已滚到底部，激活最后一个
+        if (targets.length && scrollTop >= maxScroll) {
+            if (this.activeTarget !== targets[targets.length - 1]) {
+                this.activate(targets[targets.length - 1]);
+            }
+            return;
+        }
 
-                        // 创建 <handy-scroll> 自定义标签
-                        const handyComponent = document.createElement('handy-scroll');
-                        // 绑定 owner 属性到刚才生成的内部容器 ID
-                        handyComponent.setAttribute('owner', uniqueId);
+        // 还在第一个标题之前，激活第一个
+        if (this.activeTarget && targets.length && scrollTop <= offsets[0]) {
+            if (this.activeTarget !== targets[0]) {
+                this.activate(targets[0]);
+            }
+            return;
+        }
 
-                        // 将组件放到包裹层内（位于滚动容器后面）
-                        newOuter.appendChild(handyComponent);
-                    }
-                }
-            });
-        };
-
-        // 立即执行一次
-        processWideTables();
-
-        // 绑定 resize 事件
-        if (!initHandyScrollForTables._resizeBound) {
-            window.addEventListener('resize', debounce(processWideTables, 100));
-            initHandyScrollForTables._resizeBound = true;
+        // 从后往前找，第一个 offset <= scrollTop 的就是当前章节
+        for (i = offsets.length; i--;) {
+            if (this.activeTarget !== targets[i] &&
+                scrollTop >= offsets[i] &&
+                (!offsets[i + 1] || scrollTop < offsets[i + 1])) {
+                this.activate(targets[i]);
+            }
         }
     }
-    initHandyScrollForTables();
+
+    activate(target) {
+        this.activeTarget = target;
+
+        // 清除所有 li.active
+        const allLis = document.querySelectorAll(this.selector.replace(' > a', ''));
+        allLis.forEach(function (li) { li.classList.remove('active'); });
+
+        // 给当前 section 对应的 li 加上 .active
+        const escapedHref = CSS.escape(target.substring(1));
+        const activeLink = document.querySelector(this.selector + '[href="#' + escapedHref + '"]');
+        if (activeLink) {
+            const li = activeLink.closest('li');
+            if (li) {
+                li.classList.add('active');
+                // 同时激活所有祖先 li（使子列表能通过 .nav>.active>ul 展开）
+                let ancestor = li.parentElement;
+                while (ancestor) {
+                    if (ancestor.tagName === 'LI') ancestor.classList.add('active');
+                    ancestor = ancestor.parentElement;
+                }
+            }
+        }
+    }
+
+    destroy() {
+        this.$scrollElement.removeEventListener('scroll', this._process);
+    }
+}
+
+
+// ============================================================
+// Tabber — 1:1 参照灰机wiki ext.gadget.Tabber (richtab 部分)
+// 处理 Boss介绍/Boss指南 等 tab 切换
+// ============================================================
+function initTabber() {
+    document.querySelectorAll('.tabber.richtab').forEach(function (tabber) {
+        const filter = tabber.querySelector('.tabber-filter');
+        if (!filter) return;
+
+        const filterItems = filter.querySelectorAll('.tabber-filter-item');
+        const panes = tabber.querySelectorAll('.tab-pane.tabber-item');
+
+        filterItems.forEach(function (item) {
+            // 确保内容被 <a> 包裹（参照 simRichTab）
+            if (!item.querySelector('a')) {
+                item.innerHTML = '<a href="javascript:void(0);">' + item.innerHTML + '</a>';
+            }
+
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (item.classList.contains('active')) return;
+
+                // 移除所有按钮的 active
+                filterItems.forEach(function (fi) { fi.classList.remove('active'); });
+                // 当前按钮加 active
+                item.classList.add('active');
+
+                // 切换 pane
+                const richtabId = item.getAttribute('data-richtab');
+                panes.forEach(function (pane) {
+                    pane.style.display = pane.getAttribute('data-richtab') === richtabId ? 'block' : 'none';
+                });
+            });
+        });
+
+        // 初始化：根据已有 active 按钮显示对应 pane（HTML 中第一个按钮已带 active 类）
+        const activeBtn = filter.querySelector('.tabber-filter-item.active') || filterItems[0];
+        if (activeBtn) {
+            const activeId = activeBtn.getAttribute('data-richtab');
+            panes.forEach(function (pane) {
+                pane.style.display = pane.getAttribute('data-richtab') === activeId ? 'block' : 'none';
+            });
+        }
+    });
+}
+
+
+function refresh() {
 
     // ============================================================
     // 3. Mobile Floating Fix (移动端浮动修复)
@@ -476,115 +556,80 @@ function refresh() {
 
     // ============================================================
     // 4. Template:Sound (音频播放控制)
+    // 自动包装 <audio> 为 .sound 容器，替换为 SVG 播放按钮
     // ============================================================
+
+    // 4a. 包装所有独立的 <audio> → <div.sound>
+    document.querySelectorAll('audio').forEach(audio => {
+        if (audio.closest('.sound')) return;
+
+        const src = audio.currentSrc || audio.querySelector('source')?.getAttribute('src') || audio.getAttribute('src');
+        if (!src) return;
+
+        const container = document.createElement('div');
+        container.className = 'sound';
+        container.title = '点击播放';
+        container.style.cursor = 'pointer';
+        container.dataset.src = src;
+
+        // SVG 播放按钮
+        container.innerHTML = `<svg class="sound-play-icon" viewBox="0 0 24 24" width="32" height="32">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.8"/>
+    <polygon points="10,7 17,12 10,17" fill="white"/>
+</svg>`;
+
+        audio.parentNode.replaceChild(container, audio);
+    });
+
+    // 4b. 处理所有 .sound 容器的点击
     const sounds = document.querySelectorAll('.sound');
     sounds.forEach(container => {
         container.style.cursor = 'pointer';
-        container.title = '点击播放';
-
-        const audio = container.querySelector('audio');
-        if (!audio) return;
-
-        // ✅ 新增：监听当前音频自然播放结束的事件
-        audio.addEventListener('ended', function () {
-            container.classList.remove('sound-playing');
-            container.title = '点击播放';
-            audio.currentTime = 0; // 将进度条重置回开头
-        });
+        container.title = container.title || '点击播放';
 
         container.addEventListener('click', function (e) {
-            if (e.target.tagName === 'A') return;
+            if (e.target.closest('a')) return;
 
-            // 1. 停止页面上所有其他正在播放的音频
-            document.querySelectorAll('audio').forEach(otherAudio => {
-                if (otherAudio !== audio && !otherAudio.paused) {
-                    otherAudio.pause();
-                    otherAudio.currentTime = 0;
-                    otherAudio.closest('.sound')?.classList.remove('sound-playing');
+            // 停止当前正在播放的音频
+            if (window._soundCurrent && !window._soundCurrent.paused) {
+                window._soundCurrent.pause();
+                window._soundCurrent.currentTime = 0;
+                if (window._soundCurrent._container) {
+                    window._soundCurrent._container.classList.remove('sound-playing');
+                    window._soundCurrent._container.title = '点击播放';
                 }
+
+                // 如果点击的是同一个容器，就是暂停
+                if (window._soundCurrent._container === this) {
+                    window._soundCurrent = null;
+                    return;
+                }
+            }
+
+            const src = this.dataset.src;
+            if (!src) return;
+
+            const audio = new Audio(src);
+            audio._container = this;
+
+            audio.addEventListener('ended', function () {
+                this._container.classList.remove('sound-playing');
+                this._container.title = '点击播放';
+                window._soundCurrent = null;
             });
 
-            // 2. 切换当前音频状态
-            if (audio.paused) {
-                audio.play();
-                this.classList.add('sound-playing');
-                this.title = '点击停止';
-            } else {
-                audio.pause();
-                audio.currentTime = 0;
-                this.classList.remove('sound-playing');
-                this.title = '点击播放';
-            }
+            audio.play();
+            this.classList.add('sound-playing');
+            this.title = '点击停止';
+            window._soundCurrent = audio;
         });
     });
 
     // ============================================================
-    // 5. 目录生成
+    // 5. 目录生成 — 1:1 参照灰机wiki (Bootstrap ScrollSpy)
     // ============================================================
 
-    let tocObserver = null; // 目录滚动监听实例
-
-    function initTocScrollSpy(tocList, articleContent) {
-        // 先销毁旧的 observer，避免页面切换后累积
-        if (tocObserver) {
-            tocObserver.disconnect();
-            tocObserver = null;
-        }
-
-        // 收集所有标题
-        const allHeadings = articleContent.querySelectorAll('h2, h3');
-        if (allHeadings.length === 0) return;
-
-        // 建立标题 → toc LI 的映射
-        const headingToLi = new Map();
-        const tocItems = tocList.querySelectorAll('li.toclevel-1, li.toclevel-2');
-        tocItems.forEach((li, i) => {
-            if (i < allHeadings.length) headingToLi.set(allHeadings[i], li);
-        });
-
-        // 建立 h2 → 其子列表 ul 的映射
-        const h2headings = articleContent.querySelectorAll('h2');
-        const h2ToSubUl = new Map();
-        tocList.querySelectorAll('li.toclevel-1').forEach((li, i) => {
-            if (i < h2headings.length) {
-                const subUl = li.querySelector('ul');
-                if (subUl) h2ToSubUl.set(h2headings[i], subUl);
-            }
-        });
-
-        let lastActive = null;
-
-        tocObserver = new IntersectionObserver((entries) => {
-            // 找到最靠上的、在视口中的标题
-            let topHeading = null;
-            let topY = Infinity;
-            for (const e of entries) {
-                if (e.isIntersecting && e.boundingClientRect.top < topY) {
-                    topY = e.boundingClientRect.top;
-                    topHeading = e.target;
-                }
-            }
-
-            // 切换 active
-            if (topHeading) {
-                const newLi = headingToLi.get(topHeading);
-                if (newLi && newLi !== lastActive) {
-                    if (lastActive) lastActive.classList.remove('active');
-                    newLi.classList.add('active');
-                    lastActive = newLi;
-                }
-            }
-
-            // h3 子列表展开/收起
-            for (const [h2, subUl] of h2ToSubUl) {
-                const rect = h2.getBoundingClientRect();
-                subUl.classList.toggle('toc-sub-visible',
-                    rect.top < window.innerHeight && rect.bottom > 0);
-            }
-        }, { rootMargin: '-10% 0px', threshold: 0 });
-
-        allHeadings.forEach(h => tocObserver.observe(h));
-    }
+    let scrollSpyInstance = null; // ScrollSpy 实例
 
     function generateToc() {
         // 0. 删除文章内容里自带的旧目录 (避免重复 #toc 干扰)
@@ -634,62 +679,53 @@ function refresh() {
             // 4. 处理主标题 (H2)
             if (tagName === 'h2') {
                 h2Count++;
-                h3Count = 0; // 遇到新的 h2，重置 h3 的计数
+                h3Count = 0;
 
-                // 创建一级目录的 li 和 a 标签
                 currentH2Li = document.createElement('li');
                 currentH2Li.className = 'toclevel-1';
 
                 const link = document.createElement('a');
                 link.setAttribute('href', '#' + id);
 
-                // 创建序号 span
                 const numberSpan = document.createElement('span');
                 numberSpan.className = 'tocnumber';
                 numberSpan.textContent = h2Count + ' ';
 
-                // 创建文本 span
                 const textSpan = document.createElement('span');
                 textSpan.className = 'toctext';
                 textSpan.textContent = text;
 
-                // 组装并塞入大目录
                 link.appendChild(numberSpan);
                 link.appendChild(textSpan);
                 currentH2Li.appendChild(link);
                 tocList.appendChild(currentH2Li);
 
-                currentSubUl = null; // 重置子列表引用
+                currentSubUl = null;
             }
             // 5. 处理子标题 (H3)
             else if (tagName === 'h3' && currentH2Li) {
                 h3Count++;
 
-                // 如果当前的 H2 下面还没有子列表容器 (ul)，就帮它建一个
                 if (!currentSubUl) {
                     currentSubUl = document.createElement('ul');
                     currentSubUl.className = 'nav nav-list';
                     currentH2Li.appendChild(currentSubUl);
                 }
 
-                // 创建二级目录的 li 和 a 标签
                 const h3Li = document.createElement('li');
                 h3Li.className = 'toclevel-2';
 
                 const link = document.createElement('a');
                 link.setAttribute('href', '#' + id);
 
-                // 创建二级序号（形如 2.1）
                 const numberSpan = document.createElement('span');
                 numberSpan.className = 'tocnumber';
                 numberSpan.textContent = h2Count + '.' + h3Count + ' ';
 
-                // 创建二级文本
                 const textSpan = document.createElement('span');
                 textSpan.className = 'toctext';
                 textSpan.textContent = text;
 
-                // 组装并塞入二级子列表
                 link.appendChild(numberSpan);
                 link.appendChild(textSpan);
                 h3Li.appendChild(link);
@@ -697,11 +733,24 @@ function refresh() {
             }
         });
 
-        // 6. 滚动监听：只在当前 h2 区域展开其 h3 子列表
-        initTocScrollSpy(tocList, articleContent);
+        // 6. 添加"回到顶部"项，默认 active（参照灰机wiki）
+        const backToTopLi = document.createElement('li');
+        backToTopLi.className = 'active';
+        const backLink = document.createElement('a');
+        backLink.setAttribute('href', '#firstHeading');
+        backLink.textContent = '回到顶部';
+        backToTopLi.appendChild(backLink);
+        tocList.appendChild(backToTopLi);
 
-    };
+        // 7. 初始化 ScrollSpy（1:1 参照灰机wiki: $('body').scrollspy({ target: '#toc .toc-ul-wrap', offset: 10 })）
+        if (scrollSpyInstance) scrollSpyInstance.destroy();
+        scrollSpyInstance = new ScrollSpy(document.body, {
+            target: '#toc .toc-ul-wrap',
+            offset: 10
+        });
+    }
     generateToc();
+    initTabber();
 
 }
 

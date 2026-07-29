@@ -1,0 +1,97 @@
+html.light {
+    --wiki-body-background-color: #f6f6f6;
+    --wiki-body-background-image: url(./images/main/Site-background.jpg);
+    --wiki-body-background-position: top center;
+    --wiki-body-background-size: cover;
+    --wiki-body-background-repeat: no-repeat;
+    --wiki-body-background-attachment: fixed;
+    --wiki-content-background-color: #eaeef1;
+    --wiki-content-background-opacity: 100%;
+    --wiki-content-background-color--secondary: color-mix(in srgb, var(--wiki-content-background-color) 96%, var(--wiki-content-dynamic-color));
+    --wiki-content-border-color: #aaa;
+    --wiki-content-border-color--secondary: color-mix(in srgb, var(--wiki-content-border-color) 50%, transparent);
+    --wiki-content-border-color--accent: color-mix(in srgb, var(--wiki-accent-color) 50%, transparent);
+    --wiki-content-text-color: #080a13;
+    --wiki-content-link-color: #2d4068;
+    --wiki-content-link-color--visited: #2d4068;
+    --wiki-content-link-color--hover: #2d4068;
+    --wiki-content-redlink-color: #9f0000;
+    --wiki-content-diff-text-color: #ffffff;
+    --wiki-content-heading-color: #080a13;
+    --wiki-content-link-label-color: #ffffff;
+    --wiki-content-dynamic-color: #000000;
+    --wiki-content-dynamic-color--inverted: #ffffff;
+    --wiki-content-dynamic-color--secondary: #666;
+    --wiki-content-dynamic-color--secondary--inverted: #333;
+    --wiki-accent-color: #2d4068;
+    --wiki-accent-color--hover: color-mix(in srgb, var(--wiki-accent-color) 95%, var(--wiki-accent-label-color));
+    --wiki-accent-label-color: #ffffff;
+    --wiki-accent-link-color: #2d4068;
+    --wiki-icon-to-link-filter: invert(20%) sepia(93%) saturate(2141%) hue-rotate(210deg) brightness(83%) contrast(103%);
+    --wiki-sidebar-background-color: #f6f6f6;
+    --wiki-sidebar-background-opacity: 100%;
+    --wiki-sidebar-border-color: #aaa;
+    --wiki-sidebar-link-color: #2d4068;
+    --wiki-sidebar-link-color--hover: #2d4068;
+    --wiki-sidebar-heading-color: #080a13;
+    --wiki-navigation-background-color: color-mix(in srgb, var(--wiki-content-background-color) 96%, var(--wiki-content-dynamic-color));
+    --wiki-navigation-background-color--secondary: var(--wiki-content-background-color);
+    --wiki-navigation-border-color: #aaa;
+    --wiki-navigation-text-color: #2d4068;
+    --wiki-navigation-text-color--hover: #2d4068;
+    --wiki-navigation-selected-background-color: var(--wiki-content-background-color);
+    --wiki-navigation-selected-border-color: var(--wiki-navigation-border-color);
+    --wiki-navigation-selected-text-color: #080a13;
+    --wiki-neutral-color: var(--wiki-content-text-mix-color);
+    --wiki-alert-color: #d61616;
+    --wiki-warning-color: #9d5900;
+    --wiki-success-color: #007e00;
+    --wiki-body-dynamic-color: #000000;
+    --wiki-body-dynamic-color--inverted: #ffffff;
+    --wiki-body-dynamic-color--secondary: #666;
+    --wiki-body-dynamic-color--secondary--inverted: #333;
+    --wiki-alert-label-color: #ffffff;
+    --wiki-warning-label-color: #ffffff;
+    --wiki-success-label-color: #ffffff;
+    --wiki-icon-general-filter: ;
+    --wiki-tooltip-background-color: #ffffff;
+    --wiki-tooltip-box-shadow: rgba(0, 0, 0, 0.15);
+    --wiki-tooltip-border-color: #aaa;
+    --theme-page-background-color--secondary: #d1e1e6;
+    --theme-border-color: #aaa;
+    --theme-page-background-color: #eaeef1;
+    --theme-page-text-color: #080a13;
+    --theme-widget-shadow: 0px 0px 15px 0px rgba(10, 10, 40, 0.45);
+    --theme-widget-border-color: rgba(255, 255, 255, 0.1) rgba(13, 4, 2, 0.2) rgba(13, 4, 2, 0.2) rgba(255, 255, 255, 0.1);
+    --theme-box-border-color: #aaa;
+    --theme-box-background: rgba(200, 200, 210, 0.15);
+    --custom-template-journey-color: #c70a7d;
+    --template-background-color-1: #b6babc;
+    --template-background-color-2: #eaeef1;
+    --template-background-color-3: #e0e4e7;
+    --template-background-color-4: #353637;
+    --template-heading-background-color-1: #848994;
+    --template-heading-background-color-2: #e0e4e7;
+    --template-heading-text-color-1: #000000;
+    --template-heading-text-color-2: #ffffff;
+    --template-accent-color: #2d4068;
+    --template-border-color: #aaaaaa;
+    --template-border-color-2: #999999;
+    --table-separator-color-1: #a1a4a6;
+    --table-separator-color-2: #5d6067;
+    --note-color: #000000;
+    --diagram-color: #5d6067;
+    --diagram-box-color: #162034;
+    --pi-background: #eaeef1;
+    --pi-secondary-background: #2d4068;
+    --pi-secondary-background-label: #ffffff;
+    --pi-border-color: rgba(45, 64, 104, 0.5)
+}
+
+html.light .hp>div .text-red {
+    color: #d61616
+}
+
+html.light .hp>div .text-golden {
+    color: #946114
+}

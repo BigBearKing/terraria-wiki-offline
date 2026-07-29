@@ -22,26 +22,25 @@
     "Common.UnknownTime": "Unknown Time",
     "Common.Title": "Title",
     "Common.Content": "Content",
-
     "NavMenu.SwitchToLight": "Switch to Light",
     "NavMenu.SwitchToDark": "Switch to Dark",
-
     "TopBar.Menu": "Menu",
     "TopBar.Back": "Back",
     "TopBar.PinToTop": "Pin to Top",
     "TopBar.SearchPlaceholder": "Enter keywords to search...",
     "TopBar.MatchTitle": "Match Title",
-
     "AllPages.Index": "All Pages Index",
     "AllPages.FoundCount": "Found @totalPageCount pages",
-
     "DataManagement.Title": "Wiki Data Management",
     "DataManagement.Installed": "Installed",
     "DataManagement.NotInstalled": "Not Installed",
+    "DataManagement.AllLanguages": "All",
+    "DataManagement.Chinese": "Chinese",
+    "DataManagement.English": "English",
+    "DataManagement.NoWikiFound": "No matching Wiki found",
     "DataManagement.NotImplemented": "Data management page for other Wikis is not yet implemented",
     "DataManagement.SwitchWikiTitle": "Switch Wiki",
     "DataManagement.SwitchWikiDesc": "Switch to {0}? The app will restart.",
-
     "DataManagementDetails.NoData": "No data fetched yet",
     "DataManagementDetails.DownloadRequired": "You need to download the basic data package and resource files to browse this Wiki offline",
     "DataManagementDetails.DatabaseSize": "Database Size",
@@ -50,7 +49,7 @@
     "DataManagementDetails.AssetCount": "Asset Count",
     "DataManagementDetails.LastUpdateTime": "Last Updated",
     "DataManagementDetails.CheckUpdate": "Check for Data Updates",
-    "DataManagementDetails.CleanUnusedAssets": "Clean Unused Assets",
+    "DataManagementDetails.ExportData": "Export Data",
     "DataManagementDetails.DeleteAssets": "Delete Asset Data",
     "DataManagementDetails.DownloadAssets": "Download Asset Data",
     "DataManagementDetails.DeleteDatabase": "Delete Database",
@@ -62,26 +61,21 @@
     "DataManagementDetails.RetryFailed": "Failed files detected. Retry download?",
     "DataManagementDetails.ConfirmDeleteAssets": "Confirm deletion of image resources and other data?",
     "DataManagementDetails.ConfirmDeleteDatabase": "Confirm deletion of the entire database (including favorites and history)?",
-
     "Favorites.Title": "Favorites",
     "Favorites.FoundCount": "Found @favoriteCount results",
     "Favorites.Empty": "No favorites yet",
     "Favorites.FavoritedAt": "Favorited at @item.FavoritedAt.ToString()",
-
     "History.Title": "Browsing History",
     "History.ClearHistory": "Clear History",
     "History.Today": "Today",
     "History.Yesterday": "Yesterday",
     "History.DateFormat": "MM/dd",
     "History.ConfirmClear": "Confirm clearing history?",
-
     "LogPanel.Title": "Log",
     "LogPanel.CurrentTask": "Current task:",
-
     "SearchResultPanel.Searching": "Searching...",
     "SearchResultPanel.NotFound": "No results found for @query",
     "SearchResultPanel.RedirectTo": "Redirect to",
-
     "Settings.Title": "App Preferences",
     "Settings.Personalization": "Personalization",
     "Settings.DefaultColorTheme": "Default Color Theme",
@@ -106,8 +100,6 @@
     "Settings.ClearFailedList": "Clear Failed List",
     "Settings.ClearFailedListDesc": "Remove all failed records for the current Wiki",
     "Settings.Database": "Database",
-    "Settings.ExportData": "Export Data",
-    "Settings.ExportDataDesc": "Export current data to a local file",
     "Settings.ImportData": "Import Data",
     "Settings.ImportDataDesc": "Import database from a local file",
     "Settings.SelectFile": "Select File",
@@ -128,7 +120,6 @@
     "Settings.CheckFailed": "Check failed:\\n{e.Message}",
     "Settings.ConfirmCleanup": "Confirm Cleanup",
     "Settings.ConfirmCleanupDesc": "This will delete all failed download records and cannot be undone. Continue?",
-
     "Test.EnterFileUrl": "Enter File URL",
     "Test.AssetsCount": "Total {assetsInfo.Count} asset files.",
     "Test.TestingFile": "Testing file: {fileName}",
@@ -138,13 +129,11 @@
     "Test.NeedsUpdate": "🔄 Test result: [Update needed] (Server returned 200 OK)\\nLatest file time on server: {remoteTime?.ToString() ?? ",
     "Test.AbnormalStatus": "⚠️ Test result: [Abnormal status] Server returned {response.StatusCode}",
     "Test.TestFailed": "❌ Test failed, error: {ex.Message}",
-
     "AppService.PageNotFound": "Page not found",
     "AppService.DateFormat": "yyyy-MM-dd HH:mm",
     "AppService.CannotOpenLink": "Cannot open link: {ex.Message}",
     "AppService.AlreadyHome": "Already on the home page",
     "AppService.CopyImageFailed": "Copy image failed: {ex.Message}",
-
     "AppState.CheckUpdate": "Check for Software Updates",
     "AppState.CheckingUpdate": "Checking for updates",
     "AppState.DownloadAllPages": "Download All Pages",
@@ -159,13 +148,13 @@
     "AppState.RetryFailed": "Retry Failed Tasks",
     "AppState.Retrying": "Retrying",
     "AppState.DeleteData": "Delete Data",
+    "AppState.ExportData": "Export Data",
     "AppState.Exporting": "Exporting",
+    "AppState.ImportData": "Import Data",
     "AppState.Importing": "Importing",
-
     "DatabaseService.TerrariaIntro": "Terraria is a land of adventure! A land of mystery! A land that's yours to shape, defend, and enjoy. Your options in Terraria are limitless. Are you an action gamer with an itchy trigger finger? A master builder? A collector? An explorer? There's something for everyone.",
     "DatabaseService.CalamityIntro": "The Calamity Mod is the largest content expansion mod for Terraria, adding hours of new gameplay after the vanilla endgame, along with numerous new enemies and more bosses than the original game.",
     "DatabaseService.DownloadDataFirst": "Please download data first",
-
     "DataService.Log.DownloadAllPagesAndAssets": "Starting download of all pages and assets",
     "DataService.Log.DownloadPagesOnly": "Starting page-only download",
     "DataService.Log.AllPagesAndAssetsCompleted": "All pages and assets download completed",
@@ -216,6 +205,8 @@
     "DataService.Log.ReplacingLocalFiles": "Replacing local files",
     "DataService.Log.UpdatingDatabase": "Updating database",
     "DataService.Log.ImportSuccess": "Data imported successfully",
+    "DataService.Log.ImportOldVersionTitle": "Old Import Package",
+    "DataService.Log.ImportOldVersionDesc": "The import package version ({0}) is lower than the current app version ({1}). Data migration may be required after import. Continue?",
     "DataService.Log.ImportFailed": "Data import failed: {ex.Message}",
     "DataService.Log.FetchingPageList": "Starting to fetch page list",
     "DataService.Log.PagesFetched": "{pagesCount} fetched",
@@ -240,30 +231,24 @@
     "DataService.Log.AssetSkipped": "[Worker {workerId}] {c}/{totalCount} asset skipped: {fileName}",
     "DataService.Log.AssetsDownloadCompleted": "All assets downloaded",
     "DataService.Log.CleaningTempFiles": "Cleaning temporary files",
-
     "FileHelper.SelectFile": "Please select a file",
     "FileHelper.ExportFailedNotExist": "Export failed: source file does not exist.",
     "FileHelper.ExportFile": "Export File",
     "FileHelper.CacheCleanComplete": "[Cache Cleanup] Complete! Freed space: {freedSpace / 1024 / 1024} MB",
     "FileHelper.CacheCleanError": "[Cache Cleanup] Critical error: {ex.Message}",
-
     "LogService.ArchiveFailed": "Archive failed: {ex.Message}",
     "LogService.PlatformNotSupported": "Log export is not supported on this platform",
     "LogService.ExportSuccess": "Log exported successfully",
     "LogService.ExportFailed": "Log export failed",
     "LogService.ExportFailedWithError": "Log export failed: {ex.Message}",
     "LogService.LogCleared": "Log cleared",
-
     "MainPage.BurnInProtection": "Processing in background&#x0a;Burn-in protection mode active&#x0a;Tap anywhere on screen to wake",
     "MainPage.SafeAreaTopBottom": "Safe Area - Top: {topDp}dp, Bottom: {bottomDp}dp",
     "MainPage.SafeAreaLeftRight": "Safe Area - Left: {leftDp}dp, Right: {rightDp}dp",
-
     "BackEventsService.PressAgain": "Press again to exit",
-
     "ProcessingService.ProcessingTask": "Processing task",
     "ProcessingService.CurrentTask": "Current task: {appState.Tasks[appState.ProcessingTaskId].Name}",
     "ProcessingService.BackgroundStatus": "Background Processing Status",
-
     "Web.LastEdited": "This page was last edited on ",
     "Web.ClickToPlay": "Click to play",
     "Web.ClickToStop": "Click to stop",

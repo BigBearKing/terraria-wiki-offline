@@ -22,26 +22,25 @@
     "Common.UnknownTime": "未知时间",
     "Common.Title": "标题",
     "Common.Content": "内容",
-
     "NavMenu.SwitchToLight": "切换亮色",
     "NavMenu.SwitchToDark": "切换暗色",
-
     "TopBar.Menu": "菜单",
     "TopBar.Back": "后退",
     "TopBar.PinToTop": "置顶",
     "TopBar.SearchPlaceholder": "输入关键词搜索...",
     "TopBar.MatchTitle": "匹配标题",
-
     "AllPages.Index": "所有页面索引",
     "AllPages.FoundCount": "共找到 @totalPageCount 个页面",
-
     "DataManagement.Title": "Wiki数据管理",
     "DataManagement.Installed": "已安装",
     "DataManagement.NotInstalled": "未安装",
+    "DataManagement.AllLanguages": "全部",
+    "DataManagement.Chinese": "中文",
+    "DataManagement.English": "英文",
+    "DataManagement.NoWikiFound": "没有找到匹配的 Wiki",
     "DataManagement.NotImplemented": "尚未实现其他 Wiki 的数据管理页面",
     "DataManagement.SwitchWikiTitle": "切换 Wiki",
     "DataManagement.SwitchWikiDesc": "切换到 {0}？应用将重新启动。",
-
     "DataManagementDetails.NoData": "尚未获取数据",
     "DataManagementDetails.DownloadRequired": "你需要下载基础数据包和资源文件才能离线浏览此 Wiki",
     "DataManagementDetails.DatabaseSize": "数据库大小",
@@ -50,7 +49,7 @@
     "DataManagementDetails.AssetCount": "资源数量",
     "DataManagementDetails.LastUpdateTime": "上次更新时间",
     "DataManagementDetails.CheckUpdate": "检查数据更新",
-    "DataManagementDetails.CleanUnusedAssets": "清理未用资源",
+    "DataManagementDetails.ExportData": "导出数据",
     "DataManagementDetails.DeleteAssets": "删除资源数据",
     "DataManagementDetails.DownloadAssets": "下载资源数据",
     "DataManagementDetails.DeleteDatabase": "删除数据库",
@@ -62,26 +61,21 @@
     "DataManagementDetails.RetryFailed": "检测到有失败文件，是否要重试下载？",
     "DataManagementDetails.ConfirmDeleteAssets": "确认删除图片资源等数据吗？",
     "DataManagementDetails.ConfirmDeleteDatabase": "确认删除整个数据库（包含收藏、历史）吗？",
-
     "Favorites.Title": "收藏内容",
     "Favorites.FoundCount": "共找到 @favoriteCount 个结果",
     "Favorites.Empty": "还没有收藏任何内容",
     "Favorites.FavoritedAt": "收藏于 @item.FavoritedAt.ToString()",
-
     "History.Title": "浏览历史",
     "History.ClearHistory": "清空历史",
     "History.Today": "今天",
     "History.Yesterday": "昨天",
     "History.DateFormat": "M月d日",
     "History.ConfirmClear": "确认清空历史记录吗？",
-
     "LogPanel.Title": "日志",
     "LogPanel.CurrentTask": "当前任务：",
-
     "SearchResultPanel.Searching": "正在搜索...",
     "SearchResultPanel.NotFound": "未找到关于 @query 的内容",
     "SearchResultPanel.RedirectTo": "跳转至",
-
     "Settings.Title": "应用偏好设置",
     "Settings.Personalization": "个性化",
     "Settings.DefaultColorTheme": "默认颜色主题",
@@ -106,8 +100,6 @@
     "Settings.ClearFailedList": "清理失败列表",
     "Settings.ClearFailedListDesc": "删除当前Wiki所有失败记录",
     "Settings.Database": "数据库",
-    "Settings.ExportData": "导出数据",
-    "Settings.ExportDataDesc": "导出当前数据到本地文件",
     "Settings.ImportData": "导入数据",
     "Settings.ImportDataDesc": "从本地文件导入数据库",
     "Settings.SelectFile": "选择文件",
@@ -128,7 +120,6 @@
     "Settings.CheckFailed": "检查失败：\\n{e.Message}",
     "Settings.ConfirmCleanup": "确认清理",
     "Settings.ConfirmCleanupDesc": "此操作将删除所有下载失败的记录，无法恢复。确定要继续吗？",
-
     "Test.EnterFileUrl": "输入文件 URL",
     "Test.AssetsCount": "共计 {assetsInfo.Count} 个资源文件。",
     "Test.TestingFile": "正在测试文件: {fileName}",
@@ -138,13 +129,11 @@
     "Test.NeedsUpdate": "🔄 测试结果：【需要更新】 (服务器返回 200 OK)\\n服务器文件的最新时间为: {remoteTime?.ToString() ?? ",
     "Test.AbnormalStatus": "⚠️ 测试结果：【异常状态】 服务器返回了 {response.StatusCode}",
     "Test.TestFailed": "❌ 测试失败，发生错误: {ex.Message}",
-
     "AppService.PageNotFound": "页面不存在",
     "AppService.DateFormat": "yyyy年MM月dd日 HH:mm",
     "AppService.CannotOpenLink": "无法打开链接: {ex.Message}",
     "AppService.AlreadyHome": "这已经是首页",
     "AppService.CopyImageFailed": "复制图片失败: {ex.Message}",
-
     "AppState.CheckUpdate": "检查软件更新",
     "AppState.CheckingUpdate": "正在检查更新",
     "AppState.DownloadAllPages": "下载所有页面",
@@ -159,13 +148,13 @@
     "AppState.RetryFailed": "重试失败任务",
     "AppState.Retrying": "正在重试",
     "AppState.DeleteData": "删除数据",
+    "AppState.ExportData": "导出数据",
     "AppState.Exporting": "正在导出",
+    "AppState.ImportData": "导入数据",
     "AppState.Importing": "正在导入",
-
     "DatabaseService.TerrariaIntro": "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
     "DatabaseService.CalamityIntro": "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
     "DatabaseService.DownloadDataFirst": "请先下载数据",
-
     "DataService.Log.DownloadAllPagesAndAssets": "开始下载所有页面和资源",
     "DataService.Log.DownloadPagesOnly": "开始仅下载页面数据",
     "DataService.Log.AllPagesAndAssetsCompleted": "所有页面和资源下载完成",
@@ -216,6 +205,8 @@
     "DataService.Log.ReplacingLocalFiles": "正在替换本地文件",
     "DataService.Log.UpdatingDatabase": "正在更新数据库",
     "DataService.Log.ImportSuccess": "数据导入成功",
+    "DataService.Log.ImportOldVersionTitle": "旧版导入包",
+    "DataService.Log.ImportOldVersionDesc": "导入包版本（{0}）低于当前应用版本（{1}），导入后可能需要数据迁移。是否继续？",
     "DataService.Log.ImportFailed": "数据导入失败: {ex.Message}",
     "DataService.Log.FetchingPageList": "开始获取页面清单",
     "DataService.Log.PagesFetched": "{pagesCount} 条已获取",
@@ -240,30 +231,24 @@
     "DataService.Log.AssetSkipped": "[线程 {workerId}] {c}/{totalCount} 跳过资源: {fileName}",
     "DataService.Log.AssetsDownloadCompleted": "资源文件下载完毕",
     "DataService.Log.CleaningTempFiles": "正在清理临时文件",
-
     "FileHelper.SelectFile": "请选择文件",
     "FileHelper.ExportFailedNotExist": "导出失败：源文件不存在。",
     "FileHelper.ExportFile": "导出文件",
     "FileHelper.CacheCleanComplete": "[缓存清理] 完成！共释放空间: {freedSpace / 1024 / 1024} MB",
     "FileHelper.CacheCleanError": "[缓存清理] 发生严重错误: {ex.Message}",
-
     "LogService.ArchiveFailed": "归档失败: {ex.Message}",
     "LogService.PlatformNotSupported": "当前平台不支持导出日志功能",
     "LogService.ExportSuccess": "导出日志成功",
     "LogService.ExportFailed": "导出日志失败",
     "LogService.ExportFailedWithError": "导出日志失败: {ex.Message}",
     "LogService.LogCleared": "日志已清除",
-
     "MainPage.BurnInProtection": "正在后台处理任务&#x0a;为防止烧屏已进入保护模式&#x0a;点击屏幕任意位置唤醒",
     "MainPage.SafeAreaTopBottom": "安全区 - 上: {topDp}dp, 下: {bottomDp}dp",
     "MainPage.SafeAreaLeftRight": "安全区 - 左: {leftDp}dp, 右: {rightDp}dp",
-
     "BackEventsService.PressAgain": "再按一次退出应用",
-
     "ProcessingService.ProcessingTask": "正在处理任务",
     "ProcessingService.CurrentTask": "当前任务：{appState.Tasks[appState.ProcessingTaskId].Name}",
     "ProcessingService.BackgroundStatus": "后台处理状态",
-
     "Web.LastEdited": "此页面最后编辑于 ",
     "Web.ClickToPlay": "点击播放",
     "Web.ClickToStop": "点击停止",

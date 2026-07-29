@@ -1,32 +1,22 @@
 /* ============================================================
-   layout.css — 目录栏 + 内容栏 左右布局
-   (目录样式由 vector.css 负责)
+   layout.css — 目录栏 + 内容栏 响应式布局
+   布局由 Bootstrap 栅格 (vector.css) 处理:
+   - col-md-2 + col-md-10 (≥992px 并排)
+   - hidden-sm (768~991px 隐藏侧边栏)
+   - col-sm-12 (<992px 文章满宽)
+   此处仅做 sticky 定位和间距微调
    ============================================================ */
 
-/* 主内容区域：flex 布局，目录在左，文章在右 */
-#content.row {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0;
-}
-
-/* 目录侧边栏：固定宽度，sticky 悬浮不滚动 */
+/* 目录侧边栏：sticky 固定，仅在 ≥992px 生效 */
 #toc.toc-sidebar {
-    flex: 0 0 220px;
-    width: 220px;
-    max-width: 220px;
-    min-width: 0;
     position: sticky;
     top: 10px;
     align-self: flex-start;
     max-height: calc(100vh - 20px);
-    display: block;
 }
 
-/* 文章内容区：占据剩余空间 */
+/* 文章区：左侧留空 */
 #content > article {
-    flex: 1 1 0;
-    min-width: 0;
     padding-left: 24px;
 }
 
@@ -35,38 +25,40 @@
     display: none !important;
 }
 
-/* 目录栏隐藏后，文章内容占满 */
-#toc.toc-sidebar.toc-hidden + article {
+/* 隐藏目录栏同时，文章区改为满宽（覆盖 Bootstrap .col-md-10 的 width） */
+#toc.toc-sidebar.toc-hidden ~ article {
+    width: 100% !important;
     padding-left: 0;
 }
 
-/* h3 子列表默认隐藏，由 JS 根据滚动位置展开 */
-#toc.toc-sidebar .toc-ul-wrap ul ul {
-    display: none;
+/* TOC 一级条目 padding */
+#toc.toc-sidebar .nav > li > a {
+    padding: 3px 12px;
 }
 
-/* 当前可见区域的 h3 子列表展开 */
-#toc.toc-sidebar .toc-ul-wrap ul ul.toc-sub-visible {
+/* Logo：置顶，随屏幕缩放 */
+#wiki-logo {
+    text-align: center;
+    padding: 16px 0;
+}
+#wiki-logo img {
     display: block;
+    max-width: 375px;
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
 }
 
-/* 移动端：目录栏放到文章上方 */
-@media screen and (max-width: 768px) {
-    #content.row {
-        flex-direction: column;
+/* ============================================================
+   响应式工具类 — Bootstrap hidden-* (vector.css 缺失)
+   ============================================================ */
+@media (max-width: 767px) {
+    .hidden-xs {
+        display: none !important;
     }
-
-    #toc.toc-sidebar {
-        flex: 0 0 auto;
-        width: 100%;
-        max-width: 100%;
-        position: static;
-        max-height: none;
-        margin-bottom: 16px;
-        display: block;
-    }
-
-    #content > article {
-        padding-left: 0;
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .hidden-sm {
+        display: none !important;
     }
 }

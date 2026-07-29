@@ -8,85 +8,112 @@
 
 <div class="page-anim page-content">
 
-	<header class="page-header">
-		<span class="page-title">@Loc.Get("DataManagement.Title")</span>
-	</header>
+    <header class="page-header">
+        <span class="page-title">@Loc.Get("DataManagement.Title")</span>
+    </header>
 
-	<div class="list-container wiki-card-list">
-		@* === 视图 1：Wiki 列表选择 === *@
+    <div class="list-container wiki-card-list">
+        @* === 语言筛选 === *@
+        <div class="lang-filter">
+            <button class='lang-btn @(_langFilter == "all" ? "lang-active" : "")' @onclick='() => SetLangFilter("all")'>@Loc.Get("DataManagement.AllLanguages")</button>
+            <button class='lang-btn @(_langFilter == "zh" ? "lang-active" : "")' @onclick='() => SetLangFilter("zh")'>@Loc.Get("DataManagement.Chinese")</button>
+            <button class='lang-btn @(_langFilter == "en" ? "lang-active" : "")' @onclick='() => SetLangFilter("en")'>@Loc.Get("DataManagement.English")</button>
+        </div>
 
-		@if (_wikiBookList != null)
-		{
-			@foreach (var wiki in _wikiBookList)
-			{
-				<div class="manage-card button @(wiki.Id == AppState.ActiveWikiBookId ? "active-card" : "")" @onclick="() => OnCardClicked(wiki)">
-					<div class="manage-card-icon">
-						<img src="images/@wiki.DataFolder/logo.png" style="width: 48px;
-						height: 48px;object-fit: contain;" />
-					</div>
-					<div class="manage-card-info">
-						<div class="manage-card-title">@wiki.Title</div>
-						<div class="manage-card-desc">@wiki.Description</div>
-						<div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
-							@(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
-						</div>
-					</div>
-					<Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
-				</div>
-			}
-		}
+        @* === 视图 1：Wiki 列表选择 === *@
+        @if (_filteredWikiList != null && _filteredWikiList.Any())
+        {
+            @foreach (var wiki in _filteredWikiList)
+            {
+                <div class="manage-card button @(wiki.Id == AppState.ActiveWikiBookId ? "active-card" : "")" @onclick="() => OnCardClicked(wiki)">
+                    <div class="manage-card-icon">
+                        <img src="images/@wiki.DataFolder/logo.png" style="width: 48px;
+                        height: 48px;object-fit: contain;" />
+                    </div>
+                    <div class="manage-card-info">
+                        <div class="manage-card-title">@wiki.Title</div>
+                        <div class="manage-card-desc">@wiki.Description</div>
+                        <div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
+                            @(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
+                        </div>
+                    </div>
+                    <Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">@Loc.Get("DataManagement.NoWikiFound")</div>
+        }
 
-	</div>
+    </div>
 </div>
 
 @code {
 
+    private List<WikiBook> _wikiBookList = [];
+    private List<WikiBook> _filteredWikiList = [];
+    private string _langFilter = "all";
 
-	private List<WikiBook> _wikiBookList;
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += RefreshUI;
+        Loc.OnChange += RefreshUI;
+    }
 
+    public void Dispose()
+    {
+        AppState.OnChange -= RefreshUI;
+        Loc.OnChange -= RefreshUI;
+    }
 
-	protected override void OnInitialized()
-	{
-		AppState.OnChange += RefreshUI;
-		Loc.OnChange += RefreshUI;
-	}
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
 
-	public void Dispose()
-	{
-		AppState.OnChange -= RefreshUI;
-		Loc.OnChange -= RefreshUI;
-	}
+    protected override async Task OnInitializedAsync()
+    {
+        _wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
+        ApplyLangFilter();
+    }
 
-	private void RefreshUI() => InvokeAsync(StateHasChanged);
+    private void SetLangFilter(string filter)
+    {
+        _langFilter = filter;
+        ApplyLangFilter();
+    }
 
-	protected override async Task OnInitializedAsync()
-	{
-		_wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
-	}
+    private void ApplyLangFilter()
+    {
+        _filteredWikiList = _langFilter switch
+        {
+            "zh" => _wikiBookList.Where(w => w.DataFolder.EndsWith("_zh")).ToList(),
+            "en" => _wikiBookList.Where(w => w.DataFolder.EndsWith("_en")).ToList(),
+            _ => _wikiBookList
+        };
+    }
 
-	private async Task OnCardClicked(WikiBook item)
-	{
-		if (item.Id == AppState.ActiveWikiBookId)
-		{
-			// 当前已选择的 Wiki → 直接进入详情
-			AppState.CurrentPage = "data/" + item.Id;
-			NavManager.NavigateTo(AppState.CurrentPage);
-			return;
-		}
+    private async Task OnCardClicked(WikiBook item)
+    {
+        if (item.Id == AppState.ActiveWikiBookId)
+        {
+            // 当前已选择的 Wiki → 直接进入详情
+            AppState.CurrentPage = "data/" + item.Id;
+            NavManager.NavigateTo(AppState.CurrentPage);
+            return;
+        }
 
-		// 非当前 Wiki → 弹窗确认切换
-		bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-			Loc.Get("DataManagement.SwitchWikiTitle"),
-			Loc.Get("DataManagement.SwitchWikiDesc", item.Title),
-			Loc.Get("Common.OK"),
-			Loc.Get("Common.Cancel"));
+        // 非当前 Wiki → 弹窗确认切换
+        bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
+            Loc.Get("DataManagement.SwitchWikiTitle"),
+            Loc.Get("DataManagement.SwitchWikiDesc", item.Title),
+            Loc.Get("Common.OK"),
+            Loc.Get("Common.Cancel"));
 
-		if (confirm)
-		{
-			Preferences.Default.Set("ActiveWikiBookId", item.Id);
-			AppService.RestartApp();
-		}
-	}
+        if (confirm)
+        {
+            Preferences.Default.Set("ActiveWikiBookId", item.Id);
+            AppService.RestartApp();
+        }
+    }
 
 
 
@@ -96,76 +123,107 @@
 
 <style>
 
-	.wiki-card-list{
-		gap:12px;
-		padding: 12px 0 max(12px, var(--safe-area-bottom));
-	}
-	/* 布局微调 */
+    .lang-filter {
+        display: flex;
+        gap: 8px;
+        padding-bottom: 4px;
+    }
+
+    .lang-btn {
+        border: none;
+        background: var(--bg-color);
+        color: var(--text-secondary);
+        padding: 6px 16px;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+        .lang-btn:hover {
+            background: var(--bg-color-secondary);
+        }
+
+    .lang-active {
+        background: var(--blue-secondary);
+        color: #fff;
+    }
+
+        .lang-active:hover {
+            background: var(--blue-secondary);
+        }
+
+    .wiki-card-list {
+        gap: 12px;
+        padding: 12px 0 max(12px, var(--safe-area-bottom));
+    }
+    /* 布局微调 */
 
 
 
 
 
-	.manage-card {
-		background-color: var(--bg-color-secondary);
-		border-radius: 16px;
-		padding: 16px;
-		display: flex;
-		align-items: center;
-	}
+    .manage-card {
+        background-color: var(--bg-color-secondary);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+    }
 
-	.manage-card-icon {
-		width: 48px;
-		height: 48px;
-		border-radius: 12px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.5rem;
-		font-weight: bold;
-		margin-right: 16px;
-	}
+    .manage-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 16px;
+    }
 
-	.manage-card-info {
-		flex: 1;
-	}
+    .manage-card-info {
+        flex: 1;
+    }
 
-	.manage-card-title {
-		font-weight: 600;
-		font-size: 1.05rem;
-		color: var(--text-primary);
-		margin-bottom: 4px;
-	}
+    .manage-card-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
 
-	.manage-card-desc {
-		font-size: 0.85rem;
-		color: var(--text-secondary);
-		margin-bottom: 6px;
-		display: -webkit-box;
-		-webkit-line-clamp: 1;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
+    .manage-card-desc {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 
-	.manage-card-status {
-		font-size: 0.75rem;
-		display: inline-block;
-		padding: 2px 8px;
-		border-radius: 99px;
-		font-weight: 500;
-	}
+    .manage-card-status {
+        font-size: 0.75rem;
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 99px;
+        font-weight: 500;
+    }
 
-	.status-ok {
-		background-color: var(--green-tertiary);
-		color: var(--green-primary);
-	}
+    .status-ok {
+        background-color: var(--green-tertiary);
+        color: var(--green-primary);
+    }
 
-	.status-none {
-		background-color: var(--bg-color);
-		color: var(--text-secondary);
-	}
+    .status-none {
+        background-color: var(--bg-color);
+        color: var(--text-secondary);
+    }
 
-	.active-card{
-		background-color: var(--blue-tertiary);
-	}
+    .active-card {
+        background-color: var(--blue-tertiary);
+    }
 </style>

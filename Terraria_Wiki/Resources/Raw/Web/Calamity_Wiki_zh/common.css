@@ -796,7 +796,16 @@ table.calamityajax {
 		min-width: 20vw;
     }
 }
- 
+
+/* 音频播放按钮 — 默认白色，播放时亮蓝色 */
+.sound-play-icon {
+    color: #fff;
+    transition: color 0.2s;
+}
+.sound-playing .sound-play-icon {
+    color: #00bfff;
+}
+
 /* 用于richtab的标题 */
 /* 未激活的标签 - 淡黄色背景 */
 .tabber-filter-item {

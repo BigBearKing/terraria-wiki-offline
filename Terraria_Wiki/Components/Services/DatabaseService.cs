@@ -165,7 +165,7 @@ public class DatabaseService
         new WikiBook
         {
             Id=1,
-            Title = "泰拉瑞亚官方百科",
+            Title = "泰拉瑞亚中文百科",
             Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
@@ -174,7 +174,7 @@ public class DatabaseService
             RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "10000",
-            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()",
+            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
             DataFolder = "Terraria_Wiki_zh",
             DefaultPageContent = "请先下载数据",
             DefaultPageTitle = "Terraria Wiki",
@@ -182,7 +182,7 @@ public class DatabaseService
         new WikiBook
         {
             Id=2,
-            Title = "灾厄百科",
+            Title = "灾厄中文百科",
             Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
             IsPageDownloaded = false,
             IsResourceDownloaded = false,
@@ -191,7 +191,7 @@ public class DatabaseService
             RedirectListUrl = "/wiki/%E7%89%B9%E6%AE%8A:%E9%87%8D%E5%AE%9A%E5%90%91%E9%A1%B5%E5%88%97%E8%A1%A8?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "",
-            JunkXPath = "//span[@class='mw-editsection']",
+            JunkXPath = "//span[@class='mw-editsection']|//comment()",
             DataFolder = "Calamity_Wiki_zh",
             DefaultPageContent = "请先下载数据",
             DefaultPageTitle = "首页",
@@ -208,10 +208,27 @@ public class DatabaseService
             RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "10000",
-            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//div[@role='navigation' and contains(@class, 'ranger-navbox')]|//comment()",
+            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
             DataFolder = "Terraria_Wiki_en",
             DefaultPageContent = "please download data first",
             DefaultPageTitle = "Terraria Wiki",
+        },
+        new WikiBook
+        {
+            Id=4,
+            Title = "Calamity Mod Wiki",
+            Description = "The Calamity Mod is a large content mod for Terraria which adds many hours of endgame content and dozens of enemies and bosses dispersed throughout the vanilla game's progression. The Calamity Mod also features several harder difficulty modes, five new biomes and new structures, a new class, more than fifty new songs, over fifty recipes for previously uncraftable vanilla items, and other assorted changes to vanilla gameplay.",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://calamitymod.wiki.gg/api.php",
+            BaseUrl = "https://calamitymod.wiki.gg",
+            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "10000",
+            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
+            DataFolder = "Calamity_Wiki_en",
+            DefaultPageContent = "please download data first",
+            DefaultPageTitle = "Calamity Mod Wiki",
         },
     };
 
@@ -315,6 +332,15 @@ public class DatabaseService
     {
         await Init();
         return await _db.Table<T>().ToListAsync();
+    }
+
+    // 3.1 轻量查询：只取主键列表，不加载大字段
+    public async Task<List<string>> GetAllPrimaryKeysAsync<T>() where T : new()
+    {
+        await Init();
+        var mapping = _db.GetConnection().GetMapping<T>();
+        var pk = mapping.PK;
+        return await _db.QueryScalarsAsync<string>($"SELECT \"{pk.Name}\" FROM \"{mapping.TableName}\"");
     }
 
     // 4. 通用功能：根据主键取一条数据 (比如根据 Title 或 Id)

@@ -121,15 +121,15 @@ document.addEventListener('click', function (e) {
             openThumb(targetLink);
             return;
         }
-        const title = targetLink.getAttribute('title');
+        const wikiTitle = targetLink.getAttribute('data-wiki');
         const href = targetLink.getAttribute('href') || '';
         if (href.startsWith('http')) {
             e.preventDefault();
             callCSharpAsync("OpenExternalWebsite", href);
             return;
         }
-        if (title && !href) {
-            gotoPage(title);
+        if (wikiTitle && !href) {
+            gotoPage(wikiTitle);
         }
     }
 });
@@ -331,7 +331,7 @@ function initContextMenu() {
                 targetUrl = aTag.href;
             } else {
                 const title = window.pageTitle || "Terraria Wiki";
-                targetUrl = "https://terraria.wiki.gg/zh/wiki/" + encodeURIComponent(title.replace(/ /g, "_"));
+                targetUrl = "https://terraria.wiki.gg/wiki/" + encodeURIComponent(title.replace(/ /g, "_"));
             }
 
             if (targetUrl) {

@@ -1,240 +1,130 @@
-html.light #drilldown-header img,
-html.light div.drilldown-filters-wrapper img {
-    filter: none
+/* ============================================================
+   theme/light.css — 浅色主题
+   所有颜色均来自已有 light.css 主题变量
+   ============================================================ */
+
+html.light { --bg-color: #ffffff; --bg-color-secondary: #f6f6f6; }
+
+/* === 基础元素 === */
+html.light body { color: #080a13; background-color: #f6f6f6; }
+html.light a { color: #2d4068; }
+html.light a:hover { color: #5e6569; }
+html.light code { color: #d61616; background-color: #eaeef1; }
+html.light kbd { color: #080a13; background-color: #d6dbdf; box-shadow: inset 0 -1px 0 rgba(20,20,20,.1); }
+html.light pre { color: #080a13; background-color: #eaeef1; border-color: #aaa; }
+html.light mark, html.light .mark { background-color: #d1e1e6; }
+html.light hr { border-top-color: #aaa; background: #aaa; }
+html.light img.thumbborder { border-color: #aaa; }
+html.light body::selection { background: #2d4068; color: #f6f6f6; }
+
+/* === 工具类 === */
+html.light .text-muted { color: #666; }
+html.light .text-red { color: #d61616; }
+html.light .text-green { color: #007e00; }
+
+/* === 页面布局 === */
+html.light .page-header { border-bottom-color: #aaa; }
+html.light .bottom.footer { background-color: #f6f6f6; }
+html.light .bottom.footer footer { color: #666; }
+
+/* === huiji-css-hook === */
+html.light .huiji-css-hook { background-color: #f6f6f6; }
+html.light .huiji-css-hook .wiki-body { background-color: #eaeef1; color: #080a13; }
+html.light .huiji-css-hook #contentSub { color: #666; }
+html.light .huiji-css-hook .toc-sidebar li a { color: #666; }
+html.light .huiji-css-hook .toc-sidebar li a:hover { color: #2d4068; border-color: #2d4068; }
+html.light .huiji-css-hook .toc-sidebar li.active>a { color: #2d4068; border-color: #2d4068; }
+html.light .huiji-css-hook .bottom.footer { background: #f6f6f6; color: #666; }
+html.light .huiji-css-hook .wikitable,
+html.light .huiji-css-hook .mw-datatable,
+html.light .huiji-css-hook .mw_metadata,
+html.light .huiji-css-hook .mw-json,
+html.light .huiji-css-hook .property-page-results { background-color: #eaeef1; color: #080a13; }
+html.light .huiji-css-hook .infobox { background-color: #eaeef1; color: #080a13; }
+html.light .huiji-css-hook .infobox th,
+html.light .huiji-css-hook .infobox td { border-bottom-color: #aaa; }
+html.light .huiji-css-hook .infobox .infobox-title { background-color: #d1e1e6; }
+html.light .huiji-css-hook .infobox .infobox-title a { color: #2d4068; }
+html.light .huiji-css-hook .infobox .infobox-title a:hover { color: #5e6569; }
+html.light .huiji-css-hook .infobox .infobox-item-title th,
+html.light .huiji-css-hook .infobox .infobox-header th { background-color: #d1e1e6; }
+html.light .huiji-css-hook .infobox .infobox-item-title th a,
+html.light .huiji-css-hook .infobox .infobox-header th a { color: #2d4068; }
+html.light .huiji-css-hook .infobox .infobox-item-title th a:hover,
+html.light .huiji-css-hook .infobox .infobox-header th a:hover { color: #5e6569; }
+
+/* === Bootstrap Nav (Tabber) === */
+html.light .nav>li>a:hover,
+html.light .nav>li>a:focus { background-color: #d1e1e6; }
+html.light .nav-tabs { border-bottom-color: #aaa; }
+html.light .nav-tabs>li>a:hover { border-color: #aaa; }
+html.light .nav-tabs>li.active>a,
+html.light .nav-tabs>li.active>a:hover,
+html.light .nav-tabs>li.active>a:focus {
+    color: #080a13; background-color: #eaeef1; border-color: #aaa;
+}
+html.light .nav-tabs.nav-justified>.active>a { border-color: #aaa; }
+@media (min-width:768px) {
+    html.light .nav-tabs.nav-justified>.active>a { border-bottom-color: #eaeef1; }
 }
 
-html.light .hp>div .text-red {
-    color: #d61616
+/* === 灾厄信息框 === */
+html.light .table_body, html.light .infobox_body, html.light .main,
+html.light table.mainbody, html.light div.mainbody,
+html.light table.calamityinfo, html.light .guideblock {
+    background: #eaeef1 !important; color: #080a13 !important;
+}
+html.light .table_body, html.light .infobox_body,
+html.light div.mainbody, html.light .guideblock { border-color: #aaa; }
+html.light .main { border-color: #aaa; }
+
+/* === 灾厄表头 === */
+html.light .infobox_head, html.light th.mainhead, html.light div.mainhead,
+html.light .guidetitle, html.light .tabber-filter-item.active {
+    background: #d1e1e6; color: #080a13;
+}
+html.light th.mainhead, html.light div.mainhead { border-color: #aaa; }
+html.light .guidetitle { border-color: #aaa; }
+
+/* === 灾厄表格表头行 === */
+html.light .calamityinfo th, html.light .calamity th,
+html.light .calamitas th, html.light .calamityajax th {
+    background: #d1e1e6; color: #080a13;
 }
 
-html.light .hp>div .text-golden {
-    color: #946114
+/* === 灾厄表格主体 === */
+html.light table.calamity, html.light .calamity,
+html.light table.calamitas, html.light table.calamityajax, html.light .calamityajax {
+    background: #eaeef1; border-color: #aaa;
+}
+html.light .calamity th, html.light .calamity td,
+html.light .calamitas th, html.light .calamitas td,
+html.light .calamityajax th, html.light .calamityajax td {
+    border-color: #aaa;
 }
 
-html.light .message-box::before {
-    background: var(--message-box-highlight-color, var(--theme-box-border-color))
-}
+/* === 其他 === */
+html.light .doubleborder { border-top-color: #333; border-bottom-color: #333; }
+html.light .tr-tooltip { color: #080a13; background: rgba(200,200,210,.15); }
+html.light .mw-collapsible-content .template-loading-hint { background: #eaeef1; border-color: #aaa; }
+html.light .catlinks li { border-left-color: #aaa; }
 
-html.light {
-    --theme-modetabs-classic-background: var(--theme-highlight-background);
-    --theme-modetabs-expert-background: #ffeece;
-    --theme-modetabs-expert-border-color: #ffca67;
-    --theme-modetabs-expert-text-color: #3a3119;
-    --theme-modetabs-expert-text-color-label: #9b5700;
-    --theme-modetabs-master-background: #ffe9e9;
-    --theme-modetabs-master-border-color: #ffbaba;
-    --theme-modetabs-master-text-color: #462b08;
-    --theme-modetabs-master-text-color-label: #dd1414;
-    --custom-template-expert-color: #9b5700;
-    --custom-template-master-color: #dd1414;
-    --custom-template-journey-color: #c70a7d
-}
+/* === 音频 === */
+html.light .sound-play-icon { color: #080a13; }
+html.light .sound-playing .sound-play-icon { color: #2d4068; }
 
-html.light {
-    --theme-site-background: #9079c8 url(/images/main/Site-background-snow.jpg) center top / cover no-repeat fixed;
+/* === Tabber === */
+html.light .tabber-filter-item { background: #d1e1e6 !important; }
+html.light .tabber-filter-item a { background: inherit !important; color: #080a13 !important; }
 
-}
+/* === Diagram === */
+html.light table.diagram td.l { border-color: #aaa; }
+html.light table.diagram td.cf:after { border-bottom-color: #aaa; }
+html.light .diagram-box { border-color: #d1e1e6; }
 
-html.light {
-    --theme-background: #f6f6f6;
-}
-
-html.light {
-    --theme-background-accent: rgba(20, 20, 20, 0.2)
-}
-
-
-html.light {
-    --theme-text-color: #080a13;
-    --theme-text-color--rgb: 8, 10, 19;
-    --theme-text-color-note: #666;
-    --theme-text-color-em: #080a13;
-    --theme-text-color-highlight: #000;
-    --theme-text-color-green: #007e00;
-    --theme-text-color-orange: #9d5900;
-    --theme-text-color-red: #d61616
-}
-
-html.light {
-    --theme-text-background-color-highlight: #d1e1e6
-}
-
-html.light {
-    --theme-link-color: #2d4068;
-    --theme-link-color--rgb: 45, 64, 104;
-    --theme-link-color-hover: #2d4068;
-    --theme-link-color-visited: #2d4068;
-    --theme-link-color-redlink: #9f0000
-}
-
-html.light {
-    --theme-highlight-background: rgba(20, 20, 20, 0.1)
-}
-
-html.light {
-    --theme-widget-shadow: 0px 0px 15px 0px rgba(10, 10, 40, 0.45);
-    --theme-widget-background: linear-gradient(rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.1)), #d6dbdf url(/images/main/Content-background-snow.jpg)
-}
-
-html.light {
-    --theme-box-border-color: #aaa;
-    --theme-box-border-color--rgb: 170, 170, 170;
-    --theme-box-border-color-light: rgba(0, 0, 0, 0.1);
-    --theme-box-background: rgba(200, 200, 210, 0.15);
-    --theme-box-inset-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.05);
-    --theme-border-color-accent: #333
-}
-
-html.light {
-    --theme-hr-color-bottom: rgba(255, 255, 255, 0.5)
-}
-
-html.light {
-    --theme-dropdown-background: #d6dbdf url(/images/main/Content-background-snow.jpg)
-}
-
-html.light #mw-head {
-    --theme-background: #f6f6f6;
-
-}
-
-html.light #footer {
-    --theme-background: #f6f6f6;
-}
-
-html.light .catlinks {
-    --theme-background: #f6f6f6;
-}
-
-html.light {
-    --oouihelper--red: #900000;
-    --oouihelper--red-darker: #491010;
-    --oouihelper--red-lighter: #b40000;
-    --oouihelper--red-lightest: #bc0000
-}
-
-html.light {
-    --oouihelper--progressive: var(--theme-link-color);
-    --oouihelper--progressive-transparent: rgba(var(--theme-link-color--rgb), 0.6);
-    --oouihelper--progressive-lighter: rgba(var(--theme-link-color--rgb), 0.8)
-}
-
-html.light {
-    --oouihelper--disabled: #666;
-    --oouihelper--disabled-lighter-transparent: rgba(100, 100, 100, 0.1);
-    --oouihelper--disabled-darker-transparent: rgba(10, 10, 10, 0.1)
-}
-
-html.light {
-    --oouihelper--borderdark: var(--theme-border-color);
-    --oouihelper--borderdark-lighter: rgba(var(--theme-border-color--rgb), 0.85);
-    --oouihelper--borderdark-hover: rgba(var(--theme-border-color--rgb), 0.9)
-}
-
-html.light {
-    --oouihelper--textinput-background: rgba(100, 100, 110, 0.1);
-    --oouihelper--textinput-background-lighter: rgba(130, 130, 140, 0.1);
-    --oouihelper--textinput-background-darker: rgba(80, 80, 90, 0.2)
-}
-
-html.light {
-    --oouihelper--placeholdertext: var(--theme-text-color-note)
-}
-
-html.light {
-    --oouihelper--themerelated: #adb0b1;
-    --oouihelper--themerelated-lighter: #b7babd;
-    --oouihelper--themerelated-lighter-transparent: rgba(197, 200, 204, 0.6);
-    --oouihelper--themerelated-lightest: #c6c9ce;
-    --oouihelper--themerelated-darker: #808588;
-    --oouihelper--themerelated-darkest: #5e6569;
-    --oouihelper--themerelated-disabled: rgba(128, 133, 136, 0.1);
-    --oouihelper--themerelated-disabled-transparent: rgba(128, 133, 136, 0.05);
-    --oouihelper--themerelated-disabled-lighter: rgb(183, 186, 189)
-}
-
-html.light {
-    --oouihelper--text-background: #eaeef1;
-    --oouihelper--text-deeper: var(--theme-text-color)
-}
-
-html.light {
-    --ooui--button-background--hover: #7b573d url(/images/main/main/Button-background-snow.jpg) center center / cover repeat-x;
-    --ooui--button-background: linear-gradient(rgba(100, 100, 100, 0.05), rgba(100, 100, 100, 0.05)), var(--ooui--button-background--hover);
-    --ooui--button-box-shadow: rgba(50, 50, 60, 0.15) 2px 2px 3px
-}
-
-html.light {
-    --ooui--button-border-top: 1px solid rgb(191, 200, 221);
-    --ooui--button-border-right: 1px solid rgb(68, 51, 89);
-    --ooui--button-border-top--hover: 1px solid rgba(191, 200, 221, 0.5);
-    --ooui--button-border-right--hover: 1px solid rgba(191, 200, 221, 0.5);
-    --ooui--button-color--hover: var(--oouihelper--text-deeper)
-}
-
-html.light {
-    --ooui--button-frameless-on-color: var(--oouihelper--text-deeper)
-}
-
-html.light {
-    --ooui--checkbox-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Ctitle%3Echeck%3C/title%3E%3Cg fill=%22%23adb0b1%22%3E%3Cpath d=%22M7 14.17L2.83 10l-1.41 1.41L7 17 19 5l-1.41-1.42z%22/%3E%3C/g%3E%3C/svg%3E");
-    --ooui--checkbox-icon--hover: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Ctitle%3Echeck%3C/title%3E%3Cg fill=%22%23b7babd%22%3E%3Cpath d=%22M7 14.17L2.83 10l-1.41 1.41L7 17 19 5l-1.41-1.42z%22/%3E%3C/g%3E%3C/svg%3E")
-}
-
-html.light {
-    --ooui--tagitem-background-color: rgba(20, 20, 20, 0.1);
-    --ooui--tagitem-color--hover: var(--theme-text-color-em);
-    --ooui--tagitem-disabled-background-color: rgba(20, 20, 20, 0.2)
-}
-
-html.light {
-    --ooui--progressbar-pending-background-color-1: rgba(var(--theme-link-color--rgb), 0.35);
-    --ooui--progressbar-pending-background-color-2: rgba(var(--theme-border-color--rgb), 0.2)
-}
-
-html.light {
-    --ooui--messagewidget-notice-background-color: #eaeef1
-}
-
-html.light {
-    --ooui--indicator-filter: brightness(0) invert(50%) sepia(21%) saturate(662%) hue-rotate(170deg) brightness(80%) contrast(91%)
-}
-
-html.light {
-    --ooui--icon-normal-filter: brightness(0) invert(0%) sepia(0%) saturate(100%) hue-rotate(5deg) brightness(100%) contrast(100%);
-    --ooui--icon-progressive-filter: brightness(0) invert(50%) sepia(21%) saturate(662%) hue-rotate(170deg) brightness(80%) contrast(91%)
-}
-
-html.light {
-    --background-color-base: #eaeef1
-}
-
-html.light {
-    --color-base: #080a13
-}
-
-html.light {
-    --color-emphasized: #080a13;
-    --color-subtle: #666
-}
-
-html.light {
-    --color-progressive: #2d4068;
-    --color-progressive--hover: #2d4068;
-    --color-progressive--focus: #2d4068
-}
-
-html.light {
-    --color-destructive: #9f0000;
-    --color-destructive--focus: #9f0000
-}
-
-html.light {
-    --color-error: #d61616;
-    --color-warning: #9d5900;
-    --color-success: #007e00
-}
-
-html.light {
-    --border-color-base: #aaa
-}
+/* === 彩蛋 === */
+html.light .yyc, html.light .yyc a, html.light a .yyc, html.light .yyc a.new { background-color: #f6f6f6; color: #f6f6f6; }
+html.light body:not(.yyc_toggle_on) .yyc:hover { background-color: rgba(20,20,20,.1); }
+html.light body:not(.yyc_toggle_on) .yyc:hover a { color: #2d4068; background-color: rgba(20,20,20,.1); }
+html.light body:not(.yyc_toggle_on) .yyc.off .new { color: #d61616; background-color: rgba(20,20,20,.1); }
+html.light div#dc { background: #d6dbdf; }
