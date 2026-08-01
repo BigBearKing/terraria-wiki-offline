@@ -1,4 +1,7 @@
 <Solution>
+  <Project Path="../../Demo/MauiApp1/MauiApp1/MauiApp1.csproj">
+    <Deploy />
+  </Project>
   <Project Path="Terraria_Wiki/Terraria_Wiki.csproj">
     <Deploy />
   </Project>

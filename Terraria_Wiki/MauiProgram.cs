@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Maui.LifecycleEvents;
 using Terraria_Wiki.Models;
 using Terraria_Wiki.Services;
 
@@ -62,7 +63,19 @@ namespace Terraria_Wiki
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();
 #endif
+#if WINDOWS
+            builder.ConfigureLifecycleEvents((events) =>
+            {
+                events.AddWindows(wndLifeCycleBuilder =>
+                {
+                    wndLifeCycleBuilder.OnWindowCreated((window) =>
+                    {
+                        WindowHelper.EnableResizableBorderless(window);
+                    });
+                });
+            });
 
+#endif
             return builder.Build();
         }
     }

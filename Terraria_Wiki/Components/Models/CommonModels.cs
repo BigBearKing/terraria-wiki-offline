@@ -147,3 +147,10 @@ public class TaskConfig
     public string GetProcessingText(LocalizationService loc) =>
         string.IsNullOrEmpty(ProcessingTextKey) ? "" : loc.Get(ProcessingTextKey);
 }
+
+public class TabModel
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Title { get; set; } = "";
+    public List<TempHistory> TempHistory { get; set; } = new();
+}

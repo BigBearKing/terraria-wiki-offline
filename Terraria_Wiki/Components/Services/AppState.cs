@@ -11,6 +11,7 @@ public class AppState
     public event Action? OnCurrentPageChanged;
     public event Action? OnSearchQueryChanged;
     public event Action<string, string>? OnShowAlert;
+    public event Action? OnTabsChanged;
 
 
     public static void Init(IJSRuntime jsRuntime) => JS = jsRuntime;
@@ -23,6 +24,8 @@ public class AppState
     private int _processingTaskId = 0;
 
     private string _currentWikiPage;
+    private List<TabModel> _tabs;
+    private string _activeTabId;
     private int _activeWikiBookId = Preferences.Default.Get("ActiveWikiBookId", 1);
     private WikiBook? _activeWikiBook;
     private string _searchQuery = "";
@@ -52,8 +55,99 @@ public class AppState
 
     public AppState()
     {
-        TempHistory = new List<TempHistory>();
+        var defaultTab = new TabModel();
+        _tabs = new List<TabModel> { defaultTab };
+        _activeTabId = defaultTab.Id;
+    }
 
+    private const int MaxTabs = 5;
+
+    public List<TabModel> Tabs
+    {
+        get => _tabs;
+        set
+        {
+            _tabs = value;
+            OnTabsChanged?.Invoke();
+            OnChange?.Invoke();
+        }
+    }
+
+    public string ActiveTabId
+    {
+        get => _activeTabId;
+        set
+        {
+            if (_activeTabId != value)
+            {
+                _activeTabId = value;
+                var tab = GetActiveTab();
+                if (tab != null)
+                {
+                    _currentWikiPage = tab.Title;
+                }
+                OnTabsChanged?.Invoke();
+                OnChange?.Invoke();
+            }
+        }
+    }
+
+    public List<TempHistory> TempHistory
+    {
+        get
+        {
+            var tab = GetActiveTab();
+            return tab?.TempHistory ?? new List<TempHistory>();
+        }
+        set
+        {
+            var tab = GetActiveTab();
+            if (tab != null)
+            {
+                tab.TempHistory = value ?? new List<TempHistory>();
+            }
+        }
+    }
+
+    public TabModel? GetActiveTab()
+    {
+        return _tabs.FirstOrDefault(t => t.Id == _activeTabId);
+    }
+
+    public TabModel AddTab()
+    {
+        if (_tabs.Count >= MaxTabs) return GetActiveTab()!;
+        var tab = new TabModel();
+        _tabs.Add(tab);
+        ActiveTabId = tab.Id;
+        OnTabsChanged?.Invoke();
+        OnChange?.Invoke();
+        return tab;
+    }
+
+    public void CloseTab(string tabId)
+    {
+        if (_tabs.Count <= 1) return;
+        var tab = _tabs.FirstOrDefault(t => t.Id == tabId);
+        if (tab == null) return;
+
+        var index = _tabs.IndexOf(tab);
+        _tabs.RemoveAt(index);
+
+        if (_activeTabId == tabId)
+        {
+            var newIndex = Math.Min(index, _tabs.Count - 1);
+            ActiveTabId = _tabs[newIndex].Id;
+        }
+
+        OnTabsChanged?.Invoke();
+        OnChange?.Invoke();
+    }
+
+    public void SwitchToTab(string tabId)
+    {
+        if (_activeTabId == tabId) return;
+        ActiveTabId = tabId;
     }
 
     public string CurrentPage
@@ -134,6 +228,11 @@ public class AppState
         set
         {
             _currentWikiPage = value;
+            var tab = GetActiveTab();
+            if (tab != null)
+            {
+                tab.Title = value;
+            }
             OnChange?.Invoke();
 
         }
@@ -160,8 +259,6 @@ public class AppState
             OnChange?.Invoke();
         }
     }
-
-    public List<TempHistory> TempHistory { get; set; }
 
     public string SearchQuery
     {

@@ -4544,6 +4544,25 @@ blockquote.quotation > div.c > p:last-child {
   display: none !important;
 }
 
+/********* [[Template:Tocright]] *********/
+@media (min-width: 720px) {
+  .tocright {
+    float: right;
+    clear: right;
+    margin-left: var(--layout-gap-l);
+    max-width: 20em;
+  }
+  .tocright-clear-left {
+    clear: left;
+  }
+  .tocright-clear-both {
+    clear: both;
+  }
+  .tocright-clear-none {
+    clear: none;
+  }
+}
+
 /********* [[Template:Error]] *********/
 .error {
   font-weight: bold;

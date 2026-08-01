@@ -1,0 +1,60 @@
+@using Terraria_Wiki.Services
+@using Terraria_Wiki.Models
+
+<div class="tab-bar">
+    <div class="tab-list">
+        @foreach (var tab in AppState.Tabs)
+        {
+            var isActive = tab.Id == AppState.ActiveTabId;
+            var tabId = tab.Id;
+            <div class="tab-item @(isActive ? "active" : "")" @onclick="() => OnTabClick(tabId)" @onclick:preventDefault>
+                <span class="tab-title">@(string.IsNullOrEmpty(tab.Title) ? App.Localization!.Get("TabBar.NewTab") : tab.Title)</span>
+                @if (AppState.Tabs.Count > 1)
+                {
+                    <button class="tab-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
+                        ×
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    @if (AppState.Tabs.Count < 5)
+    {
+        <button class="tab-add" @onclick="OnAddTab" title="@App.Localization!.Get("TabBar.NewTab")">
+            +
+        </button>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.OnTabsChanged += RefreshUI;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnTabsChanged -= RefreshUI;
+    }
+
+    private void RefreshUI()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnTabClick(string tabId)
+    {
+        if (tabId == AppState.ActiveTabId) return;
+        await AppService.SwitchToTabAsync(tabId);
+    }
+
+    private async void OnTabClose(string tabId)
+    {
+        await AppService.CloseTabAsync(tabId);
+    }
+
+    private async void OnAddTab()
+    {
+        await AppService.AddTabAsync();
+    }
+}

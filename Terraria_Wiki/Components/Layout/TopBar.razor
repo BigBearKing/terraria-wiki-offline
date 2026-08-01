@@ -72,6 +72,7 @@
     {
         AppState.OnChange += RefreshUI;
         AppState.OnCurrentPageChanged += HandlePageChanged;
+        AppState.OnTabsChanged += RefreshUI;
         App.Localization!.OnChange += RefreshUI;
     }
 
@@ -79,6 +80,7 @@
     {
         AppState.OnChange -= RefreshUI;
         AppState.OnCurrentPageChanged -= HandlePageChanged;
+        AppState.OnTabsChanged -= RefreshUI;
         App.Localization!.OnChange -= RefreshUI;
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
@@ -280,13 +282,13 @@
     {
         if (AppState.IsPinned)
         {
-            WindowHelper.SetAlwaysOnTop(Application.Current.Windows[0], false);
+            WindowHelper.SetAlwaysOnTop(false);
             AppState.IsPinned = false;
 
         }
         else
         {
-            WindowHelper.SetAlwaysOnTop(Application.Current.Windows[0], true);
+            WindowHelper.SetAlwaysOnTop(true);
             AppState.IsPinned = true;
         }
     }

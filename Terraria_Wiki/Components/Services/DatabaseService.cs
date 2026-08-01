@@ -207,7 +207,7 @@ public class DatabaseService
             BaseUrl = "https://terraria.wiki.gg",
             RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
             MainNamespace = 0,
-            AdditionalNamespaces = "10000",
+            AdditionalNamespaces = "110",
             JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
             DataFolder = "Terraria_Wiki_en",
             DefaultPageContent = "please download data first",

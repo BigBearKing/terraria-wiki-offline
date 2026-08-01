@@ -199,6 +199,53 @@ namespace Terraria_Wiki.Services
             await IframeBridge.CallJsAsync("BackHome", "");
         }
 
+        public static async Task SwitchToTabAsync(string tabId)
+        {
+            App.AppStateManager.SwitchToTab(tabId);
+            var tab = App.AppStateManager.GetActiveTab();
+            if (tab == null) return;
+
+            if (tab.TempHistory.Count > 0)
+            {
+                var lastHistory = tab.TempHistory[^1];
+                await IframeBridge.CallJsAsync("BackToPage", IframeBridge.ObjToJson(lastHistory));
+            }
+            else
+            {
+                await IframeBridge.CallJsAsync("BackHome", "");
+            }
+        }
+
+        public static async Task CloseTabAsync(string tabId)
+        {
+            App.AppStateManager.CloseTab(tabId);
+            var tab = App.AppStateManager.GetActiveTab();
+            if (tab == null) return;
+
+            if (tab.TempHistory.Count > 0)
+            {
+                var lastHistory = tab.TempHistory[^1];
+                await IframeBridge.CallJsAsync("BackToPage", IframeBridge.ObjToJson(lastHistory));
+            }
+            else
+            {
+                await IframeBridge.CallJsAsync("BackHome", "");
+            }
+        }
+
+        public static async Task AddTabAsync()
+        {
+            var tab = App.AppStateManager.AddTab();
+            if (tab == null)
+            {
+                App.AppStateManager.TriggerAlert(
+                    App.Localization!.Get("Common.Notice"),
+                    App.Localization!.Get("TabBar.MaxReached"));
+                return;
+            }
+            await IframeBridge.CallJsAsync("BackHome", "");
+        }
+
         // 跳转页面
         public static void NavigateTo(string pageName)
         {

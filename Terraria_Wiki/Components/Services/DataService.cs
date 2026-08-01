@@ -1286,36 +1286,14 @@ namespace Terraria_Wiki.Services
 
         private void ProcessAnchorLinks(HtmlNode node)
         {
-            node.SelectNodes("//a[@href]")?.ToList().ForEach(n =>
+            node.SelectNodes("//a[@href and @title]")?.ToList().ForEach(n =>
             {
                 string href = n.Attributes["href"].Value;
-
-                // 外部链接保留原样，不处理
-                if (href.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                    href.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    return;
-
-                // 提取锚点部分
-                string? anchor = null;
                 int hashIndex = href.IndexOf('#');
                 if (hashIndex >= 0)
                 {
-                    anchor = href.Substring(hashIndex + 1);
-                    href = href.Substring(0, hashIndex);
+                    n.SetAttributeValue("title", n.GetAttributeValue("title", "") + href.Substring(hashIndex));
                 }
-
-                // 从 href 最后一个 / 后面提取页面标题并 URL 解码
-                int lastSlash = href.LastIndexOf('/');
-                string rawTitle = lastSlash >= 0 ? href.Substring(lastSlash + 1) : href;
-                string pageTitle = Uri.UnescapeDataString(rawTitle);
-
-                if (!string.IsNullOrEmpty(pageTitle))
-                {
-                    string wikiValue = anchor != null ? pageTitle + "#" + anchor : pageTitle;
-                    wikiValue = wikiValue.Replace('_', ' ');
-                    n.SetAttributeValue("data-wiki", wikiValue);
-                }
-
                 n.Attributes.Remove("href");
             });
         }
