@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject NavigationManager NavManager
+@using System.ComponentModel
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 
@@ -36,7 +37,7 @@
     protected override void OnInitialized()
     {
 
-        AppState.OnChange += RefreshUI;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         AppState.OnShowAlert += HandleShowAlert;
         iframeTheme = ThemeService.GetIframeThemeState();
         isMobile = DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS;
@@ -46,14 +47,20 @@
 
     public void Dispose()
     {
-        AppState.OnChange -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         AppState.OnShowAlert -= HandleShowAlert;
     }
 
     private void RefreshUI()
     {
-
         InvokeAsync(StateHasChanged);
+    }
+
+    // 仅响应 LogPanelIsOpen 和 CurrentPage 变化
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppState.LogPanelIsOpen) or nameof(AppState.CurrentPage))
+            RefreshUI();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -63,7 +70,7 @@
 
             AppState.Init(JS);
             IframeBridge.Init(JS);
-            AppService.Init(NavManager);
+            AppService.Init(NavManager, JS);
             await ThemeService.InitIframeThemeAsync(JS);
             if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
             {

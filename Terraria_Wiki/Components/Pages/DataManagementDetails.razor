@@ -1,4 +1,5 @@
 ﻿@page "/data/{WikiId:int}"
+@using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
@@ -124,7 +125,7 @@
 
     protected override void OnInitialized()
     {
-        AppState.OnChange += RefreshUI;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         Loc.OnChange += RefreshUI;
     }
 
@@ -132,8 +133,15 @@
 
     public void Dispose()
     {
-        AppState.OnChange -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         Loc.OnChange -= RefreshUI;
+    }
+
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // 只关心任务状态变化（任务完成后重新加载 Wiki 统计数据）
+        if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+            RefreshUI();
     }
 
     private async void RefreshUI()

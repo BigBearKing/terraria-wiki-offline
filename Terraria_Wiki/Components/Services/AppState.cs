@@ -1,17 +1,33 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Microsoft.JSInterop;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
-public class AppState
+public class AppState : INotifyPropertyChanged
 {
     public static IJSRuntime? JS;
 
+    /// <summary>
+    /// 统一属性变化通知（订阅方按属性名过滤或全量刷新）。
+    /// </summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public event Action? OnChange;
-    public event Action? OnCurrentPageChanged;
-    public event Action? OnSearchQueryChanged;
+    /// <summary>
+    /// 业务事件（一次性命令通知，带参数），不属于"状态已变"语义，单独保留。
+    /// </summary>
     public event Action<string, string>? OnShowAlert;
-    public event Action? OnTabsChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
 
 
     public static void Init(IJSRuntime jsRuntime) => JS = jsRuntime;
@@ -65,12 +81,7 @@ public class AppState
     public List<TabModel> Tabs
     {
         get => _tabs;
-        set
-        {
-            _tabs = value;
-            OnTabsChanged?.Invoke();
-            OnChange?.Invoke();
-        }
+        set => SetProperty(ref _tabs, value);
     }
 
     public string ActiveTabId
@@ -78,16 +89,14 @@ public class AppState
         get => _activeTabId;
         set
         {
-            if (_activeTabId != value)
+            if (SetProperty(ref _activeTabId, value))
             {
-                _activeTabId = value;
                 var tab = GetActiveTab();
                 if (tab != null)
                 {
                     _currentWikiPage = tab.Title;
+                    OnPropertyChanged(nameof(CurrentWikiPage));
                 }
-                OnTabsChanged?.Invoke();
-                OnChange?.Invoke();
             }
         }
     }
@@ -97,14 +106,15 @@ public class AppState
         get
         {
             var tab = GetActiveTab();
-            return tab?.TempHistory ?? new List<TempHistory>();
+            return tab?.TempHistory ?? [];
         }
         set
         {
             var tab = GetActiveTab();
             if (tab != null)
             {
-                tab.TempHistory = value ?? new List<TempHistory>();
+                tab.TempHistory = value ?? [];
+                OnPropertyChanged(nameof(TempHistory));
             }
         }
     }
@@ -114,14 +124,12 @@ public class AppState
         return _tabs.FirstOrDefault(t => t.Id == _activeTabId);
     }
 
-    public TabModel AddTab()
+    public TabModel? AddTab()
     {
-        if (_tabs.Count >= MaxTabs) return GetActiveTab()!;
+        if (_tabs.Count >= MaxTabs) return null;
         var tab = new TabModel();
         _tabs.Add(tab);
-        ActiveTabId = tab.Id;
-        OnTabsChanged?.Invoke();
-        OnChange?.Invoke();
+        OnPropertyChanged(nameof(Tabs));
         return tab;
     }
 
@@ -131,81 +139,32 @@ public class AppState
         var tab = _tabs.FirstOrDefault(t => t.Id == tabId);
         if (tab == null) return;
 
-        var index = _tabs.IndexOf(tab);
-        _tabs.RemoveAt(index);
-
-        if (_activeTabId == tabId)
-        {
-            var newIndex = Math.Min(index, _tabs.Count - 1);
-            ActiveTabId = _tabs[newIndex].Id;
-        }
-
-        OnTabsChanged?.Invoke();
-        OnChange?.Invoke();
-    }
-
-    public void SwitchToTab(string tabId)
-    {
-        if (_activeTabId == tabId) return;
-        ActiveTabId = tabId;
+        _tabs.RemoveAt(_tabs.IndexOf(tab));
+        OnPropertyChanged(nameof(Tabs));
     }
 
     public string CurrentPage
     {
         get => _currentPage;
-        set
-        {
-
-            _currentPage = value;
-            OnCurrentPageChanged?.Invoke();
-            OnChange?.Invoke();
-
-        }
+        set => SetProperty(ref _currentPage, value);
     }
 
     public bool SidebarIsExpanded
     {
         get => _sidebarIsExpanded;
-        set
-        {
-
-            _sidebarIsExpanded = value;
-            OnChange?.Invoke();
-
-        }
+        set => SetProperty(ref _sidebarIsExpanded, value);
     }
 
     public bool LogPanelIsOpen
     {
         get => _logPanelIsOpen;
-        set
-        {
-            _logPanelIsOpen = value;
-            OnChange?.Invoke();
-        }
+        set => SetProperty(ref _logPanelIsOpen, value);
     }
 
     public bool IsDarkTheme
     {
         get => _isDarkTheme;
-        set
-        {
-
-            _isDarkTheme = value;
-            OnChange?.Invoke();
-#if ANDROID
-
-            // 获取当前 Activity 并转换为 MainActivity
-            var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MainActivity;
-
-            // 确保在主线程执行 UI 相关操作
-            activity?.RunOnUiThread(() =>
-            {
-                activity.ChangeStatusBarColor();
-            });
-#endif
-
-        }
+        set => SetProperty(ref _isDarkTheme, value);
     }
 
     public int ProcessingTaskId
@@ -213,12 +172,14 @@ public class AppState
         get => _processingTaskId;
         set
         {
-            _processingTaskId = value;
-            if (value != 0)
+            if (SetProperty(ref _processingTaskId, value))
             {
-                _logPanelIsOpen = true;
+                if (value != 0)
+                {
+                    _logPanelIsOpen = true;
+                    OnPropertyChanged(nameof(LogPanelIsOpen));
+                }
             }
-            OnChange?.Invoke();
         }
     }
 
@@ -227,14 +188,14 @@ public class AppState
         get => _currentWikiPage;
         set
         {
-            _currentWikiPage = value;
-            var tab = GetActiveTab();
-            if (tab != null)
+            if (SetProperty(ref _currentWikiPage, value))
             {
-                tab.Title = value;
+                var tab = GetActiveTab();
+                if (tab != null)
+                {
+                    tab.Title = value;
+                }
             }
-            OnChange?.Invoke();
-
         }
     }
 
@@ -243,34 +204,25 @@ public class AppState
         get => _activeWikiBookId;
         set
         {
-            _activeWikiBookId = value;
-            Preferences.Default.Set("ActiveWikiBookId", value);
-            _activeWikiBook = null; // 切换 wiki 时清缓存，下次访问时重新加载
-            OnChange?.Invoke();
+            if (SetProperty(ref _activeWikiBookId, value))
+            {
+                Preferences.Default.Set("ActiveWikiBookId", value);
+                _activeWikiBook = null; // 切换 wiki 时清缓存，下次访问时重新加载
+                OnPropertyChanged(nameof(ActiveWikiBook));
+            }
         }
     }
 
     public WikiBook? ActiveWikiBook
     {
         get => _activeWikiBook;
-        set
-        {
-            _activeWikiBook = value;
-            OnChange?.Invoke();
-        }
+        set => SetProperty(ref _activeWikiBook, value);
     }
 
     public string SearchQuery
     {
         get => _searchQuery;
-        set
-        {
-            if (_searchQuery != value)
-            {
-                _searchQuery = value;
-                OnSearchQueryChanged?.Invoke();
-            }
-        }
+        set => SetProperty(ref _searchQuery, value);
     }
 
     public void TriggerAlert(string title, string message)
@@ -281,21 +233,13 @@ public class AppState
     public bool IsPinned
     {
         get => _isPinned;
-        set
-        {
-            _isPinned = value;
-            OnChange?.Invoke();
-        }
+        set => SetProperty(ref _isPinned, value);
     }
 
     public bool IsSmallScreen
     {
         get => _isSmallScreen;
-        set
-        {
-            _isSmallScreen = value;
-            OnChange?.Invoke();
-        }
+        set => SetProperty(ref _isSmallScreen, value);
     }
 
     [JSInvokable]
@@ -307,38 +251,28 @@ public class AppState
     public double SafeAreaTop
     {
         get => _safeAreaTop;
-        set
-        {
-            _safeAreaTop = value;
-            JS?.InvokeVoidAsync("setSafeAreaTop", value);
-        }
+        set => SetSafeArea(ref _safeAreaTop, value, "setSafeAreaTop", nameof(SafeAreaTop));
     }
     public double SafeAreaBottom
     {
         get => _safeAreaBottom;
-        set
-        {
-            _safeAreaBottom = value;
-            JS?.InvokeVoidAsync("setSafeAreaBottom", value);
-        }
+        set => SetSafeArea(ref _safeAreaBottom, value, "setSafeAreaBottom", nameof(SafeAreaBottom));
     }
     public double SafeAreaLeft
     {
         get => _safeAreaLeft;
-        set
-        {
-            _safeAreaLeft = value;
-            JS?.InvokeVoidAsync("setSafeAreaLeft", value);
-        }
+        set => SetSafeArea(ref _safeAreaLeft, value, "setSafeAreaLeft", nameof(SafeAreaLeft));
     }
     public double SafeAreaRight
     {
         get => _safeAreaRight;
-        set
-        {
-            _safeAreaRight = value;
-            JS?.InvokeVoidAsync("setSafeAreaRight", value);
-        }
+        set => SetSafeArea(ref _safeAreaRight, value, "setSafeAreaRight", nameof(SafeAreaRight));
+    }
+
+    private void SetSafeArea(ref double field, double value, string jsMethod, string propertyName)
+    {
+        if (SetProperty(ref field, value, propertyName))
+            JS?.InvokeVoidAsync(jsMethod, value);
     }
 
 }

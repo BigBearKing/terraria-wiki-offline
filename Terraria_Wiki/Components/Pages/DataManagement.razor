@@ -1,5 +1,6 @@
 ﻿@page "/data"
 @inject NavigationManager NavManager
+@using System.ComponentModel
 @using Terraria_Wiki
 @using Terraria_Wiki.Components.Icons
 @using Microsoft.AspNetCore.Components.Web.Virtualization
@@ -57,17 +58,24 @@
 
     protected override void OnInitialized()
     {
-        AppState.OnChange += RefreshUI;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         Loc.OnChange += RefreshUI;
     }
 
     public void Dispose()
     {
-        AppState.OnChange -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         Loc.OnChange -= RefreshUI;
     }
 
     private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // 只关心 ActiveWikiBookId 变化（切换 wiki 时重新加载列表）
+        if (e.PropertyName == nameof(AppState.ActiveWikiBookId))
+            RefreshUI();
+    }
 
     protected override async Task OnInitializedAsync()
     {

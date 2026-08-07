@@ -1,4 +1,5 @@
 ﻿@page "/all-pages"
+@using System.ComponentModel
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
 @using Microsoft.AspNetCore.Components.Web.Virtualization
@@ -29,13 +30,13 @@
     protected override void OnInitialized()
     {
         //订阅 Topbar 传来的搜索事件
-        AppState.OnSearchQueryChanged += HandleSearchChanged;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         Loc.OnChange += StateHasChanged;
     }
 
     public void Dispose()
     {
-        AppState.OnSearchQueryChanged -= HandleSearchChanged;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         Loc.OnChange -= StateHasChanged;
     }
 
@@ -45,6 +46,12 @@
         // 调用服务获取数量
         totalPageCount = await App.ContentDb.GetCountAsync<WikiPage>();
 
+    }
+
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AppState.SearchQuery))
+            HandleSearchChanged();
     }
 
     private async ValueTask<ItemsProviderResult<WikiPageSummary>> LoadPages(ItemsProviderRequest request)

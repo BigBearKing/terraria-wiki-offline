@@ -138,9 +138,31 @@ namespace Terraria_Wiki.Services
                 {
                     // 如果请求根目录，默认返回 index.html
                     if (path == "/") path = "/index.html";
-                    // 拼接 Resources/Raw 下的路径
-                    // 假设你的 HTML 文件放在 Resources/Raw/Web 文件夹下
-                    string assetPath = "Web/" + App.AppStateManager.ActiveWikiBook.DataFolder + path;
+                    // 共享 bridge 位于 Blazor 宿主的 wwwroot，需要让 iframe 也能访问它。
+                    string assetPath;
+                    if (path.Equals("/_common/iframe-bridge.js", StringComparison.OrdinalIgnoreCase))
+                    {
+                        assetPath = "wwwroot/js/iframe-bridge.js";
+                    }
+                    else if (path.Equals("/_common/wiki-app-common.js", StringComparison.OrdinalIgnoreCase))
+                    {
+                        assetPath = "Web/_common/wiki-app-common.js";
+                    }
+                    else if (path.Equals("/_common/handy-scroll.js", StringComparison.OrdinalIgnoreCase))
+                    {
+                        assetPath = "Web/_common/handy-scroll.js";
+                    }
+                    else if (path.StartsWith("/_common/viewer/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 共享的 Viewer.js 资源（各 wiki 共用一份）
+                        assetPath = "Web/_common/" + path.Substring("/_common/".Length);
+                    }
+                    else
+                    {
+                        // 拼接 Resources/Raw 下的路径
+                        // 假设你的 HTML 文件放在 Resources/Raw/Web 文件夹下
+                        assetPath = "Web/" + App.AppStateManager.ActiveWikiBook.DataFolder + path;
+                    }
 
                     if (await FileSystem.AppPackageFileExistsAsync(assetPath))
                     {

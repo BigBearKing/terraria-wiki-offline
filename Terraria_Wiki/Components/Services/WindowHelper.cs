@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Microsoft.JSInterop;
+using System.Runtime.InteropServices;
 #if WINDOWS
 using MicrosoftuiWindowing = Microsoft.UI.Windowing;
 #endif
@@ -22,33 +23,21 @@ public static class WindowHelper
     [DllImport("user32.dll")]
     private static extern bool IsIconic(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
     [DllImport("user32.dll", SetLastError = true)]
     private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-
-    [DllImport("comctl32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetWindowSubclass(IntPtr hWnd, SUBCLASSPROC pfnSubclass, UIntPtr uIdSubclass, IntPtr dwRefData);
-
-    [DllImport("comctl32.dll")]
-    private static extern IntPtr DefSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
-    }
-
-    private delegate IntPtr SUBCLASSPROC(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData);
 
     // ========== Win32 常量 ==========
     private static readonly IntPtr HWND_TOPMOST = new(-1);
@@ -63,41 +52,31 @@ public static class WindowHelper
     private const int GWL_STYLE = -16;
     private const int WS_CAPTION = 0x00C00000;
 
-    // ========== 无边框拉伸（WM_NCHITTEST 子类化） ==========
-    private const int WM_NCHITTEST = 0x0084;
+    private const int WM_NCLBUTTONDOWN = 0x00A1;
+    private const int HTCAPTION = 0x0002;
 
-    private const int HTCLIENT = 1;
-    private const int HTLEFT = 10;
-    private const int HTRIGHT = 11;
-    private const int HTTOP = 12;
-    private const int HTTOPLEFT = 13;
-    private const int HTTOPRIGHT = 14;
-    private const int HTBOTTOM = 15;
-    private const int HTBOTTOMLEFT = 16;
-    private const int HTBOTTOMRIGHT = 17;
-
-    private const int DWMWA_BORDER_COLOR = 34;
-    private const uint DWMWA_COLOR_NONE = 0xFFFFFFFE;
     private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
     private const int DWMWCP_ROUND = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref uint attrValue, int attrSize);
 
-    private static int _borderWidth = 16;
-    private static SUBCLASSPROC? _subclassProc;
-
     // ========== 公开方法 ==========
 
     /// <summary>
-    /// 无边框 + 可调整大小（WM_NCHITTEST 子类化，边缘命中带默认 4px）。
+    /// 无边框 + 可调整大小（OverlappedPresenter 保留系统原生缩放能力，ExtendsContentIntoTitleBar 避免顶部白条）。
     /// </summary>
-    public static void EnableResizableBorderless(Microsoft.UI.Xaml.Window nativeWindow, int borderWidth = 16)
+    public static void EnableResizableBorderless(Microsoft.UI.Xaml.Window nativeWindow)
     {
         if (nativeWindow is null)
             return;
-
-        _borderWidth = borderWidth;
 
         var appWindow = nativeWindow.AppWindow;
         if (appWindow is null)
@@ -105,68 +84,28 @@ public static class WindowHelper
 
         // 内容延伸到标题栏区域，避免顶部露出系统标题栏背景
         nativeWindow.ExtendsContentIntoTitleBar = true;
+        nativeWindow.Title = AppInfo.Name;
 
-        // IsResizable=false：不产生 WS_THICKFRAME，系统不会在顶部留白色非客户区（白条的根源）。
-        // 窗口调整大小完全交给 WM_NCHITTEST 子类实现（SC_SIZE 原生缩放循环不依赖 WS_THICKFRAME）。
+        // OverlappedPresenter.Create() 默认 IsResizable=true（保留 WS_THICKFRAME，系统原生可缩放），
+        // 配合去掉 WS_CAPTION + ExtendsContentIntoTitleBar 实现无边框且无顶部白条
         var presenter = MicrosoftuiWindowing.OverlappedPresenter.Create();
-        presenter.IsResizable = false;
-        presenter.IsMaximizable = false;
-        presenter.IsMinimizable = false;
-        presenter.SetBorderAndTitleBar(false, false);
+        presenter.IsMaximizable = true;
+        presenter.IsMinimizable = true;
         appWindow.SetPresenter(presenter);
 
         IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
         if (hwnd != IntPtr.Zero)
         {
-            // 只去掉 WS_CAPTION（不再强制 WS_THICKFRAME，避免顶部白条）
+            // 只去掉 WS_CAPTION（保留 WS_THICKFRAME 以支持系统原生缩放）
             int style = GetWindowLong(hwnd, GWL_STYLE);
             SetWindowLong(hwnd, GWL_STYLE, style & ~WS_CAPTION);
-
-            // 隐藏 Win11 默认的 1px 窗口边框线
-            //uint colorNone = DWMWA_COLOR_NONE;
-            //DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref colorNone, sizeof(uint));
 
             // 让样式改动立即生效
             SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-
-            // 挂 WM_NCHITTEST 子类，边缘命中返回拉伸码（委托用静态字段持有，防 GC）
-            _subclassProc ??= SubclassProc;
-            SetWindowSubclass(hwnd, _subclassProc, new UIntPtr(1001), IntPtr.Zero);
         }
 
         ForceRoundedCorners(nativeWindow);
-    }
-
-    /// <summary>
-    /// WM_NCHITTEST 子类回调：仅边缘命中带返回拉伸码，其余区域放行给默认处理（保证内容可点击）。
-    /// </summary>
-    private static IntPtr SubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData)
-    {
-        if (uMsg == WM_NCHITTEST)
-        {
-            int x = (short)(lParam.ToInt64() & 0xFFFF);
-            int y = (short)((lParam.ToInt64() >> 16) & 0xFFFF);
-
-            GetWindowRect(hWnd, out RECT rect);
-
-            bool top = y >= rect.Top && y - rect.Top <= _borderWidth;
-            bool bottom = y <= rect.Bottom && rect.Bottom - y <= _borderWidth;
-            bool left = x >= rect.Left && x - rect.Left <= _borderWidth;
-            bool right = x <= rect.Right && rect.Right - x <= _borderWidth;
-
-            // 四角优先
-            if (top && left) return (IntPtr)HTTOPLEFT;
-            if (top && right) return (IntPtr)HTTOPRIGHT;
-            if (bottom && left) return (IntPtr)HTBOTTOMLEFT;
-            if (bottom && right) return (IntPtr)HTBOTTOMRIGHT;
-            if (top) return (IntPtr)HTTOP;
-            if (bottom) return (IntPtr)HTBOTTOM;
-            if (left) return (IntPtr)HTLEFT;
-            if (right) return (IntPtr)HTRIGHT;
-        }
-
-        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
     }
 
     /// <summary>
@@ -293,4 +232,68 @@ public static class WindowHelper
     #else
     public static void SetAlwaysOnTop(bool _) { }
 #endif
+
+    /// <summary>
+    /// 让当前窗口进入拖动状态（由 JS 在标签栏按下后调用，绕过 WebView2 子窗口对拖动区域的拦截）。
+    /// 实现与 tauri/tao 的 handle_os_dragging 完全一致：
+    ///   1. 取真实光标坐标打包进 lParam（保证拖拽锚点正确）
+    ///   2. ReleaseCapture 释放 WebView2 子窗口可能持有的鼠标捕获
+    ///   3. SendMessage 同步发送 WM_NCLBUTTONDOWN，在鼠标按下期间进入系统拖拽循环
+    /// </summary>
+    public static void StartWindowDragImmediately()
+    {
+#if WINDOWS
+        var mauiWindow = Application.Current?.Windows[0];
+        if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+            return;
+
+        IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        GetCursorPos(out POINT pt);
+        IntPtr lParam = (IntPtr)(((pt.Y & 0xFFFF) << 16) | (pt.X & 0xFFFF));
+        ReleaseCapture();
+        SendMessage(hwnd, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, lParam);
+#endif
+    }
+
+    /// <summary>
+    /// 双击拖拽区最大化/还原（对应 tauri 的 internal_toggle_maximize 命令）。
+    /// 先检查 is_resizable 和 is_maximizable，与 tauri 行为一致。
+    /// </summary>
+    [JSInvokable]
+    public static void ToggleMaximize()
+    {
+#if WINDOWS
+        var mauiWindow = Application.Current?.Windows[0];
+        if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+            return;
+
+        var appWindow = nativeWindow.AppWindow;
+        if (appWindow?.Presenter is not MicrosoftuiWindowing.OverlappedPresenter presenter)
+            return;
+
+        if (presenter.State == MicrosoftuiWindowing.OverlappedPresenterState.Maximized)
+            presenter.Restore();
+        else
+            presenter.Maximize();
+#endif
+    }
 }
+
+#if WINDOWS
+/// <summary>
+/// 暴露给 WebView2 JS 的同步拖拽桥（host object）。
+/// JS 通过 window.chrome.webview.hostObjects.sync.dragBridge 同步调用，
+/// 绕过 Blazor JS interop 的异步消息队列（该队列在 WebView2 输入事件处理期间会被推迟），
+/// 实现"按下即拖拽、实时跟随"。等价于 tauri 的 JS→原生 IPC 通道。
+/// </summary>
+[ComVisible(true)]
+[ClassInterface(ClassInterfaceType.AutoDispatch)]
+public class DragBridge
+{
+    public void StartWindowDrag() => WindowHelper.StartWindowDragImmediately();
+    public void ToggleMaximize() => WindowHelper.ToggleMaximize();
+}
+#endif

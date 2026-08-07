@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8" />
+    <script src="/_common/iframe-bridge.js"></script>
+    <script src="/_common/wiki-app-common.js"></script>
+    <script type="module" src="/_common/handy-scroll.js"></script>
     <script type="module" src="app.js"></script>
     <link rel="stylesheet" href="vector.css" />
     <link rel="stylesheet" href="common.css" />
@@ -11,8 +14,8 @@
     <link rel="stylesheet" href="theme/light.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Terraria Wiki</title>
-    <script type="module" src="viewer/viewer.min.js" defer></script>
-    <link rel="stylesheet" href="viewer/viewer.min.css" />
+    <script type="module" src="/_common/viewer/viewer.min.js" defer></script>
+    <link rel="stylesheet" href="/_common/viewer/viewer.min.css" />
 </head>
 
 
@@ -76,7 +79,7 @@
     </div>
 
     <div id="loading-mask"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; cursor: wait;">
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; -webkit-backdrop-filter: blur(150px); backdrop-filter: blur(150px);">
     </div>
 
     <div id="custom-context-menu" class="hidden-menu">

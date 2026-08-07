@@ -1,4 +1,5 @@
-﻿@using Microsoft.JSInterop
+﻿@using System.ComponentModel
+@using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
@@ -87,19 +88,29 @@
 @code {
     protected override void OnInitialized()
     {
-        AppState.OnChange += RefreshUI;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         App.Localization!.OnChange += RefreshUI;
     }
 
     public void Dispose()
     {
-        AppState.OnChange -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         App.Localization!.OnChange -= RefreshUI;
     }
 
     private void RefreshUI()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    // 仅响应相关属性变化：CurrentPage, SidebarIsExpanded, ProcessingTaskId, IsDarkTheme
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppState.CurrentPage) 
+                            or nameof(AppState.SidebarIsExpanded) 
+                            or nameof(AppState.ProcessingTaskId) 
+                            or nameof(AppState.IsDarkTheme))
+            RefreshUI();
     }
     // 核心逻辑：判断当前按钮是否应该高亮
     private string GetActiveClass(string pageName)

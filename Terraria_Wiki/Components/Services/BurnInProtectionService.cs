@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿using System.ComponentModel;
+using Microsoft.JSInterop;
 using Terraria_Wiki.Models; // 引入 AppState 所在的命名空间
 
 namespace Terraria_Wiki.Services;
@@ -23,8 +24,14 @@ public class BurnInProtectionService
         _idleTimer.Interval = TimeSpan.FromSeconds(IdleTimeoutSeconds);
         _idleTimer.Tick += (s, e) => Activate();
 
-        // 💡 自动监听！当任务状态改变时，执行 HandleTaskStateChanged
-        _appState.OnChange += HandleTaskStateChanged;
+        // 💡 自动监听！当 ProcessingTaskId 变化时，执行 HandleTaskStateChanged
+        _appState.PropertyChanged += OnAppStatePropertyChanged;
+    }
+
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+            HandleTaskStateChanged();
     }
 
     // 💡 事件处理：根据 TaskId 自动决定启动还是停止

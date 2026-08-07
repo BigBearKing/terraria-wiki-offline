@@ -12,6 +12,11 @@ namespace Terraria_Wiki
 {
     public partial class MainPage : ContentPage
     {
+#if WINDOWS
+        private bool _windowsIntegrationInitialized;
+        private bool _dragBridgeRegistered;
+        private bool _titleBarConfigured;
+#endif
 #if IOS
         private readonly BurnInProtectionService _burnInService;
         private float _originalBrightness = 0.5f;
@@ -47,6 +52,9 @@ namespace Terraria_Wiki
         private void MainPage_Loaded(object sender, EventArgs e)
         {
             UpdateSafeAreaToWeb();
+#if WINDOWS
+            InitializeWindowsIntegration();
+#endif
         }
         private void Current_MainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
         {
@@ -81,6 +89,10 @@ namespace Terraria_Wiki
         {
             base.OnHandlerChanged();
 
+#if WINDOWS
+            InitializeWindowsIntegration();
+#endif
+
 #if ANDROID
             if (blazorWebView.Handler?.PlatformView is Android.Webkit.WebView androidWebView)
             {
@@ -89,6 +101,104 @@ namespace Terraria_Wiki
             }
 #endif
         }
+
+#if WINDOWS
+        private const int TabBarHeightDip = 32;
+
+        private void InitializeWindowsIntegration()
+        {
+            if (blazorWebView.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.WebView2 webView)
+                return;
+
+            if (!_windowsIntegrationInitialized)
+            {
+                webView.SizeChanged += (s, e) => UpdateTabBarDragRectangle();
+                _windowsIntegrationInitialized = true;
+            }
+
+            if (webView.CoreWebView2 != null)
+            {
+                RegisterDragBridge(webView.CoreWebView2);
+            }
+            else
+            {
+                webView.CoreWebView2Initialized += (s, e) =>
+                {
+                    if (e.Exception == null && webView.CoreWebView2 != null)
+                        RegisterDragBridge(webView.CoreWebView2);
+                };
+            }
+
+            ConfigureTabBarTitleBar();
+        }
+
+        private void ConfigureTabBarTitleBar()
+        {
+            var mauiWindow = Application.Current?.Windows[0];
+            if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow ||
+                nativeWindow.AppWindow?.TitleBar == null)
+                return;
+
+            nativeWindow.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+
+            if (!_titleBarConfigured)
+            {
+                nativeWindow.AppWindow.Changed += OnAppWindowChanged;
+                _titleBarConfigured = true;
+            }
+
+            nativeWindow.DispatcherQueue.TryEnqueue(UpdateTabBarDragRectangle);
+        }
+
+        private void OnAppWindowChanged(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        {
+            if (args.DidSizeChange)
+                UpdateTabBarDragRectangle();
+        }
+
+        private void UpdateTabBarDragRectangle()
+        {
+            var mauiWindow = Application.Current?.Windows[0];
+            if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow ||
+                nativeWindow.Content == null ||
+                blazorWebView.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.WebView2 webView ||
+                webView.ActualWidth <= 0)
+                return;
+
+            var appWindow = nativeWindow.AppWindow;
+            if (appWindow?.TitleBar == null)
+                return;
+
+            double scale = nativeWindow.Content.XamlRoot?.RasterizationScale ?? 1.0;
+            var webViewOrigin = webView.TransformToVisual(nativeWindow.Content)
+                .TransformPoint(new Windows.Foundation.Point(0, 0));
+
+            var tabBarDragRect = new Windows.Graphics.RectInt32(
+                (int)Math.Round(webViewOrigin.X * scale),
+                (int)Math.Round(webViewOrigin.Y * scale),
+                (int)Math.Round(webView.ActualWidth * scale),
+                (int)Math.Round(TabBarHeightDip * scale));
+
+            appWindow.TitleBar.SetDragRectangles(new[] { tabBarDragRect });
+        }
+
+        private void RegisterDragBridge(Microsoft.Web.WebView2.Core.CoreWebView2 core)
+        {
+            if (_dragBridgeRegistered)
+                return;
+
+            try
+            {
+                // 暴露给 JS：window.chrome.webview.hostObjects.sync.dragBridge
+                core.AddHostObjectToScript("dragBridge", new DragBridge());
+                _dragBridgeRegistered = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RegisterDragBridge failed: {ex}");
+            }
+        }
+#endif
 
         protected override bool OnBackButtonPressed()
         {

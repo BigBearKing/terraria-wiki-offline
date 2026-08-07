@@ -153,4 +153,7 @@ public class TabModel
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; } = "";
     public List<TempHistory> TempHistory { get; set; } = new();
+
+    // 保存当前正在浏览的页面状态（不在 TempHistory 中）
+    public TempHistory? CurrentPage { get; set; }
 }

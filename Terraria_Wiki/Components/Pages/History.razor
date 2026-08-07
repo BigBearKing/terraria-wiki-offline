@@ -1,4 +1,5 @@
 ﻿@page "/history"
+@using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
@@ -42,17 +43,23 @@
 	protected override void OnInitialized()
 	{
 		//订阅 Topbar 传来的搜索事件
-		AppState.OnSearchQueryChanged += HandleSearchChanged;
+		AppState.PropertyChanged += OnAppStatePropertyChanged;
 		Loc.OnChange += RefreshUI;
 	}
 
 	public void Dispose()
 	{
-		AppState.OnSearchQueryChanged -= HandleSearchChanged;
+		AppState.PropertyChanged -= OnAppStatePropertyChanged;
 		Loc.OnChange -= RefreshUI;
 	}
 
 	private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+	private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+	{
+		if (e.PropertyName == nameof(AppState.SearchQuery))
+			HandleSearchChanged();
+	}
 
 	private async ValueTask<ItemsProviderResult<HistoryTimelineItem>> LoadPages(ItemsProviderRequest request)
 	{

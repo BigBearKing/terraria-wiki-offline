@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -24,9 +25,8 @@ namespace Terraria_Wiki
 
             if (_appState != null)
             {
-                // 假设你的 AppState 里有一个事件叫做 OnChange 或者 PropertyChanged
-                // 你需要在这里订阅它。只要 TaskId 变化了，这个事件就会触发。
-                _appState.OnChange += CheckAndToggleProcessingService;
+                // 只关心 ProcessingTaskId 变化，按属性名过滤
+                _appState.PropertyChanged += OnAppStatePropertyChanged;
             }
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
             AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, false);
@@ -78,6 +78,14 @@ namespace Terraria_Wiki
         }
 
 
+        private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+                CheckAndToggleProcessingService();
+            else if (e.PropertyName == nameof(AppState.IsDarkTheme))
+                RunOnUiThread(ChangeStatusBarColor);
+        }
+
         private async void CheckAndToggleProcessingService()
         {
             if (_appState.ProcessingTaskId != 0)
@@ -120,7 +128,7 @@ namespace Terraria_Wiki
         {
             if (_appState != null)
             {
-                _appState.OnChange -= CheckAndToggleProcessingService; // 防内存泄漏
+                _appState.PropertyChanged -= OnAppStatePropertyChanged; // 防内存泄漏
             }
             base.OnDestroy();
         }

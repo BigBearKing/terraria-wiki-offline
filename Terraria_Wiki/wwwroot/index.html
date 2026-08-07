@@ -8,26 +8,20 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="Terraria_Wiki.styles.css" />
     <link rel="icon" href="data:,">
+    <!-- Iframe 通信桥接库 -->
+    <script src="js/iframe-bridge.js"></script>
     <script>
-        window.hostBridge = {
-            iframeWin: null,
-
-            // C# 调用此方法发送给 Iframe
-            sendToIframe: function (msg) {
-                var iframe = document.getElementById("wiki-frame");
-                if (iframe) iframe.contentWindow.postMessage(msg, '*');
+        // hostBridge 已由 iframe-bridge.js 提供
+        // 添加获取 iframe 当前位置的便捷函数
+        window.getCurrentIframePosition = async function () {
+            try {
+                const position = await window.hostBridge.getIframeScrollPosition();
+                return position.toString();
+            } catch (error) {
+                console.error('获取 iframe 位置失败:', error);
+                return "0";
             }
         };
-        // 监听 Iframe 发来的消息 -> 转发给 C#
-        window.addEventListener('message', function (e) {
-            if (typeof event.data === 'string' && event.data.startsWith('__bwv:')) {
-                return;
-            }
-            // 调用 C# 的静态方法 ReceiveMessage
-            // 注意：把 'YourProjectName' 换成你的项目名！！！
-            DotNet.invokeMethodAsync('Terraria_Wiki', 'ReceiveMessage', JSON.stringify(e.data));
-        });
-
 
         window.checkTheme = function () {
             return document.documentElement.classList.contains('dark-theme');
@@ -84,6 +78,8 @@
         window.setGlobalKeyboardHeight = (height) => {
             document.documentElement.style.setProperty('--global-keyboard-offset', height + 'px');
         };
+
+
     </script>
 </head>
 
@@ -120,7 +116,7 @@
         };
 
         // 鼠标/手指按下时，给 body 加上标记
-        document.addEventListener('pointerdown', function () {
+        document.addEventListener('pointerdown', function (e) {
             document.body.classList.add('is-mouse-down');
         }, { passive: true });
 
@@ -133,6 +129,94 @@
             document.body.classList.remove('is-mouse-down');
 
         });
+
+        // ===== 窗口拖拽区域：与 tauri 的 data-tauri-drag-region (drag.js) 实现对齐 =====
+        // 属性语义：bare/"true"=仅自身；"deep"=子树任意点击；"false"=禁用(阻断祖先拖拽)
+        // 可点击元素(button/a/input 等)默认阻断拖拽，除非它们自身带该属性
+        (function () {
+            const TAURI_DRAG_REGION_ATTR = 'data-tauri-drag-region';
+            const CLICKABLE_TAGS = new Set(['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'LABEL', 'SUMMARY']);
+            const INTERACTIVE_ROLES = new Set(['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'option']);
+
+            function isClickableElement(el) {
+                return CLICKABLE_TAGS.has(el.tagName)
+                    || (el.hasAttribute('contenteditable') && el.getAttribute('contenteditable') !== 'false')
+                    || (el.hasAttribute('tabindex') && el.getAttribute('tabindex') !== '-1')
+                    || INTERACTIVE_ROLES.has(el.getAttribute('role'));
+            }
+
+            // 与 tauri 的 isDragRegion 完全一致：沿 composedPath 从目标向上遍历
+            function isDragRegion(composedPath) {
+                for (const el of composedPath) {
+                    if (!(el instanceof HTMLElement)) continue;
+                    const attr = el.getAttribute(TAURI_DRAG_REGION_ATTR);
+                    // 可点击且无显式拖拽属性 → 阻断拖拽
+                    if (isClickableElement(el) && attr === null) return false;
+                    if (attr === null) continue;
+                    if (attr === 'false') return false;
+                    if (attr === 'deep') return true;
+                    if (attr === '' || attr === 'true') return el === composedPath[0];
+                }
+                return false;
+            }
+
+            // 平台判断（tauri 通过模板注入 os_name，这里用 userAgent 等价判断）
+            const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || navigator.userAgent.includes('Mac');
+
+            // 同步调用桥：优先走 WebView2 host objects（window.chrome.webview.hostObjects.sync），
+            // 它是原生同步通道，不经过 Blazor JS interop 的异步消息队列，
+            // 避免 mousedown 期间消息被 WebView2 输入处理推迟，导致拖拽命令晚于 mouseup 执行
+            // （表现为：拖动时窗口不动、松开瞬间才跳到鼠标位置）。
+            function invokeDragCommand(cmd) {
+                try {
+                    var host = window.chrome && window.chrome.webview && window.chrome.webview.hostObjects
+                        && window.chrome.webview.hostObjects.sync
+                        && window.chrome.webview.hostObjects.sync.dragBridge;
+                    if (host) {
+                        host[cmd]();
+                        return;
+                    }
+                } catch (err) { }
+            }
+
+            let isDragStarted = false;
+            let initialX = 0;
+            let initialY = 0;
+
+            // 捕获阶段同步处理 mousedown，赶在 mouseup 之前把拖拽命令发出去，
+            // 避免 Blazor 事件桥的异步延迟导致"松开才跳"
+            document.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return;
+                if (e.detail !== 1 && e.detail !== 2) return;
+                if (!isDragRegion(e.composedPath())) return;
+
+                // 与 tauri 一致：防止文本光标
+                e.preventDefault();
+                // 与 tauri 一致：阻止其他 mousedown 处理（修复双击拖拽区边缘误触发最大化）
+                e.stopImmediatePropagation();
+
+                // macOS 最大化在 mouseup 触发，先保存状态并返回
+                if (isMac && e.detail === 2) {
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+                    return;
+                }
+
+                const cmd = e.detail === 2 ? 'ToggleMaximize' : 'StartWindowDrag';
+                invokeDragCommand(cmd);
+            }, true);
+
+            // macOS：双击最大化在 mouseup 且鼠标未移动时触发（与系统原生行为一致）
+            if (isMac) {
+                document.addEventListener('mouseup', function (e) {
+                    if (e.button !== 0 || e.detail !== 2) return;
+                    if (e.clientX === initialX && e.clientY === initialY
+                        && isDragRegion(e.composedPath())) {
+                        invokeDragCommand('ToggleMaximize');
+                    }
+                }, true);
+            }
+        })();
 
 
         //拦截默认浏览器行为
@@ -380,7 +464,6 @@
                 }
             };
         }
-
 
     </script>
 

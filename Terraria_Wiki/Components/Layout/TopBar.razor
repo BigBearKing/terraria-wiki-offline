@@ -1,4 +1,5 @@
-﻿@using Terraria_Wiki.Components.Pages
+﻿@using System.ComponentModel
+@using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @inject IJSRuntime JS
@@ -70,17 +71,13 @@
     //刷新机制
     protected override void OnInitialized()
     {
-        AppState.OnChange += RefreshUI;
-        AppState.OnCurrentPageChanged += HandlePageChanged;
-        AppState.OnTabsChanged += RefreshUI;
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
         App.Localization!.OnChange += RefreshUI;
     }
 
     public void Dispose()
     {
-        AppState.OnChange -= RefreshUI;
-        AppState.OnCurrentPageChanged -= HandlePageChanged;
-        AppState.OnTabsChanged -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
         App.Localization!.OnChange -= RefreshUI;
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
@@ -91,6 +88,22 @@
     {
         _isFavorite = await IsFavoritePageAsync();
         InvokeAsync(StateHasChanged);
+    }
+
+    // 仅响应相关属性变化：CurrentPage, CurrentWikiPage, IsPinned, Tabs, ActiveTabId
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // CurrentPage 变化时额外清空搜索框
+        if (e.PropertyName == nameof(AppState.CurrentPage))
+            HandlePageChanged();
+
+        // 只在相关属性变化时刷新
+        if (e.PropertyName is nameof(AppState.CurrentPage) 
+                            or nameof(AppState.CurrentWikiPage) 
+                            or nameof(AppState.IsPinned) 
+                            or nameof(AppState.Tabs) 
+                            or nameof(AppState.ActiveTabId))
+            RefreshUI();
     }
 
     // 当页面切换时，自动清空搜索框
