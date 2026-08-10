@@ -33,9 +33,21 @@ public class AppState : INotifyPropertyChanged
     public static void Init(IJSRuntime jsRuntime) => JS = jsRuntime;
     public string AppName { get; set; } = AppInfo.Current.Name;
 
+    /// <summary>
+    /// 平台类型：应用启动时（DI 构造）只判断一次，避免各处反复调用 DeviceInfo。
+    /// </summary>
+    public DevicePlatform Platform { get; }
+
+    public bool IsWindows => Platform == DevicePlatform.WinUI;
+    public bool IsAndroid => Platform == DevicePlatform.Android;
+    public bool IsIOS => Platform == DevicePlatform.iOS;
+    public bool IsMacCatalyst => Platform == DevicePlatform.MacCatalyst;
+    public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
+
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
     private bool _logPanelIsOpen = false;
+    private bool _mobileTabPanelOpen = false;
     private bool _isDarkTheme;
     private int _processingTaskId = 0;
 
@@ -45,6 +57,7 @@ public class AppState : INotifyPropertyChanged
     private int _activeWikiBookId = Preferences.Default.Get("ActiveWikiBookId", 1);
     private WikiBook? _activeWikiBook;
     private string _searchQuery = "";
+    private string _currentLanguage = "zh-cn";
     private bool _isPinned = false;
     private bool _isSmallScreen = false;
     private double _safeAreaTop = 0;
@@ -71,18 +84,21 @@ public class AppState : INotifyPropertyChanged
 
     public AppState()
     {
+        Platform = DeviceInfo.Platform;
         var defaultTab = new TabModel();
         _tabs = new List<TabModel> { defaultTab };
         _activeTabId = defaultTab.Id;
     }
 
-    private const int MaxTabs = 5;
+    public const int MaxTabs = 5;
 
     public List<TabModel> Tabs
     {
         get => _tabs;
         set => SetProperty(ref _tabs, value);
     }
+
+    public bool CanAddTab => _tabs.Count < MaxTabs;
 
     public string ActiveTabId
     {
@@ -101,23 +117,25 @@ public class AppState : INotifyPropertyChanged
         }
     }
 
-    public List<TempHistory> TempHistory
+    public List<PageViewInfo> TabHistory
     {
         get
         {
             var tab = GetActiveTab();
-            return tab?.TempHistory ?? [];
+            return tab?.TabHistory ?? [];
         }
         set
         {
             var tab = GetActiveTab();
             if (tab != null)
             {
-                tab.TempHistory = value ?? [];
-                OnPropertyChanged(nameof(TempHistory));
+                tab.TabHistory = value ?? [];
+                OnPropertyChanged(nameof(TabHistory));
             }
         }
     }
+
+    public TabModel? ActiveTab => GetActiveTab();
 
     public TabModel? GetActiveTab()
     {
@@ -153,6 +171,12 @@ public class AppState : INotifyPropertyChanged
     {
         get => _sidebarIsExpanded;
         set => SetProperty(ref _sidebarIsExpanded, value);
+    }
+
+    public bool MobileTabPanelOpen
+    {
+        get => _mobileTabPanelOpen;
+        set => SetProperty(ref _mobileTabPanelOpen, value);
     }
 
     public bool LogPanelIsOpen
@@ -223,6 +247,12 @@ public class AppState : INotifyPropertyChanged
     {
         get => _searchQuery;
         set => SetProperty(ref _searchQuery, value);
+    }
+
+    public string CurrentLanguage
+    {
+        get => _currentLanguage;
+        set => SetProperty(ref _currentLanguage, value);
     }
 
     public void TriggerAlert(string title, string message)

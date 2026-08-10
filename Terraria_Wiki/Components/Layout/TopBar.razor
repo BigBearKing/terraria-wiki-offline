@@ -37,6 +37,11 @@
             <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
         </button>
     </div>
+    <div class="actions-wrapper">
+        <button class="action-btn button mobile-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel" style="display:@(AppState.CurrentPage == "home" ? "" : "none")">
+            <Icon Name="more" Size="24"></Icon>
+        </button>
+    </div>
 
 
 </header>
@@ -102,7 +107,8 @@
                             or nameof(AppState.CurrentWikiPage) 
                             or nameof(AppState.IsPinned) 
                             or nameof(AppState.Tabs) 
-                            or nameof(AppState.ActiveTabId))
+                            or nameof(AppState.ActiveTabId)
+                            or nameof(AppState.MobileTabPanelOpen))
             RefreshUI();
     }
 
@@ -117,6 +123,12 @@
     private void OpenMobileSidebar()
     {
         AppState.SidebarIsExpanded = true;
+    }
+
+    // 新增：移动端切换垂直标签面板
+    private void ToggleMobileTabPanel()
+    {
+        AppState.MobileTabPanelOpen = !AppState.MobileTabPanelOpen;
     }
 
     //
@@ -284,11 +296,7 @@
 
     private bool ShouldShowPinButton()
     {
-        if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
-        {
-            return true;
-        }
-        return false;
+        return AppState.IsWindows || AppState.IsMacCatalyst;
     }
 
     private async Task TogglePinStateAsync()

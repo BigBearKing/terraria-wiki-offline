@@ -1,0 +1,51 @@
+/* ============================================================== */
+/* 统一遮罩层：默认半透明全屏遮罩，淡入淡出，show 时拦截点击      */
+/* ============================================================== */
+.app-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    cursor: default;
+    transition: opacity 0.25s ease;
+}
+
+.app-mask.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 锁定：即使显示也不拦截点击（如搜索进行中） */
+.app-mask.locked {
+    pointer-events: none !important;
+}
+
+/* 透明遮罩：仅拦截点击，不遮挡视觉 */
+.app-mask.transparent {
+    background-color: transparent;
+}
+
+/* 从顶部栏下方开始覆盖（搜索遮罩等场景） */
+.app-mask.from-header {
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+}
+
+/* 仅移动端显示（侧边栏抽屉、垂直标签面板的遮罩） */
+.app-mask.mobile-only {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .app-mask.mobile-only {
+        display: block;
+    }
+
+    .app-mask.from-header {
+        height: calc(100vh - 2*var(--header-height));
+    }
+}

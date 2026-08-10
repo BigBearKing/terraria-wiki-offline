@@ -571,7 +571,7 @@ namespace Terraria_Wiki.Services
                 };
                 exportFileName = wikibook.Title + ".pkg";
                 // 3. 获取导出路径（准备阶段）
-                if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (App.AppStateManager?.IsWindows == true)
                 {
 #if WINDOWS
                     string exportPath = await FileHelper.PickFolderWindowsAsync();
@@ -579,7 +579,7 @@ namespace Terraria_Wiki.Services
                     finalPkgPath = Path.Combine(exportPath, exportFileName);
 #endif
                 }
-                else if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst || DeviceInfo.Platform == DevicePlatform.Android)
+                else if (App.AppStateManager?.IsMobile == true || App.AppStateManager?.IsMacCatalyst == true)
                 {
                     // 【修改点 1】移动端 (包括安卓) 统一先输出到缓存目录
                     finalPkgPath = Path.Combine(FileSystem.CacheDirectory, exportFileName);
@@ -644,7 +644,7 @@ namespace Terraria_Wiki.Services
                 // ==========================================
 
                 // 5. 移动端/Mac端：处理刚刚生成的缓存文件 (UI 操作，需在主线程)
-                if (DeviceInfo.Platform == DevicePlatform.Android)
+                if (App.AppStateManager?.IsAndroid == true)
                 {
 #if ANDROID
                     // 【修改点 2】唤起 SAF 选择位置，将缓存包拷贝过去
@@ -671,7 +671,7 @@ namespace Terraria_Wiki.Services
                     }
 #endif
                 }
-                else if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                else if (App.AppStateManager?.IsIOS == true || App.AppStateManager?.IsMacCatalyst == true)
                 {
                     await FileHelper.ExportFileAppleAsync(finalPkgPath);
                 }
@@ -693,7 +693,7 @@ namespace Terraria_Wiki.Services
                 }
 
                 // 如果是移动端，临时生成的包分享/拷贝完后也要删掉防占用空间
-                if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                if (App.AppStateManager?.IsMobile == true || App.AppStateManager?.IsMacCatalyst == true)
                 {
                     _ = FileHelper.ClearAppCacheAsync();
                 }
@@ -720,7 +720,7 @@ namespace Terraria_Wiki.Services
                     mainPage.ShowLoadingPopup("导入数据", "正在导入数据，请稍候...");
                 }
 
-                if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (App.AppStateManager?.IsWindows == true)
                 {
                     filePath = await FileHelper.ImportFileAsync(_loc.Get("DataService.Log.SelectImportPackage"), customFileType);
                 }
@@ -913,7 +913,7 @@ namespace Terraria_Wiki.Services
             {
                 // ... (保持你原本的清理逻辑不变)
                 if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
-                if ((DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS) && !string.IsNullOrEmpty(filePath))
+                if (App.AppStateManager?.IsMobile == true && !string.IsNullOrEmpty(filePath))
                 {
                     _ = FileHelper.ClearAppCacheAsync();
                 }

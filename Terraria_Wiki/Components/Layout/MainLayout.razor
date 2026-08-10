@@ -11,7 +11,7 @@
     {
         <LogPanel />
     }
-    <main class="main-area">
+    <main class="main-area">      
         <TabBar />
         <TopBar />
         <div class="iframe-container page-anim"
@@ -40,7 +40,7 @@
         AppState.PropertyChanged += OnAppStatePropertyChanged;
         AppState.OnShowAlert += HandleShowAlert;
         iframeTheme = ThemeService.GetIframeThemeState();
-        isMobile = DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS;
+        isMobile = AppState.IsMobile;
         src = $"http://127.0.0.1:55000?theme={iframeTheme}&isMobile={isMobile}";
 
     }
@@ -72,7 +72,8 @@
             IframeBridge.Init(JS);
             AppService.Init(NavManager, JS);
             await ThemeService.InitIframeThemeAsync(JS);
-            if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
+            await JS.InvokeVoidAsync("setPlatform", AppState.IsWindows ? "True" : "False");
+            if (AppState.IsMobile)
             {
                 await JS.InvokeVoidAsync("initHover", "False");
                 await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);

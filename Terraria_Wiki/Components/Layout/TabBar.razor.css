@@ -3,7 +3,7 @@
     align-items: flex-end;
     height: 32px;
     flex-shrink: 0;
-    padding: 0 8px 0 8px;
+    padding: 0 150px 0 8px;
     background: var(--bg-color-secondary);
 }
 
@@ -97,4 +97,171 @@
 .tab-add:hover {
     background: var(--hover-bg);
     color: var(--text-primary);
+}
+
+/* --- 移动端垂直标签面板（默认隐藏，仅 <768px 生效） --- */
+.tab-panel {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* 隐藏顶部横向标签栏 */
+    .tab-bar {
+        display: none !important;
+    }
+
+    /* Windows 上保留 32px 占位（含 data-tauri-drag-region 拖拽区），仅隐藏标签内容，避免拖窄窗口时布局跳动 */
+    .tab-bar.win-placeholder {
+        display: flex !important;
+    }
+
+        .tab-bar.win-placeholder .tab-list,
+        .tab-bar.win-placeholder .tab-add {
+            display: none;
+        }
+
+    /* 垂直标签面板：从右上角下拉 */
+    .tab-panel {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: calc(var(--header-height) + 4px);
+        right: 10px;
+        width: min(320px, calc(100vw - 32px));
+        max-height: 50vh;
+        background: var(--bg-color);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        z-index: 1001;
+        opacity: 0;
+        transform: scale(0.94) translateY(-8px);
+        transform-origin: top right;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        overflow: hidden;
+    }
+
+        .tab-panel.show {
+            opacity: 1;
+            transform: none;
+            pointer-events: auto;
+        }
+
+    .tab-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px 8px 16px;
+        border-bottom: 1px solid var(--hover-bg);
+        flex-shrink: 0;
+    }
+
+    .tab-panel-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .tab-panel-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.15s, color 0.15s;
+    }
+
+        .tab-panel-close:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+    .tab-panel-list {
+        overflow-y: auto;
+        padding: 6px;
+        flex-shrink: 1;
+    }
+
+    .tab-panel-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 14px;
+        transition: background 0.15s, color 0.15s;
+    }
+
+        .tab-panel-item.active {
+            background: var(--blue-tertiary);
+            color: var(--blue-primary);
+            font-weight: 600;
+        }
+
+        .tab-panel-item:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+    .tab-panel-item-title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .tab-panel-item-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        flex-shrink: 0;
+        padding: 0;
+        line-height: 1;
+        transition: background 0.15s, color 0.15s;
+    }
+
+        .tab-panel-item-close:hover {
+            background: var(--pressed-bg);
+            color: var(--text-primary);
+        }
+
+    .tab-panel-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin: 6px;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 14px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s, color 0.15s;
+    }
+
+        .tab-panel-add:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
 }

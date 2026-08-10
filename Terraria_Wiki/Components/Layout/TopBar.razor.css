@@ -92,6 +92,10 @@ body.has-hover .action-btn:hover {
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
 }
 
+.mobile-btn {
+    display: none;
+}
+
 .mobile-menu-btn {
     display: none;
 }
@@ -134,5 +138,9 @@ body.has-hover .action-btn:hover {
 
     .page-title {
         text-align: right;
+    }
+
+    .mobile-btn {
+        display: flex;
     }
 }

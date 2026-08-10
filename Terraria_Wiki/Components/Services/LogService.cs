@@ -227,12 +227,12 @@ namespace Terraria_Wiki.Services
                 FileHelper.CreateZipFromDirectory(_archiveFolderPath, tempZipPath);
                 await FileHelper.AddFilesToZip(tempZipPath, new[] { _activeLogPath });
 
-                if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                if (App.AppStateManager?.IsIOS == true || App.AppStateManager?.IsMacCatalyst == true)
                 {
                     // Apple 端依然走系统分享或原有的导出逻辑
                     await FileHelper.ExportFileAppleAsync(tempZipPath);
                 }
-                else if (DeviceInfo.Platform == DevicePlatform.Android)
+                else if (App.AppStateManager?.IsAndroid == true)
                 {
 #if ANDROID
                     // 安卓端走 SAF 机制
@@ -255,7 +255,7 @@ namespace Terraria_Wiki.Services
                     }
 #endif
                 }
-                else if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                else if (App.AppStateManager?.IsWindows == true)
                 {
 #if WINDOWS
             string outputFolder = await FileHelper.PickFolderWindowsAsync();

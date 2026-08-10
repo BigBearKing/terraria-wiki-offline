@@ -10,6 +10,12 @@ namespace Terraria_Wiki.Services
         public static async Task BackEvents()
         {
 
+            if (App.AppStateManager.MobileTabPanelOpen && App.AppStateManager.IsSmallScreen)
+            {
+                App.AppStateManager.MobileTabPanelOpen = false;
+                return;
+            }
+
             if (App.AppStateManager.SidebarIsExpanded && App.AppStateManager.IsSmallScreen)
             {
                 App.AppStateManager.SidebarIsExpanded = false;
@@ -33,7 +39,7 @@ namespace Terraria_Wiki.Services
             string currentPage = App.AppStateManager?.CurrentPage ?? "";
             if (currentPage == "home")
             {
-                if (App.AppStateManager?.TempHistory.Count == 0)
+                if (App.AppStateManager?.TabHistory.Count == 0)
                 {
                     _ = ExitApp();
                 }

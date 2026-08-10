@@ -4,7 +4,7 @@
 
 @if (!string.IsNullOrWhiteSpace(query))
 {
-	<div class="search-overlay @(isSearching ? "searching-lock" : "")" @onclick="ClosePanel"></div>
+	<Mask Show="true" Locked="isSearching" Transparent="true" FromHeader="true" ZIndex="900" OnClick="ClosePanel" />
 
 	<div class="search-popup-panel">
 		@if (isSearching)

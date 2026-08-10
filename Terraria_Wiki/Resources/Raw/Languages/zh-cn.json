@@ -31,6 +31,7 @@
     "TopBar.MatchTitle": "匹配标题",
     "TabBar.NewTab": "新标签页",
     "TabBar.Close": "关闭标签",
+    "TabBar.Tabs": "标签页",
     "TabBar.MaxReached": "最多只能打开5个标签页",
     "AllPages.Index": "所有页面索引",
     "AllPages.FoundCount": "共找到 @totalPageCount 个页面",

@@ -47,7 +47,7 @@ namespace Terraria_Wiki.Services
             else // auto 跟随系统
             {
                 // 使用 MAUI 原生 API 获取系统当前主题，瞬间完成！
-                if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (App.AppStateManager?.IsWindows == true)
                 {
                     isDark = Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
                 }
@@ -74,6 +74,8 @@ namespace Terraria_Wiki.Services
         public static async Task ToggleTheme()
         {
             App.AppStateManager.IsDarkTheme = await JS.InvokeAsync<bool>("toggleTheme", ContentTheme);
+            // 同步更新 Windows 标题栏（含最小化/最大化/关闭按钮）颜色
+            WindowHelper.ApplyTitleBarTheme(App.AppStateManager.IsDarkTheme);
         }
 
     }

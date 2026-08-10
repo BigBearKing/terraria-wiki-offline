@@ -9,6 +9,9 @@ namespace Terraria_Wiki;
 public static class WindowHelper
 {
 #if WINDOWS
+    // 当前原生窗口引用（用于标题栏主题等需要窗口的操作）
+    private static Microsoft.UI.Xaml.Window? _nativeWindow;
+
     // ========== Win32 API（仅保留窗口状态/置顶所需） ==========
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -77,6 +80,8 @@ public static class WindowHelper
     {
         if (nativeWindow is null)
             return;
+
+        _nativeWindow = nativeWindow;
 
         var appWindow = nativeWindow.AppWindow;
         if (appWindow is null)
@@ -232,6 +237,37 @@ public static class WindowHelper
     #else
     public static void SetAlwaysOnTop(bool _) { }
 #endif
+
+    /// <summary>
+    /// 应用标题栏主题（含最小化/最大化/关闭按钮颜色），暗色/亮色跟随应用主题。
+    /// </summary>
+    public static void ApplyTitleBarTheme(bool isDark)
+    {
+#if WINDOWS
+        if (_nativeWindow?.AppWindow?.TitleBar is not { } titleBar) return;
+
+        var bg = isDark ? Windows.UI.Color.FromArgb(255, 19, 19, 19) : Windows.UI.Color.FromArgb(255, 255, 255, 255);
+        var fg = isDark ? Windows.UI.Color.FromArgb(255, 249, 250, 251) : Windows.UI.Color.FromArgb(255, 17, 24, 39);
+        var hoverBg = isDark ? Windows.UI.Color.FromArgb(255, 31, 41, 55) : Windows.UI.Color.FromArgb(255, 238, 238, 238);
+        var pressedBg = isDark ? Windows.UI.Color.FromArgb(255, 55, 65, 81) : Windows.UI.Color.FromArgb(255, 227, 227, 227);
+        var inactiveFg = isDark ? Windows.UI.Color.FromArgb(255, 156, 163, 175) : Windows.UI.Color.FromArgb(255, 107, 114, 128);
+        var transparent = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+
+        titleBar.BackgroundColor = bg;
+        titleBar.ForegroundColor = fg;
+        titleBar.InactiveBackgroundColor = bg;
+        titleBar.InactiveForegroundColor = inactiveFg;
+        // 按钮常态背景透明，仅悬停/按下时显示反馈色
+        titleBar.ButtonBackgroundColor = transparent;
+        titleBar.ButtonForegroundColor = fg;
+        titleBar.ButtonHoverBackgroundColor = hoverBg;
+        titleBar.ButtonHoverForegroundColor = fg;
+        titleBar.ButtonPressedBackgroundColor = pressedBg;
+        titleBar.ButtonPressedForegroundColor = fg;
+        titleBar.ButtonInactiveBackgroundColor = transparent;
+        titleBar.ButtonInactiveForegroundColor = inactiveFg;
+#endif
+    }
 
     /// <summary>
     /// 让当前窗口进入拖动状态（由 JS 在标签栏按下后调用，绕过 WebView2 子窗口对拖动区域的拦截）。

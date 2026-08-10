@@ -31,6 +31,7 @@
     "TopBar.MatchTitle": "Match Title",
     "TabBar.NewTab": "New Tab",
     "TabBar.Close": "Close Tab",
+    "TabBar.Tabs": "Tabs",
     "TabBar.MaxReached": "Maximum 5 tabs allowed",
     "AllPages.Index": "All Pages Index",
     "AllPages.FoundCount": "Found @totalPageCount pages",

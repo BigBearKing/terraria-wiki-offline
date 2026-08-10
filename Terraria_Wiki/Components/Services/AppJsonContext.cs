@@ -13,7 +13,7 @@ namespace Terraria_Wiki.Services;
 [JsonSerializable(typeof(GitHubReleaseInfo))]
 [JsonSerializable(typeof(WikiPageStringTime))]
 [JsonSerializable(typeof(TitleWithAnchor))]
-[JsonSerializable(typeof(TempHistory))]
+[JsonSerializable(typeof(PageViewInfo))]
 [JsonSerializable(typeof(WikiPackageInfo))]
 [JsonSerializable(typeof(List<FileMeta>))]
 [JsonSerializable(typeof(FileMeta))]

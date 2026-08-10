@@ -1,0 +1,27 @@
+@* 统一遮罩层组件：半透明/透明遮罩、淡入淡出、点击关闭（或放行点击） *@
+<div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(MobileOnly ? "mobile-only" : "")"
+     style="z-index: @ZIndex;"
+     @onclick="OnClick"></div>
+
+@code {
+    /// <summary>是否显示（淡入 + 拦截点击）</summary>
+    [Parameter] public bool Show { get; set; }
+
+    /// <summary>锁定：即使显示也放行点击（pointer-events: none），如搜索进行中</summary>
+    [Parameter] public bool Locked { get; set; }
+
+    /// <summary>透明遮罩：无背景色，仅拦截点击</summary>
+    [Parameter] public bool Transparent { get; set; }
+
+    /// <summary>从顶部栏下方开始覆盖（top: var(--header-height)）</summary>
+    [Parameter] public bool FromHeader { get; set; }
+
+    /// <summary>仅移动端（≤768px）显示，桌面端隐藏</summary>
+    [Parameter] public bool MobileOnly { get; set; }
+
+    /// <summary>层级（默认 900）</summary>
+    [Parameter] public int ZIndex { get; set; } = 900;
+
+    /// <summary>点击遮罩时回调（用于关闭对应面板）</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+}

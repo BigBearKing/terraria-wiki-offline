@@ -71,6 +71,8 @@ namespace Terraria_Wiki
                     wndLifeCycleBuilder.OnWindowCreated((window) =>
                     {
                         WindowHelper.EnableResizableBorderless(window);
+                        // 启动时按当前主题设置标题栏（含最小化/最大化/关闭按钮）颜色
+                        WindowHelper.ApplyTitleBarTheme(App.AppStateManager?.IsDarkTheme ?? false);
                     });
                 });
             });

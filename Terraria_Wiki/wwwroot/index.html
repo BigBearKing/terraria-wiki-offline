@@ -44,6 +44,15 @@
 
         };
 
+        // 平台类：Windows 上用于把 TabBar 高度计入 --tabbar-height / --header-height
+        window.setPlatform = function (isWindows) {
+            if (isWindows === "True") {
+                document.documentElement.classList.add('windows');
+            } else {
+                document.documentElement.classList.remove('windows');
+            }
+        };
+
 
         window.initGlobalScreenListener = () => {
             const mq = window.matchMedia('(max-width: 768px)');

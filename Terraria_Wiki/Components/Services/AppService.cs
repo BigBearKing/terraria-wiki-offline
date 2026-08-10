@@ -56,7 +56,7 @@ namespace Terraria_Wiki.Services
                     var tab = App.AppStateManager.GetActiveTab();
                     if (tab != null)
                     {
-                        tab.CurrentPage = new TempHistory
+                        tab.CurrentPage = new PageViewInfo
                         {
                             Title = page.Title,
                             Position = 0
@@ -98,17 +98,17 @@ namespace Terraria_Wiki.Services
                 return IframeBridge.ObjToJson(result);
             };
 
-            IframeBridge.Actions["SaveToTempHistory"] = async (args) =>
+            IframeBridge.Actions["SaveToTabHistory"] = async (args) =>
             {
-                TempHistory tempHistory = IframeBridge.JsonToObj<TempHistory>(args);
+                PageViewInfo pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
 
-                // 获取当前激活 tab 并直接操作其 TempHistory
+                // 获取当前激活 tab 并直接操作其 TabHistory
                 var tab = App.AppStateManager.GetActiveTab();
                 if (tab != null)
                 {
-                    tab.TempHistory.Add(tempHistory);
+                    tab.TabHistory.Add(pageViewInfo);
                     // 可选：触发通知（如果需要 UI 更新）
-                    // App.AppStateManager.OnPropertyChanged(nameof(App.AppStateManager.TempHistory));
+                    // App.AppStateManager.OnPropertyChanged(nameof(App.AppStateManager.TabHistory));
                 }
 
                 return null;
@@ -118,6 +118,35 @@ namespace Terraria_Wiki.Services
             {
                 if (Preferences.Default.Get("IsSideButtonBack", true))
                     await WikiBackAsync();
+                return null;
+            };
+
+            IframeBridge.Actions["OpenInNewTab"] = async (args) =>
+            {
+                PageViewInfo pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
+
+                // 校验目标页面是否存在（WikiPage 或 WikiRedirect），避免新建出空白标签页
+                if (pageViewInfo != null && !string.IsNullOrEmpty(pageViewInfo.Title))
+                {
+                    // 去掉可能携带的 #锚点，只校验词条本身
+                    var title = pageViewInfo.Title;
+                    int hashIndex = title.IndexOf('#');
+                    if (hashIndex != -1) title = title.Substring(0, hashIndex);
+
+                    bool exists = await App.ContentDb.ItemExistsAsync<WikiPage>(title)
+                                  || await App.ContentDb.ItemExistsAsync<WikiRedirect>(title);
+
+                    if (!exists)
+                    {
+                        App.AppStateManager.TriggerAlert(
+                            App.Localization!.Get("Common.Notice"),
+                            App.Localization!.Get("AppService.PageNotFound"));
+                        return null; // 页面不存在，不创建标签页
+                    }
+                }
+
+                var tab = await AddTabAsync(pageViewInfo);
+                await SwitchToTabAsync(tab.Id);
                 return null;
             };
 
@@ -178,7 +207,7 @@ namespace Terraria_Wiki.Services
 
         public static async Task WikiBackAsync()
         {
-            var list = App.AppStateManager.TempHistory;
+            var list = App.AppStateManager.TabHistory;
             var listcount = list.Count;
             if (listcount != 0)
             {
@@ -194,7 +223,7 @@ namespace Terraria_Wiki.Services
 
         public static async Task WikiBackHomeAsync()
         {
-            var list = App.AppStateManager.TempHistory;
+            var list = App.AppStateManager.TabHistory;
             var listcount = list.Count;
             if (listcount != 0)
             {
@@ -216,7 +245,7 @@ namespace Terraria_Wiki.Services
 
         public static async Task WikiRefreshAsync()
         {
-            App.AppStateManager.TempHistory.Clear();
+            App.AppStateManager.TabHistory.Clear();
             await IframeBridge.CallJsAsync("ClearPage", "");
             await IframeBridge.CallJsAsync("BackHome", "");
         }
@@ -231,7 +260,7 @@ namespace Terraria_Wiki.Services
                 var positionStr = await _js.InvokeAsync<string>("getCurrentIframePosition");
                 float position = string.IsNullOrEmpty(positionStr) ? 0 : float.Parse(positionStr);
 
-                currentTab.CurrentPage = new TempHistory
+                currentTab.CurrentPage = new PageViewInfo
                 {
                     Title = App.AppStateManager.CurrentWikiPage,
                     Position = position
@@ -248,9 +277,9 @@ namespace Terraria_Wiki.Services
             {
                 await IframeBridge.CallJsAsync("BackToPage", IframeBridge.ObjToJson(tab.CurrentPage));
             }
-            else if (tab.TempHistory.Count > 0)
+            else if (tab.TabHistory.Count > 0)
             {
-                var lastHistory = tab.TempHistory[^1];
+                var lastHistory = tab.TabHistory[^1];
                 await IframeBridge.CallJsAsync("BackToPage", IframeBridge.ObjToJson(lastHistory));
             }
             else
@@ -283,7 +312,7 @@ namespace Terraria_Wiki.Services
             }
         }
 
-        public static async Task AddTabAsync()
+        public static async Task<TabModel> AddTabAsync(PageViewInfo pageViewInfo = null)
         {
             var tab = App.AppStateManager.AddTab();
             if (tab == null)
@@ -291,11 +320,17 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.TriggerAlert(
                     App.Localization!.Get("Common.Notice"),
                     App.Localization!.Get("TabBar.MaxReached"));
-                return;
-            }
 
-            // 切换到新 tab（保存旧 tab 状态/恢复新 tab 状态由 SwitchToTabAsync 统一处理）
-            await SwitchToTabAsync(tab.Id);
+            }
+            if (pageViewInfo != null)
+            {
+                tab.CurrentPage = pageViewInfo;
+            }
+            else
+            {
+                tab.CurrentPage = null;
+            }
+            return tab;
         }
 
         // 跳转页面

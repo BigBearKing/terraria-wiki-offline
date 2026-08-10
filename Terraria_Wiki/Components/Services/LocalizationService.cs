@@ -22,6 +22,7 @@ namespace Terraria_Wiki.Services
             if (!string.IsNullOrEmpty(savedLang))
                 _currentLanguage = NormalizeCode(savedLang);
             await LoadLanguage(_currentLanguage);
+            App.AppStateManager!.CurrentLanguage = _currentLanguage;
             NotifyStateChanged();
         }
 
@@ -35,6 +36,7 @@ namespace Terraria_Wiki.Services
             _currentLanguage = normalized;
             Preferences.Default.Set("AppLanguage", normalized);
             await LoadLanguage(normalized);
+            App.AppStateManager!.CurrentLanguage = _currentLanguage;
             NotifyStateChanged();
         }
 

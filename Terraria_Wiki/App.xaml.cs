@@ -66,6 +66,9 @@ namespace Terraria_Wiki
             window.MinimumWidth = 400;
             window.MinimumHeight = 300;
 #endif
+            // 恢复上次的窗口位置/大小/最大化状态，并在销毁时保存
+            WindowHelper.RestoreWindowState(window);
+            WindowHelper.RegisterSaveOnDestroy(window);
             return window;
         }
 #endif

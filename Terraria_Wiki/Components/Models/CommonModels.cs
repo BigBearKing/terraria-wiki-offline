@@ -56,7 +56,7 @@ public class RawPage
 
 // AppState Models 定义
 
-public class TempHistory
+public class PageViewInfo
 {
     public string Title { get; set; }
     public float Position { get; set; }
@@ -152,8 +152,8 @@ public class TabModel
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; } = "";
-    public List<TempHistory> TempHistory { get; set; } = new();
+    public List<PageViewInfo> TabHistory { get; set; } = new();
 
-    // 保存当前正在浏览的页面状态（不在 TempHistory 中）
-    public TempHistory? CurrentPage { get; set; }
+    // 保存当前正在浏览的页面状态（不在 TabHistory 中）
+    public PageViewInfo? CurrentPage { get; set; }
 }

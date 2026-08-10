@@ -3,7 +3,7 @@
 @inject IJSRuntime JSRuntime
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
-<div class="sidebar-mask @(AppState.SidebarIsExpanded ? "show" : "")" @onclick="CloseSidebar"></div>
+<Mask Show="AppState.SidebarIsExpanded" MobileOnly="true" ZIndex="999" OnClick="CloseSidebar" />
 
 <div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
 

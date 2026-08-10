@@ -61,6 +61,8 @@
             changeTheme('False');
         }
 
+        ensureCommonUI(); // 注入公共 UI（加载遮罩、右键菜单结构、公共样式）
+
         window.pageTitle = null; // 当前页面标题，初始为空
         registerHandlers(config); // 注册 C# -> JS 的消息处理器
         bindNavigation(config);   // 绑定链接点击、鼠标侧键等导航交互
@@ -138,10 +140,12 @@
         // 处理所有链接点击
         document.addEventListener('click', function (e) {
             const targetLink = e.target.closest('a');
-
+            console.log('点击了',targetLink);
             if (targetLink) {
-                // 点击缩略图（thumb）中的链接 -> 打开图片查看器
-                if (targetLink.closest("div.thumb")) {
+                // 点击缩略图（thumb）中的图片链接 -> 打开图片查看器
+                // 注意：thumbcaption 说明文字里的普通文本链接（无 <img>）不属于图片，
+                // 不应被劫持，应继续走下方正常的站内跳转逻辑
+                if (targetLink.closest("div.thumb") && targetLink.querySelector('img')) {
                     openThumb(targetLink);
                     return;
                 }
@@ -224,7 +228,7 @@
 
         // 导航仍有效时，把上一页信息存入临时历史
         if (isCurrentNavigation(navigationId)) {
-            await callCSharpAsync("SaveToTempHistory", JSON.stringify(args));
+            await callCSharpAsync("SaveToTabHistory", JSON.stringify(args));
         }
     }
 
@@ -356,6 +360,158 @@
     }
 
     /**
+     * 注入所有 wiki 页面共用的 UI 元素与样式。
+     *
+     * 原先这些内容（加载遮罩、自定义右键菜单的 HTML 结构，以及滚动条、
+     * Viewer 动画、右键菜单等公共 CSS）在各站点的 index.html 中重复出现，
+     * 现统一由本函数动态创建，保证所有页面外观与行为一致。
+     */
+    function ensureCommonUI() {
+        // ---- 加载遮罩：页面切换时用于遮挡内容替换过程 ----
+        if (!document.getElementById("loading-mask")) {
+            const loadingMask = document.createElement("div");
+            loadingMask.id = "loading-mask";
+            loadingMask.style.cssText =
+                "display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; -webkit-backdrop-filter: blur(150px); backdrop-filter: blur(150px);";
+            document.body.appendChild(loadingMask);
+        }
+
+        // ---- 自定义右键菜单结构（仅桌面端使用，initContextMenu 中绑定行为）----
+        if (!document.getElementById("custom-context-menu")) {
+            const menu = document.createElement("div");
+            menu.id = "custom-context-menu";
+            menu.className = "hidden-menu";
+
+            const copyItem = document.createElement("div");
+            copyItem.className = "menu-item";
+            copyItem.id = "menu-copy";
+            copyItem.textContent = "复制";
+
+            const openNewTabItem = document.createElement("div");
+            openNewTabItem.className = "menu-item";
+            openNewTabItem.id = "menu-new-tab";
+            openNewTabItem.textContent = "在新标签页打开";
+
+            const openSourceItem = document.createElement("div");
+            openSourceItem.className = "menu-item";
+            openSourceItem.id = "menu-open-source";
+            openSourceItem.textContent = "打开原文";
+
+            menu.appendChild(copyItem);
+            menu.appendChild(openNewTabItem);
+            menu.appendChild(openSourceItem);
+            document.body.appendChild(menu);
+        }
+
+        // ---- 公共样式：只注入一次，避免重复 ----
+        if (!document.getElementById("wiki-common-style")) {
+            const style = document.createElement("style");
+            style.id = "wiki-common-style";
+            style.textContent = `
+            body {
+                padding-right: 0 !important;
+            }
+
+            /* 覆盖 Viewer.js 全局的形变/缩放动画速度 */
+            .viewer-transition {
+                transition: all 0.15s !important;
+                /* 默认通常是 0.3s，数值越小越快 */
+            }
+
+            /* 覆盖 Viewer.js 背景和遮罩层的淡入淡出速度 */
+            .viewer-fade {
+                transition: opacity 0.15s !important;
+            }
+
+            .mclist {
+                overflow-y: hidden;
+            }
+
+            /* 1. 基础宽度 - 稍微收窄一点，显得更精致 */
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+
+            /* 2. 轨道 - 保持完全透明 */
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            /* 3. 滑块 - 使用半透明色，确保在深色/浅色背景下都能"透"出来 */
+            ::-webkit-scrollbar-thumb {
+                background-color: rgba(128, 128, 128, 0.3);
+                border-radius: 999px;
+                transition: background-color 0.2s;
+            }
+
+            /* 4. 悬停状态 - 宽度不变，但颜色加深，增加互动反馈 */
+            ::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(128, 128, 128, 0.5);
+            }
+
+            /* 自定义右键菜单基础样式 */
+            #custom-context-menu {
+                position: fixed;
+                background: #ffffff;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 100000;
+                min-width: 140px;
+                padding: 4px 0;
+                /* 用 opacity + visibility 实现淡入淡出：
+                   visibility 支持过渡，会在淡出动画结束后才真正隐藏，
+                   淡入时立即可见再配合 opacity 过渡，避免 display 切换无动画 */
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.08s ease, visibility 0.08s ease;
+                font-family: inherit;
+            }
+
+            /* 显示菜单的状态 */
+            #custom-context-menu.show-menu {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* 菜单项样式 */
+            .menu-item {
+                padding: 6px 16px;
+                font-size: 14px;
+                color: #333;
+                cursor: pointer;
+                transition: background-color 0.1s;
+            }
+
+            .menu-item:hover {
+                background-color: #f0f0f0;
+            }
+
+
+            /* ---- 深色模式 (dark theme) 适配 ---- */
+            html.dark #custom-context-menu {
+                background: #2b2b2b;
+                border-color: #444;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            }
+
+            html.dark .menu-item {
+                color: #eee;
+            }
+
+            html.dark .menu-item:hover {
+                background-color: #3a3a3a;
+            }
+
+            html.dark .menu-divider {
+                background-color: #444;
+            }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    /**
      * 初始化自定义右键菜单（仅桌面端使用，替代 WebView 默认右键菜单）。
      * 菜单项包括：复制文本/图片、打开源码页面。
      * @param {object} config 配置对象
@@ -417,42 +573,76 @@
             }, 0);
         });
 
-        // “复制”菜单项：优先复制选中的文本；右键目标是图片时复制图片
-        const btnCopy = document.getElementById('menu-copy');
-        if (btnCopy) {
-            btnCopy.addEventListener('click', () => {
-                if (rightClickSelectedText) {
-                    callCSharpAsync("CopyTextToClipboard", rightClickSelectedText);
-                } else if (rightClickTarget && rightClickTarget.tagName === 'IMG') {
-                    // 通过图片文件名让 C# 侧定位并复制图片
-                    callCSharpAsync("CopyImageToClipboard", rightClickTarget.src.split('/').pop());
+        // 事件委托：在菜单容器上只注册一次 click，按菜单项 id 分发处理
+        contextMenu.addEventListener('click', (e) => {
+            const item = e.target.closest('.menu-item');
+            if (!item) return;
+
+            switch (item.id) {
+                // “复制”菜单项：优先复制选中的文本；右键目标是图片时复制图片
+                case 'menu-copy':
+                    if (rightClickSelectedText) {
+                        callCSharpAsync("CopyTextToClipboard", rightClickSelectedText);
+                    } else if (rightClickTarget && rightClickTarget.tagName === 'IMG') {
+                        // 通过图片文件名让 C# 侧定位并复制图片
+                        callCSharpAsync("CopyImageToClipboard", rightClickTarget.src.split('/').pop());
+                    }
+                    break;
+
+                // “打开源码”菜单项：右键的是外链则打开该链接，否则打开当前词条的源码页面
+                case 'menu-open-source': {
+                    const aTag = rightClickTarget ? rightClickTarget.closest('a') : null;
+                    let targetUrl = '';
+
+                    if (aTag && aTag.href && aTag.href.startsWith('http')) {
+                        targetUrl = aTag.href;
+                    } else {
+                        const title = window.pageTitle || config.homePage;
+                        targetUrl = config.sourceUrl(title);
+                    }
+
+                    if (targetUrl) {
+                        callCSharpAsync("OpenExternalWebsite", targetUrl);
+                    }
+                    break;
                 }
 
-                hideMenu();
-            });
-        }
+                // “在新标签页打开”菜单项：
+                // 站内词条链接 -> 新标签页打开该词条；外链 -> 系统浏览器打开；其余 -> 新标签页打开当前页
+                case 'menu-new-tab': {
+                    const aTag = rightClickTarget ? rightClickTarget.closest('a') : null;
+                    const href = aTag ? (aTag.getAttribute('href') || '') : '';
+                    const wikiTitle = aTag ? aTag.getAttribute('data-wiki') : null;
 
-        // “打开源码”菜单项：右键的是外链则打开该链接，否则打开当前词条的源码页面
-        const btnOpenSource = document.getElementById('menu-open-source');
-        if (btnOpenSource) {
-            btnOpenSource.addEventListener('click', () => {
-                const aTag = rightClickTarget ? rightClickTarget.closest('a') : null;
-                let targetUrl = '';
-
-                if (aTag && aTag.href && aTag.href.startsWith('http')) {
-                    targetUrl = aTag.href;
-                } else {
-                    const title = window.pageTitle || config.homePage;
-                    targetUrl = config.sourceUrl(title);
+                    // 外链 -> 交给 C# 用系统浏览器打开
+                    if (href.startsWith('http')) {
+                        callCSharpAsync("OpenExternalWebsite", href);
+                    } else if (wikiTitle && !href) {
+                        // 带 data-wiki 属性的站内链接 -> 在新标签页打开该词条
+                        const args = {
+                            title: wikiTitle,
+                            position: 0
+                        };
+                        callCSharpAsync("OpenInNewTab", JSON.stringify(args));
+                    } else {
+                        // 空白处右键、相对链接或锚点链接 -> 在新标签页打开当前页
+                        const args = {
+                            title: window.pageTitle,
+                            position: window.pageYOffset
+                        };
+                        callCSharpAsync("OpenInNewTab", JSON.stringify(args));
+                    }
+                    break; // 统一由下方 hideMenu() 关闭菜单
                 }
 
-                if (targetUrl) {
-                    callCSharpAsync("OpenExternalWebsite", targetUrl);
-                }
 
-                hideMenu();
-            });
-        }
+                default:
+                    // 未识别的菜单项：不关闭菜单，交由自定义逻辑处理
+                    return;
+            }
+
+            hideMenu();
+        });
     }
 
     // 对外暴露入口，供页面脚本调用 window.wikiApp.start(config)

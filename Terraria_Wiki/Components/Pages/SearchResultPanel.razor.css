@@ -1,19 +1,4 @@
-﻿/* 遮罩层：铺满整个屏幕，拦截点击事件 */
-.search-overlay {
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 900;
-    cursor: default;
-}
-
-    .search-overlay.searching-lock {
-        pointer-events: none;
-    }
-
-/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
+﻿/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
     top: calc(var(--header-height) + 4px);
@@ -88,7 +73,4 @@ body.has-hover .result-item:hover {
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 
-    .search-overlay {
-        height: calc(100vh - 2*var(--header-height));
     }
-}
