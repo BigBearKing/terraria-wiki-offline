@@ -18,6 +18,8 @@ public class AppState : INotifyPropertyChanged
     /// </summary>
     public event Action<string, string>? OnShowAlert;
 
+    public event Action? OnWikiBookSwitched;
+
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -140,6 +142,30 @@ public class AppState : INotifyPropertyChanged
     public TabModel? GetActiveTab()
     {
         return _tabs.FirstOrDefault(t => t.Id == _activeTabId);
+    }
+
+    public void ResetWikiNavigation()
+    {
+        var defaultTab = new TabModel();
+        _tabs = new List<TabModel> { defaultTab };
+        _activeTabId = defaultTab.Id;
+        _currentWikiPage = string.Empty;
+        _currentPage = "home";
+        _searchQuery = string.Empty;
+        _mobileTabPanelOpen = false;
+
+        OnPropertyChanged(nameof(Tabs));
+        OnPropertyChanged(nameof(ActiveTabId));
+        OnPropertyChanged(nameof(ActiveTab));
+        OnPropertyChanged(nameof(CurrentWikiPage));
+        OnPropertyChanged(nameof(CurrentPage));
+        OnPropertyChanged(nameof(SearchQuery));
+        OnPropertyChanged(nameof(MobileTabPanelOpen));
+    }
+
+    public void NotifyWikiBookSwitched()
+    {
+        OnWikiBookSwitched?.Invoke();
     }
 
     public TabModel? AddTab()

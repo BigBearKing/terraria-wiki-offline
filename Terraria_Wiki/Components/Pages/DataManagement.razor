@@ -118,8 +118,7 @@
 
         if (confirm)
         {
-            Preferences.Default.Set("ActiveWikiBookId", item.Id);
-            AppService.RestartApp();
+            await AppService.SwitchWikiBookAsync(item.Id);
         }
     }
 

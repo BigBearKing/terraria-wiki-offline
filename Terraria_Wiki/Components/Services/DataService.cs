@@ -393,6 +393,17 @@ namespace Terraria_Wiki.Services
                 await App.ManagerDb.SaveItemAsync(wikiBook);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 await AppService.WikiRefreshAsync();
+
+                // 后台压缩数据库：先合并 WAL 回主库，再 VACUUM 回收磁盘空间
+                // （SQLite 的 DELETE 只标记空闲页，文件大小不变，必须 VACUUM 才归还空间）
+                // 注意：VACUUM 会重建整个库文件，期间避免并发读写，故放后台线程执行
+                await Task.Run(async () =>
+                {
+                    var conn = App.ContentDb.GetConnection();
+                    await conn.ExecuteAsync("PRAGMA wal_checkpoint(TRUNCATE)");
+                    await App.ContentDb.VacuumDatabaseAsync();
+                });
+
                 _log.Success(_loc.Get("DataService.Log.DeleteAssetsCompleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DeleteAssetsCompleted"));
 
@@ -505,6 +516,8 @@ namespace Terraria_Wiki.Services
                 await App.ManagerDb.DeleteItemAsync<WikiBook>(App.AppStateManager.ActiveWikiBookId);
                 await App.ManagerDb.Init(true);
                 await App.ContentDb.ReconnectAsync();
+                await App.ContentDb.Init(true, App.AppStateManager.ActiveWikiBook);
+                App.AppStateManager.ResetWikiNavigation();
                 await AppService.WikiRefreshAsync();
                 _log.Success(_loc.Get("DataService.Log.DatabaseDeleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.DatabaseDeleted"));
@@ -1289,11 +1302,22 @@ namespace Terraria_Wiki.Services
             node.SelectNodes("//a[@href and @title]")?.ToList().ForEach(n =>
             {
                 string href = n.Attributes["href"].Value;
+
+                // 纯锚点（如 href="#历史"）是页内目录跳转，保持原样交给浏览器原生处理
+                if (href.StartsWith('#'))
+                {
+                    return;
+                }
+
+                // 把 #锚点 合并进 title，作为站内跳转目标（含锚点定位）
                 int hashIndex = href.IndexOf('#');
                 if (hashIndex >= 0)
                 {
                     n.SetAttributeValue("title", n.GetAttributeValue("title", "") + href.Substring(hashIndex));
                 }
+
+                // 前端 JS 通过 data-wiki 识别站内链接并触发应用内跳转
+                n.SetAttributeValue("data-wiki", n.GetAttributeValue("title", ""));
                 n.Attributes.Remove("href");
             });
         }

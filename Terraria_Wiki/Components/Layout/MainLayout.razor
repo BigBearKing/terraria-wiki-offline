@@ -38,22 +38,35 @@
     {
 
         AppState.PropertyChanged += OnAppStatePropertyChanged;
+        AppState.OnWikiBookSwitched += OnWikiBookSwitched;
         AppState.OnShowAlert += HandleShowAlert;
         iframeTheme = ThemeService.GetIframeThemeState();
         isMobile = AppState.IsMobile;
-        src = $"http://127.0.0.1:55000?theme={iframeTheme}&isMobile={isMobile}";
+        src = BuildWikiFrameUrl();
 
     }
 
     public void Dispose()
     {
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
+        AppState.OnWikiBookSwitched -= OnWikiBookSwitched;
         AppState.OnShowAlert -= HandleShowAlert;
     }
 
     private void RefreshUI()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private string BuildWikiFrameUrl()
+    {
+        return $"http://127.0.0.1:55000?theme={iframeTheme}&isMobile={isMobile}&v={DateTime.UtcNow.Ticks}";
+    }
+
+    private void OnWikiBookSwitched()
+    {
+        src = BuildWikiFrameUrl();
+        RefreshUI();
     }
 
     // 仅响应 LogPanelIsOpen 和 CurrentPage 变化

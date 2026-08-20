@@ -19,169 +19,147 @@ namespace Terraria_Wiki.Services
     {
         private static NavigationManager _navManager;
         private static IJSRuntime _js;
+        private static readonly SemaphoreSlim _wikiSwitchLock = new(1, 1);
 
 
         public AppService()
         {
-            IframeBridge.Actions["PageRedirectAsync"] = async (title) =>
+            RegisterIframeActions();
+        }
+
+        private void RegisterIframeActions()
+        {
+            IframeBridge.Actions["PageRedirectAsync"] = PageRedirectAsync;
+            IframeBridge.Actions["GetRedirectedTitleAndAnchorAsync"] = GetRedirectedTitleAndAnchorAsync;
+            IframeBridge.Actions["SaveToTabHistory"] = SaveToTabHistoryAsync;
+            IframeBridge.Actions["WikiBackAsync"] = WikiBackActionAsync;
+            IframeBridge.Actions["OpenInNewTab"] = OpenInNewTabAsync;
+            IframeBridge.Actions["OpenExternalWebsite"] = OpenExternalWebsiteAsync;
+            IframeBridge.Actions["CopyTextToClipboard"] = CopyTextToClipboardAsync;
+            IframeBridge.Actions["CopyImageToClipboard"] = CopyImageToClipboardAsync;
+        }
+
+        private async Task<string> PageRedirectAsync(string title)
+        {
+            WikiPage page;
+            if (await App.ContentDb.ItemExistsAsync<WikiPage>(title))
+                page = await App.ContentDb.GetItemAsync<WikiPage>(title);
+            else if (await App.ContentDb.ItemExistsAsync<WikiRedirect>(title))
             {
-                WikiPage page;
-                if (await App.ContentDb.ItemExistsAsync<WikiPage>(title))
+                var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
+                page = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
+            }
+            else
+            {
+                App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.PageNotFound"));
+                return null;
+            }
+
+            if (page == null) return null;
+
+            var result = new WikiPageStringTime
+            {
+                Title = page.Title,
+                Content = page.Content,
+                LastModified = page.LastModified.ToString(App.Localization!.Get("AppService.DateFormat"))
+            };
+            App.AppStateManager.CurrentWikiPage = page.Title;
+
+            var tab = App.AppStateManager.GetActiveTab();
+            if (tab != null)
+                tab.CurrentPage = new PageViewInfo { Title = page.Title, Position = 0 };
+
+            if (page.Title != App.AppStateManager.ActiveWikiBook.DefaultPageTitle)
+                Task.Run(async () => await SaveToHistoryAsync(page.Title));
+
+            return IframeBridge.ObjToJson(result);
+        }
+
+        private async Task<string> GetRedirectedTitleAndAnchorAsync(string input)
+        {
+            if (input.IndexOf('#') == -1 && await App.ContentDb.ItemExistsAsync<WikiRedirect>(input))
+            {
+                var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(input);
+                input = redirect.ToTarget;
+            }
+
+            var parts = input.Split(new[] { '#' }, 2);
+            return IframeBridge.ObjToJson(new TitleWithAnchor
+            {
+                Title = parts[0],
+                Anchor = parts.Length > 1 ? parts[1] : null
+            });
+        }
+
+        private Task<string> SaveToTabHistoryAsync(string args)
+        {
+            var pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
+            var tab = App.AppStateManager.GetActiveTab();
+            if (tab != null)
+                tab.TabHistory.Add(pageViewInfo);
+            return Task.FromResult<string>(null);
+        }
+
+        private async Task<string> WikiBackActionAsync(string args)
+        {
+            if (Preferences.Default.Get("IsSideButtonBack", true))
+                await WikiBackAsync();
+            return null;
+        }
+
+        private async Task<string> OpenInNewTabAsync(string args)
+        {
+            var pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
+            if (pageViewInfo != null && !string.IsNullOrEmpty(pageViewInfo.Title))
+            {
+                var title = pageViewInfo.Title;
+                int hashIndex = title.IndexOf('#');
+                if (hashIndex != -1) title = title.Substring(0, hashIndex);
+
+                bool exists = await App.ContentDb.ItemExistsAsync<WikiPage>(title)
+                              || await App.ContentDb.ItemExistsAsync<WikiRedirect>(title);
+                if (!exists)
                 {
-                    page = await App.ContentDb.GetItemAsync<WikiPage>(title);
-                }
-                else if (await App.ContentDb.ItemExistsAsync<WikiRedirect>(title))
-                {
-                    var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
-                    page = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
-                }
-                else
-                {
-                    App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.PageNotFound"));
+                    App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization.Get("AppService.PageNotFound"));
                     return null;
-
                 }
+            }
 
-                if (page != null)
-                {
+            var tab = await AddTabAsync(pageViewInfo);
+            await SwitchToTabAsync(tab.Id);
+            return null;
+        }
 
-
-                    WikiPageStringTime result = new WikiPageStringTime();
-                    result.Title = page.Title;
-                    result.Content = page.Content;
-                    result.LastModified = page.LastModified.ToString(App.Localization!.Get("AppService.DateFormat"));
-                    App.AppStateManager.CurrentWikiPage = page.Title;
-
-                    // 更新当前 tab 的 CurrentPage（暂时设为 null，等 JS 返回位置后会更新）
-                    var tab = App.AppStateManager.GetActiveTab();
-                    if (tab != null)
-                    {
-                        tab.CurrentPage = new PageViewInfo
-                        {
-                            Title = page.Title,
-                            Position = 0
-                        };
-                    }
-
-                    if (page.Title != App.AppStateManager.ActiveWikiBook.DefaultPageTitle)
-                        Task.Run(async () => await SaveToHistoryAsync(page.Title));
-
-
-                    return IframeBridge.ObjToJson(result);
-                }
-                else
-                {
-                    return null;
-                }
-
-            };
-
-            IframeBridge.Actions["GetRedirectedTitleAndAnchorAsync"] = async (input) =>
+        private async Task<string> OpenExternalWebsiteAsync(string url)
+        {
+            try
             {
-                // 1. 如果没有锚点，先检查是否需要重定向，如果需要则替换 input
-                if (input.IndexOf('#') == -1 && await App.ContentDb.ItemExistsAsync<WikiRedirect>(input))
-                {
-                    var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(input);
-                    input = redirect.ToTarget; // 此时 input 变成了目标字符串（可能带#，也可能不带）
-                }
-
-                // 2. 统一处理分割逻辑 (Split只需写一次)
-                // 限制只分割成2部分，确保只取第一个#之后的内容作为锚点
-                var parts = input.Split(new[] { '#' }, 2);
-
-                var result = new TitleWithAnchor
-                {
-                    Title = parts[0],
-                    Anchor = parts.Length > 1 ? parts[1] : null
-                };
-
-                return IframeBridge.ObjToJson(result);
-            };
-
-            IframeBridge.Actions["SaveToTabHistory"] = async (args) =>
+                await Browser.Default.OpenAsync(url, BrowserLaunchMode.SystemPreferred);
+            }
+            catch (Exception ex)
             {
-                PageViewInfo pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
+                App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization.Get("AppService.CannotOpenLink", ex.Message));
+            }
+            return null;
+        }
 
-                // 获取当前激活 tab 并直接操作其 TabHistory
-                var tab = App.AppStateManager.GetActiveTab();
-                if (tab != null)
-                {
-                    tab.TabHistory.Add(pageViewInfo);
-                    // 可选：触发通知（如果需要 UI 更新）
-                    // App.AppStateManager.OnPropertyChanged(nameof(App.AppStateManager.TabHistory));
-                }
+        private Task<string> CopyTextToClipboardAsync(string text)
+        {
+            Microsoft.Maui.ApplicationModel.DataTransfer.Clipboard.Default.SetTextAsync(text);
+            return Task.FromResult<string>(null);
+        }
 
-                return null;
-            };
-
-            IframeBridge.Actions["WikiBackAsync"] = async (args) =>
+        private async Task<string> CopyImageToClipboardAsync(string src)
+        {
+            WikiAsset asset = await App.ContentDb.GetItemAsync<WikiAsset>(src);
+            byte[] imageBytes = asset?.Data;
+            if (imageBytes != null)
             {
-                if (Preferences.Default.Get("IsSideButtonBack", true))
-                    await WikiBackAsync();
-                return null;
-            };
-
-            IframeBridge.Actions["OpenInNewTab"] = async (args) =>
-            {
-                PageViewInfo pageViewInfo = IframeBridge.JsonToObj<PageViewInfo>(args);
-
-                // 校验目标页面是否存在（WikiPage 或 WikiRedirect），避免新建出空白标签页
-                if (pageViewInfo != null && !string.IsNullOrEmpty(pageViewInfo.Title))
-                {
-                    // 去掉可能携带的 #锚点，只校验词条本身
-                    var title = pageViewInfo.Title;
-                    int hashIndex = title.IndexOf('#');
-                    if (hashIndex != -1) title = title.Substring(0, hashIndex);
-
-                    bool exists = await App.ContentDb.ItemExistsAsync<WikiPage>(title)
-                                  || await App.ContentDb.ItemExistsAsync<WikiRedirect>(title);
-
-                    if (!exists)
-                    {
-                        App.AppStateManager.TriggerAlert(
-                            App.Localization!.Get("Common.Notice"),
-                            App.Localization!.Get("AppService.PageNotFound"));
-                        return null; // 页面不存在，不创建标签页
-                    }
-                }
-
-                var tab = await AddTabAsync(pageViewInfo);
-                await SwitchToTabAsync(tab.Id);
-                return null;
-            };
-
-            IframeBridge.Actions["OpenExternalWebsite"] = async (url) =>
-            {
-                try
-                {
-                    await Browser.Default.OpenAsync(url, BrowserLaunchMode.SystemPreferred);
-                }
-                catch (Exception ex)
-                {
-                    App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.CannotOpenLink", ex.Message));
-                }
-                return null;
-            };
-
-            IframeBridge.Actions["CopyTextToClipboard"] = async (text) =>
-            {
-                Microsoft.Maui.ApplicationModel.DataTransfer.Clipboard.Default.SetTextAsync(text);
-                return null;
-            };
-
-            IframeBridge.Actions["CopyImageToClipboard"] = async (src) =>
-            {
-
-                WikiAsset asset = await App.ContentDb.GetItemAsync<WikiAsset>(src);
-                byte[] imageBytes = asset?.Data;
-                if (imageBytes != null)
-                {
 #if WINDOWS
-                    CopyImageToClipboardWindowsAsync(imageBytes);
+                await CopyImageToClipboardWindowsAsync(imageBytes);
 #endif
-                }
-                return null;
-            };
+            }
+            return null;
         }
         public static void Init(NavigationManager navManager, IJSRuntime js)
         {
@@ -346,14 +324,52 @@ namespace Terraria_Wiki.Services
             _navManager.NavigateTo(App.AppStateManager.CurrentPage);
         }
 
-        //重启软件
-        public static void RestartApp()
+        public static async Task<bool> SwitchWikiBookAsync(int wikiBookId)
         {
+            if (!await _wikiSwitchLock.WaitAsync(0))
+                return false;
 
-            string exePath = Environment.ProcessPath;
-            System.Diagnostics.Process.Start(exePath);
-            Application.Current.Quit();
+            try
+            {
+                if (App.AppStateManager.ProcessingTaskId != 0)
+                {
+                    App.AppStateManager.TriggerAlert(
+                        App.Localization!.Get("Common.Notice"),
+                        App.Localization.Get("AppService.SwitchWikiBusy"));
+                    return false;
+                }
 
+                var book = await App.ManagerDb.GetItemAsync<WikiBook>(wikiBookId);
+                if (book == null)
+                    return false;
+
+                var contentDbPath = Path.Combine(
+                    FileSystem.AppDataDirectory,
+                    book.DataFolder,
+                    "data.db");
+
+                await App.ContentDb.SwitchDatabaseAsync(contentDbPath);
+                await App.ContentDb.Init(false, book);
+
+                App.AppStateManager.ActiveWikiBookId = book.Id;
+                App.AppStateManager.ActiveWikiBook = book;
+                App.AppStateManager.ResetWikiNavigation();
+                await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+                App.AppStateManager.NotifyWikiBookSwitched();
+                _navManager.NavigateTo("home");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                App.AppStateManager.TriggerAlert(
+                    App.Localization!.Get("Common.Notice"),
+                    App.Localization.Get("AppService.SwitchWikiFailed", ex.Message));
+                return false;
+            }
+            finally
+            {
+                _wikiSwitchLock.Release();
+            }
         }
 
 
