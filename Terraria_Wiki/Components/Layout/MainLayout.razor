@@ -111,8 +111,15 @@
 
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
             {
-                await Task.Delay(100);
-                mainPage.HideLoadingScreen();
+                if (await mainPage.WaitForWebViewAsync(TimeSpan.FromSeconds(5)))
+                {
+                    await Task.Delay(100);
+                    mainPage.HideLoadingScreen();
+                }
+                else
+                {
+                    await mainPage.ShowWebViewMissingAlertAsync();
+                }
 
             }
 
@@ -130,7 +137,7 @@
             var mainPage = Application.Current?.Windows[0].Page;
             if (mainPage != null)
             {
-                await mainPage.DisplayAlertAsync(title, message, "确定");
+                await mainPage.DisplayAlertAsync(title, message, App.Localization.Get("Common.OK"));
             }
         });
     }

@@ -16,8 +16,10 @@ namespace Terraria_Wiki
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
-            var contentDbService = new ContentDbService(Path.Combine(FileSystem.AppDataDirectory, "placeholder.db"));
-            var managerDbService = new ManagerDbService(Path.Combine(FileSystem.AppDataDirectory, "Manager.db"));
+            var storagePathService = new StoragePathService();
+            var contentDbService = new ContentDbService(Path.Combine(storagePathService.RootPath, "placeholder.db"));
+            var managerDbService = new ManagerDbService(Path.Combine(storagePathService.RootPath, "Manager.db"));
+            builder.Services.AddSingleton(storagePathService);
             builder.Services.AddSingleton(managerDbService);
             builder.Services.AddSingleton(contentDbService);
             builder.Services.AddSingleton(sp => new LocalWebServer(contentDbService));

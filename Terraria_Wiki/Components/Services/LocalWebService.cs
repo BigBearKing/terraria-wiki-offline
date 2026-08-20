@@ -152,6 +152,16 @@ namespace Terraria_Wiki.Services
                     {
                         assetPath = "Web/_common/handy-scroll.js";
                     }
+                    else if (path.Equals("/_common/wiki-math.js", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 离线公式渲染脚本（MathJax 配置与渲染调度）
+                        assetPath = "Web/_common/wiki-math.js";
+                    }
+                    else if (path.StartsWith("/_common/mathjax/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 共享的 MathJax 离线资源（tex-chtml-full.js + 字体）
+                        assetPath = "Web/_common/" + path.Substring("/_common/".Length);
+                    }
                     else if (path.StartsWith("/_common/viewer/", StringComparison.OrdinalIgnoreCase))
                     {
                         // 共享的 Viewer.js 资源（各 wiki 共用一份）
@@ -223,6 +233,8 @@ namespace Terraria_Wiki.Services
                 ".jpeg" => "image/jpeg",
                 ".gif" => "image/gif",
                 ".svg" => "image/svg+xml",
+                ".woff" => "font/woff",
+                ".woff2" => "font/woff2",
                 ".json" => "application/json",
                 _ => "application/octet-stream"
             };

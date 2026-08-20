@@ -136,6 +136,47 @@
                     </button>
                 </div>
             </div>
+
+            @if (AppState.IsWindows)
+            {
+                <div class="category-card">
+                    <span class="category-title">@Loc.Get("Settings.DataLocation")</span>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">@Loc.Get("Settings.DataLocationMode")</span>
+                            <span class="setting-desc">@Loc.Get("Settings.DataLocationDesc")</span>
+                        </div>
+                        <select class="modern-select" @bind="PendingStorageMode">
+                            <option value="@StorageLocationMode.Default">@Loc.Get("Settings.DataLocationDefault")</option>
+                            <option value="@StorageLocationMode.Application">@Loc.Get("Settings.DataLocationApplication")</option>
+                            <option value="@StorageLocationMode.Custom">@Loc.Get("Settings.DataLocationCustom")</option>
+                        </select>
+                    </div>
+
+                    @if (PendingStorageMode == StorageLocationMode.Custom)
+                    {
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">@Loc.Get("Settings.DataLocationCustomPath")</span>
+                                <span class="setting-desc">@(_pendingCustomPath ?? Loc.Get("Settings.DataLocationNotSelected"))</span>
+                            </div>
+                            <button class="button setting-btn" @onclick="ChooseCustomStoragePath">
+                                @Loc.Get("Settings.SelectFolder")
+                            </button>
+                        </div>
+                    }
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-desc">@Loc.Get("Settings.DataLocationSaveDesc")</span>
+                        </div>
+                        <button class="button setting-btn" disabled="@(!HasStorageLocationChanges)" @onclick="() => RunSafe(SaveStorageLocation)">
+                            @Loc.Get("Common.Save")
+                        </button>
+                    </div>
+                </div>
+            }
             <div class="category-card">
                 <span class="category-title">@Loc.Get("Common.Log")</span>
                 <div class="setting-item">
@@ -186,8 +227,61 @@
 @code {
     protected override void OnInitialized()
     {
+        if (AppState.IsWindows)
+        {
+            _pendingStorageMode = App.StoragePath!.LocationMode;
+            _pendingCustomPath = App.StoragePath.CustomPath;
+        }
         AppState.PropertyChanged += OnAppStatePropertyChanged;
         Loc.OnChange += RefreshUI;
+    }
+
+    private StorageLocationMode _pendingStorageMode;
+    private string? _pendingCustomPath;
+
+    private StorageLocationMode PendingStorageMode
+    {
+        get => _pendingStorageMode;
+        set
+        {
+            _pendingStorageMode = value;
+            StateHasChanged();
+        }
+    }
+
+    private bool HasStorageLocationChanges =>
+        AppState.IsWindows &&
+        (_pendingStorageMode != App.StoragePath!.LocationMode ||
+         (_pendingStorageMode == StorageLocationMode.Custom &&
+          !string.Equals(_pendingCustomPath, App.StoragePath.CustomPath, StringComparison.OrdinalIgnoreCase)));
+
+    private async Task ChooseCustomStoragePath()
+    {
+#if WINDOWS
+        var path = await FileHelper.PickFolderWindowsAsync();
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            _pendingCustomPath = path;
+            await InvokeAsync(StateHasChanged);
+        }
+#endif
+    }
+
+    private async Task SaveStorageLocation()
+    {
+        if (_pendingStorageMode == StorageLocationMode.Custom && string.IsNullOrWhiteSpace(_pendingCustomPath))
+        {
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.DataLocationNotSelected"));
+            return;
+        }
+
+        var changed = await AppService.SwitchStorageLocationAsync(_pendingStorageMode, _pendingCustomPath);
+        if (changed)
+        {
+            _pendingCustomPath = App.StoragePath!.CustomPath;
+            await InvokeAsync(StateHasChanged);
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.DataLocationSaved"));
+        }
     }
 
     public void Dispose()

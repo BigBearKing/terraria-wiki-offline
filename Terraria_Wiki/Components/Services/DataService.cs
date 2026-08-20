@@ -15,8 +15,6 @@ namespace Terraria_Wiki.Services
     public class DataService
     {
         // ================= 配置与常量 =================
-        private static readonly string _tempDir = Path.Combine(FileSystem.AppDataDirectory, "Temp");
-
         /// <summary>Go 原生 TLS 库，伪造 Chrome 131 指纹绕过 Cloudflare</summary>
         private static readonly TlsClient _tlsClient = new()
         {
@@ -111,16 +109,20 @@ namespace Terraria_Wiki.Services
         // ================= 事件与状态 =================
         private readonly LogService _log;
         private readonly LocalizationService _loc;
+        private readonly StoragePathService _storagePath;
         private int _maxRetryAttempts;
         private int _pageConcurrency;
         private int _resConcurrency;
 
-        public DataService(LogService logService, LocalizationService localizationService)
+        public DataService(LogService logService, LocalizationService localizationService, StoragePathService storagePath)
         {
             _log = logService;
             _loc = localizationService;
+            _storagePath = storagePath;
             
         }
+
+        private string TempDir => Path.Combine(_storagePath.RootPath, "Temp");
 
 
         //主要功能
@@ -801,7 +803,7 @@ namespace Terraria_Wiki.Services
                     int jsonLen = reader.ReadInt32();
                     reader.ReadBytes(jsonLen); // skip JSON
 
-                    if (!Directory.Exists(_tempDir)) Directory.CreateDirectory(_tempDir);
+                    if (!Directory.Exists(TempDir)) Directory.CreateDirectory(TempDir);
 
                     // 3. 逐个提取文件并实时校验 MD5
                     _log.Info(_loc.Get("DataService.Log.ExtractingAndVerifying"));
@@ -810,7 +812,7 @@ namespace Terraria_Wiki.Services
 
                     foreach (var fileMeta in meta.Files)
                     {
-                        string outPath = Path.Combine(_tempDir, fileMeta.RelativePath);
+                        string outPath = Path.Combine(TempDir, fileMeta.RelativePath);
                         string outDir = Path.GetDirectoryName(outPath);
                         if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
 
@@ -851,7 +853,7 @@ namespace Terraria_Wiki.Services
                         {
                             Directory.Delete(_currentDataDir, true);
                         }
-                        Directory.Move(_tempDir, _currentDataDir);
+                        Directory.Move(TempDir, _currentDataDir);
 
                         // 旧版包数据库文件重命名为 data.db
                         string oldDbPath = Path.Combine(_currentDataDir, "Terraria_Wiki.db");
@@ -872,7 +874,7 @@ namespace Terraria_Wiki.Services
                         {
                             Directory.Delete(targetDir, true);
                         }
-                        Directory.Move(_tempDir, targetDir);
+                        Directory.Move(TempDir, targetDir);
 
                         // 旧版包数据库文件重命名为 data.db
                         string oldDbPath = Path.Combine(targetDir, "Terraria_Wiki.db");
@@ -925,7 +927,7 @@ namespace Terraria_Wiki.Services
             finally
             {
                 // ... (保持你原本的清理逻辑不变)
-                if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
+                if (Directory.Exists(TempDir)) Directory.Delete(TempDir, true);
                 if (App.AppStateManager?.IsMobile == true && !string.IsNullOrEmpty(filePath))
                 {
                     _ = FileHelper.ClearAppCacheAsync();
@@ -1478,7 +1480,7 @@ namespace Terraria_Wiki.Services
             _junkXPath = book.JunkXPath;
 
             // 根据 DataFolder 设置数据目录和所有文件路径
-            _baseDir = FileSystem.AppDataDirectory;
+            _baseDir = _storagePath.RootPath;
             _currentDataDir= Path.Combine(_baseDir, book.DataFolder);
             _resListPath = Path.Combine(_currentDataDir, "res.txt");
             _tempResListPath = Path.Combine(_currentDataDir, "temp_res.txt");

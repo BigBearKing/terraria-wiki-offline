@@ -12,10 +12,12 @@ namespace Terraria_Wiki
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
         public static LocalizationService? Localization { get; private set; }
+        public static StoragePathService? StoragePath { get; private set; }
 
         public App(LocalWebServer webServer, ManagerDbService managerDb,
                 ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
                 LocalizationService localizationService,
+                StoragePathService storagePath,
                 IServiceProvider services)
         {
             WebServer = webServer;
@@ -25,6 +27,7 @@ namespace Terraria_Wiki
             LogManager = logService;
             AppStateManager = appState;
             Localization = localizationService;
+            StoragePath = storagePath;
 
             ThemeService.InitTheme();
             _ = InitializeAsync();
@@ -36,6 +39,9 @@ namespace Terraria_Wiki
 
         private async Task InitializeAsync()
         {
+            AppStateManager!.IsNetworkAvailable =
+                Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+
             await Localization!.InitializeAsync();
             await ManagerDb.Init();
             // 根据活跃 WikiBook 的 DataFolder 切换 ContentDb 到正确路径，并缓存到 AppState
@@ -48,7 +54,7 @@ namespace Terraria_Wiki
 
             if (activeBook != null)
             {
-                var contentDbPath = Path.Combine(FileSystem.AppDataDirectory, activeBook.DataFolder, "data.db");
+                var contentDbPath = Path.Combine(StoragePath.RootPath, activeBook.DataFolder, "data.db");
                 await ContentDb.SwitchDatabaseAsync(contentDbPath);
             }
             WebServer.Start();

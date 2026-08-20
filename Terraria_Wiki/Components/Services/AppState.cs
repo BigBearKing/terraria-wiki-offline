@@ -46,6 +46,14 @@ public class AppState : INotifyPropertyChanged
     public bool IsMacCatalyst => Platform == DevicePlatform.MacCatalyst;
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
+    private bool _isNetworkAvailable;
+
+    public bool IsNetworkAvailable
+    {
+        get => _isNetworkAvailable;
+        set => SetProperty(ref _isNetworkAvailable, value);
+    }
+
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
     private bool _logPanelIsOpen = false;

@@ -13,7 +13,7 @@ public class LegacyUpgradeHandler
 
     public LegacyUpgradeHandler()
     {
-        _appDataDir = FileSystem.AppDataDirectory;
+        _appDataDir = App.StoragePath?.RootPath ?? FileSystem.AppDataDirectory;
     }
 
     /// <summary>

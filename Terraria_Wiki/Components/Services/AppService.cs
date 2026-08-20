@@ -20,11 +20,94 @@ namespace Terraria_Wiki.Services
         private static NavigationManager _navManager;
         private static IJSRuntime _js;
         private static readonly SemaphoreSlim _wikiSwitchLock = new(1, 1);
+        private static readonly SemaphoreSlim _storageSwitchLock = new(1, 1);
 
 
         public AppService()
         {
             RegisterIframeActions();
+        }
+
+        public static async Task<bool> SwitchStorageLocationAsync(StorageLocationMode mode, string? customPath = null)
+        {
+            if (!await _storageSwitchLock.WaitAsync(0))
+                return false;
+
+            var storage = App.StoragePath!;
+            var oldMode = storage.LocationMode;
+            var oldCustomPath = storage.CustomPath;
+            var oldRoot = storage.RootPath;
+            var activeBook = App.AppStateManager!.ActiveWikiBook;
+
+            try
+            {
+                if (App.AppStateManager.ProcessingTaskId != 0)
+                {
+                    App.AppStateManager.TriggerAlert(
+                        App.Localization!.Get("Common.Notice"),
+                        App.Localization.Get("Settings.DataLocationBusy"));
+                    return false;
+                }
+
+                var targetRoot = storage.ResolvePath(mode, customPath);
+                if (string.Equals(Path.GetFullPath(oldRoot), Path.GetFullPath(targetRoot), StringComparison.OrdinalIgnoreCase))
+                {
+                    storage.SaveLocation(mode, customPath);
+                    return true;
+                }
+
+                App.WebServer?.Stop();
+                await App.ContentDb!.CloseConnection();
+                await App.ManagerDb!.CloseConnection();
+                await storage.MigrateAsync(mode, customPath);
+
+                await App.ManagerDb.SwitchDatabaseAsync(Path.Combine(targetRoot, "Manager.db"));
+                await App.ManagerDb.Init(true);
+
+                if (activeBook != null)
+                {
+                    await App.ContentDb.SwitchDatabaseAsync(Path.Combine(targetRoot, activeBook.DataFolder, "data.db"));
+                    await App.ContentDb.Init(true, activeBook);
+                }
+
+                await App.DataManager!.InitializeSettings();
+                if (activeBook != null)
+                    await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+
+                await App.WebServer!.Start();
+                App.AppStateManager.ResetWikiNavigation();
+                App.AppStateManager.NotifyWikiBookSwitched();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                storage.SaveLocation(oldMode, oldCustomPath);
+
+                try
+                {
+                    await App.ManagerDb!.SwitchDatabaseAsync(Path.Combine(oldRoot, "Manager.db"));
+                    await App.ManagerDb.Init(true);
+                    if (activeBook != null)
+                    {
+                        await App.ContentDb!.SwitchDatabaseAsync(Path.Combine(oldRoot, activeBook.DataFolder, "data.db"));
+                        await App.ContentDb.Init(true, activeBook);
+                    }
+                    await App.DataManager!.InitializeSettings();
+                    await App.WebServer!.Start();
+                }
+                catch
+                {
+                }
+
+                App.AppStateManager.TriggerAlert(
+                    App.Localization!.Get("Common.Error"),
+                    App.Localization.Get("Settings.DataLocationMigrationFailed", ex.Message));
+                return false;
+            }
+            finally
+            {
+                _storageSwitchLock.Release();
+            }
         }
 
         private void RegisterIframeActions()
@@ -344,7 +427,7 @@ namespace Terraria_Wiki.Services
                     return false;
 
                 var contentDbPath = Path.Combine(
-                    FileSystem.AppDataDirectory,
+                    App.StoragePath!.RootPath,
                     book.DataFolder,
                     "data.db");
 
