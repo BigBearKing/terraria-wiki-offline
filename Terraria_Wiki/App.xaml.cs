@@ -41,6 +41,7 @@ namespace Terraria_Wiki
         {
             AppStateManager!.IsNetworkAvailable =
                 Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+            AppStateManager.SetDataRootPath(StoragePath!.RootPath);
 
             await Localization!.InitializeAsync();
             await ManagerDb.Init();

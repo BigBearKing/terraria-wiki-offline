@@ -38,6 +38,7 @@ namespace Terraria_Wiki.Services
             var oldCustomPath = storage.CustomPath;
             var oldRoot = storage.RootPath;
             var activeBook = App.AppStateManager!.ActiveWikiBook;
+            MainPage? loadingPage = null;
 
             try
             {
@@ -56,10 +57,19 @@ namespace Terraria_Wiki.Services
                     return true;
                 }
 
+                if (Application.Current?.Windows[0].Page is MainPage mainPage)
+                {
+                    loadingPage = mainPage;
+                    loadingPage.ShowLoadingPopup(
+                        App.Localization!.Get("Settings.DataLocationMigrationTitle"),
+                        App.Localization.Get("Settings.DataLocationMigrationMessage"));
+                }
+
                 App.WebServer?.Stop();
                 await App.ContentDb!.CloseConnection();
                 await App.ManagerDb!.CloseConnection();
                 await storage.MigrateAsync(mode, customPath);
+                App.AppStateManager.SetDataRootPath(storage.RootPath);
 
                 await App.ManagerDb.SwitchDatabaseAsync(Path.Combine(targetRoot, "Manager.db"));
                 await App.ManagerDb.Init(true);
@@ -77,11 +87,34 @@ namespace Terraria_Wiki.Services
                 await App.WebServer!.Start();
                 App.AppStateManager.ResetWikiNavigation();
                 App.AppStateManager.NotifyWikiBookSwitched();
+
+                loadingPage?.HideLoadingPopup();
+                bool deleteOldData = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
+                    App.Localization!.Get("Settings.DeleteOldDataTitle"),
+                    App.Localization.Get("Settings.DeleteOldDataDescription"),
+                    App.Localization.Get("Settings.DeleteOldData"),
+                    App.Localization.Get("Settings.KeepOldData"));
+
+                if (deleteOldData)
+                {
+                    try
+                    {
+                        Directory.Delete(oldRoot, true);
+                    }
+                    catch (Exception deleteException)
+                    {
+                        App.AppStateManager.TriggerAlert(
+                            App.Localization.Get("Common.Error"),
+                            App.Localization.Get("Settings.DeleteOldDataFailed", deleteException.Message));
+                    }
+                }
+
                 return true;
             }
             catch (Exception ex)
             {
                 storage.SaveLocation(oldMode, oldCustomPath);
+                App.AppStateManager.SetDataRootPath(oldRoot);
 
                 try
                 {
@@ -106,6 +139,7 @@ namespace Terraria_Wiki.Services
             }
             finally
             {
+                loadingPage?.HideLoadingPopup();
                 _storageSwitchLock.Release();
             }
         }

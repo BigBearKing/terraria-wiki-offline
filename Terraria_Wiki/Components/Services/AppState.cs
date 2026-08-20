@@ -47,11 +47,23 @@ public class AppState : INotifyPropertyChanged
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
     private bool _isNetworkAvailable;
+    private string _dataRootPath = string.Empty;
 
     public bool IsNetworkAvailable
     {
         get => _isNetworkAvailable;
         set => SetProperty(ref _isNetworkAvailable, value);
+    }
+
+    public string DataRootPath
+    {
+        get => _dataRootPath;
+        private set => SetProperty(ref _dataRootPath, value);
+    }
+
+    public void SetDataRootPath(string path)
+    {
+        DataRootPath = path;
     }
 
     private string _currentPage = "home";

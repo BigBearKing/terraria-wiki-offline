@@ -3,7 +3,6 @@ namespace Terraria_Wiki.Services;
 public enum StorageLocationMode
 {
     Default,
-    Application,
     Custom
 }
 
@@ -13,7 +12,6 @@ public sealed class StoragePathService
     private const string CustomPathKey = "DataStorageCustomPath";
 
     public string DefaultPath => FileSystem.AppDataDirectory;
-    public string ApplicationPath => AppContext.BaseDirectory;
 
     public StorageLocationMode LocationMode
     {
@@ -30,7 +28,6 @@ public sealed class StoragePathService
     {
         return mode switch
         {
-            StorageLocationMode.Application => ApplicationPath,
             StorageLocationMode.Custom when !string.IsNullOrWhiteSpace(customPath) => Path.GetFullPath(customPath),
             _ => DefaultPath
         };
