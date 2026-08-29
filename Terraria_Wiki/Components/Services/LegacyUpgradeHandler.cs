@@ -11,9 +11,9 @@ public class LegacyUpgradeHandler
 {
     private readonly string _appDataDir;
 
-    public LegacyUpgradeHandler()
+    public LegacyUpgradeHandler(StoragePathService storagePath)
     {
-        _appDataDir = App.StoragePath?.RootPath ?? FileSystem.AppDataDirectory;
+        _appDataDir = storagePath.RootPath;
     }
 
     /// <summary>

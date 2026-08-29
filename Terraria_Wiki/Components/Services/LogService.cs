@@ -6,8 +6,8 @@ namespace Terraria_Wiki.Services
     // 继承 IAsyncDisposable 确保应用退出时能优雅关闭文件
     public class LogService : IAsyncDisposable
     {
-        private readonly string _activeLogPath;
-        private readonly string _archiveFolderPath;
+        private string _activeLogPath;
+        private string _archiveFolderPath;
 
         // 内存索引
         private readonly List<long> _lineOffsets = new();
@@ -24,13 +24,19 @@ namespace Terraria_Wiki.Services
         private readonly Task _processTask;
         private readonly CancellationTokenSource _cts = new();
         private readonly LocalizationService _loc;
+        private readonly StoragePathService _storagePath;
+        private readonly SemaphoreSlim _fileLock = new(1, 1);
+        private readonly object _queueLock = new();
+        private int _pendingWrites;
+        private TaskCompletionSource _queueDrained = CompletedSource();
 
         public event Action OnLogAdded;
 
-        public LogService(LocalizationService localizationService)
+        public LogService(LocalizationService localizationService, StoragePathService storagePath)
         {
             _loc = localizationService;
-            var basePath = FileSystem.AppDataDirectory;
+            _storagePath = storagePath;
+            var basePath = _storagePath.RootPath;
             _archiveFolderPath = Path.Combine(basePath, "LogHistory");
             _activeLogPath = Path.Combine(basePath, "current_session.log");
 
@@ -98,7 +104,53 @@ namespace Terraria_Wiki.Services
         /// </summary>
         public void AppendLog(string message)
         {
-            _logQueue.Writer.TryWrite(message);
+            lock (_queueLock)
+            {
+                if (_pendingWrites == 0)
+                    _queueDrained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                _pendingWrites++;
+                if (!_logQueue.Writer.TryWrite(message))
+                {
+                    _pendingWrites--;
+                    if (_pendingWrites == 0)
+                        _queueDrained.TrySetResult();
+                }
+            }
+        }
+
+        public Task FlushAsync()
+        {
+            lock (_queueLock)
+            {
+                return _pendingWrites == 0 ? Task.CompletedTask : _queueDrained.Task;
+            }
+        }
+
+        private static TaskCompletionSource CompletedSource()
+        {
+            var source = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            source.SetResult();
+            return source;
+        }
+
+        public async Task SwitchStorageRootAsync(string newRoot)
+        {
+            await _fileLock.WaitAsync();
+            try
+            {
+                if (_streamWriter != null) await _streamWriter.DisposeAsync();
+                if (_writeStream != null) await _writeStream.DisposeAsync();
+
+                _archiveFolderPath = Path.Combine(newRoot, "LogHistory");
+                _activeLogPath = Path.Combine(newRoot, "current_session.log");
+                Directory.CreateDirectory(_archiveFolderPath);
+                InitializeSession();
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
         }
 
         /// <summary>
@@ -111,27 +163,41 @@ namespace Terraria_Wiki.Services
                 // 等待队列有数据，没有数据时就在这休眠，不耗 CPU
                 await foreach (var message in _logQueue.Reader.ReadAllAsync(_cts.Token))
                 {
-                    var logLine = $"[{DateTime.Now:HH:mm:ss}] {message}";
-
-                    // 异步写入文件
-                    await _streamWriter.WriteLineAsync(logLine);
-
-                    // 获取刚写完的末尾位置
-                    long newOffset = _writeStream.Position;
-
-                    // 加写锁，更新内存索引
-                    _offsetLock.EnterWriteLock();
                     try
                     {
-                        _lineOffsets.Add(newOffset);
+                        var logLine = $"[{DateTime.Now:HH:mm:ss}] {message}";
+                        await _fileLock.WaitAsync(_cts.Token);
+                        try
+                        {
+                            await _streamWriter.WriteLineAsync(logLine);
+                            long newOffset = _writeStream.Position;
+
+                            _offsetLock.EnterWriteLock();
+                            try
+                            {
+                                _lineOffsets.Add(newOffset);
+                            }
+                            finally
+                            {
+                                _offsetLock.ExitWriteLock();
+                            }
+                        }
+                        finally
+                        {
+                            _fileLock.Release();
+                        }
+
+                        OnLogAdded?.Invoke();
                     }
                     finally
                     {
-                        _offsetLock.ExitWriteLock();
+                        lock (_queueLock)
+                        {
+                            _pendingWrites--;
+                            if (_pendingWrites == 0)
+                                _queueDrained.TrySetResult();
+                        }
                     }
-
-                    // 抛出事件通知 UI 更新
-                    OnLogAdded?.Invoke();
                 }
             }
             catch (OperationCanceledException)
@@ -212,6 +278,7 @@ namespace Terraria_Wiki.Services
             if (_streamWriter != null) await _streamWriter.DisposeAsync();
             if (_writeStream != null) await _writeStream.DisposeAsync();
             _offsetLock.Dispose();
+            _fileLock.Dispose();
         }
 
 

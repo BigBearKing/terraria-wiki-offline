@@ -98,7 +98,7 @@ public class AppState : INotifyPropertyChanged
         { 8, new TaskConfig { Id = 8, NameKey = "AppState.DeleteData", ProcessingTextKey = "AppState.Deleting" }  },
         { 9, new TaskConfig { Id = 9, NameKey = "AppState.ExportData", ProcessingTextKey = "AppState.Exporting" }   },
         { 10, new TaskConfig { Id = 10, NameKey = "AppState.ImportData", ProcessingTextKey = "AppState.Importing" }  },
-        { 11, new TaskConfig { Id = 11, NameKey = "", ProcessingTextKey = "" }  },
+        { 11, new TaskConfig { Id = 11, NameKey = "AppState.MigrateData", ProcessingTextKey = "AppState.MigratingData" }  },
         { 12, new TaskConfig { Id = 12, NameKey = "", ProcessingTextKey = "" }  },
         { 13, new TaskConfig { Id = 13, NameKey = "", ProcessingTextKey = "" }  },
         { 14, new TaskConfig { Id = 14, NameKey = "", ProcessingTextKey = "" }  }

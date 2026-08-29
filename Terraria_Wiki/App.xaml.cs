@@ -50,7 +50,7 @@ namespace Terraria_Wiki
             AppStateManager.ActiveWikiBook = activeBook;
 
             // 执行旧版数据迁移（通过判断旧文件是否存在决定是否执行）
-            var upgradeHandler = new LegacyUpgradeHandler();
+            var upgradeHandler = new LegacyUpgradeHandler(StoragePath!);
             await upgradeHandler.RunAsync(activeBook);
 
             if (activeBook != null)

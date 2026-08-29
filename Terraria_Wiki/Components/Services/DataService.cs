@@ -912,7 +912,7 @@ namespace Terraria_Wiki.Services
                 // 旧版包迁移：为 <a> 标签添加 data-wiki 属性
                 if (needMigration && meta.Id == App.AppStateManager.ActiveWikiBookId)
                 {
-                    var upgradeHandler = new LegacyUpgradeHandler();
+                    var upgradeHandler = new LegacyUpgradeHandler(_storagePath);
                     await upgradeHandler.MigrateAnchorDataWikiAsync(App.AppStateManager.ActiveWikiBook);
                 }
 

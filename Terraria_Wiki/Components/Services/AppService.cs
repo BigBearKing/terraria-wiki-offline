@@ -57,6 +57,10 @@ namespace Terraria_Wiki.Services
                     return true;
                 }
 
+                App.AppStateManager.ProcessingTaskId = 11;
+                App.LogManager!.Info(App.Localization!.Get("AppService.DataMigrationStarted", oldRoot, targetRoot));
+                await App.LogManager.FlushAsync();
+
                 if (Application.Current?.Windows[0].Page is MainPage mainPage)
                 {
                     loadingPage = mainPage;
@@ -69,7 +73,10 @@ namespace Terraria_Wiki.Services
                 await App.ContentDb!.CloseConnection();
                 await App.ManagerDb!.CloseConnection();
                 await storage.MigrateAsync(mode, customPath);
+                App.LogManager.Info(App.Localization.Get("AppService.DataMigrationCopied"));
                 App.AppStateManager.SetDataRootPath(storage.RootPath);
+                await App.LogManager!.SwitchStorageRootAsync(storage.RootPath);
+                App.LogManager.Info(App.Localization.Get("AppService.DataMigrationSwitched", storage.RootPath));
 
                 await App.ManagerDb.SwitchDatabaseAsync(Path.Combine(targetRoot, "Manager.db"));
                 await App.ManagerDb.Init(true);
@@ -87,6 +94,7 @@ namespace Terraria_Wiki.Services
                 await App.WebServer!.Start();
                 App.AppStateManager.ResetWikiNavigation();
                 App.AppStateManager.NotifyWikiBookSwitched();
+                App.LogManager.Info(App.Localization.Get("AppService.DataMigrationCompleted"));
 
                 loadingPage?.HideLoadingPopup();
                 bool deleteOldData = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
@@ -113,11 +121,13 @@ namespace Terraria_Wiki.Services
             }
             catch (Exception ex)
             {
+                App.LogManager?.Error(App.Localization!.Get("AppService.DataMigrationFailed"), ex);
                 storage.SaveLocation(oldMode, oldCustomPath);
                 App.AppStateManager.SetDataRootPath(oldRoot);
 
                 try
                 {
+                    await App.LogManager!.SwitchStorageRootAsync(oldRoot);
                     await App.ManagerDb!.SwitchDatabaseAsync(Path.Combine(oldRoot, "Manager.db"));
                     await App.ManagerDb.Init(true);
                     if (activeBook != null)
@@ -140,6 +150,7 @@ namespace Terraria_Wiki.Services
             finally
             {
                 loadingPage?.HideLoadingPopup();
+                App.AppStateManager.ProcessingTaskId = 0;
                 _storageSwitchLock.Release();
             }
         }
