@@ -21,7 +21,22 @@ public class LegacyUpgradeHandler
     /// </summary>
     public async Task RunAsync(WikiBook activeBook)
     {
-        await RenameDataFolderAsync(activeBook);
+        App.AppStateManager?.ProcessingTaskId = 12;
+        App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Started") ?? "开始执行旧版数据迁移。");
+        try
+        {
+            await RenameDataFolderAsync(activeBook);
+            App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Completed") ?? "旧版数据迁移完成。");
+        }
+        catch (Exception ex)
+        {
+            App.LogManager?.Error(App.Localization?.Get("LegacyUpgrade.Failed") ?? "旧版数据迁移失败", ex);
+            throw;
+        }
+        finally
+        {
+            App.AppStateManager?.ProcessingTaskId = 0;
+        }
     }
 
     /// <summary>
@@ -79,6 +94,8 @@ public class LegacyUpgradeHandler
 
         try
         {
+            App.AppStateManager?.ProcessingTaskId = 12;
+            App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.AnchorMigrationStarted") ?? "开始迁移页面链接数据。");
             var titles = await App.ContentDb.GetAllPrimaryKeysAsync<WikiPage>();
             var doc = new HtmlDocument();
             int processed = 0;
