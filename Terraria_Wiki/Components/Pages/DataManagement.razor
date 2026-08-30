@@ -37,6 +37,10 @@
                         <div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
                             @(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
                         </div>
+                        @if (_downloadTasks.TryGetValue(wiki.Id, out var downloadTask) && downloadTask.Status != DownloadTaskStatus.Completed)
+                        {
+                            <div class="manage-card-progress">@GetTaskStatusText(downloadTask) @downloadTask.Progress.ToString("F1")%</div>
+                        }
                     </div>
                     <Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
                 </div>
@@ -55,6 +59,7 @@
     private List<WikiBook> _wikiBookList = [];
     private List<WikiBook> _filteredWikiList = [];
     private string _langFilter = "all";
+    private readonly Dictionary<int, DownloadTask> _downloadTasks = [];
 
     protected override void OnInitialized()
     {
@@ -73,15 +78,31 @@
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只关心 ActiveWikiBookId 变化（切换 wiki 时重新加载列表）
-        if (e.PropertyName == nameof(AppState.ActiveWikiBookId))
+        if (e.PropertyName == nameof(AppState.ActiveWikiBookId) || e.PropertyName == nameof(AppState.CurrentDownloadTask))
+        {
+            if (AppState.CurrentDownloadTask != null)
+                _downloadTasks[AppState.CurrentDownloadTask.WikiId] = AppState.CurrentDownloadTask;
             RefreshUI();
+        }
     }
 
     protected override async Task OnInitializedAsync()
     {
         _wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
+        var tasks = await App.ManagerDb.GetItemsAsync<DownloadTask>();
+        foreach (var task in tasks.GroupBy(t => t.WikiId).Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
+            _downloadTasks[task.WikiId] = task;
         ApplyLangFilter();
     }
+
+    private static string GetTaskStatusText(DownloadTask task) => task.Status switch
+    {
+        DownloadTaskStatus.Running => "下载中",
+        DownloadTaskStatus.Paused => "已暂停",
+        DownloadTaskStatus.Interrupted => "已中断",
+        DownloadTaskStatus.Failed => "失败",
+        _ => "待开始"
+    };
 
     private void SetLangFilter(string filter)
     {
@@ -193,6 +214,12 @@
 
     .manage-card-info {
         flex: 1;
+    }
+
+    .manage-card-progress {
+        color: var(--blue-primary);
+        font-size: 0.75rem;
+        margin-top: 4px;
     }
 
     .manage-card-title {

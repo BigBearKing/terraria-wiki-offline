@@ -72,6 +72,7 @@ public class AppState : INotifyPropertyChanged
     private bool _mobileTabPanelOpen = false;
     private bool _isDarkTheme;
     private int _processingTaskId = 0;
+    private DownloadTask? _currentDownloadTask;
 
     private string _currentWikiPage;
     private List<TabModel> _tabs;
@@ -241,6 +242,16 @@ public class AppState : INotifyPropertyChanged
     {
         get => _processingTaskId;
         set => SetProperty(ref _processingTaskId, value);
+    }
+
+    public DownloadTask? CurrentDownloadTask
+    {
+        get => _currentDownloadTask;
+        set
+        {
+            _currentDownloadTask = value;
+            OnPropertyChanged(nameof(CurrentDownloadTask));
+        }
     }
 
     public string CurrentWikiPage

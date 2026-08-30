@@ -73,9 +73,9 @@
                     }
                     else
                     {
-                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadRes)">
+                        <div class="primary-btn btn-blue" @onclick="ToggleResourcesDownload">
                             <Icon Name="download" Size="16" />
-                            @(AppState.ProcessingTaskId == 3 ? AppState.Tasks[3].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DownloadAssets"))
+                            @(IsResourceDownloadRunning ? "暂停" : Loc.Get("DataManagementDetails.DownloadAssets"))
                             
                         </div>
                     }
@@ -91,6 +91,17 @@
             }
             else
             {
+                @if (CurrentDownloadTask != null)
+                {
+                    <div class="download-progress-panel">
+                        <div class="download-progress-heading">
+                            <span>@GetDownloadPhaseText()</span>
+                            <span>@CurrentDownloadTask.Progress.ToString("F1")%</span>
+                        </div>
+                        <progress value="@CurrentDownloadTask.Progress" max="100"></progress>
+                        <div class="download-progress-count">@GetDownloadCountText()</div>
+                    </div>
+                }
                 <div class="download-actions">
 
                     <div class="download-card">
@@ -98,8 +109,8 @@
                             <div class="dl-title">@Loc.Get("DataManagementDetails.AllContent")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.AllContentDesc")</div>
                         </div>
-                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadAll)">
-                            @(AppState.ProcessingTaskId == 2 ? AppState.Tasks[2].GetProcessingText(Loc) : Loc.Get("Common.Download"))
+                        <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(true)">
+                            @(IsDownloadRunning ? "暂停" : Loc.Get("Common.Download"))
                         </div>
                     </div>
                     <div class="download-card">
@@ -107,8 +118,8 @@
                             <div class="dl-title">@Loc.Get("DataManagementDetails.BasicData")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.BasicDataDesc")</div>
                         </div>
-                        <div class="primary-btn btn-blue" @onclick="() => RunSafe(DownloadPages)">
-                            @(AppState.ProcessingTaskId == 2 ? AppState.Tasks[2].GetProcessingText(Loc) : Loc.Get("Common.Download"))
+                        <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(false)">
+                            @(IsDownloadRunning ? "暂停" : Loc.Get("Common.Download"))
                             
                         </div>
                     </div>
@@ -165,6 +176,9 @@
     }
 
     private WikiBook _selectedWiki;
+    private DownloadTask? CurrentDownloadTask => AppState.CurrentDownloadTask?.WikiId == WikiId ? AppState.CurrentDownloadTask : null;
+    private bool IsDownloadRunning => CurrentDownloadTask?.Status == DownloadTaskStatus.Running;
+    private bool IsResourceDownloadRunning => CurrentDownloadTask?.TaskType == DownloadTaskType.DownloadResources && IsDownloadRunning;
 
     protected override async Task OnInitializedAsync()
     {
@@ -174,6 +188,39 @@
         CheckFailList();
 
 
+    }
+
+    private async Task ToggleDownload(bool includeResources)
+    {
+        if (IsDownloadRunning)
+            await App.DataManager.PauseDownloadAsync();
+        else
+            _ = App.DataManager.StartOrResumeDownloadAsync(includeResources);
+    }
+
+    private async Task ToggleResourcesDownload()
+    {
+        if (IsResourceDownloadRunning)
+            await App.DataManager.PauseDownloadAsync();
+        else
+            _ = App.DataManager.DownloadResourcesAsync();
+    }
+
+    private string GetDownloadPhaseText() => CurrentDownloadTask?.Phase switch
+    {
+        DownloadTaskPhase.FetchingLists => "获取重定向和页面列表",
+        DownloadTaskPhase.DownloadingPages => "下载页面",
+        DownloadTaskPhase.DownloadingResources => "下载图片",
+        DownloadTaskPhase.PostProcessing => "后续处理",
+        _ => "下载"
+    };
+
+    private string GetDownloadCountText()
+    {
+        if (CurrentDownloadTask is null) return string.Empty;
+        return CurrentDownloadTask.Phase == DownloadTaskPhase.DownloadingResources
+            ? $"{CurrentDownloadTask.CompletedResources} / {CurrentDownloadTask.TotalResources}"
+            : $"{CurrentDownloadTask.CompletedPages} / {CurrentDownloadTask.TotalPages}";
     }
 
 
@@ -264,6 +311,32 @@
 }
 
 <style>
+
+    .download-progress-panel {
+        background-color: var(--bg-color-secondary);
+        border-radius: 12px;
+        padding: 14px 16px;
+    }
+
+    .download-progress-heading {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .download-progress-panel progress {
+        width: 100%;
+        height: 8px;
+        accent-color: var(--blue-primary);
+    }
+
+    .download-progress-count {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-top: 6px;
+    }
 
     .icon-btn {
         padding: 4px;

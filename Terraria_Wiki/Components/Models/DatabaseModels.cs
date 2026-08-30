@@ -42,6 +42,52 @@ public class WikiBook
     public string DefaultPageTitle { get; set; }
 }
 
+public enum DownloadTaskType
+{
+    DownloadAll = 1,
+    DownloadPages = 2,
+    DownloadResources = 3
+}
+
+public enum DownloadTaskStatus
+{
+    Pending = 0,
+    Running = 1,
+    Paused = 2,
+    Interrupted = 3,
+    Completed = 4,
+    Failed = 5
+}
+
+public enum DownloadTaskPhase
+{
+    FetchingLists = 0,
+    DownloadingPages = 1,
+    DownloadingResources = 2,
+    PostProcessing = 3
+}
+
+public class DownloadTask
+{
+    [PrimaryKey, AutoIncrement]
+    public int Id { get; set; }
+    [Indexed]
+    public int WikiId { get; set; }
+    public DownloadTaskType TaskType { get; set; }
+    public DownloadTaskStatus Status { get; set; }
+    public DownloadTaskPhase Phase { get; set; }
+    public bool IncludeResources { get; set; }
+    public string TaskDirectory { get; set; } = string.Empty;
+    public int TotalPages { get; set; }
+    public int CompletedPages { get; set; }
+    public int TotalResources { get; set; }
+    public int CompletedResources { get; set; }
+    public double Progress { get; set; }
+    public string? LastError { get; set; }
+    public DateTime CreatedTime { get; set; }
+    public DateTime UpdatedTime { get; set; }
+}
+
 public class WikiPage
 {
     [PrimaryKey] // 标题作为主键，不再需要自增 ID

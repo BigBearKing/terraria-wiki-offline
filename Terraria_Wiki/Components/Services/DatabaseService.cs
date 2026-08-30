@@ -38,6 +38,7 @@ public class DatabaseService
         if (Mode == DbMode.Manager)
         {
             await _db.CreateTableAsync<WikiBook>();
+            await _db.CreateTableAsync<DownloadTask>();
             await MigrateWikiBookColumnsAsync();
             await SeedWikiBooksAsync();
 

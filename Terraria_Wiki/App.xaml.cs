@@ -69,6 +69,23 @@ namespace Terraria_Wiki
             await WebServer.Start();
             await ContentDb.Init(false, activeBook);
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
+            await RestoreDownloadTaskStateAsync();
+        }
+
+        private static async Task RestoreDownloadTaskStateAsync()
+        {
+            var tasks = await ManagerDb!.GetItemsAsync<DownloadTask>();
+            foreach (var task in tasks.Where(t => t.Status == DownloadTaskStatus.Running))
+            {
+                task.Status = DownloadTaskStatus.Interrupted;
+                task.UpdatedTime = DateTime.Now;
+                await ManagerDb.SaveItemAsync(task);
+            }
+
+            AppStateManager!.CurrentDownloadTask = tasks
+                .Where(t => t.WikiId == AppStateManager.ActiveWikiBookId && t.Status != DownloadTaskStatus.Completed)
+                .OrderByDescending(t => t.UpdatedTime)
+                .FirstOrDefault();
         }
 
 
