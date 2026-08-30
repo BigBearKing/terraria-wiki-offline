@@ -240,17 +240,7 @@ public class AppState : INotifyPropertyChanged
     public int ProcessingTaskId
     {
         get => _processingTaskId;
-        set
-        {
-            if (SetProperty(ref _processingTaskId, value))
-            {
-                if (value != 0)
-                {
-                    _logPanelIsOpen = true;
-                    OnPropertyChanged(nameof(LogPanelIsOpen));
-                }
-            }
-        }
+        set => SetProperty(ref _processingTaskId, value);
     }
 
     public string CurrentWikiPage

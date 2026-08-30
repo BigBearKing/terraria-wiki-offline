@@ -301,6 +301,7 @@
     "Web.SubjectTo": ".",
     "Web.CCLicense": "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International",
     "Web.Copy": "Copy",
+    "Web.OpenInNewTab": "Open in new tab",
     "Web.OpenOriginal": "Open Original",
     "Web.Show": "Show",
     "Web.Hide": "Hide"

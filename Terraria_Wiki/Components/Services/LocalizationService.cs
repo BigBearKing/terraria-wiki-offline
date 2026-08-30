@@ -208,5 +208,15 @@ namespace Terraria_Wiki.Services
         /// 检查键是否存在
         /// </summary>
         public bool HasKey(string key) => _translations.ContainsKey(key);
+
+        /// <summary>
+        /// 获取供 iframe/WebView 使用的翻译字典。
+        /// </summary>
+        public Dictionary<string, string> GetWebTranslations()
+        {
+            return _translations
+                .Where(pair => pair.Key.StartsWith("Web.", StringComparison.Ordinal))
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+        }
     }
 }

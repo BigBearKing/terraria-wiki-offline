@@ -21,6 +21,37 @@
         return window.iframeBridge.callCSharpAsync(method, data);
     }
 
+    let localization = {};
+    let lastModifiedValue = "";
+
+    function t(key, fallback) {
+        return localization[key] || fallback;
+    }
+
+    async function loadLocalization() {
+        try {
+            const json = await callCSharpAsync("GetIframeLocalization", "");
+            localization = json ? JSON.parse(json) : {};
+        } catch (error) {
+            console.warn('Failed to load iframe localization:', error);
+            localization = {};
+        }
+    }
+
+    function refreshLocalizedUi() {
+        const contextMenu = document.getElementById('custom-context-menu');
+        if (contextMenu) {
+            contextMenu.querySelector('#menu-copy').textContent = t('Web.Copy', 'Copy');
+            contextMenu.querySelector('#menu-new-tab').textContent = t('Web.OpenInNewTab', 'Open in new tab');
+            contextMenu.querySelector('#menu-open-source').textContent = t('Web.OpenOriginal', 'Open original');
+        }
+
+        const lastModified = document.getElementById('footer-info-lastmod');
+        if (lastModified && lastModifiedValue) {
+            lastModified.textContent = t('Web.LastEdited', 'This page was last edited on ') + lastModifiedValue;
+        }
+    }
+
     /**
      * 开始一次新的导航：隐藏加载遮罩并使导航版本号自增。
      * @returns {number} 本次导航的版本号
@@ -48,7 +79,7 @@
      * 脚本入口：读取 URL 参数、注册 C# 消息处理器、绑定页面交互，最后加载首页。
      * @param {object} config 配置对象（由各平台页面传入）
      */
-    function start(config) {
+    async function start(config) {
         // 从 URL 查询参数中读取初始主题与设备类型
         const urlParams = new URLSearchParams(window.location.search);
         const initialTheme = urlParams.get('theme');
@@ -61,7 +92,9 @@
             changeTheme('False');
         }
 
+        await loadLocalization();
         ensureCommonUI(); // 注入公共 UI（加载遮罩、右键菜单结构、公共样式）
+        refreshLocalizedUi();
 
         window.pageTitle = null; // 当前页面标题，初始为空
         registerHandlers(config); // 注册 C# -> JS 的消息处理器
@@ -81,6 +114,17 @@
      * @param {object} config 配置对象
      */
     function registerHandlers(config) {
+        window.iframeBridge.registerHandler("SetLocalization", (json) => {
+            try {
+                localization = typeof json === 'string' ? JSON.parse(json) : (json || {});
+            } catch (error) {
+                console.warn('Failed to apply iframe localization:', error);
+            }
+            refreshLocalizedUi();
+            config.refresh();
+            return null;
+        });
+
         // 跳转到指定词条页面（msg 为词条标题）
         window.iframeBridge.registerHandler("GotoPage", async (msg) => {
             await gotoPage(msg, config);
@@ -300,7 +344,9 @@
         window.pageTitle = result.title;
         document.getElementById(config.headingId).textContent = result.title;
         document.getElementById("mw-content-text").innerHTML = result.content;
-        document.getElementById("footer-info-lastmod").textContent = config.lastModifiedPrefix + result.lastModified;
+        lastModifiedValue = result.lastModified;
+        document.getElementById("footer-info-lastmod").textContent =
+            t('Web.LastEdited', config.lastModifiedPrefix || 'This page was last edited on ') + result.lastModified;
 
         // 首页特殊处理：通过 body 上的类名控制首页样式
         const isHomePage = title === config.homePage;
@@ -318,6 +364,8 @@
 
         // 调用配置中的刷新回调（例如重新运行页面脚本、刷新锚点等）
         config.refresh();
+        await waitForImages(document.getElementById("mw-content-text"));
+        window.parent.postMessage({ type: "event", method: "IframePageReady", data: null }, '*');
         return true;
     }
 
@@ -385,17 +433,17 @@
             const copyItem = document.createElement("div");
             copyItem.className = "menu-item";
             copyItem.id = "menu-copy";
-            copyItem.textContent = "复制";
+            copyItem.textContent = t('Web.Copy', 'Copy');
 
             const openNewTabItem = document.createElement("div");
             openNewTabItem.className = "menu-item";
             openNewTabItem.id = "menu-new-tab";
-            openNewTabItem.textContent = "在新标签页打开";
+            openNewTabItem.textContent = t('Web.OpenInNewTab', 'Open in new tab');
 
             const openSourceItem = document.createElement("div");
             openSourceItem.className = "menu-item";
             openSourceItem.id = "menu-open-source";
-            openSourceItem.textContent = "打开原文";
+            openSourceItem.textContent = t('Web.OpenOriginal', 'Open original');
 
             menu.appendChild(copyItem);
             menu.appendChild(openNewTabItem);
@@ -647,6 +695,7 @@
 
     // 对外暴露入口，供页面脚本调用 window.wikiApp.start(config)
     window.wikiApp = {
-        start
+        start,
+        t
     };
 })();

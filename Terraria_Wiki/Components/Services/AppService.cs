@@ -165,6 +165,13 @@ namespace Terraria_Wiki.Services
             IframeBridge.Actions["OpenExternalWebsite"] = OpenExternalWebsiteAsync;
             IframeBridge.Actions["CopyTextToClipboard"] = CopyTextToClipboardAsync;
             IframeBridge.Actions["CopyImageToClipboard"] = CopyImageToClipboardAsync;
+            IframeBridge.Actions["GetIframeLocalization"] = GetIframeLocalizationAsync;
+        }
+
+        private Task<string> GetIframeLocalizationAsync(string _)
+        {
+            var translations = App.Localization!.GetWebTranslations();
+            return Task.FromResult(IframeBridge.ObjToJson(translations));
         }
 
         private async Task<string> PageRedirectAsync(string title)

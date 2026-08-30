@@ -23,6 +23,7 @@ namespace Terraria_Wiki.Services;
 [JsonSerializable(typeof(JSCallResultType))]
 [JsonSerializable(typeof(JSCallType))]
 [JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(NavigationOptions))]
 //重要：如果你还有其他模型类通过 IframeBridge 传递，必须在这里继续添加 [JsonSerializable(typeof(你的类名))]
 public partial class AppJsonContext : JsonSerializerContext

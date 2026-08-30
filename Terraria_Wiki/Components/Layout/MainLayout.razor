@@ -14,13 +14,16 @@
     <main class="main-area">      
         <TabBar />
         <TopBar />
-        <div class="iframe-container page-anim"
-             style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
+        @if (isAppReady)
+        {
+            <div class="iframe-container page-anim"
+                 style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
 
-            <iframe src="@src"
-                    class="wiki-frame" id="wiki-frame">
-            </iframe>
-        </div>
+                <iframe src="@src"
+                        class="wiki-frame" id="wiki-frame">
+                </iframe>
+            </div>
+        }
         <div class="content-container" style="display: @(AppState.CurrentPage == "home" ? "none" : "block")">
             @Body
         </div>
@@ -32,6 +35,7 @@
     string iframeTheme;
     string src;
     bool isMobile;
+    bool isAppReady;
 
     //刷新机制
     protected override void OnInitialized()
@@ -40,6 +44,8 @@
         AppState.PropertyChanged += OnAppStatePropertyChanged;
         AppState.OnWikiBookSwitched += OnWikiBookSwitched;
         AppState.OnShowAlert += HandleShowAlert;
+        App.Localization!.OnChange += OnLocalizationChanged;
+        IframeBridge.OnIframePageReady += OnIframePageReady;
         iframeTheme = ThemeService.GetIframeThemeState();
         isMobile = AppState.IsMobile;
         src = BuildWikiFrameUrl();
@@ -51,6 +57,8 @@
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
         AppState.OnWikiBookSwitched -= OnWikiBookSwitched;
         AppState.OnShowAlert -= HandleShowAlert;
+        App.Localization!.OnChange -= OnLocalizationChanged;
+        IframeBridge.OnIframePageReady -= OnIframePageReady;
     }
 
     private void RefreshUI()
@@ -69,6 +77,39 @@
         RefreshUI();
     }
 
+    private void OnIframePageReady()
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (Application.Current?.Windows[0].Page is MainPage mainPage)
+                mainPage.HideLoadingScreen();
+        });
+    }
+
+    private async void OnLocalizationChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            StateHasChanged();
+
+            try
+            {
+                var translations = IframeBridge.ObjToJson(App.Localization!.GetWebTranslations());
+                await JS.InvokeVoidAsync("hostBridge.sendToIframe", new
+                {
+                    type = "req",
+                    id = Guid.NewGuid().ToString(),
+                    method = "SetLocalization",
+                    data = translations
+                });
+            }
+            catch (JSException)
+            {
+                // iframe 尚未初始化或已切换页面时，下一次加载会主动获取最新翻译。
+            }
+        });
+    }
+
     // 仅响应 LogPanelIsOpen 和 CurrentPage 变化
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -80,53 +121,57 @@
     {
         if (firstRender)
         {
+            await InitializeAfterBlazorBeforePageDisplayAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
-            AppState.Init(JS);
-            IframeBridge.Init(JS);
-            AppService.Init(NavManager, JS);
-            await ThemeService.InitIframeThemeAsync(JS);
-            await JS.InvokeVoidAsync("setPlatform", AppState.IsWindows ? "True" : "False");
-            if (AppState.IsMobile)
+    private async Task InitializeAfterBlazorBeforePageDisplayAsync()
+    {
+        await ((App)Application.Current!).InitializationTask;
+
+        AppState.Init(JS);
+        IframeBridge.Init(JS);
+        AppService.Init(NavManager, JS);
+        await ThemeService.InitIframeThemeAsync(JS);
+        await JS.InvokeVoidAsync("setPlatform", AppState.IsWindows ? "True" : "False");
+        if (AppState.IsMobile)
+        {
+            await JS.InvokeVoidAsync("initHover", "False");
+            await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);
+            await JS.InvokeVoidAsync("setSafeAreaBottom", AppState.SafeAreaBottom);
+            await JS.InvokeVoidAsync("setSafeAreaLeft", AppState.SafeAreaLeft);
+            await JS.InvokeVoidAsync("setSafeAreaRight", AppState.SafeAreaRight);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("initHover", "True");
+        }
+        _ = JS.InvokeVoidAsync("initGlobalScreenListener");
+
+        await App.DataManager.InitializeSettings();
+
+        // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
+        var upgradeHandler = new LegacyUpgradeHandler(App.StoragePath!);
+        await upgradeHandler.MigrateAnchorDataWikiAsync(AppState.ActiveWikiBook);
+
+        if (Application.Current?.Windows[0].Page is MainPage mainPage)
+        {
+            if (await mainPage.WaitForWebViewAsync(TimeSpan.FromSeconds(5)))
             {
-                await JS.InvokeVoidAsync("initHover", "False");
-                await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);
-                await JS.InvokeVoidAsync("setSafeAreaBottom", AppState.SafeAreaBottom);
-                await JS.InvokeVoidAsync("setSafeAreaLeft", AppState.SafeAreaLeft);
-                await JS.InvokeVoidAsync("setSafeAreaRight", AppState.SafeAreaRight);
+                isAppReady = true;
+                StateHasChanged();
             }
             else
             {
-                await JS.InvokeVoidAsync("initHover", "True");
-
+                await mainPage.ShowWebViewMissingAlertAsync();
             }
-            _ = JS.InvokeVoidAsync("initGlobalScreenListener");
-
-            await App.DataManager.InitializeSettings();
-
-            // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
-
-            var upgradeHandler = new LegacyUpgradeHandler(App.StoragePath!);
-            await upgradeHandler.MigrateAnchorDataWikiAsync(AppState.ActiveWikiBook);
-
-
-            if (Application.Current?.Windows[0].Page is MainPage mainPage)
-            {
-                if (await mainPage.WaitForWebViewAsync(TimeSpan.FromSeconds(5)))
-                {
-                    await Task.Delay(100);
-                    mainPage.HideLoadingScreen();
-                }
-                else
-                {
-                    await mainPage.ShowWebViewMissingAlertAsync();
-                }
-
-            }
-
-
-
         }
-        await base.OnAfterRenderAsync(firstRender);
+        else
+        {
+            isAppReady = true;
+            StateHasChanged();
+        }
     }
 
     private void HandleShowAlert(string title, string message)

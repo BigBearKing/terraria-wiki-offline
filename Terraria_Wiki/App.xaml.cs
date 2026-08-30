@@ -14,6 +14,8 @@ namespace Terraria_Wiki
         public static LocalizationService? Localization { get; private set; }
         public static StoragePathService? StoragePath { get; private set; }
 
+        public Task InitializationTask { get; }
+
         public App(LocalWebServer webServer, ManagerDbService managerDb,
                 ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
                 LocalizationService localizationService,
@@ -29,15 +31,21 @@ namespace Terraria_Wiki
             Localization = localizationService;
             StoragePath = storagePath;
 
-            ThemeService.InitTheme();
-            _ = InitializeAsync();
-
             InitializeComponent();
 
+            InitializeNativeStateBeforeBlazor();
+
             MainPage = services.GetRequiredService<MainPage>();
+
+            InitializationTask = InitializeBeforeBlazorAsync();
         }
 
-        private async Task InitializeAsync()
+        private void InitializeNativeStateBeforeBlazor()
+        {
+            ThemeService.InitTheme();
+        }
+
+        private async Task InitializeBeforeBlazorAsync()
         {
             AppStateManager!.IsNetworkAvailable =
                 Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
@@ -58,7 +66,7 @@ namespace Terraria_Wiki
                 var contentDbPath = Path.Combine(StoragePath.RootPath, activeBook.DataFolder, "data.db");
                 await ContentDb.SwitchDatabaseAsync(contentDbPath);
             }
-            WebServer.Start();
+            await WebServer.Start();
             await ContentDb.Init(false, activeBook);
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
         }

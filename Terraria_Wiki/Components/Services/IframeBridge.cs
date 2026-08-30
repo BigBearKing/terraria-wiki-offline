@@ -11,6 +11,7 @@ public static class IframeBridge
     private static readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingTasks = new();
 
     public static readonly Dictionary<string, Func<string, Task<string>>> Actions = new();
+    public static event Action? OnIframePageReady;
 
 
     public static void Init(IJSRuntime jsRuntime) => _js = jsRuntime;
@@ -63,6 +64,10 @@ public static class IframeBridge
 
             // 发送返回值给 JS
             await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "res", id = msg.Id, data = result });
+        }
+        else if (msg.Type == "event" && msg.Method == "IframePageReady")
+        {
+            OnIframePageReady?.Invoke();
         }
         return 0;
     }

@@ -144,7 +144,7 @@ function refresh() {
     const sounds = document.querySelectorAll('.sound');
     sounds.forEach(container => {
         container.style.cursor = 'pointer';
-        container.title = '点击播放';
+        container.title = window.wikiApp.t('Web.ClickToPlay', 'Click to play');
 
         const audio = container.querySelector('audio');
         if (!audio) return;
@@ -152,7 +152,7 @@ function refresh() {
         // ✅ 新增：监听当前音频自然播放结束的事件
         audio.addEventListener('ended', function () {
             container.classList.remove('sound-playing');
-            container.title = '点击播放';
+            container.title = window.wikiApp.t('Web.ClickToPlay', 'Click to play');
             audio.currentTime = 0; // 将进度条重置回开头
         });
 
@@ -172,12 +172,12 @@ function refresh() {
             if (audio.paused) {
                 audio.play();
                 this.classList.add('sound-playing');
-                this.title = '点击停止';
+                this.title = window.wikiApp.t('Web.ClickToStop', 'Click to stop');
             } else {
                 audio.pause();
                 audio.currentTime = 0;
                 this.classList.remove('sound-playing');
-                this.title = '点击播放';
+                this.title = window.wikiApp.t('Web.ClickToPlay', 'Click to play');
             }
         });
     });
