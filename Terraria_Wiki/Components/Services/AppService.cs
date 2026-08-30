@@ -87,7 +87,7 @@ namespace Terraria_Wiki.Services
                     await App.ContentDb.Init(true, activeBook);
                 }
 
-                await App.DataManager!.InitializeSettings();
+                App.DataManager!.InitializeSettings();
                 if (activeBook != null)
                     await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
 
@@ -135,7 +135,7 @@ namespace Terraria_Wiki.Services
                         await App.ContentDb!.SwitchDatabaseAsync(Path.Combine(oldRoot, activeBook.DataFolder, "data.db"));
                         await App.ContentDb.Init(true, activeBook);
                     }
-                    await App.DataManager!.InitializeSettings();
+                    App.DataManager!.InitializeSettings();
                     await App.WebServer!.Start();
                 }
                 catch

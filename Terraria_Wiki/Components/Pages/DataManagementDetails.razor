@@ -190,12 +190,12 @@
 
     private async Task CheckFailList()
     {
-        if (App.DataManager.CheckFailList())
+        if (App.DataManager.HasFailedItems())
         {
             bool result = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.RetryFailed"), Loc.Get("Common.Yes"), Loc.Get("Common.No"));
             if (result)
             {
-                _ = App.DataManager.RetryFailList();
+                _ = App.DataManager.RetryFailedItemsAsync();
             }
         }
 
@@ -218,7 +218,7 @@
     private async Task DownloadRes()
     {
 
-        _ = App.DataManager.DownloadResAsync();
+        _ = App.DataManager.DownloadResourcesAsync();
 
     }
 
@@ -232,13 +232,13 @@
 
     private async Task CleanUpRes()
     {
-        _ = App.DataManager.CleanUpResAsync();
+        _ = App.DataManager.CleanupResourcesAsync();
 
     }
 
     private async Task ExportData()
     {
-        _ = App.DataManager?.ExportData(WikiId);
+        _ = App.DataManager?.ExportDataAsync(WikiId);
     }
 
     private async Task DeleteRes()
@@ -246,7 +246,7 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.ConfirmDeleteAssets"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (isConfirmed)
         {
-            _ = App.DataManager.DeleteResAsync();         
+            _ = App.DataManager.DeleteResourcesAsync();         
 
         }
     }
@@ -256,7 +256,7 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.ConfirmDeleteDatabase"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (isConfirmed)
         {
-            await App.DataManager.DeleteDatabase();
+            await App.DataManager.DeleteDatabaseAsync();
             BackToList();
         }
     }

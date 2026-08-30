@@ -1,5 +1,4 @@
 using HtmlAgilityPack;
-using LuYao.TlsClient;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
@@ -14,79 +13,6 @@ namespace Terraria_Wiki.Services
 {
     public class DataService
     {
-        // ================= 配置与常量 =================
-        /// <summary>Go 原生 TLS 库，伪造 Chrome 131 指纹绕过 Cloudflare</summary>
-        private static readonly TlsClient _tlsClient = new()
-        {
-            TLSClientIdentifier = ClientIdentifiers.Chrome_131,
-            FollowRedirect = true,
-            Timeout = TimeSpan.FromSeconds(15)
-        };
-
-        private static readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-        private static readonly string _crawlerUserAgent = "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
-
-        /// <summary>通用 HTTP 客户端，用于非 TLS 场景的所有 GET 请求和资源下载</summary>
-        private static readonly HttpClient _httpClient = new()
-        {
-            Timeout = TimeSpan.FromSeconds(150)
-        };
-
-        static DataService()
-        {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_crawlerUserAgent);
-        }
-
-        /// <summary>将含中文等非 ASCII 字符的 IRI 转为标准 URI 编码</summary>
-        private static string EncodeUrl(string url)
-        {
-            if (string.IsNullOrEmpty(url)) return string.Empty;
-
-            // 现代 .NET 的 Uri 解析器非常智能，会自动对完整 URL 中的空格、中文等进行标准的 RFC 3986 转义
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                return uri.AbsoluteUri;
-
-            // 如果走到这里，说明传入的字符串根本不是一个完整的绝对 URL
-            // 最佳实践：抛出异常拒绝脏数据，或者根据业务返回 string.Empty / 原字符串
-            throw new ArgumentException("输入的字符串不是合法的完整绝对 URL", nameof(url));
-        }
-        private static async Task<string> GetStringWithTlsAsync(string url)
-        {
-            url = EncodeUrl(url);
-            var req = _tlsClient.CreateRequest();
-            req.RequestUrl = url;
-            req.RequestMethod = "GET";
-            req.Headers["User-Agent"] = _userAgent;
-            req.Headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-            req.Headers["Accept-Language"] = "zh-CN,zh;q=0.9";
-
-            var resp = await Task.Run(() => _tlsClient.Request(req));
-
-            if (resp.Status < 200 || resp.Status >= 300)
-                throw new HttpRequestException($"TLS request failed with status {resp.Status} for {url}", null, (HttpStatusCode)resp.Status);
-
-            return resp.Body;
-        }
-
-        private static async Task<string> GetStringWithHttpClientAsync(string url)
-        {
-            url = EncodeUrl(url);
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-            using var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        /// <summary>根据当前 WikiBook 的 Id 自动选择 TLS 或普通 HTTP 客户端</summary>
-        private async Task<string> GetStringAsync(string url)
-        {
-            if (App.AppStateManager?.ActiveWikiBook?.Id == 2)
-                return await GetStringWithTlsAsync(url);
-
-            return await GetStringWithHttpClientAsync(url);
-        }
-
         private string _baseDir;
         private string _currentDataDir;
         private string _resListPath;
@@ -126,11 +52,11 @@ namespace Terraria_Wiki.Services
 
 
         //主要功能
-        public async Task DownloadDataAsync(bool isAll)
+        public async Task DownloadDataAsync(bool includeResources, CancellationToken cancellationToken = default)
         {
             // 1. 锁定状态
             App.AppStateManager?.ProcessingTaskId = 2;
-            if (isAll)
+            if (includeResources)
             {
                 _log.Info(_loc.Get("DataService.Log.DownloadAllPagesAndAssets"));
             }
@@ -141,20 +67,20 @@ namespace Terraria_Wiki.Services
 
             try
             {
-                await InitializeSettings();
+                InitializeSettings();
 
-                await GetWikiRedirectsListAsync();
-                await GetWikiPagesListAsync();
+                await FetchWikiRedirectsListAsync();
+                await FetchWikiPagesListAsync();
                 var book = App.AppStateManager.ActiveWikiBook;
-                if (isAll)
+                if (includeResources)
                 {
-                    await StartDownloadPagesAsync(_pageListPath, _resListPath, _failedPageListPath, _pageConcurrency);
-                    await StartDownloadResAsync(_resListPath, _failedResListPath, _resConcurrency);
+                    await DownloadPagesBatchAsync(_pageListPath, _resListPath, _failedPageListPath, _pageConcurrency, cancellationToken);
+                    await DownloadResourcesBatchAsync(_resListPath, _failedResListPath, _resConcurrency, cancellationToken: cancellationToken);
                     book.IsResourceDownloaded = true;
                 }
                 else
                 {
-                    await StartDownloadPagesAsync(_pageListPath, _resListPath, _failedPageListPath, _pageConcurrency);
+                    await DownloadPagesBatchAsync(_pageListPath, _resListPath, _failedPageListPath, _pageConcurrency, cancellationToken);
                 }
 
                 // 数据库更新操作
@@ -164,9 +90,9 @@ namespace Terraria_Wiki.Services
 
                 await App.ManagerDb.SaveItemAsync(book);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                CleanUpTempFile();
+                CleanupTemporaryFiles();
                 await AppService.WikiRefreshAsync();
-                if (isAll)
+                if (includeResources)
                 {
                     _log.Success(_loc.Get("DataService.Log.AllPagesAndAssetsCompleted"));
                     App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllPagesAndAssetsCompleted"));
@@ -193,7 +119,7 @@ namespace Terraria_Wiki.Services
             }
         }
 
-        public async Task DownloadResAsync()
+        public async Task DownloadResourcesAsync(CancellationToken cancellationToken = default)
         {
             // 1. 锁定状态
             App.AppStateManager?.ProcessingTaskId = 3;
@@ -201,7 +127,7 @@ namespace Terraria_Wiki.Services
 
             try
             {
-                await InitializeSettings();
+                InitializeSettings();
 
                 // 2. 检查文件有效性
                 if (!FileHelper.IsFileValid(_resListPath))
@@ -213,7 +139,7 @@ namespace Terraria_Wiki.Services
                 }
 
                 // 3. 执行核心下载逻辑
-                await StartDownloadResAsync(_resListPath, _failedResListPath, _resConcurrency);
+                await DownloadResourcesBatchAsync(_resListPath, _failedResListPath, _resConcurrency, cancellationToken: cancellationToken);
 
                 // 4. 更新数据库状态
                 var book = App.AppStateManager.ActiveWikiBook;
@@ -221,7 +147,7 @@ namespace Terraria_Wiki.Services
                 await App.ManagerDb.SaveItemAsync(book);
 
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                CleanUpTempFile();
+                CleanupTemporaryFiles();
                 await AppService.WikiRefreshAsync();
                 _log.Success(_loc.Get("DataService.Log.AllAssetsCompleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllAssetsCompleted"));
@@ -241,10 +167,10 @@ namespace Terraria_Wiki.Services
         }
 
         //更新页面和资源
-        public async Task UpdateDataAsync(bool isAll)
+        public async Task UpdateDataAsync(bool includeResources, CancellationToken cancellationToken = default)
         {
             App.AppStateManager?.ProcessingTaskId = 4;
-            if (isAll)
+            if (includeResources)
             {
                 _log.Info(_loc.Get("DataService.Log.UpdateAllPagesAndAssets"));
             }
@@ -254,13 +180,13 @@ namespace Terraria_Wiki.Services
             }
             try
             {
-                await InitializeSettings();
+                InitializeSettings();
                 //获取新的页面列表
-                await GetWikiRedirectsListAsync();
-                await GetWikiPagesListAsync();
+                await FetchWikiRedirectsListAsync();
+                await FetchWikiPagesListAsync();
 
                 //检查是否有要更新的页面
-                int updateCount = await CheckUpdatePage();
+                int updateCount = await CheckForPageUpdatesAsync(cancellationToken);
                 _log.Success(_loc.Get("DataService.Log.UpdateListReady", updateCount));
                 if (updateCount == 0)
                 {
@@ -268,14 +194,14 @@ namespace Terraria_Wiki.Services
                     return;
                 }
 
-                if (isAll)
+                if (includeResources)
                 {
-                    await StartDownloadPagesAsync(_updatePageListPath, _updateResListPath, _failedPageListPath, _pageConcurrency);
-                    await StartDownloadResAsync(_updateResListPath, _failedResListPath, _resConcurrency);
+                    await DownloadPagesBatchAsync(_updatePageListPath, _updateResListPath, _failedPageListPath, _pageConcurrency, cancellationToken);
+                    await DownloadResourcesBatchAsync(_updateResListPath, _failedResListPath, _resConcurrency, cancellationToken: cancellationToken);
                 }
                 else
                 {
-                    await StartDownloadPagesAsync(_updatePageListPath, _updateResListPath, _failedPageListPath, _pageConcurrency);
+                    await DownloadPagesBatchAsync(_updatePageListPath, _updateResListPath, _failedPageListPath, _pageConcurrency, cancellationToken);
                 }
                 await FileHelper.AppendFileAsync(_updateResListPath, _resListPath);
                 string tempFile = Path.Combine(_currentDataDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
@@ -286,8 +212,8 @@ namespace Terraria_Wiki.Services
                 book.UpdateTime = DateTime.Now;
                 await App.ManagerDb.SaveItemAsync(book);
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                CleanUpTempFile();
-                if (isAll)
+                CleanupTemporaryFiles();
+                if (includeResources)
                 {
                     _log.Success(_loc.Get("DataService.Log.AllPagesAndAssetsUpdated"));
                     App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.AllPagesAndAssetsUpdated"));
@@ -313,9 +239,9 @@ namespace Terraria_Wiki.Services
 
 
         //检查是否有要更新的页面
-        private async Task<int> CheckUpdatePage()
+        private async Task<int> CheckForPageUpdatesAsync(CancellationToken cancellationToken = default)
         {
-            var writer = new BatchLineWriter(_updatePageListPath, 200);
+            using var writer = new BatchLineWriter(_updatePageListPath, 200);
             int totalCount = 0;
             if (File.Exists(_pageListPath))
             {
@@ -323,10 +249,17 @@ namespace Terraria_Wiki.Services
             }
             int currentCount = 0;
             int updateCount = 0;
-            async Task ProcessPageLine(int workerId, string line)
+            using var provider = new BatchLineProvider(_pageListPath);
+            var scheduler = new BatchTaskScheduler<BatchLineItem>(_maxRetryAttempts);
+            async Task ProcessPageLine(int workerId, BatchLineItem item, CancellationToken token)
             {
+                string line = item.Line;
                 var parts = line.Split('|');
-                if (parts.Length < 2) return;
+                if (parts.Length < 2)
+                {
+                    item.Complete();
+                    return;
+                }
                 var page = new PageInfo { Title = parts[0], LastModified = DateTime.Parse(parts[1]) };
                 try
                 {
@@ -344,7 +277,7 @@ namespace Terraria_Wiki.Services
                         writer.Add(line);
                         Interlocked.Increment(ref updateCount);
                     }
-
+                    item.Complete();
                 }
                 finally
                 {
@@ -353,12 +286,22 @@ namespace Terraria_Wiki.Services
 
 
             }
-            await RunBatchJobAsync(_pageListPath, _failedPageListPath, 1, ProcessPageLine, postWork: () => writer.Flush());
+            await scheduler.RunAsync(
+                provider.GetNextItemAsync,
+                ProcessPageLine,
+                async (_, item, ex, token) =>
+                {
+                    await AppendFailedUrlAsync(_failedPageListPath, item.Line);
+                    item.Complete();
+                },
+                concurrency: 1,
+                cancellationToken: cancellationToken);
+            writer.Flush();
             return updateCount;
         }
 
         //清理数据库
-        public async Task CleanUpResAsync()
+        public async Task CleanupResourcesAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 5;
             _log.Info(_loc.Get("DataService.Log.CleanUnusedAssetsStart"));
@@ -383,7 +326,7 @@ namespace Terraria_Wiki.Services
         }
 
         //删除图片资源
-        public async Task DeleteResAsync()
+        public async Task DeleteResourcesAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 6;
             _log.Info(_loc.Get("DataService.Log.DeleteAssetsStart"));
@@ -423,7 +366,7 @@ namespace Terraria_Wiki.Services
         }
 
         //检查是否有失败列表
-        public bool CheckFailList()
+        public bool HasFailedItems()
         {
             if (App.AppStateManager.ProcessingTaskId != 0)
             {
@@ -439,20 +382,20 @@ namespace Terraria_Wiki.Services
         }
 
         //重试失败列表
-        public async Task RetryFailList()
+        public async Task RetryFailedItemsAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 7;
             try
             {
-                bool isAll = true;
+                bool includeResources = true;
                 var wikiBook = App.AppStateManager.ActiveWikiBook;
-                if (!wikiBook.IsResourceDownloaded) isAll = false;
-                await InitializeSettings();
+                if (!wikiBook.IsResourceDownloaded) includeResources = false;
+                InitializeSettings();
 
                 if (FileHelper.IsFileValid(_failedPageListPath))
                 {
                     _log.Info(_loc.Get("DataService.Log.RetryFailedPages"));
-                    await StartDownloadPagesAsync(_failedPageListPath, _failedResListPath, _tempFailedPageListPath, 1);
+                    await DownloadPagesBatchAsync(_failedPageListPath, _failedResListPath, _tempFailedPageListPath, 1);
                     await FileHelper.AppendFileAsync(_failedResListPath, _resListPath);
                     string tempFile = Path.Combine(_currentDataDir, $"temp_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
                     FileHelper.RemoveDuplicatesOptimized(_resListPath, tempFile);
@@ -463,15 +406,15 @@ namespace Terraria_Wiki.Services
 
                 }
 
-                if (FileHelper.IsFileValid(_failedResListPath) && isAll == true)
+                if (FileHelper.IsFileValid(_failedResListPath) && includeResources)
                 {
                     _log.Info(_loc.Get("DataService.Log.RetryFailedAssets"));
-                    await StartDownloadResAsync(_failedResListPath, _tempFailedResListPath, 1, false);
+                    await DownloadResourcesBatchAsync(_failedResListPath, _tempFailedResListPath, 1, false);
                     // 用本次仍失败的条目替换旧失败列表，成功的条目自动清除
                     ReplaceFailedList(_tempFailedResListPath, _failedResListPath);
                 }
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-                CleanUpTempFile();
+                CleanupTemporaryFiles();
                 _log.Success(_loc.Get("DataService.Log.RetryCompleted"));
                 App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.RetryCompleted"));
             }
@@ -504,7 +447,7 @@ namespace Terraria_Wiki.Services
 
         }
         //删除文件夹
-        public async Task DeleteDatabase()
+        public async Task DeleteDatabaseAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 8;
             _log.Info(_loc.Get("DataService.Log.DeletingDatabase"));
@@ -513,7 +456,7 @@ namespace Terraria_Wiki.Services
                 await App.ContentDb.CloseConnection();
                 await Task.Run(() =>
                 {
-                    DeleteDataFolder();
+                    DeleteDataDirectory();
                 });
                 await App.ManagerDb.DeleteItemAsync<WikiBook>(App.AppStateManager.ActiveWikiBookId);
                 await App.ManagerDb.Init(true);
@@ -535,7 +478,7 @@ namespace Terraria_Wiki.Services
             }
 
         }
-        public void DeleteDataFolder()
+        public void DeleteDataDirectory()
         {
             if (Directory.Exists(_currentDataDir))
                 Directory.Delete(_currentDataDir, true);
@@ -543,11 +486,11 @@ namespace Terraria_Wiki.Services
 
 
         //导出数据
-        public async Task ExportData(int selectedWikiId)
+        public async Task ExportDataAsync(int selectedWikiId)
         {
             App.AppStateManager?.ProcessingTaskId = 9;
             _log.Info(_loc.Get("DataService.Log.ExportDataStart"));
-            await InitializeSettings();
+            InitializeSettings();
             string finalPkgPath = null;
 
             // --- 准备工作 ---
@@ -718,12 +661,12 @@ namespace Terraria_Wiki.Services
         }
 
         //导入数据
-        public async Task ImportData()
+        public async Task ImportDataAsync()
         {
             App.AppStateManager?.ProcessingTaskId = 10;
             _log.Info(_loc.Get("DataService.Log.ImportDataStart"));
             string filePath = null;
-            await InitializeSettings();
+            InitializeSettings();
             try
             {
                 var customFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
@@ -941,7 +884,7 @@ namespace Terraria_Wiki.Services
         }
 
         // ================= 核心功能 1: 获取页面清单 =================
-        private async Task<int> GetWikiPagesListAsync()
+        private async Task<int> FetchWikiPagesListAsync()
         {
             _log.Info(_loc.Get("DataService.Log.FetchingPageList"));
             var writer = new BatchLineWriter(_pageListPath, 200);
@@ -968,7 +911,7 @@ namespace Terraria_Wiki.Services
 
                     try
                     {
-                        string jsonResponse = await GetStringAsync(currentUrl);
+                        string jsonResponse = await NetworkService.GetStringAsync(currentUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2);
                         retryCount = 0;
 
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -1011,7 +954,7 @@ namespace Terraria_Wiki.Services
             return pagesCount;
         }
 
-        private async Task GetWikiRedirectsListAsync()
+        private async Task FetchWikiRedirectsListAsync()
         {
             string nextUrl = _redirectStartUrl;
             int pageCount = 1;
@@ -1025,7 +968,7 @@ namespace Terraria_Wiki.Services
                     try
                     {
                         string fullUrl = _baseUrl + nextUrl;
-                        string html = await GetStringAsync(fullUrl);
+                        string html = await NetworkService.GetStringAsync(fullUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2);
                         var doc = new HtmlDocument();
                         doc.LoadHtml(html);
                         var listItems = doc.DocumentNode.SelectNodes("//div[@class='mw-spcontent']//ol/li");
@@ -1083,77 +1026,10 @@ namespace Terraria_Wiki.Services
 
             }
         }
-        // ================= 核心功能 2: 批量任务调度器 =================
-
-        private async Task RunBatchJobAsync(string inputPath, string failedPath, int concurrency, Func<int, string, Task> itemProcessor, Action? preWork = null, Action? postWork = null)
-        {
-
-            _log.Info(_loc.Get("DataService.Log.TaskStart", concurrency));
-
-            // ================= 修改开始 =================
-            // 使用 using 确保任务结束时执行 Dispose()，从而执行最后一次文件截断
-            using var urlProvider = new BatchLineProvider(inputPath, batchSize: 50);
-            // ================= 修改结束 =================
-
-            // 执行前置操作
-            preWork?.Invoke();
-
-            var tasks = Enumerable.Range(0, concurrency).Select(i => Task.Run(async () =>
-            {
-                await RunWorkerLoopAsync(i, urlProvider, failedPath, itemProcessor);
-            }));
-
-
-            await Task.WhenAll(tasks);
-            postWork?.Invoke();
-
-
-        }
-
-        // 通用的 Worker 循环逻辑
-        private async Task RunWorkerLoopAsync(int workerId, BatchLineProvider provider, string failedPath, Func<int, string, Task> processAction)
-        {
-            while (true)
-            {
-                string? line = provider.GetNextLine();
-                if (string.IsNullOrWhiteSpace(line)) break;
-
-                try
-                {
-                    int retry = 0;
-                    while (true)
-                    {
-                        try
-                        {
-                            await processAction(workerId, line);
-                            break;
-                        }
-                        catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.NotFound)
-                        {
-                            // 如果遇到 404 (NotFound)，直接抛出异常，不进入下面的常规 Exception 重试
-                            _log.Info(_loc.Get("DataService.Log.ResourceNotFound", workerId, line));
-                            break;
-                        }
-                        catch (Exception)
-                        {
-                            if (++retry > _maxRetryAttempts) throw;
-                            _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, line));
-                            await Task.Delay(1000);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(_loc.Get("DataService.Log.WorkerError", workerId, ex.Message));
-                    await DataService.AppendFailedUrlAsync(failedPath, line);
-                }
-            }
-        }
-
         // ================= 业务入口: 下载页面 =================
-        private async Task StartDownloadPagesAsync(string pageListPath, string resListPath, string failedPageListPath, int maxConcurrency)
+        private async Task DownloadPagesBatchAsync(string pageListPath, string resListPath, string failedPageListPath, int maxConcurrency, CancellationToken cancellationToken = default)
         {
-            var writer = new BatchLineWriter(resListPath, 200);
+            using var writer = new BatchLineWriter(resListPath, 200);
             int totalCount = 0;
             int currentCount = 0;
             if (File.Exists(pageListPath))
@@ -1164,14 +1040,22 @@ namespace Terraria_Wiki.Services
             // 定义如何处理单行数据
 
 
-            async Task ProcessPageLine(int workerId, string line)
+            using var provider = new BatchLineProvider(pageListPath);
+            var scheduler = new BatchTaskScheduler<BatchLineItem>(_maxRetryAttempts);
+            async Task ProcessPageLine(int workerId, BatchLineItem item, CancellationToken token)
             {
+                string line = item.Line;
                 var parts = line.Split('|');
-                if (parts.Length < 2) return;
+                if (parts.Length < 2)
+                {
+                    item.Complete();
+                    return;
+                }
                 var page = new PageInfo { Title = parts[0], LastModified = DateTime.Parse(parts[1]) };
                 try
                 {
                     await DownloadAndSavePageToDbAsync(page, writer);
+                    item.Complete();
                 }
                 finally
                 {
@@ -1182,9 +1066,23 @@ namespace Terraria_Wiki.Services
 
             }
 
-            // 启动通用任务
-            await RunBatchJobAsync(pageListPath, failedPageListPath, maxConcurrency, ProcessPageLine,
-                postWork: () => writer.Flush());
+            await scheduler.RunAsync(
+                provider.GetNextItemAsync,
+                ProcessPageLine,
+                async (_, item, ex, token) =>
+                {
+                    await AppendFailedUrlAsync(failedPageListPath, item.Line);
+                    item.Complete();
+                },
+                maxConcurrency,
+                onRetry: (workerId, item, retry, ex) =>
+                    _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line)),
+                onNotFound: (workerId, item, ex) =>
+                {
+                    _log.Info(_loc.Get("DataService.Log.ResourceNotFound", workerId, item.Line));
+                    item.Complete();
+                },
+                cancellationToken: cancellationToken);
 
             // 爬取完成后，清洗一下数据
             if (File.Exists(resListPath))
@@ -1201,7 +1099,7 @@ namespace Terraria_Wiki.Services
         }
 
         // ================= 业务入口: 下载资源 =================
-        private async Task StartDownloadResAsync(string resListPath, string failedResListPath, int maxConcurrency, bool deleteFile = false)
+        private async Task DownloadResourcesBatchAsync(string resListPath, string failedResListPath, int maxConcurrency, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
             int totalCount = 0;
             int currentCount = 0;
@@ -1210,13 +1108,17 @@ namespace Terraria_Wiki.Services
                 totalCount = File.ReadLines(resListPath).Count();
             }
             _log.Info(_loc.Get("DataService.Log.DownloadAssetsStart", totalCount));
-            async Task ProcessResLine(int workerId, string url)
+            using var provider = new BatchLineProvider(deleteFile ? resListPath : _tempResListPath);
+            var scheduler = new BatchTaskScheduler<BatchLineItem>(_maxRetryAttempts);
+            async Task ProcessResLine(int workerId, BatchLineItem item, CancellationToken token)
             {
+                string url = item.Line;
                 bool changeData = false;
                 string fileName = DataService.GetFileNameFromUrl(url);
                 try
                 {
-                    changeData = await DownloadAndSaveResToDbAsync(url, fileName);
+                    changeData = await DownloadAndSaveResourceAsync(url, fileName);
+                    item.Complete();
                 }
                 finally
                 {
@@ -1235,12 +1137,43 @@ namespace Terraria_Wiki.Services
             if (!deleteFile)
             {
                 File.Copy(resListPath, _tempResListPath, true);
-                // 启动通用任务
-                await RunBatchJobAsync(_tempResListPath, failedResListPath, maxConcurrency, ProcessResLine);
+                await scheduler.RunAsync(
+                    provider.GetNextItemAsync,
+                    ProcessResLine,
+                    async (_, item, ex, token) =>
+                    {
+                        await AppendFailedUrlAsync(failedResListPath, item.Line);
+                        item.Complete();
+                    },
+                    maxConcurrency,
+                    onRetry: (workerId, item, retry, ex) =>
+                        _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line)),
+                    onNotFound: (workerId, item, ex) =>
+                {
+                    _log.Info(_loc.Get("DataService.Log.ResourceNotFound", workerId, item.Line));
+                    item.Complete();
+                },
+                    cancellationToken: cancellationToken);
             }
             else
             {
-                await RunBatchJobAsync(resListPath, failedResListPath, maxConcurrency, ProcessResLine);
+                await scheduler.RunAsync(
+                    provider.GetNextItemAsync,
+                    ProcessResLine,
+                    async (_, item, ex, token) =>
+                    {
+                        await AppendFailedUrlAsync(failedResListPath, item.Line);
+                        item.Complete();
+                    },
+                    maxConcurrency,
+                    onRetry: (workerId, item, retry, ex) =>
+                        _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line)),
+                    onNotFound: (workerId, item, ex) =>
+                {
+                    _log.Info(_loc.Get("DataService.Log.ResourceNotFound", workerId, item.Line));
+                    item.Complete();
+                },
+                    cancellationToken: cancellationToken);
             }
 
             _log.Info(_loc.Get("DataService.Log.AssetsDownloadCompleted"));
@@ -1263,7 +1196,7 @@ namespace Terraria_Wiki.Services
 
             var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
 
-            string xml = await GetStringAsync(pageUrl);
+            string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2);
 
             var xmldoc = XDocument.Parse(xml);
 
@@ -1361,7 +1294,7 @@ namespace Terraria_Wiki.Services
 
                 // 还原缩略图
                 src = Regex.Replace(src, @"/thumb/(.+)/[^/]+$", "/$1");
-                src = DataService.CleanUpUrl(src);
+                src = DataService.GetUrlWithoutQuery(src);
 
                 // 灰机 wiki 的缩略图域名与原图域名不同，需要切换
                 if (App.AppStateManager?.ActiveWikiBookId == 2)
@@ -1402,7 +1335,7 @@ namespace Terraria_Wiki.Services
             return Regex.Replace(plainText, @"\s+", " ").Trim();
         }
 
-        private async Task<bool> DownloadAndSaveResToDbAsync(string url, string fileName)
+        private async Task<bool> DownloadAndSaveResourceAsync(string url, string fileName)
         {
             // 1. 尝试从数据库获取已存在的资源记录
             WikiAsset existingAsset = null;
@@ -1411,44 +1344,25 @@ namespace Terraria_Wiki.Services
                 existingAsset = await App.ContentDb.GetItemAsync<WikiAsset>(fileName);
             }
 
-            // 2. 构造请求
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            // 2. 下载资源，并在已有记录时使用 Last-Modified 进行条件请求
+            var response = await NetworkService.GetBytesResponseAsync(
+                url,
+                useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2,
+                ifModifiedSince: existingAsset?.LastModified);
 
-            // 如果本地已存在该资源，并且记录了最后修改时间，将其加入请求头验证
-            if (existingAsset != null && existingAsset.LastModified != null)
-            {
-                var localTimeUtc = DateTime.SpecifyKind(existingAsset.LastModified.Value, DateTimeKind.Utc);
-                request.Headers.IfModifiedSince = new DateTimeOffset(localTimeUtc);
-            }
-
-            // 3. 发送请求
-            using var response = await _httpClient.SendAsync(request);
-
-            // ================= 核心更新逻辑 =================
-            // 4. 如果服务器返回 304 Not Modified，说明云端资源未更改，无需重新下载耗费流量和性能
             if (response.StatusCode == HttpStatusCode.NotModified)
             {
-                // 资源没变，直接返回即可
                 return false;
             }
 
-            // 如果返回其他错误状态码（如 404 / 500 等），抛出异常以进入外层的失败重试循环
-            response.EnsureSuccessStatusCode();
-
-            // 5. 如果返回 200 OK，说明有更新或首次下载，读取新数据
-            string mimeType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-            byte[] data = await response.Content.ReadAsByteArrayAsync();
-
-            // 6. 提取服务器返回的最后修改时间（Last-Modified），如果服务器没给，则用当前系统时间兜底
-            DateTime lastModifiedDate = response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.UtcNow;
-
-            // 7. 保存或覆盖更新到数据库
+            byte[] data = response.Data;
+            DateTime lastModifiedDate = response.LastModified ?? DateTime.UtcNow;
             await App.ContentDb.SaveItemAsync(new WikiAsset
             {
                 FileName = fileName,
                 Data = data,
-                MimeType = mimeType,
-                LastModified = lastModifiedDate // 记录本次更新的时间
+                MimeType = response.ContentType,
+                LastModified = lastModifiedDate
             });
             return true;
         }
@@ -1456,7 +1370,7 @@ namespace Terraria_Wiki.Services
         // ================= 辅助工具方法 =================
 
         //更新成员变量
-        public async Task InitializeSettings()
+        public void InitializeSettings()
         {
             _maxRetryAttempts = Preferences.Default.Get("MaxRetryAttempts", 5);
             _pageConcurrency = Preferences.Default.Get("PageConcurrency", 2);
@@ -1493,11 +1407,11 @@ namespace Terraria_Wiki.Services
             _updateResListPath = Path.Combine(_currentDataDir, "update_res.txt");
 
             if (!Directory.Exists(_currentDataDir)) Directory.CreateDirectory(_currentDataDir);
-            CleanUpTempFile();
+            CleanupTemporaryFiles();
         }
 
         //清理临时文件
-        private void CleanUpTempFile()
+        private void CleanupTemporaryFiles()
         {
             _log.Info(_loc.Get("DataService.Log.CleaningTempFiles"));
             if (File.Exists(_pageListPath))
@@ -1528,7 +1442,7 @@ namespace Terraria_Wiki.Services
         }
 
         //清理 URL 中的查询参数，获取干净的文件名
-        private static string CleanUpUrl(string url)
+        private static string GetUrlWithoutQuery(string url)
         {
             int qIdx = url.IndexOf('?');
             return (qIdx > 0) ? url.Substring(0, qIdx) : url;
@@ -1537,7 +1451,7 @@ namespace Terraria_Wiki.Services
         // 从 URL 中提取文件名，并进行 URL 解码
         public static string GetFileNameFromUrl(string url)
         {
-            string cleanUrl = DataService.CleanUpUrl(url);
+            string cleanUrl = DataService.GetUrlWithoutQuery(url);
             string name = cleanUrl.Substring(cleanUrl.LastIndexOf('/') + 1);
             string decodedName = WebUtility.UrlDecode(name);
             return decodedName;
@@ -1565,164 +1479,4 @@ namespace Terraria_Wiki.Services
 
 
     }
-
-    // ================= 保持原逻辑的辅助类 (稍微整理格式) =================
-
-    public class BatchLineWriter
-    {
-        private readonly string _filePath;
-        private readonly int _batchSize;
-        private readonly List<string> _buffer;
-        private readonly object _lock = new();
-
-        public BatchLineWriter(string filePath, int batchSize = 200)
-        {
-            _filePath = filePath;
-            _batchSize = batchSize;
-            _buffer = new List<string>(batchSize);
-        }
-
-        public void Add(string line)
-        {
-            if (string.IsNullOrWhiteSpace(line)) return;
-            lock (_lock)
-            {
-                _buffer.Add(line);
-                if (_buffer.Count >= _batchSize) FlushInternal();
-            }
-        }
-
-        public void Flush() { lock (_lock) FlushInternal(); }
-
-        private void FlushInternal()
-        {
-            if (_buffer.Count == 0) return;
-            File.AppendAllLines(_filePath, _buffer);
-            _buffer.Clear();
-        }
-    }
-
-    public class BatchLineProvider : IDisposable
-    {
-        private readonly string _filePath;
-        private readonly int _batchSize;
-        private readonly ConcurrentQueue<string> _memoryQueue = new();
-        private readonly object _fileLock = new();
-        private bool _isFileExhausted = false;
-
-        // 新增：记录上一次应该截断的位置
-        private long _pendingTruncatePosition = -1;
-
-        public BatchLineProvider(string filePath, int batchSize = 50)
-        {
-            _filePath = filePath;
-            _batchSize = batchSize;
-        }
-
-        public string? GetNextLine()
-        {
-            // 1. 尝试从内存队列取数据
-            if (_memoryQueue.TryDequeue(out var url)) return url;
-
-            lock (_fileLock)
-            {
-                // 双重检查，防止并发进入
-                if (_memoryQueue.TryDequeue(out url)) return url;
-                if (_isFileExhausted) return null;
-
-                // 2. 关键修改：在读取新的一批数据之前，执行"上一批"的截断
-                // 这意味着：如果程序在上一批处理中途崩溃，文件尚未截断，重启后数据还在
-                if (_pendingTruncatePosition >= 0)
-                {
-                    TruncateFile(_filePath, _pendingTruncatePosition);
-                    _pendingTruncatePosition = -1; // 重置
-                }
-
-                // 3. 读取新的一批数据（只读，不删）
-                var (lines, newPosition) = PeekLastNLines(_filePath, _batchSize);
-
-                if (lines.Count == 0)
-                {
-                    _isFileExhausted = true;
-                    // 如果文件空了，且有待截断的操作，立即执行（清空文件）
-                    if (_pendingTruncatePosition >= 0)
-                    {
-                        TruncateFile(_filePath, _pendingTruncatePosition);
-                        _pendingTruncatePosition = -1;
-                    }
-                    return null;
-                }
-
-                // 4. 将数据加入队列，并记录"下一次"需要截断的位置
-                foreach (var item in lines) _memoryQueue.Enqueue(item);
-                _pendingTruncatePosition = newPosition;
-            }
-
-            return _memoryQueue.TryDequeue(out url) ? url : null;
-        }
-
-        // 实现 Dispose 以确保最后一批数据被截断
-        public void Dispose()
-        {
-            lock (_fileLock)
-            {
-                if (_pendingTruncatePosition >= 0)
-                {
-                    try { TruncateFile(_filePath, _pendingTruncatePosition); } catch { }
-                    _pendingTruncatePosition = -1;
-                }
-            }
-            GC.SuppressFinalize(this);
-        }
-
-        // 将原 PopLastNLines 拆分为 PeekLastNLines（只读）和 TruncateFile（只删）
-
-        private (List<string> lines, long newPosition) PeekLastNLines(string filePath, int count)
-        {
-            if (!File.Exists(filePath)) return (new List<string>(), 0);
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            if (fs.Length == 0) return (new List<string>(), 0);
-
-            long pos = fs.Length - 1;
-            int linesFound = 0;
-
-            // 从后往前扫描换行符
-            while (pos >= 0)
-            {
-                fs.Position = pos;
-                if (fs.ReadByte() == '\n')
-                {
-                    if (++linesFound > count)
-                    {
-                        pos++; // 回到换行符之后（保留这个换行符给上一行）
-                        break;
-                    }
-                }
-                pos--;
-            }
-
-            if (pos < 0) pos = 0;
-
-            // 读取这部分数据
-            fs.Position = pos;
-            byte[] buffer = new byte[fs.Length - pos];
-            fs.Read(buffer, 0, buffer.Length);
-
-            var resultLines = Encoding.UTF8.GetString(buffer).Trim()
-                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                .ToList();
-
-            // 返回数据和应该截断的位置 (pos)
-            return (resultLines, pos);
-        }
-
-        private void TruncateFile(string filePath, long length)
-        {
-            if (!File.Exists(filePath)) return;
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-            fs.SetLength(length);
-        }
-    }
-
-
 }

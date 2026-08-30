@@ -149,7 +149,7 @@
         }
         _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
-        await App.DataManager.InitializeSettings();
+        App.DataManager.InitializeSettings();
 
         // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
         var upgradeHandler = new LegacyUpgradeHandler(App.StoragePath!);
