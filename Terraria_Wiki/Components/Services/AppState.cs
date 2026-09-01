@@ -71,8 +71,7 @@ public class AppState : INotifyPropertyChanged
     private bool _logPanelIsOpen = false;
     private bool _mobileTabPanelOpen = false;
     private bool _isDarkTheme;
-    private int _processingTaskId = 0;
-    private DownloadTask? _currentDownloadTask;
+    private readonly Dictionary<int, ActiveTaskInfo> _activeTasks = [];
 
     private string _currentWikiPage;
     private List<TabModel> _tabs;
@@ -87,22 +86,25 @@ public class AppState : INotifyPropertyChanged
     private double _safeAreaBottom = 0;
     private double _safeAreaLeft = 0;
     private double _safeAreaRight = 0;
-    public readonly Dictionary<int, TaskConfig> Tasks = new()
+    public Dictionary<AppTaskType, TaskConfig> Tasks { get; } = new()
     {
-        { 1, new TaskConfig { Id = 1, NameKey = "AppState.CheckUpdate", ProcessingTextKey = "AppState.CheckingUpdate" } },
-        { 2, new TaskConfig { Id = 2, NameKey = "AppState.DownloadAllPages", ProcessingTextKey = "AppState.Downloading" } },
-        { 3, new TaskConfig { Id = 3, NameKey = "AppState.DownloadAllAssets", ProcessingTextKey = "AppState.Downloading" } },
-        { 4, new TaskConfig { Id = 4, NameKey = "AppState.UpdateData", ProcessingTextKey = "AppState.Updating" } },
-        { 5, new TaskConfig { Id = 5, NameKey = "AppState.CleanUnusedAssets", ProcessingTextKey = "AppState.Cleaning" }  },
-        { 6, new TaskConfig { Id = 6, NameKey = "AppState.DeleteAssets", ProcessingTextKey = "AppState.Deleting" }   },
-        { 7, new TaskConfig { Id = 7, NameKey = "AppState.RetryFailed", ProcessingTextKey = "AppState.Retrying" } },
-        { 8, new TaskConfig { Id = 8, NameKey = "AppState.DeleteData", ProcessingTextKey = "AppState.Deleting" }  },
-        { 9, new TaskConfig { Id = 9, NameKey = "AppState.ExportData", ProcessingTextKey = "AppState.Exporting" }   },
-        { 10, new TaskConfig { Id = 10, NameKey = "AppState.ImportData", ProcessingTextKey = "AppState.Importing" }  },
-        { 11, new TaskConfig { Id = 11, NameKey = "AppState.MigrateData", ProcessingTextKey = "AppState.MigratingData" }  },
-        { 12, new TaskConfig { Id = 12, NameKey = "AppState.LegacyUpgrade", ProcessingTextKey = "AppState.LegacyUpgrading" }  },
-        { 13, new TaskConfig { Id = 13, NameKey = "", ProcessingTextKey = "" }  },
-        { 14, new TaskConfig { Id = 14, NameKey = "", ProcessingTextKey = "" }  }
+        { AppTaskType.CheckUpdate, new TaskConfig { Id = AppTaskType.CheckUpdate, NameKey = "AppState.CheckUpdate", ProcessingTextKey = "AppState.CheckingUpdate" } },
+        { AppTaskType.DownloadPages, new TaskConfig { Id = AppTaskType.DownloadPages, NameKey = "AppState.DownloadAllPages", ProcessingTextKey = "AppState.Downloading" } },
+        { AppTaskType.DownloadResources, new TaskConfig { Id = AppTaskType.DownloadResources, NameKey = "AppState.DownloadAllAssets", ProcessingTextKey = "AppState.Downloading" } },
+        { AppTaskType.DownloadAll, new TaskConfig { Id = AppTaskType.DownloadAll, NameKey = "AppState.DownloadAllContent", ProcessingTextKey = "AppState.Downloading" } },
+        { AppTaskType.UpdateData, new TaskConfig { Id = AppTaskType.UpdateData, NameKey = "AppState.UpdateData", ProcessingTextKey = "AppState.Updating" } },
+        { AppTaskType.UpdatePages, new TaskConfig { Id = AppTaskType.UpdatePages, NameKey = "AppState.UpdatePages", ProcessingTextKey = "AppState.Updating" } },
+        { AppTaskType.UpdateAll, new TaskConfig { Id = AppTaskType.UpdateAll, NameKey = "AppState.UpdateAll", ProcessingTextKey = "AppState.Updating" } },
+        { AppTaskType.DeleteResources, new TaskConfig { Id = AppTaskType.DeleteResources, NameKey = "AppState.DeleteAssets", ProcessingTextKey = "AppState.Deleting" } },
+        { AppTaskType.RetryFailed, new TaskConfig { Id = AppTaskType.RetryFailed, NameKey = "AppState.RetryFailed", ProcessingTextKey = "AppState.Retrying" } },
+        { AppTaskType.DeleteData, new TaskConfig { Id = AppTaskType.DeleteData, NameKey = "AppState.DeleteData", ProcessingTextKey = "AppState.Deleting" } },
+        { AppTaskType.ExportData, new TaskConfig { Id = AppTaskType.ExportData, NameKey = "AppState.ExportData", ProcessingTextKey = "AppState.Exporting" } },
+        { AppTaskType.ImportData, new TaskConfig { Id = AppTaskType.ImportData, NameKey = "AppState.ImportData", ProcessingTextKey = "AppState.Importing" } },
+        { AppTaskType.MigrateData, new TaskConfig { Id = AppTaskType.MigrateData, NameKey = "AppState.MigrateData", ProcessingTextKey = "AppState.MigratingData" } },
+        { AppTaskType.LegacyUpgrade, new TaskConfig { Id = AppTaskType.LegacyUpgrade, NameKey = "AppState.LegacyUpgrade", ProcessingTextKey = "AppState.LegacyUpgrading" } }
+        ,{ AppTaskType.ExportLog, new TaskConfig { Id = AppTaskType.ExportLog, NameKey = "AppState.ExportLog", ProcessingTextKey = "AppState.Exporting" } }
+        ,{ AppTaskType.DeleteLog, new TaskConfig { Id = AppTaskType.DeleteLog, NameKey = "AppState.DeleteLog", ProcessingTextKey = "AppState.Deleting" } }
+        ,{ AppTaskType.ClearFailedList, new TaskConfig { Id = AppTaskType.ClearFailedList, NameKey = "AppState.ClearFailedList", ProcessingTextKey = "AppState.Cleaning" } }
     };
 
     public AppState()
@@ -238,19 +240,52 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _isDarkTheme, value);
     }
 
-    public int ProcessingTaskId
+    public IReadOnlyCollection<ActiveTaskInfo> ActiveTasks => _activeTasks.Values;
+
+    public bool HasActiveTasks => _activeTasks.Count != 0;
+
+    public void AddActiveTask(ActiveTaskInfo task)
     {
-        get => _processingTaskId;
-        set => SetProperty(ref _processingTaskId, value);
+        if (task.Task.Status != AppTaskStatus.Running)
+            return;
+        _activeTasks[task.Task.Id] = task;
+        OnPropertyChanged(nameof(ActiveTasks));
+        OnPropertyChanged(nameof(HasActiveTasks));
     }
 
-    public DownloadTask? CurrentDownloadTask
+    public void RemoveActiveTask(int taskId)
     {
-        get => _currentDownloadTask;
+        if (_activeTasks.Remove(taskId))
+        {
+            OnPropertyChanged(nameof(ActiveTasks));
+            OnPropertyChanged(nameof(HasActiveTasks));
+        }
+    }
+
+    public ActiveTaskInfo? GetActiveTask(int taskId) => _activeTasks.GetValueOrDefault(taskId);
+
+    public AppTask? CurrentDownloadTask
+    {
+        get => _activeTasks.Values
+            .Select(x => x.Task)
+            .FirstOrDefault(t => t.WikiId == ActiveWikiBookId &&
+                t.TaskType is AppTaskType.DownloadAll or AppTaskType.DownloadPages or AppTaskType.DownloadResources or AppTaskType.UpdatePages or AppTaskType.UpdateAll or AppTaskType.RetryFailed);
         set
         {
-            _currentDownloadTask = value;
-            OnPropertyChanged(nameof(CurrentDownloadTask));
+            if (value is null)
+            {
+                foreach (var task in _activeTasks.Values
+                    .Where(x => x.Task.WikiId == ActiveWikiBookId)
+                    .Select(x => x.Task.Id)
+                    .ToList())
+                    RemoveActiveTask(task);
+                return;
+            }
+
+            if (value.Status == AppTaskStatus.Running)
+                AddActiveTask(new ActiveTaskInfo { Task = value, StartedTime = value.CreatedTime, CanCancel = true });
+            else
+                RemoveActiveTask(value.Id);
         }
     }
 

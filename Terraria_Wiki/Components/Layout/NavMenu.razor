@@ -64,7 +64,7 @@
 
     <div class="sidebar-footer">
         <button class="nav-item button" @onclick="ToggleLogPanel">
-            <div class="icon-container @(AppState.ProcessingTaskId != 0 ? "rotating" : "")" style=" @(AppState.ProcessingTaskId != 0 ? "color:var(--blue-primary)" : "")">
+            <div class="icon-container @(AppState.HasActiveTasks ? "rotating" : "")" style=" @(AppState.HasActiveTasks ? "color:var(--blue-primary)" : "")">
                 <Icon Name="sync"> </Icon>
             </div>
             <span class="text-container">
@@ -103,12 +103,12 @@
         InvokeAsync(StateHasChanged);
     }
 
-    // 仅响应相关属性变化：CurrentPage, SidebarIsExpanded, ProcessingTaskId, IsDarkTheme
+    // 仅响应相关属性变化：CurrentPage, SidebarIsExpanded, ActiveTasks, IsDarkTheme
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(AppState.CurrentPage) 
                             or nameof(AppState.SidebarIsExpanded) 
-                            or nameof(AppState.ProcessingTaskId) 
+                            or nameof(AppState.ActiveTasks) 
                             or nameof(AppState.IsDarkTheme))
             RefreshUI();
     }

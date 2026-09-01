@@ -54,6 +54,10 @@ body.has-hover .action-btn:hover {
     user-select: none;
     min-width: 0; /* 修复 Flex 布局下省略号失效的 Bug */
 }
+
+.page-title-without-actions {
+    padding-left: 16px;
+}
 /* --- 3. 右侧搜索框 (核心改动) --- */
 .search-wrapper {
     width: 260px; /* ★ 给定一个合适的宽度 */

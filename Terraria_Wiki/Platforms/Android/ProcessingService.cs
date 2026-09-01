@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using AndroidX.Core.App;
+using Terraria_Wiki.Models;
 using Terraria_Wiki.Services; // 替换为你 AppState 所在的实际命名空间
 
 namespace Terraria_Wiki.Platforms.Android;
@@ -27,7 +28,7 @@ public class ProcessingService : Service
         var appState = IPlatformApplication.Current.Services.GetService<AppState>();
 
         // 假设你的 TaskId 是 int 类型。如果是 string，改成 string.IsNullOrEmpty(appState.TaskId) 等
-        if (appState == null || appState.ProcessingTaskId == 0)
+        if (appState == null || !appState.HasActiveTasks)
         {
             // 如果 TaskId 是 0，立刻销毁通知并停止服务
             StopForeground(StopForegroundFlags.Remove);
@@ -38,7 +39,7 @@ public class ProcessingService : Service
         // 2. TaskId 不是 0，显示极其简单的通知栏（无进度条）
         var notification = new NotificationCompat.Builder(this, ChannelId)
             .SetContentTitle(App.Localization?.Get("ProcessingService.ProcessingTask") ?? "Processing")
-            .SetContentText(App.Localization?.Get("ProcessingService.CurrentTask", appState.Tasks[appState.ProcessingTaskId].GetName(App.Localization!)) ?? "")
+            .SetContentText(App.Localization?.Get("ProcessingService.CurrentTask", string.Join(", ", appState.ActiveTasks.Select(x => appState.Tasks[x.Task.TaskType].GetName(App.Localization!)))) ?? "")
             .SetSmallIcon(Resource.Mipmap.appicon) // 确保你有这个图标
             .SetOngoing(true) // 禁止用户手动划掉
             .Build();

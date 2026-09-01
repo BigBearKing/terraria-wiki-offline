@@ -1,4 +1,5 @@
 ﻿@page "/settings"
+@inject AppTaskRunner TaskRunner
 @using System.ComponentModel
 @using Terraria_Wiki.Services
 <div class="page-anim page-content">
@@ -117,7 +118,7 @@
                         <span class="setting-name">@Loc.Get("Settings.ClearFailedList")</span>
                         <span class="setting-desc">@Loc.Get("Settings.ClearFailedListDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(ClearFailedList)">
+                    <button class="button setting-btn" @onclick="ClearFailedList">
                         @Loc.Get("Settings.ClearFailedList")
                     </button>
                 </div>
@@ -131,8 +132,8 @@
                         <span class="setting-name">@Loc.Get("Settings.ImportData")</span>
                         <span class="setting-desc">@Loc.Get("Settings.ImportDataDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(ImportData)">
-                    @(AppState.ProcessingTaskId == 10 ? AppState.Tasks[10].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
+                    <button class="button setting-btn" @onclick="ImportData">
+                    @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData) ? AppState.Tasks[AppTaskType.ImportData].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
                     </button>
                 </div>
             </div>
@@ -172,7 +173,7 @@
                             <div class="setting-info">
                                 <span class="setting-desc">@Loc.Get("Settings.DataLocationApplyDesc")</span>
                             </div>
-                            <button class="button setting-btn" @onclick="() => RunSafe(SaveStorageLocation)">
+                            <button class="button setting-btn" @onclick="SaveStorageLocation">
                                 @Loc.Get("Common.Apply")
                             </button>
                         </div>
@@ -186,7 +187,7 @@
                         <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
                         <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(ExportLog)">
+                    <button class="button setting-btn" @onclick="ExportLog">
                         @Loc.Get("Common.Export")
                     </button>
                 </div>
@@ -195,7 +196,7 @@
                         <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
                         <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(DeleteLog)">
+                    <button class="button setting-btn" @onclick="DeleteLog">
                         @Loc.Get("Settings.DeleteLog")
                     </button>
                 </div>
@@ -208,8 +209,8 @@
                         <span class="setting-name">@Loc.Get("Common.Version")</span>
                         <span class="setting-desc">v@(AppVersion) (Build @BuildNumber)</span>
                     </div>
-                    <button class="button setting-btn" @onclick="() => RunSafe(CheckUpdateCommand)">
-                    @(AppState.ProcessingTaskId == 1 ? AppState.Tasks[1].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
+                    <button class="button setting-btn" @onclick="CheckUpdateCommand">
+                    @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.CheckUpdate) ? AppState.Tasks[AppTaskType.CheckUpdate].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
                     </button>
                 </div>
                 <div class="setting-item">
@@ -406,25 +407,19 @@
     private string AppVersion => $"{AppInfo.Current.Version.Major}.{AppInfo.Current.Version.Minor}.{AppInfo.Current.Version.Build}";
     private string BuildNumber => AppInfo.Current.BuildString;
     private string Author => "BigBearKing";
-    private async Task RunSafe(Func<Task> action)
-    {
-        // 统一检查
-        if (AppState.ProcessingTaskId != 0)
-        {
-            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.PleaseWait"));
-            return;
-        }
-        await action();
-    }
-
     private async Task ImportData()
     {
-        _ = App.DataManager?.ImportDataAsync();
+        await TaskRunner.RunAsync(
+            AppTaskType.ImportData,
+            _ => App.DataManager!.ImportDataAsync(),
+            access: AppTaskAccess.Exclusive);
     }
 
     private async Task ExportLog()
     {
-        _ = App.LogManager?.ExportLogsAsync();
+        await TaskRunner.RunAsync(
+            AppTaskType.ExportLog,
+            _ => App.LogManager!.ExportLogsAsync());
     }
 
     private async Task DeleteLog()
@@ -432,16 +427,22 @@
         bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmDeleteLog"), Loc.Get("Settings.ConfirmDeleteLogDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (confirm)
         {
-            App.LogManager?.DeleteLogs();
+            await TaskRunner.RunAsync(
+                AppTaskType.DeleteLog,
+                _ =>
+                {
+                    App.LogManager?.DeleteLogs();
+                    return Task.CompletedTask;
+                });
         }
     }
 
     private async Task CheckUpdateCommand()
     {
-        AppState.ProcessingTaskId = 1;
-        try
+        await TaskRunner.RunAsync(
+            AppTaskType.CheckUpdate,
+            async _ =>
         {
-
             var updateService = new UpdateService();
             var result = await updateService.CheckForUpdatesAsync();
 
@@ -462,22 +463,10 @@
             }
             else
             {
-
                 AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.AlreadyLatest"));
             }
-        }
-        catch (Exception e)
-        {
-
-            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.CheckFailed", e.Message));
-        }
-        finally
-        {
-            AppState.ProcessingTaskId = 0;
-        }
-
-
-
+        },
+        new AppTaskOptions { ShowError = false });
     }
     private async Task GotoGithub()
     {
@@ -489,8 +478,13 @@
         bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmCleanup"), Loc.Get("Settings.ConfirmCleanupDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (confirm)
         {
-            App.DataManager.ClearFailedList();
-            _ = FileHelper.ClearAppCacheAsync();
+            await TaskRunner.RunAsync(
+                AppTaskType.ClearFailedList,
+                async _ =>
+                {
+                    App.DataManager.ClearFailedList();
+                    await FileHelper.ClearAppCacheAsync();
+                });
         }
     }
     private int _clickCount = 0;

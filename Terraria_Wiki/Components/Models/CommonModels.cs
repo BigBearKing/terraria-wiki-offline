@@ -137,7 +137,7 @@ public class AssetMetadata
 
 public class TaskConfig
 {
-    public int Id { get; set; }
+    public AppTaskType Id { get; set; }
     public string NameKey { get; set; }
     public string ProcessingTextKey { get; set; }
 

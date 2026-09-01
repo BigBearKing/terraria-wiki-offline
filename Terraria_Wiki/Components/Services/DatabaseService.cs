@@ -13,6 +13,7 @@ public class DatabaseService
     public bool _initialized = false; // 标记是否已经初始化过
     public string DatabasePath { get; private set; }
     public DbMode Mode { get; private set; }
+    private readonly SemaphoreSlim _appTaskWriteLock = new(1, 1);
 
     public DatabaseService(string dbPath, DbMode mode)
     {
@@ -38,7 +39,7 @@ public class DatabaseService
         if (Mode == DbMode.Manager)
         {
             await _db.CreateTableAsync<WikiBook>();
-            await _db.CreateTableAsync<DownloadTask>();
+            await _db.CreateTableAsync<AppTask>();
             await MigrateWikiBookColumnsAsync();
             await SeedWikiBooksAsync();
 
@@ -294,6 +295,20 @@ public class DatabaseService
     public async Task SaveItemAsync<T>(T item) where T : new()
     {
         await Init();
+        if (item is AppTask task)
+        {
+            await _appTaskWriteLock.WaitAsync();
+            try
+            {
+                task.SaveTaskData();
+                await _db.InsertOrReplaceAsync(item);
+            }
+            finally
+            {
+                _appTaskWriteLock.Release();
+            }
+            return;
+        }
         await _db.InsertOrReplaceAsync(item);
     }
 
@@ -302,6 +317,8 @@ public class DatabaseService
         await Init();
         foreach (var item in items)
         {
+            if (item is AppTask task)
+                task.SaveTaskData();
             await _db.InsertOrReplaceAsync(item);
         }
     }
@@ -332,7 +349,13 @@ public class DatabaseService
     public async Task<List<T>> GetItemsAsync<T>() where T : new()
     {
         await Init();
-        return await _db.Table<T>().ToListAsync();
+        var items = await _db.Table<T>().ToListAsync();
+        if (typeof(T) == typeof(AppTask))
+        {
+            foreach (var item in items.Cast<AppTask>())
+                item.LoadTaskData();
+        }
+        return items;
     }
 
     // 3.1 轻量查询：只取主键列表，不加载大字段
@@ -348,7 +371,10 @@ public class DatabaseService
     public async Task<T> GetItemAsync<T>(object primaryKey) where T : new()
     {
         await Init();
-        return await _db.FindAsync<T>(primaryKey);
+        var item = await _db.FindAsync<T>(primaryKey);
+        if (item is AppTask task)
+            task.LoadTaskData();
+        return item;
     }
 
     //验证是否存在

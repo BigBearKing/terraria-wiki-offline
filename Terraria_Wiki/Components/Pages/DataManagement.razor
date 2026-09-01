@@ -80,8 +80,8 @@
         // 只关心 ActiveWikiBookId 变化（切换 wiki 时重新加载列表）
         if (e.PropertyName == nameof(AppState.ActiveWikiBookId) || e.PropertyName == nameof(AppState.CurrentDownloadTask))
         {
-            if (AppState.CurrentDownloadTask != null)
-                _downloadTasks[AppState.CurrentDownloadTask.WikiId] = AppState.CurrentDownloadTask;
+            if (AppState.CurrentDownloadTask?.WikiId is int wikiId)
+                _downloadTasks[wikiId] = AppState.CurrentDownloadTask;
             RefreshUI();
         }
     }
@@ -90,18 +90,20 @@
     {
         _wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
         var tasks = await App.ManagerDb.GetItemsAsync<DownloadTask>();
-        foreach (var task in tasks.GroupBy(t => t.WikiId).Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
-            _downloadTasks[task.WikiId] = task;
+        foreach (var task in tasks.Where(t => t.WikiId.HasValue).GroupBy(t => t.WikiId!.Value).Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
+            _downloadTasks[task.WikiId!.Value] = task;
         ApplyLangFilter();
     }
 
-    private static string GetTaskStatusText(DownloadTask task) => task.Status switch
+    private string GetTaskStatusText(DownloadTask task) => task.Status switch
     {
-        DownloadTaskStatus.Running => "下载中",
-        DownloadTaskStatus.Paused => "已暂停",
-        DownloadTaskStatus.Interrupted => "已中断",
-        DownloadTaskStatus.Failed => "失败",
-        _ => "待开始"
+        DownloadTaskStatus.Running when task.TaskType is DownloadTaskType.UpdatePages or DownloadTaskType.UpdateAll => Loc.Get("DataManagement.TaskUpdating"),
+        DownloadTaskStatus.Running when task.TaskType == DownloadTaskType.RetryFailed => Loc.Get("DataManagement.TaskRetrying"),
+        DownloadTaskStatus.Running => Loc.Get("DataManagement.TaskDownloading"),
+        DownloadTaskStatus.Paused => Loc.Get("DataManagement.TaskPaused"),
+        DownloadTaskStatus.Interrupted => Loc.Get("DataManagement.TaskInterrupted"),
+        DownloadTaskStatus.Failed => Loc.Get("DataManagement.TaskFailed"),
+        _ => Loc.Get("DataManagement.TaskPending")
     };
 
     private void SetLangFilter(string filter)

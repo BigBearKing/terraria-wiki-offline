@@ -18,7 +18,7 @@ public sealed class BatchTaskScheduler<T>
         Func<int, T, Exception, CancellationToken, Task> handleFailure,
         int concurrency,
         Action<int, T, int, Exception>? onRetry = null,
-        Action<int, T, HttpRequestException>? onNotFound = null,
+        Func<int, T, HttpRequestException, Task>? onNotFound = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(getNextTask);
@@ -45,7 +45,7 @@ public sealed class BatchTaskScheduler<T>
         Func<int, T, CancellationToken, Task> processTask,
         Func<int, T, Exception, CancellationToken, Task> handleFailure,
         Action<int, T, int, Exception>? onRetry,
-        Action<int, T, HttpRequestException>? onNotFound,
+        Func<int, T, HttpRequestException, Task>? onNotFound,
         CancellationToken cancellationToken)
     {
         while (true)
@@ -65,7 +65,8 @@ public sealed class BatchTaskScheduler<T>
                     }
                     catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                     {
-                        onNotFound?.Invoke(workerId, task, ex);
+                        if (onNotFound is not null)
+                            await onNotFound(workerId, task, ex);
                         break;
                     }
                     catch (Exception ex)

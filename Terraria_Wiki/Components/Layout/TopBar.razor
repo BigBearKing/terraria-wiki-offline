@@ -6,42 +6,54 @@
 <header class="top-bar">
 
     <div class="actions-wrapper">
-        <button class="action-btn button mobile-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar" style="display:none;">
+        <button class="action-btn button mobile-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar">
             <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
         </button>
-        <button class="action-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="WikiBackAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-            <Icon Name="arrow-left" Size="20"></Icon>
-        </button>
-        <button class="action-btn button" title="@App.Localization!.Get("Common.Home")" @onclick="WikiBackHomeAsync" style="display:@(ShouldShowActionButtons() ? "" : "none")">
-            <Icon Name="home" Size="20"></Icon>
-        </button>
-        <button class="action-btn button" title="@App.Localization!.Get("Common.Favorites")" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "");display:@(ShouldShowActionButtons() ? "" : "none")" @onclick="ToggleFavoriteAsync">
-            <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
-        </button>
-    </div>
-    <div class="page-title" @onclick="WikiToTopAsync" style="padding-left:@(ShouldShowActionButtons() ? "" : "16px")">@GetPageTitle()</div>
-
-
-    <div id="search-wrapper" class="search-wrapper" style="display:@(ShouldShowSearch() ? "" : "none")">
-        <Icon class="search-icon" Name="search"></Icon>
-        <input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput"/>
-        @if (AppState.CurrentPage == "home")
+        @if (ShouldShowActionButtons())
         {
-            <SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+            <button class="action-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="WikiBackAsync">
+                <Icon Name="arrow-left" Size="20"></Icon>
+            </button>
+            <button class="action-btn button" title="@App.Localization!.Get("Common.Home")" @onclick="WikiBackHomeAsync">
+                <Icon Name="home" Size="20"></Icon>
+            </button>
+            <button class="action-btn button" title="@App.Localization!.Get("Common.Favorites")" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "")" @onclick="ToggleFavoriteAsync">
+                <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
+            </button>
         }
     </div>
+    <div class="page-title @(ShouldShowActionButtons() ? "" : "page-title-without-actions")" @onclick="WikiToTopAsync">@GetPageTitle()</div>
 
 
-    <div class="actions-wrapper" style="display:@(ShouldShowPinButton() ? "" : "none")">
-        <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "");" @onclick="TogglePinStateAsync">
-            <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
-        </button>
-    </div>
-    <div class="actions-wrapper">
-        <button class="action-btn button mobile-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel" style="display:@(AppState.CurrentPage == "home" ? "" : "none")">
-            <Icon Name="more" Size="24"></Icon>
-        </button>
-    </div>
+    @if (ShouldShowSearch())
+    {
+        <div id="search-wrapper" class="search-wrapper">
+            <Icon class="search-icon" Name="search"></Icon>
+            <input type="text" class="search-input" placeholder=@GetSearchPlaceholder() @bind="SearchText" @bind:event="oninput"/>
+            @if (AppState.CurrentPage == "home")
+            {
+                <SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+            }
+        </div>
+    }
+
+    @if (ShouldShowPinButton())
+    {
+        <div class="actions-wrapper">
+            <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
+                <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
+            </button>
+        </div>
+    }
+
+    @if (AppState.CurrentPage == "home")
+    {
+        <div class="actions-wrapper">
+            <button class="action-btn button mobile-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
+                <Icon Name="more" Size="24"></Icon>
+            </button>
+        </div>
+    }
 
 
 </header>

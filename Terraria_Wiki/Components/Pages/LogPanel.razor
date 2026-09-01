@@ -13,7 +13,7 @@
 
         <div class="left-group">
             <span class="log-title">@Loc.Get("Common.Log")</span>
-            <span class="log-info">@(AppState.ProcessingTaskId != 0 ? Loc.Get("LogPanel.CurrentTask") + AppState.Tasks[AppState.ProcessingTaskId].GetName(Loc) : "")</span>
+            <span class="log-info">@(AppState.HasActiveTasks ? Loc.Get("LogPanel.CurrentTask") + string.Join(", ", AppState.ActiveTasks.Select(x => AppState.Tasks[x.Task.TaskType].GetName(Loc))) : "")</span>
         </div>
 
         <div class="close-btn button" @onclick="CloseLogPanel">
@@ -114,7 +114,7 @@
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只关心任务状态变化（更新 "处理中" 文本和任务名称）
-        if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+        if (e.PropertyName == nameof(AppState.ActiveTasks))
             StateHasChanged();
     }
 

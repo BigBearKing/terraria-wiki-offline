@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using System.Text.Json;
 using Terraria_Wiki.Services;
 namespace Terraria_Wiki.Models;
 
@@ -42,14 +43,7 @@ public class WikiBook
     public string DefaultPageTitle { get; set; }
 }
 
-public enum DownloadTaskType
-{
-    DownloadAll = 1,
-    DownloadPages = 2,
-    DownloadResources = 3
-}
-
-public enum DownloadTaskStatus
+public enum AppTaskStatus
 {
     Pending = 0,
     Running = 1,
@@ -59,7 +53,7 @@ public enum DownloadTaskStatus
     Failed = 5
 }
 
-public enum DownloadTaskPhase
+public enum AppTaskPhase
 {
     FetchingLists = 0,
     DownloadingPages = 1,
@@ -67,25 +61,88 @@ public enum DownloadTaskPhase
     PostProcessing = 3
 }
 
-public class DownloadTask
+public class AppTask
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
     [Indexed]
-    public int WikiId { get; set; }
-    public DownloadTaskType TaskType { get; set; }
-    public DownloadTaskStatus Status { get; set; }
-    public DownloadTaskPhase Phase { get; set; }
+    public int? WikiId { get; set; }
+    public AppTaskType TaskType { get; set; }
+    public AppTaskStatus Status { get; set; }
+    public bool CanPause { get; set; }
+    public string TaskData { get; set; } = "{}";
+    public DateTime CreatedTime { get; set; }
+    public DateTime UpdatedTime { get; set; }
+    public string? LastError { get; set; }
+
+    [Ignore]
+    public AppTaskPhase Phase { get; set; }
+    [Ignore]
+    public bool IncludeResources { get; set; }
+    [Ignore]
+    public string TaskDirectory { get; set; } = string.Empty;
+    [Ignore]
+    public int TotalPages { get; set; }
+    [Ignore]
+    public int CompletedPages { get; set; }
+    [Ignore]
+    public int TotalResources { get; set; }
+    [Ignore]
+    public int CompletedResources { get; set; }
+    [Ignore]
+    public double Progress => CalculateProgress();
+
+    public void LoadTaskData()
+    {
+        var data = JsonSerializer.Deserialize<AppTaskData>(TaskData) ?? new AppTaskData();
+        Phase = data.Phase;
+        IncludeResources = data.IncludeResources;
+        TaskDirectory = data.TaskDirectory;
+        TotalPages = data.TotalPages;
+        CompletedPages = data.CompletedPages;
+        TotalResources = data.TotalResources;
+        CompletedResources = data.CompletedResources;
+    }
+
+    public void SaveTaskData()
+    {
+        TaskData = JsonSerializer.Serialize(new AppTaskData
+        {
+            Phase = Phase,
+            IncludeResources = IncludeResources,
+            TaskDirectory = TaskDirectory,
+            TotalPages = TotalPages,
+            CompletedPages = CompletedPages,
+            TotalResources = TotalResources,
+            CompletedResources = CompletedResources
+        });
+    }
+
+    private double CalculateProgress()
+    {
+        if (TaskType == AppTaskType.DownloadResources)
+            return TotalResources == 0 ? 0 : CompletedResources * 100d / TotalResources;
+
+        var listProgress = Phase == AppTaskPhase.FetchingLists ? 0 : 1;
+        var pageProgress = TotalPages == 0 ? 0 : CompletedPages / (double)TotalPages;
+        if (!IncludeResources)
+            return (listProgress * 10 + pageProgress * 45) / 55 * 100;
+
+        var resourceProgress = TotalResources == 0 ? 0 : CompletedResources / (double)TotalResources;
+        var postProcessProgress = Status == DownloadTaskStatus.Completed ? 1 : 0;
+        return listProgress * 10 + pageProgress * 45 + resourceProgress * 44 + postProcessProgress;
+    }
+}
+
+public sealed class AppTaskData
+{
+    public AppTaskPhase Phase { get; set; }
     public bool IncludeResources { get; set; }
     public string TaskDirectory { get; set; } = string.Empty;
     public int TotalPages { get; set; }
     public int CompletedPages { get; set; }
     public int TotalResources { get; set; }
     public int CompletedResources { get; set; }
-    public double Progress { get; set; }
-    public string? LastError { get; set; }
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
 }
 
 public class WikiPage

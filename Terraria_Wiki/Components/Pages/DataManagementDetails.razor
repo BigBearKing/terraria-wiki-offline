@@ -4,6 +4,7 @@
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
 @inject NavigationManager NavManager
+@inject AppTaskRunner TaskRunner
 <div class="page-anim page-content">
     <div class="header-with-back">
         <div class="icon-btn button" @onclick="BackToList">
@@ -53,21 +54,29 @@
 
                 @* 2. 操作按钮 *@
                 <div class="action-row">
-                    <div class="primary-btn btn-blue" @onclick="() => RunSafe(UpdateData)">
+                    <div class="primary-btn btn-blue" @onclick="ToggleUpdate">
                         <Icon Name="sync" Size="16" />
-                        @(AppState.ProcessingTaskId == 4 ? AppState.Tasks[4].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.CheckUpdate"))
+                        @(IsUpdateRunning ? Loc.Get("Common.Pause") : GetUpdateButtonText())
                     </div>
 
-                    <div class="primary-btn btn-green" @onclick="() => RunSafe(ExportData)">
+                    <div class="primary-btn btn-green" @onclick="ExportData">
                         <Icon Name="export" Size="16" />
-                        @(AppState.ProcessingTaskId == 9 ? AppState.Tasks[9].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.ExportData"))
+                        @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ExportData) ? AppState.Tasks[AppTaskType.ExportData].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.ExportData"))
                     </div>
+
+                    @if (_hasFailedItems)
+                    {
+                        <div class="primary-btn btn-blue" @onclick="RetryFailedItems">
+                            <Icon Name="sync" Size="16" />
+                            @Loc.Get("DataManagementDetails.RetryFailedButton")
+                        </div>
+                    }
 
                     @if (_selectedWiki.IsResourceDownloaded)
                     {
-                        <div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteRes)">
+                        <div class="primary-btn btn-red" @onclick="DeleteRes">
                             <Icon Name="delete" Size="16" />
-                            @(AppState.ProcessingTaskId == 6 ? AppState.Tasks[6].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteAssets"))
+                        @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.DeleteResources) ? AppState.Tasks[AppTaskType.DeleteResources].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteAssets"))
                             
                         </div>
                     }
@@ -75,15 +84,15 @@
                     {
                         <div class="primary-btn btn-blue" @onclick="ToggleResourcesDownload">
                             <Icon Name="download" Size="16" />
-                            @(IsResourceDownloadRunning ? "暂停" : Loc.Get("DataManagementDetails.DownloadAssets"))
+                            @(IsResourceDownloadRunning ? Loc.Get("Common.Pause") : GetResourceDownloadButtonText())
                             
                         </div>
                     }
 
 
-                    <div class="primary-btn btn-red" @onclick="() => RunSafe(DeleteDatabase)">
+                    <div class="primary-btn btn-red" @onclick="DeleteDatabase">
                         <Icon Name="delete" Size="16" />
-                        @(AppState.ProcessingTaskId == 8 ? AppState.Tasks[8].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteDatabase"))
+                        @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.DeleteData) ? AppState.Tasks[AppTaskType.DeleteData].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteDatabase"))
                         
                     </div>
                 </div>
@@ -91,38 +100,46 @@
             }
             else
             {
-                @if (CurrentDownloadTask != null)
-                {
-                    <div class="download-progress-panel">
-                        <div class="download-progress-heading">
-                            <span>@GetDownloadPhaseText()</span>
-                            <span>@CurrentDownloadTask.Progress.ToString("F1")%</span>
-                        </div>
-                        <progress value="@CurrentDownloadTask.Progress" max="100"></progress>
-                        <div class="download-progress-count">@GetDownloadCountText()</div>
-                    </div>
-                }
                 <div class="download-actions">
 
-                    <div class="download-card">
-                        <div class="dl-info">
-                            <div class="dl-title">@Loc.Get("DataManagementDetails.AllContent")</div>
+                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == DownloadTaskType.DownloadAll)
+                    {
+                        <div class="download-card">
+                            <div class="dl-info">
+                                <div class="dl-title">@Loc.Get("DataManagementDetails.AllContent")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.AllContentDesc")</div>
+                            </div>
+                            <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(true)">
+                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(DownloadTaskType.DownloadAll))
+                            </div>
                         </div>
-                        <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(true)">
-                            @(IsDownloadRunning ? "暂停" : Loc.Get("Common.Download"))
-                        </div>
-                    </div>
-                    <div class="download-card">
-                        <div class="dl-info">
-                            <div class="dl-title">@Loc.Get("DataManagementDetails.BasicData")</div>
+                    }
+                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == DownloadTaskType.DownloadPages)
+                    {
+                        <div class="download-card">
+                            <div class="dl-info">
+                                <div class="dl-title">@Loc.Get("DataManagementDetails.BasicData")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.BasicDataDesc")</div>
+                            </div>
+                            <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(false)">
+                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(DownloadTaskType.DownloadPages))
+                            </div>
                         </div>
-                        <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(false)">
-                            @(IsDownloadRunning ? "暂停" : Loc.Get("Common.Download"))
-                            
-                        </div>
+                    }
+                </div>
+            }
+
+            @if (CurrentDownloadTask != null)
+            {
+                <div class="download-progress-panel">
+                    <div class="download-progress-heading">
+                        <span>@GetDownloadPhaseText()</span>
+                        <span>@CurrentDownloadTask.Progress.ToString("F1")%</span>
                     </div>
+                    <div class="download-progress-track" role="progressbar" aria-valuenow="@CurrentDownloadTask.Progress" aria-valuemin="0" aria-valuemax="100">
+                        <div class="download-progress-fill" style="@GetProgressStyle()"></div>
+                    </div>
+                    <div class="download-progress-count">@GetDownloadCountText()</div>
                 </div>
             }
 
@@ -140,7 +157,7 @@
         Loc.OnChange += RefreshUI;
     }
 
-    private int _lastTaskId;
+    private AppTaskType _lastTaskType;
 
     public void Dispose()
     {
@@ -150,22 +167,23 @@
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // 只关心任务状态变化（任务完成后重新加载 Wiki 统计数据）
-        if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+        // 任务进度保存时会更新 CurrentDownloadTask，任务完成后需重新加载 Wiki 统计数据。
+        if (e.PropertyName is nameof(AppState.ActiveTasks) or nameof(AppState.CurrentDownloadTask))
             RefreshUI();
     }
 
     private async void RefreshUI()
     {
-        // 任务刚完成（ProcessingTaskId 从非零切回 0），刷新页面数据
-        if (_lastTaskId != 0 && AppState.ProcessingTaskId == 0)
+        // 任务刚完成且活动任务集合为空时，刷新页面数据
+        if (_lastTaskType != AppTaskType.None && !AppState.HasActiveTasks)
         {
-            _lastTaskId = 0;
+            _lastTaskType = AppTaskType.None;
             _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
             await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
             _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
+            _hasFailedItems = App.DataManager.HasFailedItems();
         }
-        _lastTaskId = AppState.ProcessingTaskId;
+        _lastTaskType = AppState.CurrentDownloadTask?.TaskType ?? AppTaskType.None;
         InvokeAsync(StateHasChanged);
     }
 
@@ -176,44 +194,76 @@
     }
 
     private WikiBook _selectedWiki;
+    private bool _hasFailedItems;
     private DownloadTask? CurrentDownloadTask => AppState.CurrentDownloadTask?.WikiId == WikiId ? AppState.CurrentDownloadTask : null;
     private bool IsDownloadRunning => CurrentDownloadTask?.Status == DownloadTaskStatus.Running;
     private bool IsResourceDownloadRunning => CurrentDownloadTask?.TaskType == DownloadTaskType.DownloadResources && IsDownloadRunning;
+    private bool IsUpdateRunning => CurrentDownloadTask?.TaskType is DownloadTaskType.UpdatePages or DownloadTaskType.UpdateAll && IsDownloadRunning;
+    private bool IsTaskPaused(DownloadTaskType taskType) =>
+        CurrentDownloadTask?.TaskType == taskType && CurrentDownloadTask.Status is DownloadTaskStatus.Paused or DownloadTaskStatus.Interrupted;
+
+    private string GetDownloadButtonText(DownloadTaskType taskType) =>
+        IsTaskPaused(taskType) ? Loc.Get("Common.Resume") : Loc.Get("Common.Download");
+
+    private string GetResourceDownloadButtonText() =>
+        IsTaskPaused(DownloadTaskType.DownloadResources) ? Loc.Get("Common.Resume") : Loc.Get("DataManagementDetails.DownloadAssets");
+
+    private string GetUpdateButtonText() =>
+        IsTaskPaused(DownloadTaskType.UpdatePages) || IsTaskPaused(DownloadTaskType.UpdateAll)
+            ? Loc.Get("Common.Resume")
+            : Loc.Get("DataManagementDetails.CheckUpdate");
 
     protected override async Task OnInitializedAsync()
     {
         base.OnInitializedAsync();
         _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
-
-        CheckFailList();
-
-
+        _hasFailedItems = App.DataManager.HasFailedItems();
     }
 
     private async Task ToggleDownload(bool includeResources)
     {
         if (IsDownloadRunning)
-            await App.DataManager.PauseDownloadAsync();
+        {
+            if (CurrentDownloadTask is not null && !await TaskRunner.PauseAsync(CurrentDownloadTask.Id))
+                await App.DataManager.PauseDownloadAsync();
+        }
         else
-            _ = App.DataManager.StartOrResumeDownloadAsync(includeResources);
+            await App.DataManager.StartOrResumeDownloadAsync(includeResources);
     }
 
     private async Task ToggleResourcesDownload()
     {
         if (IsResourceDownloadRunning)
-            await App.DataManager.PauseDownloadAsync();
+        {
+            if (CurrentDownloadTask is not null && !await TaskRunner.PauseAsync(CurrentDownloadTask.Id))
+                await App.DataManager.PauseDownloadAsync();
+        }
         else
-            _ = App.DataManager.DownloadResourcesAsync();
+            await App.DataManager.DownloadResourcesAsync();
+    }
+
+    private async Task ToggleUpdate()
+    {
+        if (IsUpdateRunning)
+        {
+            if (CurrentDownloadTask is not null && !await TaskRunner.PauseAsync(CurrentDownloadTask.Id))
+                await App.DataManager.PauseDownloadAsync();
+        }
+        else
+            await UpdateData();
     }
 
     private string GetDownloadPhaseText() => CurrentDownloadTask?.Phase switch
     {
-        DownloadTaskPhase.FetchingLists => "获取重定向和页面列表",
-        DownloadTaskPhase.DownloadingPages => "下载页面",
-        DownloadTaskPhase.DownloadingResources => "下载图片",
-        DownloadTaskPhase.PostProcessing => "后续处理",
-        _ => "下载"
+        DownloadTaskPhase.FetchingLists => Loc.Get("DataManagementDetails.FetchingLists"),
+        DownloadTaskPhase.DownloadingPages => Loc.Get("DataManagementDetails.DownloadingPages"),
+        DownloadTaskPhase.DownloadingResources => Loc.Get("DataManagementDetails.DownloadingResources"),
+        DownloadTaskPhase.PostProcessing => Loc.Get("DataManagementDetails.PostProcessing"),
+        _ => Loc.Get("DataManagementDetails.Downloading")
     };
+
+    private string GetProgressStyle() =>
+        $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
 
     private string GetDownloadCountText()
     {
@@ -224,68 +274,23 @@
     }
 
 
-    private async Task RunSafe(Func<Task> action)
+    private async Task RetryFailedItems()
     {
-        // 统一检查
-        if (AppState.ProcessingTaskId != 0)
-        {
-            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.PleaseWait"));
-            return;
-        }
-        await action();
-    }
-
-    private async Task CheckFailList()
-    {
-        if (App.DataManager.HasFailedItems())
-        {
-            bool result = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.RetryFailed"), Loc.Get("Common.Yes"), Loc.Get("Common.No"));
-            if (result)
-            {
-                _ = App.DataManager.RetryFailedItemsAsync();
-            }
-        }
-
-    }
-
-    private async Task DownloadAll()
-    {
-
-        _ = App.DataManager.DownloadDataAsync(true);
-
-    }
-
-    private async Task DownloadPages()
-    {
-
-        _ = App.DataManager.DownloadDataAsync(false);
-
-    }
-
-    private async Task DownloadRes()
-    {
-
-        _ = App.DataManager.DownloadResourcesAsync();
-
+        await App.DataManager.RetryFailedItemsAsync();
     }
 
     private async Task UpdateData()
     {
         bool isAll = _selectedWiki.IsResourceDownloaded;
 
-        _ = App.DataManager.UpdateDataAsync(isAll);
-
-    }
-
-    private async Task CleanUpRes()
-    {
-        _ = App.DataManager.CleanupResourcesAsync();
+        await App.DataManager.UpdateDataAsync(isAll);
 
     }
 
     private async Task ExportData()
     {
-        _ = App.DataManager?.ExportDataAsync(WikiId);
+        if (App.DataManager is not null)
+            await App.DataManager.ExportDataAsync(WikiId);
     }
 
     private async Task DeleteRes()
@@ -293,7 +298,7 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.ConfirmDeleteAssets"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (isConfirmed)
         {
-            _ = App.DataManager.DeleteResourcesAsync();         
+            await App.DataManager.DeleteResourcesAsync();
 
         }
     }
@@ -326,10 +331,19 @@
         margin-bottom: 8px;
     }
 
-    .download-progress-panel progress {
+    .download-progress-track {
         width: 100%;
         height: 8px;
-        accent-color: var(--blue-primary);
+        overflow: hidden;
+        background-color: var(--hover-bg);
+        border-radius: 999px;
+    }
+
+    .download-progress-fill {
+        height: 100%;
+        background-color: var(--blue-primary);
+        border-radius: inherit;
+        transition: width 0.25s ease;
     }
 
     .download-progress-count {

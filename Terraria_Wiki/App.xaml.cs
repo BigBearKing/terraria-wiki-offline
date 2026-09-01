@@ -30,6 +30,7 @@ namespace Terraria_Wiki
             AppStateManager = appState;
             Localization = localizationService;
             StoragePath = storagePath;
+            services.GetRequiredService<GlobalExceptionHandler>().Register();
 
             InitializeComponent();
 
@@ -75,7 +76,7 @@ namespace Terraria_Wiki
         private static async Task RestoreDownloadTaskStateAsync()
         {
             var tasks = await ManagerDb!.GetItemsAsync<DownloadTask>();
-            foreach (var task in tasks.Where(t => t.Status == DownloadTaskStatus.Running))
+            foreach (var task in tasks.Where(t => t.Status != DownloadTaskStatus.Completed && t.Status != DownloadTaskStatus.Failed))
             {
                 task.Status = DownloadTaskStatus.Interrupted;
                 task.UpdatedTime = DateTime.Now;

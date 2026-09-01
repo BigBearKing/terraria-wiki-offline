@@ -8,6 +8,7 @@ public sealed class BatchLineWriter : IDisposable
     private readonly string _filePath;
     private readonly int _batchSize;
     private readonly List<string> _buffer;
+    private readonly HashSet<string> _knownLines;
     private readonly object _lock = new();
     private bool _disposed;
 
@@ -19,6 +20,9 @@ public sealed class BatchLineWriter : IDisposable
         _filePath = filePath;
         _batchSize = batchSize;
         _buffer = new List<string>(batchSize);
+        _knownLines = File.Exists(filePath)
+            ? File.ReadLines(filePath).ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
 
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
@@ -30,6 +34,7 @@ public sealed class BatchLineWriter : IDisposable
         lock (_lock)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (!_knownLines.Add(line)) return;
             _buffer.Add(line);
             if (_buffer.Count >= _batchSize) FlushInternal();
         }

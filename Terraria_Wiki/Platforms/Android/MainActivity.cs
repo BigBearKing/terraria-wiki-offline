@@ -6,6 +6,7 @@ using Android.OS;
 using Android.Views;
 using AndroidX.Core.View;
 using Microsoft.AspNetCore.Components.WebView.Maui;
+using Terraria_Wiki.Models;
 using Terraria_Wiki.Services;
 
 namespace Terraria_Wiki
@@ -25,7 +26,7 @@ namespace Terraria_Wiki
 
             if (_appState != null)
             {
-                // 只关心 ProcessingTaskId 变化，按属性名过滤
+                // 只关心活动任务集合变化，按属性名过滤
                 _appState.PropertyChanged += OnAppStatePropertyChanged;
             }
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
@@ -80,7 +81,7 @@ namespace Terraria_Wiki
 
         private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+            if (e.PropertyName == nameof(AppState.ActiveTasks))
                 CheckAndToggleProcessingService();
             else if (e.PropertyName == nameof(AppState.IsDarkTheme))
                 RunOnUiThread(ChangeStatusBarColor);
@@ -88,7 +89,7 @@ namespace Terraria_Wiki
 
         private async void CheckAndToggleProcessingService()
         {
-            if (_appState.ProcessingTaskId != 0)
+            if (_appState.HasActiveTasks)
             {
                 await RequestNotificationPermissionAsync();
 

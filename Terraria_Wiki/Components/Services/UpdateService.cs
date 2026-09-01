@@ -58,7 +58,7 @@ namespace Terraria_Wiki.Services
             }
             catch (Exception ex)
             {
-                throw (ex);
+                throw;
             }
         }
     }

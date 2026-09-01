@@ -21,11 +21,11 @@ public class LegacyUpgradeHandler
     /// </summary>
     public async Task RunAsync(WikiBook activeBook)
     {
-        App.AppStateManager?.ProcessingTaskId = 12;
         App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Started") ?? "开始执行旧版数据迁移。");
         try
         {
             await RenameDataFolderAsync(activeBook);
+            MigrateFailedListsOnce(activeBook);
             App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Completed") ?? "旧版数据迁移完成。");
         }
         catch (Exception ex)
@@ -35,7 +35,6 @@ public class LegacyUpgradeHandler
         }
         finally
         {
-            App.AppStateManager?.ProcessingTaskId = 0;
         }
     }
 
@@ -70,6 +69,34 @@ public class LegacyUpgradeHandler
         return Task.CompletedTask;
     }
 
+    private void MigrateFailedListsOnce(WikiBook activeBook)
+    {
+        var dataDir = Path.Combine(_appDataDir, activeBook.DataFolder);
+        var taskDir = Path.Combine(_appDataDir, "Temp", $"download_{activeBook.Id}_{(int)DownloadTaskType.RetryFailed}");
+        Directory.CreateDirectory(taskDir);
+
+        MoveIfExists(
+            Path.Combine(dataDir, "failed_pages.txt"),
+            Path.Combine(taskDir, "failed_pages.txt"));
+        MoveIfExists(
+            Path.Combine(dataDir, "failed_res.txt"),
+            Path.Combine(taskDir, "failed_resources.txt"));
+        MoveIfExists(
+            Path.Combine(dataDir, "temp_failed_pages.txt"),
+            Path.Combine(taskDir, "failed_pages.pending.txt"));
+        MoveIfExists(
+            Path.Combine(dataDir, "temp_failed_res.txt"),
+            Path.Combine(taskDir, "failed_resources.pending.txt"));
+    }
+
+    private static void MoveIfExists(string sourcePath, string targetPath)
+    {
+        if (!File.Exists(sourcePath)) return;
+        if (File.Exists(targetPath))
+            File.Delete(targetPath);
+        File.Move(sourcePath, targetPath);
+    }
+
     /// <summary>
     /// 检测旧版数据：如果默认页面的 <a> 标签没有 data-wiki 属性，
     /// 则为所有页面的 <a> 标签添加 data-wiki，值取自原有的 title 属性。
@@ -94,7 +121,6 @@ public class LegacyUpgradeHandler
 
         try
         {
-            App.AppStateManager?.ProcessingTaskId = 12;
             App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.AnchorMigrationStarted") ?? "开始迁移页面链接数据。");
             var titles = await App.ContentDb.GetAllPrimaryKeysAsync<WikiPage>();
             var doc = new HtmlDocument();

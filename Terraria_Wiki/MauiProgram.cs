@@ -25,6 +25,8 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton(sp => new LocalWebServer(contentDbService));
             builder.Services.AddSingleton<AppState>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddSingleton<AppTaskRunner>();
+            builder.Services.AddSingleton<GlobalExceptionHandler>();
             builder.Services.AddSingleton<DataService>();
             builder.Services.AddSingleton<AppService>();
             builder.Services.AddSingleton<LocalizationService>();

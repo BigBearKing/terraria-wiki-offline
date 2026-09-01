@@ -24,21 +24,20 @@ public class BurnInProtectionService
         _idleTimer.Interval = TimeSpan.FromSeconds(IdleTimeoutSeconds);
         _idleTimer.Tick += (s, e) => Activate();
 
-        // 💡 自动监听！当 ProcessingTaskId 变化时，执行 HandleTaskStateChanged
+        // 自动监听活动任务集合变化
         _appState.PropertyChanged += OnAppStatePropertyChanged;
     }
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(AppState.ProcessingTaskId))
+        if (e.PropertyName == nameof(AppState.ActiveTasks))
             HandleTaskStateChanged();
     }
 
     // 💡 事件处理：根据 TaskId 自动决定启动还是停止
     private void HandleTaskStateChanged()
     {
-        int taskId = _appState.ProcessingTaskId;
-        if (taskId != 0)
+        if (_appState.HasActiveTasks)
         {
             // 任务开始了，自动启动防烧屏倒计时
             ResetTimer();
@@ -68,7 +67,7 @@ public class BurnInProtectionService
         _idleTimer.Stop();
 
         // 💡 直接读取注入的 _appState
-        if (_appState.ProcessingTaskId != 0)
+        if (_appState.HasActiveTasks)
         {
             _idleTimer.Start();
         }

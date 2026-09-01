@@ -42,7 +42,7 @@ namespace Terraria_Wiki.Services
 
             try
             {
-                if (App.AppStateManager.ProcessingTaskId != 0)
+                if (App.AppStateManager.HasActiveTasks)
                 {
                     App.AppStateManager.TriggerAlert(
                         App.Localization!.Get("Common.Notice"),
@@ -57,7 +57,6 @@ namespace Terraria_Wiki.Services
                     return true;
                 }
 
-                App.AppStateManager.ProcessingTaskId = 11;
                 App.LogManager!.Info(App.Localization!.Get("AppService.DataMigrationStarted", oldRoot, targetRoot));
                 await App.LogManager.FlushAsync();
 
@@ -150,7 +149,6 @@ namespace Terraria_Wiki.Services
             finally
             {
                 loadingPage?.HideLoadingPopup();
-                App.AppStateManager.ProcessingTaskId = 0;
                 _storageSwitchLock.Release();
             }
         }
@@ -466,7 +464,7 @@ namespace Terraria_Wiki.Services
 
             try
             {
-                if (App.AppStateManager.ProcessingTaskId != 0)
+                if (App.AppStateManager.HasActiveTasks)
                 {
                     App.AppStateManager.TriggerAlert(
                         App.Localization!.Get("Common.Notice"),
