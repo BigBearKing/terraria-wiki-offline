@@ -135,10 +135,10 @@
                 <div class="download-progress-panel">
                     <div class="download-progress-heading">
                         <span>@GetDownloadPhaseText()</span>
-                        <span>@CurrentDownloadTask.Progress.ToString("F1")%</span>
+                        <span>@GetDownloadProgressText()</span>
                     </div>
                     <div class="download-progress-track" role="progressbar" aria-valuenow="@CurrentDownloadTask.Progress" aria-valuemin="0" aria-valuemax="100">
-                        <div class="download-progress-fill" style="@GetProgressStyle()"></div>
+                        <div class="download-progress-fill @GetProgressBarClass()" style="@GetProgressStyle()"></div>
                     </div>
                     <div class="download-progress-count">@GetDownloadCountText()</div>
                 </div>
@@ -263,12 +263,25 @@
         _ => Loc.Get("DataManagementDetails.Downloading")
     };
 
+    private string GetDownloadProgressText() =>
+        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
+            ? Loc.Get("DataManagementDetails.ProgressIndeterminate")
+            : $"{CurrentDownloadTask?.Progress:F1}%";
+
+    private string GetProgressBarClass() =>
+        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists ? "indeterminate" : string.Empty;
+
     private string GetProgressStyle() =>
-        $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
+        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
+            ? string.Empty
+            : $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
 
     private string GetDownloadCountText()
     {
         if (CurrentDownloadTask is null) return string.Empty;
+        if (CurrentDownloadTask.Phase == AppTaskPhase.FetchingLists)
+            return Loc.Get("DataManagementDetails.ListItemsFetched", CurrentDownloadTask.ListItemsFetched);
+
         return CurrentDownloadTask.Phase == AppTaskPhase.DownloadingResources
             ? $"{CurrentDownloadTask.CompletedResources} / {CurrentDownloadTask.TotalResources}"
             : $"{CurrentDownloadTask.CompletedPages} / {CurrentDownloadTask.TotalPages}";
@@ -344,6 +357,16 @@
         background-color: var(--blue-primary);
         border-radius: inherit;
         transition: width 0.25s ease;
+    }
+
+    .download-progress-fill.indeterminate {
+        width: 35%;
+        animation: download-progress-indeterminate 1.4s ease-in-out infinite;
+    }
+
+    @@keyframes download-progress-indeterminate {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(285%); }
     }
 
     .download-progress-count {

@@ -95,6 +95,10 @@ public class AppTask
     [Ignore]
     public int ResumeResourceLine { get; set; }
     [Ignore]
+    public HashSet<int> CompletedResourceLines { get; set; } = [];
+    [Ignore]
+    public int ListItemsFetched { get; set; }
+    [Ignore]
     public double Progress => CalculateProgress();
 
     public bool IsDownloadTask() => TaskType is AppTaskType.DownloadPages or AppTaskType.DownloadResources or
@@ -122,6 +126,7 @@ public class AppTask
         CompletedResources = data.CompletedResources;
         ResumePageLine = data.ResumePageLine ?? CompletedPages;
         ResumeResourceLine = data.ResumeResourceLine ?? CompletedResources;
+            CompletedResourceLines = data.CompletedResourceLines?.ToHashSet() ?? [];
     }
 
     public void SaveTaskData()
@@ -136,7 +141,8 @@ public class AppTask
             TotalResources = TotalResources,
             CompletedResources = CompletedResources,
             ResumePageLine = ResumePageLine,
-            ResumeResourceLine = ResumeResourceLine
+            ResumeResourceLine = ResumeResourceLine,
+            CompletedResourceLines = CompletedResourceLines.ToList()
         });
     }
 
@@ -167,6 +173,7 @@ public sealed class AppTaskData
     public int CompletedResources { get; set; }
     public int? ResumePageLine { get; set; }
     public int? ResumeResourceLine { get; set; }
+    public List<int>? CompletedResourceLines { get; set; }
 }
 
 public class WikiPage

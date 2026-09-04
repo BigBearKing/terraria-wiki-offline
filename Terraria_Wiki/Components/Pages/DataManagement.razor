@@ -34,12 +34,16 @@
                     <div class="manage-card-info">
                         <div class="manage-card-title">@wiki.Title</div>
                         <div class="manage-card-desc">@wiki.Description</div>
-                        <div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
-                            @(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
-                        </div>
+
                         @if (GetVisibleTask(wiki.Id) is AppTask AppTask)
                         {
                             <div class="manage-card-progress">@GetTaskStatusText(AppTask) @AppTask.Progress.ToString("F1")%</div>
+                        }
+                        else
+                        {
+                            <div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
+                                @(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
+                            </div>
                         }
                     </div>
                     <Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
@@ -236,7 +240,6 @@
     .manage-card-progress {
         color: var(--blue-primary);
         font-size: 0.75rem;
-        margin-top: 4px;
     }
 
     .manage-card-title {

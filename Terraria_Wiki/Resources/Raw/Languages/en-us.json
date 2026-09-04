@@ -73,6 +73,8 @@
     "DataManagementDetails.PleaseWait": "Please wait, processing task",
     "DataManagementDetails.RetryFailedButton": "Retry Failed Items",
     "DataManagementDetails.FetchingLists": "Fetching redirect and page lists",
+    "DataManagementDetails.ListItemsFetched": "Fetched {0} items",
+    "DataManagementDetails.ProgressIndeterminate": "Processing",
     "DataManagementDetails.DownloadingPages": "Downloading pages",
     "DataManagementDetails.DownloadingResources": "Downloading resources",
     "DataManagementDetails.PostProcessing": "Post-processing",

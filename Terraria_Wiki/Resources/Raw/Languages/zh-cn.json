@@ -73,6 +73,8 @@
     "DataManagementDetails.PleaseWait": "请稍后，正在处理任务",
     "DataManagementDetails.RetryFailedButton": "重试失败",
     "DataManagementDetails.FetchingLists": "获取重定向和页面列表",
+    "DataManagementDetails.ListItemsFetched": "已获取 {0} 项",
+    "DataManagementDetails.ProgressIndeterminate": "处理中",
     "DataManagementDetails.DownloadingPages": "下载页面",
     "DataManagementDetails.DownloadingResources": "下载资源",
     "DataManagementDetails.PostProcessing": "后续处理",

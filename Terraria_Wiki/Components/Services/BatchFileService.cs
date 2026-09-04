@@ -100,7 +100,7 @@ public sealed class BatchLineProvider : IDisposable
     private bool _isFileExhausted;
     private bool _disposed;
 
-    public BatchLineProvider(string filePath, int batchSize = 50, int startLine = 0, int initialCompletedCount = 0)
+    public BatchLineProvider(string filePath, int batchSize = 50, int startLine = 0, int initialCompletedCount = 0, IEnumerable<int>? completedLines = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batchSize);
@@ -110,6 +110,13 @@ public sealed class BatchLineProvider : IDisposable
         _nextLine = startLine;
         _completedLine = startLine;
         _completedItemCount = initialCompletedCount;
+        if (completedLines is not null)
+        {
+            foreach (var line in completedLines.Where(line => line >= startLine))
+                _completedOutOfOrder.Add(line);
+            while (_completedOutOfOrder.Remove(_completedLine))
+                _completedLine++;
+        }
     }
 
     public int CompletedItemCount
@@ -136,6 +143,9 @@ public sealed class BatchLineProvider : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (_isFileExhausted) return Task.FromResult<BatchLineItem?>(null);
 
+            while (_completedOutOfOrder.Contains(_nextLine))
+                _nextLine++;
+
             var lines = ReadNextLines(_filePath, _nextLine, 1);
             if (lines.Count == 0)
             {
@@ -147,6 +157,12 @@ public sealed class BatchLineProvider : IDisposable
             _nextLine++;
             return Task.FromResult<BatchLineItem?>(item);
         }
+    }
+
+    public IReadOnlyCollection<int> GetCompletedLineNumbers()
+    {
+        lock (_fileLock)
+            return Enumerable.Range(0, _completedLine).Concat(_completedOutOfOrder).ToArray();
     }
 
     internal void Complete(BatchLineItem item)

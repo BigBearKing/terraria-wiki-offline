@@ -60,6 +60,7 @@ namespace Terraria_Wiki.Services
         private int _totalPages;
         private int _totalResources;
         private readonly SemaphoreSlim _taskSaveLock = new(1, 1);
+        private readonly SemaphoreSlim _resourceProgressLock = new(1, 1);
 
         public DataService(LogService logService, LocalizationService localizationService, StoragePathService storagePath, AppTaskRunner taskRunner)
         {
@@ -356,6 +357,7 @@ namespace Terraria_Wiki.Services
             try
             {
                 _activeDownloadTask.UpdatedTime = DateTime.Now;
+                _activeDownloadTask.SaveTaskData();
                 await App.ManagerDb.SaveItemAsync(_activeDownloadTask);
                 App.AppStateManager!.CurrentDownloadTask = _activeDownloadTask;
                 App.AppStateManager.NotifyActiveTasksChanged();
@@ -790,6 +792,7 @@ namespace Terraria_Wiki.Services
         private async Task<int> FetchWikiPagesListAsync(CancellationToken cancellationToken = default)
         {
             _log.Info(_loc.Get("DataService.Log.FetchingPageList"));
+            await UpdateListProgressAsync(0.5, 0);
             var writer = new BatchLineWriter(_pageListPath, 200);
             int pagesCount = 0;
             bool firstBatch = true;
@@ -836,6 +839,10 @@ namespace Terraria_Wiki.Services
                                 firstBatch = false;
                                 _log.Info(_loc.Get("DataService.Log.FirstBatchSize", batchCount));
                             }
+
+                            await UpdateListProgressAsync(
+                                0.5 + 0.49 * (1 - 1d / (pagesCount + 1)),
+                                pagesCount);
                         }
 
                         if (string.IsNullOrEmpty(rawData?.Continue?.GapContinue))
@@ -854,6 +861,7 @@ namespace Terraria_Wiki.Services
             }
 
             writer.Flush();
+            await UpdateListProgressAsync(1, pagesCount);
             _log.Success(_loc.Get("DataService.Log.FetchCompleted", pagesCount));
 
             return pagesCount;
@@ -864,6 +872,7 @@ namespace Terraria_Wiki.Services
             string nextUrl = _redirectStartUrl;
             int pageCount = 1;
             int totalRedirects = 0;
+            await UpdateListProgressAsync(0, 0);
             _log.Info(_loc.Get("DataService.Log.FetchingRedirects"));
             while (!string.IsNullOrEmpty(nextUrl))
             {
@@ -900,6 +909,9 @@ namespace Terraria_Wiki.Services
                             }
                         }
                         await App.ContentDb.SaveItemsAsync(wikiRedirects);
+                        await UpdateListProgressAsync(
+                            0.49 * (1 - 1d / (pageCount + 1)),
+                            totalRedirects);
                         _log.Info(_loc.Get("DataService.Log.PageParsed", pageCount));
                         var nextLinkNode = doc.DocumentNode.SelectSingleNode("//a[@class='mw-nextlink']");
 
@@ -911,6 +923,7 @@ namespace Terraria_Wiki.Services
                         }
                         else
                         {
+                            await UpdateListProgressAsync(0.5, totalRedirects);
                             _log.Success(_loc.Get("DataService.Log.RedirectsFetched", totalRedirects));
                             nextUrl = null;
                             break;
@@ -932,6 +945,16 @@ namespace Terraria_Wiki.Services
 
             }
         }
+
+        private async Task UpdateListProgressAsync(double progress, int itemsFetched)
+        {
+            if (_activeDownloadTask is null)
+                return;
+
+            _activeDownloadTask.ListItemsFetched = itemsFetched;
+            await SaveAppTaskAsync();
+        }
+
         // ================= 业务入口: 下载页面 =================
         private async Task DownloadPagesBatchAsync(string pageListPath, string resListPath, string failedPageListPath, int maxConcurrency, CancellationToken cancellationToken = default)
         {
@@ -1043,14 +1066,24 @@ namespace Terraria_Wiki.Services
             using var provider = new BatchLineProvider(
                 inputListPath,
                 startLine: _activeDownloadTask?.ResumeResourceLine ?? _completedResources,
-                initialCompletedCount: _activeDownloadTask?.ResumeResourceLine ?? _completedResources);
+                initialCompletedCount: _activeDownloadTask?.CompletedResources ?? _completedResources,
+                completedLines: _activeDownloadTask?.CompletedResourceLines);
             async Task MarkResourceCompletedAsync()
             {
                 if (_activeDownloadTask != null)
                 {
-                    _activeDownloadTask.CompletedResources = _completedResources = provider.CompletedItemCount;
-                    _activeDownloadTask.ResumeResourceLine = provider.CompletedLineCount;
-                    await SaveAppTaskAsync();
+                    await _resourceProgressLock.WaitAsync();
+                    try
+                    {
+                        _activeDownloadTask.CompletedResources = _completedResources = provider.CompletedItemCount;
+                        _activeDownloadTask.ResumeResourceLine = provider.CompletedLineCount;
+                        _activeDownloadTask.CompletedResourceLines = provider.GetCompletedLineNumbers().ToHashSet();
+                        await SaveAppTaskAsync();
+                    }
+                    finally
+                    {
+                        _resourceProgressLock.Release();
+                    }
                 }
             }
             using var failedWriter = new BatchLineWriter(failedResListPath, 200);
