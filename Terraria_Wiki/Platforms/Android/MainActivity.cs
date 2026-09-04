@@ -112,12 +112,10 @@ namespace Terraria_Wiki
                 RunOnUiThread(ChangeStatusBarColor);
         }
 
-        private async void CheckAndToggleProcessingService()
+        private void CheckAndToggleProcessingService()
         {
             if (_appState.HasActiveTasks)
             {
-                await RequestNotificationPermissionAsync();
-
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     var intent = new Intent(this, typeof(Platforms.Android.ProcessingService));
@@ -135,20 +133,6 @@ namespace Terraria_Wiki
                     StopService(intent);
                 });
             }
-        }
-
-        private static async Task RequestNotificationPermissionAsync()
-        {
-
-            PermissionStatus status = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
-
-            // 2. 如果还没有被授予权限
-            if (status != PermissionStatus.Granted)
-            {
-                // 3. 唤起系统弹窗，向用户正式请求权限
-                await Permissions.RequestAsync<Permissions.PostNotifications>();
-            }
-
         }
 
         public override bool DispatchKeyEvent(KeyEvent? e)

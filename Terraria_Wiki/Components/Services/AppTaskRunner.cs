@@ -34,6 +34,9 @@ public sealed class AppTaskRunner
         ArgumentNullException.ThrowIfNull(action);
         options ??= new AppTaskOptions();
 
+        if (!await EnsureDownloadTaskRequirementsAsync(taskType))
+            return false;
+
         var lockTaken = access == AppTaskAccess.Exclusive && await _databaseTaskLock.WaitAsync(0, cancellationToken);
         if (access == AppTaskAccess.Exclusive && !lockTaken)
         {
@@ -55,6 +58,9 @@ public sealed class AppTaskRunner
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(action);
         options ??= new AppTaskOptions();
+
+        if (!await EnsureDownloadTaskRequirementsAsync(task.TaskType))
+            return false;
 
         var lockTaken = access == AppTaskAccess.Exclusive && await _databaseTaskLock.WaitAsync(0, cancellationToken);
         if (access == AppTaskAccess.Exclusive && !lockTaken)
@@ -215,5 +221,27 @@ public sealed class AppTaskRunner
             return;
 
         _appState.TriggerAlert(_loc.Get(titleKey), _loc.Get(messageKey, args));
+    }
+
+    private async Task<bool> EnsureDownloadTaskRequirementsAsync(AppTaskType taskType)
+    {
+        if (taskType is not (AppTaskType.DownloadPages or AppTaskType.DownloadResources or
+            AppTaskType.DownloadAll or AppTaskType.UpdatePages or AppTaskType.UpdateAll or
+            AppTaskType.RetryFailed))
+            return true;
+
+#if ANDROID
+        if (!await AndroidNotificationPermissionService.EnsureGrantedAsync())
+        {
+            ShowAlert("Common.Notice", "AppTask.NotificationPermissionRequired");
+            return false;
+        }
+#endif
+
+        if (NetworkService.IsNetworkAvailable)
+            return true;
+
+        ShowAlert("Common.Notice", "AppTask.NetworkUnavailable");
+        return false;
     }
 }

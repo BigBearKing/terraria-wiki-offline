@@ -318,6 +318,8 @@
     "MainPage.SafeAreaTopBottom": "安全区 - 上: {topDp}dp, 下: {bottomDp}dp",
     "MainPage.SafeAreaLeftRight": "安全区 - 左: {leftDp}dp, 右: {rightDp}dp",
     "BackEventsService.PressAgain": "再按一次退出应用",
+    "AppTask.NotificationPermissionRequired": "未授予通知权限，无法启动后台下载任务。请在系统设置中允许本应用发送通知后重试。",
+    "AppTask.NetworkUnavailable": "当前未连接到互联网，下载任务未启动。请检查网络连接后重试。",
     "ProcessingService.AppTask": "正在处理任务",
     "ProcessingService.CurrentTask": "当前任务：{0}",
     "ProcessingService.BackgroundStatus": "后台处理状态",

@@ -318,6 +318,8 @@
     "MainPage.SafeAreaTopBottom": "Safe Area - Top: {topDp}dp, Bottom: {bottomDp}dp",
     "MainPage.SafeAreaLeftRight": "Safe Area - Left: {leftDp}dp, Right: {rightDp}dp",
     "BackEventsService.PressAgain": "Press again to exit",
+    "AppTask.NotificationPermissionRequired": "Notification permission is required to start background downloads. Allow notifications for this app in system settings and try again.",
+    "AppTask.NetworkUnavailable": "No internet connection is available. The download task was not started. Check your connection and try again.",
     "ProcessingService.AppTask": "Processing task",
     "ProcessingService.CurrentTask": "Current task: {0}",
     "ProcessingService.BackgroundStatus": "Background Processing Status",

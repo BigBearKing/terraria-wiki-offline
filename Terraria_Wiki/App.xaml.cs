@@ -36,6 +36,15 @@ namespace Terraria_Wiki
 
             InitializeNativeStateBeforeBlazor();
 
+#if ANDROID
+            if (!AndroidSystemWebViewService.IsAvailable)
+            {
+                MainPage = new WebViewUnavailablePage();
+                InitializationTask = Task.CompletedTask;
+                return;
+            }
+#endif
+
             MainPage = services.GetRequiredService<MainPage>();
 
             InitializationTask = InitializeBeforeBlazorAsync();
