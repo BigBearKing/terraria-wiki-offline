@@ -131,8 +131,8 @@
     {
         _filteredWikiList = _langFilter switch
         {
-            "zh" => _wikiBookList.Where(w => w.DataFolder.EndsWith("_zh")).ToList(),
-            "en" => _wikiBookList.Where(w => w.DataFolder.EndsWith("_en")).ToList(),
+            "zh" => _wikiBookList.Where(w => w.Language == "zh").ToList(),
+            "en" => _wikiBookList.Where(w => w.Language == "en").ToList(),
             _ => _wikiBookList
         };
     }
@@ -143,7 +143,7 @@
         {
             // 当前已选择的 Wiki → 直接进入详情
             AppState.CurrentPage = "data/" + item.Id;
-            NavManager.NavigateTo(AppState.CurrentPage);
+            NavManager.NavigateTo($"/{AppState.CurrentPage}", false, true);
             return;
         }
 

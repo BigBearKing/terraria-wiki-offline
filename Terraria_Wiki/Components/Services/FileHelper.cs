@@ -30,6 +30,16 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
 
         }
 
+        public static async Task<FileResult> PickFileAsync(string title = null, FilePickerFileType types = null)
+        {
+            var titleText = title ?? App.Localization?.Get("FileHelper.SelectFile") ?? "请选择文件";
+            return await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = titleText,
+                FileTypes = types
+            });
+        }
+
         /// <summary>
         /// 导出文件（Windows 弹出文件夹选择，移动端/Mac 调用原生分享保存）
         /// </summary>

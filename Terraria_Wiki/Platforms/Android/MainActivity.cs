@@ -4,6 +4,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Views;
+using AndroidX.Activity;
 using AndroidX.Core.View;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 using Terraria_Wiki.Models;
@@ -18,9 +19,12 @@ namespace Terraria_Wiki
     {
 
         private AppState _appState;
+        private BackPressedCallback? _backPressedCallback;
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            _backPressedCallback = new BackPressedCallback();
+            OnBackPressedDispatcher.AddCallback(this, _backPressedCallback);
             // 提取全局 AppState
             _appState = IPlatformApplication.Current.Services.GetService<AppState>();
 
@@ -76,6 +80,27 @@ namespace Terraria_Wiki
                     AndroidFileSaver.tcs?.TrySetResult(null);
                 }
             }
+            else if (requestCode == AndroidFilePicker.RequestCode)
+            {
+                if (resultCode == Result.Ok && data?.Data != null)
+                {
+                    try
+                    {
+                        ContentResolver.TakePersistableUriPermission(
+                            data.Data,
+                            ActivityFlags.GrantReadUriPermission);
+                    }
+                    catch
+                    {
+                        // 部分文档提供器不支持持久化授权，但当前 Activity 授权仍然有效。
+                    }
+                    AndroidFilePicker.Complete(data.Data);
+                }
+                else
+                {
+                    AndroidFilePicker.Complete(null);
+                }
+            }
         }
 
 
@@ -125,13 +150,46 @@ namespace Terraria_Wiki
             }
 
         }
+
+        public override bool DispatchKeyEvent(KeyEvent? e)
+        {
+            if (e?.KeyCode == Keycode.Back)
+            {
+                if (e.Action == KeyEventActions.Down && e.RepeatCount == 0)
+                    HandleBackNavigation();
+
+                return true;
+            }
+
+            return base.DispatchKeyEvent(e);
+        }
+
+        private static void HandleBackNavigation()
+        {
+            _ = MainThread.InvokeOnMainThreadAsync(BackEventsService.BackEvents);
+        }
+
         protected override void OnDestroy()
         {
+            _backPressedCallback?.Remove();
+            _backPressedCallback = null;
             if (_appState != null)
             {
                 _appState.PropertyChanged -= OnAppStatePropertyChanged; // 防内存泄漏
             }
             base.OnDestroy();
+        }
+
+        private sealed class BackPressedCallback : OnBackPressedCallback
+        {
+            public BackPressedCallback() : base(true)
+            {
+            }
+
+            public override void HandleOnBackPressed()
+            {
+                HandleBackNavigation();
+            }
         }
 
 

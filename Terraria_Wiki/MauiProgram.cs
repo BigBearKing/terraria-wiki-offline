@@ -28,6 +28,7 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton<AppTaskRunner>();
             builder.Services.AddSingleton<GlobalExceptionHandler>();
             builder.Services.AddSingleton<DataService>();
+            builder.Services.AddSingleton<PackageService>();
             builder.Services.AddSingleton<AppService>();
             builder.Services.AddSingleton<LocalizationService>();
             builder.Services.AddTransient<App>();

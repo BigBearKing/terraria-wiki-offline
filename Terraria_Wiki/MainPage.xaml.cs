@@ -250,18 +250,6 @@ namespace Terraria_Wiki
         }
 #endif
 
-        protected override bool OnBackButtonPressed()
-        {
-#if ANDROID
-            // 将异步操作分发到主线程执行
-            Dispatcher.Dispatch(async () =>
-            {
-                _ = BackEventsService.BackEvents();
-            });
-#endif
-            return true;
-        }
-
 #if ANDROID
         // 专门为 Android WebView 编写的按键拦截器
         private class WebViewBackInterceptor : Java.Lang.Object, Android.Views.View.IOnKeyListener

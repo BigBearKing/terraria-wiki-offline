@@ -447,6 +447,7 @@ namespace Terraria_Wiki.Services
         // 跳转页面
         public static void NavigateTo(string pageName)
         {
+            pageName = pageName.Trim('/');
             if (App.AppStateManager.CurrentPage == pageName)
                 return;
             if (App.AppStateManager.IsSmallScreen)
@@ -454,7 +455,7 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.SidebarIsExpanded = false;
             }
             App.AppStateManager.CurrentPage = pageName;
-            _navManager.NavigateTo(App.AppStateManager.CurrentPage);
+            _navManager.NavigateTo($"/{pageName}", false, true);
         }
 
         public static async Task<bool> SwitchWikiBookAsync(int wikiBookId)
@@ -490,7 +491,7 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.ResetWikiNavigation();
                 await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 App.AppStateManager.NotifyWikiBookSwitched();
-                _navManager.NavigateTo("home");
+                _navManager.NavigateTo("/home", false, true);
                 return true;
             }
             catch (Exception ex)

@@ -141,6 +141,7 @@ public class DatabaseService
             ["GuideNamespace"] = "INTEGER DEFAULT 0",
             ["AdditionalNamespaces"] = "TEXT",
             ["JunkXPath"] = "TEXT",
+            ["Language"] = "TEXT DEFAULT ''",
             ["DataFolder"] = "TEXT",
             ["DefaultPageContent"] = "TEXT",
             ["DefaultPageTitle"] = "TEXT",
@@ -177,6 +178,7 @@ public class DatabaseService
             MainNamespace = 0,
             AdditionalNamespaces = "10000",
             JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
+            Language = "zh",
             DataFolder = "Terraria_Wiki_zh",
             DefaultPageContent = "请先下载数据",
             DefaultPageTitle = "Terraria Wiki",
@@ -194,6 +196,7 @@ public class DatabaseService
             MainNamespace = 0,
             AdditionalNamespaces = "",
             JunkXPath = "//span[@class='mw-editsection']|//comment()",
+            Language = "zh",
             DataFolder = "Calamity_Wiki_zh",
             DefaultPageContent = "请先下载数据",
             DefaultPageTitle = "首页",
@@ -211,6 +214,7 @@ public class DatabaseService
             MainNamespace = 0,
             AdditionalNamespaces = "110",
             JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
+            Language = "en",
             DataFolder = "Terraria_Wiki_en",
             DefaultPageContent = "please download data first",
             DefaultPageTitle = "Terraria Wiki",
@@ -228,6 +232,7 @@ public class DatabaseService
             MainNamespace = 0,
             AdditionalNamespaces = "10000",
             JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
+            Language = "en",
             DataFolder = "Calamity_Wiki_en",
             DefaultPageContent = "please download data first",
             DefaultPageTitle = "Calamity Mod Wiki",
@@ -265,6 +270,7 @@ public class DatabaseService
             if (existing.MainNamespace != def.MainNamespace) { existing.MainNamespace = def.MainNamespace; needsUpdate = true; }
             if (existing.AdditionalNamespaces != def.AdditionalNamespaces) { existing.AdditionalNamespaces = def.AdditionalNamespaces; needsUpdate = true; }
             if (existing.JunkXPath != def.JunkXPath) { existing.JunkXPath = def.JunkXPath; needsUpdate = true; }
+            if (existing.Language != def.Language) { existing.Language = def.Language; needsUpdate = true; }
             if (existing.DataFolder != def.DataFolder) { existing.DataFolder = def.DataFolder; needsUpdate = true; }
             if (existing.DefaultPageContent != def.DefaultPageContent) { existing.DefaultPageContent = def.DefaultPageContent; needsUpdate = true; }
             if (existing.DefaultPageTitle != def.DefaultPageTitle) { existing.DefaultPageTitle = def.DefaultPageTitle; needsUpdate = true; }

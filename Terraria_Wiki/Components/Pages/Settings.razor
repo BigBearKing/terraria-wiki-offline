@@ -1,5 +1,6 @@
 ﻿@page "/settings"
 @inject AppTaskRunner TaskRunner
+@inject PackageService PackageService
 @using System.ComponentModel
 @using Terraria_Wiki.Services
 <div class="page-anim page-content">
@@ -409,7 +410,7 @@
     private string Author => "BigBearKing";
     private async Task ImportData()
     {
-        await App.DataManager!.ImportDataAsync();
+        await PackageService.ImportDataAsync();
     }
 
     private async Task ExportLog()

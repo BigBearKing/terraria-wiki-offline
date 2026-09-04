@@ -254,6 +254,7 @@
     "DataService.Log.DeletingDatabase": "正在删除数据库文件",
     "DataService.Log.DatabaseDeleted": "数据库文件删除成功",
     "DataService.Log.ExportDataStart": "开始导出数据",
+    "DataService.Log.ExportBlockedByTask": "当前 Wiki 存在未完成的下载任务，无法导出数据包。",
     "DataService.Log.NoDatabaseFile": "没有找到数据库文件，无法导出",
     "DataService.Log.BackingUpDatabase": "正在备份数据库文件",
     "DataService.Log.StartPackaging": "开始打包数据",

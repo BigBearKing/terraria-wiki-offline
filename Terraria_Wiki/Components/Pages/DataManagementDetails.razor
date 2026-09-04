@@ -5,6 +5,7 @@
 @using Terraria_Wiki.Services
 @inject NavigationManager NavManager
 @inject AppTaskRunner TaskRunner
+@inject PackageService PackageService
 <div class="page-anim page-content">
     <div class="header-with-back">
         <div class="icon-btn button" @onclick="BackToList">
@@ -190,7 +191,7 @@
     private void BackToList()
     {
         AppState.CurrentPage = "data";
-        NavManager.NavigateTo(AppState.CurrentPage);
+        NavManager.NavigateTo($"/{AppState.CurrentPage}", false, true);
     }
 
     private WikiBook _selectedWiki;
@@ -289,8 +290,7 @@
 
     private async Task ExportData()
     {
-        if (App.DataManager is not null)
-            await App.DataManager.ExportDataAsync(WikiId);
+        await PackageService.ExportDataAsync(WikiId);
     }
 
     private async Task DeleteRes()

@@ -10,6 +10,7 @@ public class WikiBook
     public string Title { get; set; } // 比如 "Terraria Wiki"
 
     public string Description { get; set; }
+    public string Language { get; set; } = "";
 
     // 核心字段：记录用户到底下没下载
     public bool IsPageDownloaded { get; set; }

@@ -254,6 +254,7 @@
     "DataService.Log.DeletingDatabase": "Deleting database file",
     "DataService.Log.DatabaseDeleted": "Database file deleted successfully",
     "DataService.Log.ExportDataStart": "Starting data export",
+    "DataService.Log.ExportBlockedByTask": "The current wiki has unfinished download tasks and cannot be exported.",
     "DataService.Log.NoDatabaseFile": "No database file found, unable to export",
     "DataService.Log.BackingUpDatabase": "Backing up database file",
     "DataService.Log.StartPackaging": "Starting data packaging",
