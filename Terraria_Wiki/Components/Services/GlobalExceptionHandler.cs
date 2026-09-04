@@ -3,10 +3,12 @@ namespace Terraria_Wiki.Services;
 public sealed class GlobalExceptionHandler
 {
     private readonly LogService _log;
+    private readonly LocalizationService _loc;
 
-    public GlobalExceptionHandler(LogService log)
+    public GlobalExceptionHandler(LogService log, LocalizationService loc)
     {
         _log = log;
+        _loc = loc;
     }
 
     public void Register()
@@ -18,14 +20,14 @@ public sealed class GlobalExceptionHandler
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception exception)
-            _log.Error("未处理的全局异常", exception);
+            _log.Error(_loc.Get("GlobalException.Unhandled"), exception);
         else
-            _log.Error($"未处理的全局异常: {e.ExceptionObject}");
+            _log.Error(_loc.Get("GlobalException.UnhandledObject", e.ExceptionObject));
     }
 
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
-        _log.Error("未观察到的任务异常", e.Exception);
+        _log.Error(_loc.Get("GlobalException.UnobservedTask"), e.Exception);
         e.SetObserved();
     }
 }

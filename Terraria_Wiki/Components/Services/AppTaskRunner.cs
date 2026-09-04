@@ -113,8 +113,11 @@ public sealed class AppTaskRunner
             taskCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _taskCancellation[task.Id] = taskCancellation;
             await action(taskCancellation.Token);
-            task.Status = AppTaskStatus.Completed;
-            await _managerDb.SaveItemAsync(task);
+            if (task.Status is not AppTaskStatus.Paused and not AppTaskStatus.Interrupted)
+            {
+                task.Status = AppTaskStatus.Completed;
+                await _managerDb.SaveItemAsync(task);
+            }
         }
         catch (OperationCanceledException) when (taskCancellation?.IsCancellationRequested == true)
         {
@@ -130,6 +133,7 @@ public sealed class AppTaskRunner
             {
                 _taskCancellation.TryRemove(task.Id, out var cancellation);
                 cancellation?.Dispose();
+                _appState.RemoveActiveTask(task.Id);
             }
             if (lockTaken)
                 _databaseTaskLock.Release();
@@ -140,12 +144,22 @@ public sealed class AppTaskRunner
             _log.Info(_loc.Get("AppTask.Cancelled"));
             if (task is not null)
             {
-                task.Status = AppTaskStatus.Interrupted;
-                await _managerDb.SaveItemAsync(task);
-                _appState.RemoveActiveTask(task.Id);
+                task.Status = task.Status == AppTaskStatus.Paused
+                    ? AppTaskStatus.Paused
+                    : AppTaskStatus.Interrupted;
+                await SaveTaskStatusAsync(task);
             }
             if (options.OnCancelled is not null)
-                await options.OnCancelled();
+            {
+                try
+                {
+                    await options.OnCancelled();
+                }
+                catch (Exception callbackError)
+                {
+                    _log.Error(_loc.Get("AppTask.Failed"), callbackError);
+                }
+            }
             return false;
         }
 
@@ -156,11 +170,19 @@ public sealed class AppTaskRunner
             {
                 task.Status = AppTaskStatus.Failed;
                 task.LastError = error.Message;
-                await _managerDb.SaveItemAsync(task);
-                _appState.RemoveActiveTask(task.Id);
+                await SaveTaskStatusAsync(task);
             }
             if (options.OnError is not null)
-                await options.OnError(error);
+            {
+                try
+                {
+                    await options.OnError(error);
+                }
+                catch (Exception callbackError)
+                {
+                    _log.Error(_loc.Get("AppTask.Failed"), callbackError);
+                }
+            }
             if (options.ShowError)
                 ShowAlert("Common.Error", "AppTask.Error", error.Message);
             if (options.Rethrow)
@@ -170,9 +192,21 @@ public sealed class AppTaskRunner
 
         if (options.ShowSuccess)
             ShowAlert("Common.Notice", "AppTask.Completed");
-        if (task is not null)
-            _appState.RemoveActiveTask(task.Id);
         return true;
+    }
+
+    private async Task SaveTaskStatusAsync(AppTask task)
+    {
+        try
+        {
+            await _managerDb.SaveItemAsync(task);
+            if (task.IsDownloadTask())
+                _appState.CurrentDownloadTask = task;
+        }
+        catch (Exception saveError)
+        {
+            _log.Error(_loc.Get("AppTask.Failed"), saveError);
+        }
     }
 
     private void ShowAlert(string titleKey, string messageKey, params object[] args)

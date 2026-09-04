@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.JSInterop;
 using Terraria_Wiki.Models;
@@ -46,14 +47,7 @@ public class AppState : INotifyPropertyChanged
     public bool IsMacCatalyst => Platform == DevicePlatform.MacCatalyst;
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
-    private bool _isNetworkAvailable;
     private string _dataRootPath = string.Empty;
-
-    public bool IsNetworkAvailable
-    {
-        get => _isNetworkAvailable;
-        set => SetProperty(ref _isNetworkAvailable, value);
-    }
 
     public string DataRootPath
     {
@@ -71,7 +65,8 @@ public class AppState : INotifyPropertyChanged
     private bool _logPanelIsOpen = false;
     private bool _mobileTabPanelOpen = false;
     private bool _isDarkTheme;
-    private readonly Dictionary<int, ActiveTaskInfo> _activeTasks = [];
+    private readonly ConcurrentDictionary<int, ActiveTaskInfo> _activeTasks = new();
+    private AppTask? _currentDownloadTask;
 
     private string _currentWikiPage;
     private List<TabModel> _tabs;
@@ -240,7 +235,7 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _isDarkTheme, value);
     }
 
-    public IReadOnlyCollection<ActiveTaskInfo> ActiveTasks => _activeTasks.Values;
+    public IReadOnlyCollection<ActiveTaskInfo> ActiveTasks => _activeTasks.Values.ToArray();
 
     public bool HasActiveTasks => _activeTasks.Count != 0;
 
@@ -255,7 +250,7 @@ public class AppState : INotifyPropertyChanged
 
     public void RemoveActiveTask(int taskId)
     {
-        if (_activeTasks.Remove(taskId))
+        if (_activeTasks.TryRemove(taskId, out _))
         {
             OnPropertyChanged(nameof(ActiveTasks));
             OnPropertyChanged(nameof(HasActiveTasks));
@@ -264,28 +259,47 @@ public class AppState : INotifyPropertyChanged
 
     public ActiveTaskInfo? GetActiveTask(int taskId) => _activeTasks.GetValueOrDefault(taskId);
 
+    public void NotifyActiveTasksChanged()
+    {
+        OnPropertyChanged(nameof(ActiveTasks));
+        OnPropertyChanged(nameof(CurrentDownloadTask));
+    }
+
+    public IReadOnlyCollection<ActiveTaskInfo> GetActiveTasks(int? wikiId = null, AppTaskType? taskType = null)
+        => _activeTasks.Values
+            .Where(info => (!wikiId.HasValue || info.Task.WikiId == wikiId) &&
+                          (!taskType.HasValue || info.Task.TaskType == taskType))
+            .ToArray();
+
+    public AppTask? GetCurrentDownloadTask(int wikiId)
+        => GetActiveTasks(wikiId)
+            .Select(info => info.Task)
+            .FirstOrDefault(task => task.IsDownloadTask()) ??
+           (_currentDownloadTask?.WikiId == wikiId && _currentDownloadTask.IsDownloadTask()
+               ? _currentDownloadTask
+               : null);
+
+    public void SetCurrentDownloadTask(AppTask? task)
+    {
+        CurrentDownloadTask = task;
+        NotifyActiveTasksChanged();
+    }
+
     public AppTask? CurrentDownloadTask
     {
-        get => _activeTasks.Values
-            .Select(x => x.Task)
-            .FirstOrDefault(t => t.WikiId == ActiveWikiBookId &&
-                t.TaskType is AppTaskType.DownloadAll or AppTaskType.DownloadPages or AppTaskType.DownloadResources or AppTaskType.UpdatePages or AppTaskType.UpdateAll or AppTaskType.RetryFailed);
+        get => _currentDownloadTask;
         set
         {
-            if (value is null)
+            if (value is not null &&
+                (value.Status is AppTaskStatus.Completed ||
+                 value.TaskType is AppTaskType.None or AppTaskType.CheckUpdate or
+                     AppTaskType.DeleteResources or AppTaskType.DeleteData or AppTaskType.ExportData or
+                     AppTaskType.ImportData or AppTaskType.MigrateData or AppTaskType.LegacyUpgrade or
+                     AppTaskType.ExportLog or AppTaskType.DeleteLog or AppTaskType.ClearFailedList))
             {
-                foreach (var task in _activeTasks.Values
-                    .Where(x => x.Task.WikiId == ActiveWikiBookId)
-                    .Select(x => x.Task.Id)
-                    .ToList())
-                    RemoveActiveTask(task);
-                return;
+                value = null;
             }
-
-            if (value.Status == AppTaskStatus.Running)
-                AddActiveTask(new ActiveTaskInfo { Task = value, StartedTime = value.CreatedTime, CanCancel = true });
-            else
-                RemoveActiveTask(value.Id);
+            SetProperty(ref _currentDownloadTask, value);
         }
     }
 

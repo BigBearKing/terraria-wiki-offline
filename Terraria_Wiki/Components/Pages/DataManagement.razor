@@ -1,4 +1,4 @@
-﻿@page "/data"
+@page "/data"
 @inject NavigationManager NavManager
 @using System.ComponentModel
 @using Terraria_Wiki
@@ -37,9 +37,9 @@
                         <div class="manage-card-status @(wiki.IsPageDownloaded ? "status-ok" : "status-none")">
                             @(wiki.IsPageDownloaded ? Loc.Get("DataManagement.Installed") : Loc.Get("DataManagement.NotInstalled"))
                         </div>
-                        @if (_downloadTasks.TryGetValue(wiki.Id, out var downloadTask) && downloadTask.Status != DownloadTaskStatus.Completed)
+                        @if (GetVisibleTask(wiki.Id) is AppTask AppTask)
                         {
-                            <div class="manage-card-progress">@GetTaskStatusText(downloadTask) @downloadTask.Progress.ToString("F1")%</div>
+                            <div class="manage-card-progress">@GetTaskStatusText(AppTask) @AppTask.Progress.ToString("F1")%</div>
                         }
                     </div>
                     <Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
@@ -59,7 +59,7 @@
     private List<WikiBook> _wikiBookList = [];
     private List<WikiBook> _filteredWikiList = [];
     private string _langFilter = "all";
-    private readonly Dictionary<int, DownloadTask> _downloadTasks = [];
+    private readonly Dictionary<int, AppTask> _downloadTasks = [];
 
     protected override void OnInitialized()
     {
@@ -78,7 +78,7 @@
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只关心 ActiveWikiBookId 变化（切换 wiki 时重新加载列表）
-        if (e.PropertyName == nameof(AppState.ActiveWikiBookId) || e.PropertyName == nameof(AppState.CurrentDownloadTask))
+        if (e.PropertyName is nameof(AppState.ActiveWikiBookId) or nameof(AppState.CurrentDownloadTask))
         {
             if (AppState.CurrentDownloadTask?.WikiId is int wikiId)
                 _downloadTasks[wikiId] = AppState.CurrentDownloadTask;
@@ -89,22 +89,37 @@
     protected override async Task OnInitializedAsync()
     {
         _wikiBookList = await App.ManagerDb.GetItemsAsync<WikiBook>();
-        var tasks = await App.ManagerDb.GetItemsAsync<DownloadTask>();
-        foreach (var task in tasks.Where(t => t.WikiId.HasValue).GroupBy(t => t.WikiId!.Value).Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
+        var tasks = await App.ManagerDb.GetItemsAsync<AppTask>();
+        foreach (var task in tasks.Where(t => t.WikiId.HasValue &&
+                                              t.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted or AppTaskStatus.Failed)
+                                    .GroupBy(t => t.WikiId!.Value)
+                                    .Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
             _downloadTasks[task.WikiId!.Value] = task;
         ApplyLangFilter();
     }
 
-    private string GetTaskStatusText(DownloadTask task) => task.Status switch
+    private string GetTaskStatusText(AppTask task) => task.Status switch
     {
-        DownloadTaskStatus.Running when task.TaskType is DownloadTaskType.UpdatePages or DownloadTaskType.UpdateAll => Loc.Get("DataManagement.TaskUpdating"),
-        DownloadTaskStatus.Running when task.TaskType == DownloadTaskType.RetryFailed => Loc.Get("DataManagement.TaskRetrying"),
-        DownloadTaskStatus.Running => Loc.Get("DataManagement.TaskDownloading"),
-        DownloadTaskStatus.Paused => Loc.Get("DataManagement.TaskPaused"),
-        DownloadTaskStatus.Interrupted => Loc.Get("DataManagement.TaskInterrupted"),
-        DownloadTaskStatus.Failed => Loc.Get("DataManagement.TaskFailed"),
+        AppTaskStatus.Running when task.TaskType is AppTaskType.UpdatePages or AppTaskType.UpdateAll => Loc.Get("DataManagement.TaskUpdating"),
+        AppTaskStatus.Running when task.TaskType == AppTaskType.RetryFailed => Loc.Get("DataManagement.TaskRetrying"),
+        AppTaskStatus.Running => Loc.Get("DataManagement.TaskDownloading"),
+        AppTaskStatus.Paused => Loc.Get("DataManagement.TaskPaused"),
+        AppTaskStatus.Interrupted => Loc.Get("DataManagement.TaskInterrupted"),
+        AppTaskStatus.Failed => Loc.Get("DataManagement.TaskFailed"),
         _ => Loc.Get("DataManagement.TaskPending")
     };
+
+    private AppTask? GetVisibleTask(int wikiId)
+    {
+        var activeTask = AppState.GetCurrentDownloadTask(wikiId);
+        if (activeTask is not null)
+            return activeTask;
+
+        return _downloadTasks.TryGetValue(wikiId, out var historyTask) &&
+               historyTask.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted or AppTaskStatus.Failed
+            ? historyTask
+            : null;
+    }
 
     private void SetLangFilter(string filter)
     {

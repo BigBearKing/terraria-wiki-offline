@@ -90,11 +90,28 @@ public class AppTask
     [Ignore]
     public int CompletedResources { get; set; }
     [Ignore]
+    public int ResumePageLine { get; set; }
+    [Ignore]
+    public int ResumeResourceLine { get; set; }
+    [Ignore]
     public double Progress => CalculateProgress();
+
+    public bool IsDownloadTask() => TaskType is AppTaskType.DownloadPages or AppTaskType.DownloadResources or
+        AppTaskType.DownloadAll or AppTaskType.UpdatePages or AppTaskType.UpdateAll or AppTaskType.RetryFailed;
 
     public void LoadTaskData()
     {
-        var data = JsonSerializer.Deserialize<AppTaskData>(TaskData) ?? new AppTaskData();
+        AppTaskData data;
+        try
+        {
+            data = string.IsNullOrWhiteSpace(TaskData)
+                ? new AppTaskData()
+                : JsonSerializer.Deserialize<AppTaskData>(TaskData) ?? new AppTaskData();
+        }
+        catch (JsonException)
+        {
+            data = new AppTaskData();
+        }
         Phase = data.Phase;
         IncludeResources = data.IncludeResources;
         TaskDirectory = data.TaskDirectory;
@@ -102,6 +119,8 @@ public class AppTask
         CompletedPages = data.CompletedPages;
         TotalResources = data.TotalResources;
         CompletedResources = data.CompletedResources;
+        ResumePageLine = data.ResumePageLine ?? CompletedPages;
+        ResumeResourceLine = data.ResumeResourceLine ?? CompletedResources;
     }
 
     public void SaveTaskData()
@@ -114,7 +133,9 @@ public class AppTask
             TotalPages = TotalPages,
             CompletedPages = CompletedPages,
             TotalResources = TotalResources,
-            CompletedResources = CompletedResources
+            CompletedResources = CompletedResources,
+            ResumePageLine = ResumePageLine,
+            ResumeResourceLine = ResumeResourceLine
         });
     }
 
@@ -129,7 +150,7 @@ public class AppTask
             return (listProgress * 10 + pageProgress * 45) / 55 * 100;
 
         var resourceProgress = TotalResources == 0 ? 0 : CompletedResources / (double)TotalResources;
-        var postProcessProgress = Status == DownloadTaskStatus.Completed ? 1 : 0;
+        var postProcessProgress = Status == AppTaskStatus.Completed ? 1 : 0;
         return listProgress * 10 + pageProgress * 45 + resourceProgress * 44 + postProcessProgress;
     }
 }
@@ -143,6 +164,8 @@ public sealed class AppTaskData
     public int CompletedPages { get; set; }
     public int TotalResources { get; set; }
     public int CompletedResources { get; set; }
+    public int? ResumePageLine { get; set; }
+    public int? ResumeResourceLine { get; set; }
 }
 
 public class WikiPage

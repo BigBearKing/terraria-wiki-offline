@@ -72,20 +72,20 @@ public class LegacyUpgradeHandler
     private void MigrateFailedListsOnce(WikiBook activeBook)
     {
         var dataDir = Path.Combine(_appDataDir, activeBook.DataFolder);
-        var taskDir = Path.Combine(_appDataDir, "Temp", $"download_{activeBook.Id}_{(int)DownloadTaskType.RetryFailed}");
+        var taskDir = Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "legacy-upgrade");
         Directory.CreateDirectory(taskDir);
 
         MoveIfExists(
-            Path.Combine(dataDir, "failed_pages.txt"),
+            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_pages.txt"),
             Path.Combine(taskDir, "failed_pages.txt"));
         MoveIfExists(
-            Path.Combine(dataDir, "failed_res.txt"),
+            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_resources.txt"),
             Path.Combine(taskDir, "failed_resources.txt"));
         MoveIfExists(
-            Path.Combine(dataDir, "temp_failed_pages.txt"),
+            Path.Combine(taskDir, "failed_pages.pending.txt"),
             Path.Combine(taskDir, "failed_pages.pending.txt"));
         MoveIfExists(
-            Path.Combine(dataDir, "temp_failed_res.txt"),
+            Path.Combine(taskDir, "failed_resources.pending.txt"),
             Path.Combine(taskDir, "failed_resources.pending.txt"));
     }
 

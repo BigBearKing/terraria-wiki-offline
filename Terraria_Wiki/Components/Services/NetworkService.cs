@@ -11,6 +11,9 @@ public sealed record NetworkResponse(
 
 public static class NetworkService
 {
+    public static bool IsNetworkAvailable =>
+        Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+
     private static readonly TlsClient TlsClient = new()
     {
         TLSClientIdentifier = ClientIdentifiers.Chrome_131,

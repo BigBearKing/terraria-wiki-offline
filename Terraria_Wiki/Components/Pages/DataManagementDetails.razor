@@ -1,4 +1,4 @@
-﻿@page "/data/{WikiId:int}"
+@page "/data/{WikiId:int}"
 @using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
@@ -102,7 +102,7 @@
             {
                 <div class="download-actions">
 
-                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == DownloadTaskType.DownloadAll)
+                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == AppTaskType.DownloadAll)
                     {
                         <div class="download-card">
                             <div class="dl-info">
@@ -110,11 +110,11 @@
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.AllContentDesc")</div>
                             </div>
                             <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(true)">
-                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(DownloadTaskType.DownloadAll))
+                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(AppTaskType.DownloadAll))
                             </div>
                         </div>
                     }
-                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == DownloadTaskType.DownloadPages)
+                    @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == AppTaskType.DownloadPages)
                     {
                         <div class="download-card">
                             <div class="dl-info">
@@ -122,7 +122,7 @@
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.BasicDataDesc")</div>
                             </div>
                             <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(false)">
-                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(DownloadTaskType.DownloadPages))
+                                @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(AppTaskType.DownloadPages))
                             </div>
                         </div>
                     }
@@ -183,7 +183,7 @@
             _selectedWiki = await App.ManagerDb.GetItemAsync<WikiBook>(WikiId);
             _hasFailedItems = App.DataManager.HasFailedItems();
         }
-        _lastTaskType = AppState.CurrentDownloadTask?.TaskType ?? AppTaskType.None;
+        _lastTaskType = CurrentDownloadTask?.TaskType ?? AppTaskType.None;
         InvokeAsync(StateHasChanged);
     }
 
@@ -195,21 +195,21 @@
 
     private WikiBook _selectedWiki;
     private bool _hasFailedItems;
-    private DownloadTask? CurrentDownloadTask => AppState.CurrentDownloadTask?.WikiId == WikiId ? AppState.CurrentDownloadTask : null;
-    private bool IsDownloadRunning => CurrentDownloadTask?.Status == DownloadTaskStatus.Running;
-    private bool IsResourceDownloadRunning => CurrentDownloadTask?.TaskType == DownloadTaskType.DownloadResources && IsDownloadRunning;
-    private bool IsUpdateRunning => CurrentDownloadTask?.TaskType is DownloadTaskType.UpdatePages or DownloadTaskType.UpdateAll && IsDownloadRunning;
-    private bool IsTaskPaused(DownloadTaskType taskType) =>
-        CurrentDownloadTask?.TaskType == taskType && CurrentDownloadTask.Status is DownloadTaskStatus.Paused or DownloadTaskStatus.Interrupted;
+    private AppTask? CurrentDownloadTask => AppState.GetCurrentDownloadTask(WikiId);
+    private bool IsDownloadRunning => CurrentDownloadTask?.Status == AppTaskStatus.Running;
+    private bool IsResourceDownloadRunning => CurrentDownloadTask?.TaskType == AppTaskType.DownloadResources && IsDownloadRunning;
+    private bool IsUpdateRunning => CurrentDownloadTask?.TaskType is AppTaskType.UpdatePages or AppTaskType.UpdateAll && IsDownloadRunning;
+    private bool IsTaskPaused(AppTaskType taskType) =>
+        CurrentDownloadTask?.TaskType == taskType && CurrentDownloadTask.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted;
 
-    private string GetDownloadButtonText(DownloadTaskType taskType) =>
+    private string GetDownloadButtonText(AppTaskType taskType) =>
         IsTaskPaused(taskType) ? Loc.Get("Common.Resume") : Loc.Get("Common.Download");
 
     private string GetResourceDownloadButtonText() =>
-        IsTaskPaused(DownloadTaskType.DownloadResources) ? Loc.Get("Common.Resume") : Loc.Get("DataManagementDetails.DownloadAssets");
+        IsTaskPaused(AppTaskType.DownloadResources) ? Loc.Get("Common.Resume") : Loc.Get("DataManagementDetails.DownloadAssets");
 
     private string GetUpdateButtonText() =>
-        IsTaskPaused(DownloadTaskType.UpdatePages) || IsTaskPaused(DownloadTaskType.UpdateAll)
+        IsTaskPaused(AppTaskType.UpdatePages) || IsTaskPaused(AppTaskType.UpdateAll)
             ? Loc.Get("Common.Resume")
             : Loc.Get("DataManagementDetails.CheckUpdate");
 
@@ -255,10 +255,10 @@
 
     private string GetDownloadPhaseText() => CurrentDownloadTask?.Phase switch
     {
-        DownloadTaskPhase.FetchingLists => Loc.Get("DataManagementDetails.FetchingLists"),
-        DownloadTaskPhase.DownloadingPages => Loc.Get("DataManagementDetails.DownloadingPages"),
-        DownloadTaskPhase.DownloadingResources => Loc.Get("DataManagementDetails.DownloadingResources"),
-        DownloadTaskPhase.PostProcessing => Loc.Get("DataManagementDetails.PostProcessing"),
+        AppTaskPhase.FetchingLists => Loc.Get("DataManagementDetails.FetchingLists"),
+        AppTaskPhase.DownloadingPages => Loc.Get("DataManagementDetails.DownloadingPages"),
+        AppTaskPhase.DownloadingResources => Loc.Get("DataManagementDetails.DownloadingResources"),
+        AppTaskPhase.PostProcessing => Loc.Get("DataManagementDetails.PostProcessing"),
         _ => Loc.Get("DataManagementDetails.Downloading")
     };
 
@@ -268,7 +268,7 @@
     private string GetDownloadCountText()
     {
         if (CurrentDownloadTask is null) return string.Empty;
-        return CurrentDownloadTask.Phase == DownloadTaskPhase.DownloadingResources
+        return CurrentDownloadTask.Phase == AppTaskPhase.DownloadingResources
             ? $"{CurrentDownloadTask.CompletedResources} / {CurrentDownloadTask.TotalResources}"
             : $"{CurrentDownloadTask.CompletedPages} / {CurrentDownloadTask.TotalPages}";
     }
@@ -308,7 +308,7 @@
         bool isConfirmed = await Application.Current.Windows[0].Page?.DisplayAlertAsync(Loc.Get("Common.Notice"), Loc.Get("DataManagementDetails.ConfirmDeleteDatabase"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (isConfirmed)
         {
-            await App.DataManager.DeleteDatabaseAsync();
+            await App.DataManager.DeleteDatabaseAsync(WikiId);
             BackToList();
         }
     }

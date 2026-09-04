@@ -17,7 +17,7 @@ public sealed class BatchTaskScheduler<T>
         Func<int, T, CancellationToken, Task> processTask,
         Func<int, T, Exception, CancellationToken, Task> handleFailure,
         int concurrency,
-        Action<int, T, int, Exception>? onRetry = null,
+        Func<int, T, int, Exception, CancellationToken, Task<bool>>? onRetry = null,
         Func<int, T, HttpRequestException, Task>? onNotFound = null,
         CancellationToken cancellationToken = default)
     {
@@ -44,7 +44,7 @@ public sealed class BatchTaskScheduler<T>
         Func<CancellationToken, Task<T?>> getNextTask,
         Func<int, T, CancellationToken, Task> processTask,
         Func<int, T, Exception, CancellationToken, Task> handleFailure,
-        Action<int, T, int, Exception>? onRetry,
+        Func<int, T, int, Exception, CancellationToken, Task<bool>>? onRetry,
         Func<int, T, HttpRequestException, Task>? onNotFound,
         CancellationToken cancellationToken)
     {
@@ -71,8 +71,12 @@ public sealed class BatchTaskScheduler<T>
                     }
                     catch (Exception ex)
                     {
-                        if (++retry > _maxRetryAttempts) throw;
-                        onRetry?.Invoke(workerId, task, retry, ex);
+                        var nextRetry = retry + 1;
+                        if (onRetry is not null &&
+                            !await onRetry(workerId, task, nextRetry, ex, cancellationToken))
+                            throw new OperationCanceledException(cancellationToken);
+                        retry = nextRetry;
+                        if (retry > _maxRetryAttempts) throw;
                         await Task.Delay(1000, cancellationToken);
                     }
                 }

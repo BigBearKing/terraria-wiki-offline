@@ -300,8 +300,12 @@ public class DatabaseService
             await _appTaskWriteLock.WaitAsync();
             try
             {
-                task.SaveTaskData();
-                await _db.InsertOrReplaceAsync(item);
+                if (task.IsDownloadTask())
+                    task.SaveTaskData();
+                if (task.Id == 0)
+                    await _db.InsertAsync(task);
+                else
+                    await _db.InsertOrReplaceAsync(task);
             }
             finally
             {
@@ -317,7 +321,7 @@ public class DatabaseService
         await Init();
         foreach (var item in items)
         {
-            if (item is AppTask task)
+            if (item is AppTask task && task.IsDownloadTask())
                 task.SaveTaskData();
             await _db.InsertOrReplaceAsync(item);
         }
@@ -352,7 +356,7 @@ public class DatabaseService
         var items = await _db.Table<T>().ToListAsync();
         if (typeof(T) == typeof(AppTask))
         {
-            foreach (var item in items.Cast<AppTask>())
+            foreach (var item in items.Cast<AppTask>().Where(task => task.IsDownloadTask()))
                 item.LoadTaskData();
         }
         return items;
@@ -372,7 +376,7 @@ public class DatabaseService
     {
         await Init();
         var item = await _db.FindAsync<T>(primaryKey);
-        if (item is AppTask task)
+        if (item is AppTask task && task.IsDownloadTask())
             task.LoadTaskData();
         return item;
     }

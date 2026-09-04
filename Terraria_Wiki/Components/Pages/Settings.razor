@@ -409,10 +409,7 @@
     private string Author => "BigBearKing";
     private async Task ImportData()
     {
-        await TaskRunner.RunAsync(
-            AppTaskType.ImportData,
-            _ => App.DataManager!.ImportDataAsync(),
-            access: AppTaskAccess.Exclusive);
+        await App.DataManager!.ImportDataAsync();
     }
 
     private async Task ExportLog()
@@ -478,13 +475,8 @@
         bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmCleanup"), Loc.Get("Settings.ConfirmCleanupDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
         if (confirm)
         {
-            await TaskRunner.RunAsync(
-                AppTaskType.ClearFailedList,
-                async _ =>
-                {
-                    App.DataManager.ClearFailedList();
-                    await FileHelper.ClearAppCacheAsync();
-                });
+            await App.DataManager.ClearFailedListAsync();
+            await FileHelper.ClearAppCacheAsync();
         }
     }
     private int _clickCount = 0;

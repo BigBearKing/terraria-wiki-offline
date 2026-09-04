@@ -48,8 +48,6 @@ namespace Terraria_Wiki
 
         private async Task InitializeBeforeBlazorAsync()
         {
-            AppStateManager!.IsNetworkAvailable =
-                Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
             AppStateManager.SetDataRootPath(StoragePath!.RootPath);
 
             await Localization!.InitializeAsync();
@@ -75,18 +73,15 @@ namespace Terraria_Wiki
 
         private static async Task RestoreDownloadTaskStateAsync()
         {
-            var tasks = await ManagerDb!.GetItemsAsync<DownloadTask>();
-            foreach (var task in tasks.Where(t => t.Status != DownloadTaskStatus.Completed && t.Status != DownloadTaskStatus.Failed))
+            var tasks = await ManagerDb!.GetItemsAsync<AppTask>();
+            foreach (var task in tasks.Where(t => t.Status != AppTaskStatus.Completed && t.Status != AppTaskStatus.Failed))
             {
-                task.Status = DownloadTaskStatus.Interrupted;
+                task.Status = AppTaskStatus.Interrupted;
                 task.UpdatedTime = DateTime.Now;
                 await ManagerDb.SaveItemAsync(task);
             }
 
-            AppStateManager!.CurrentDownloadTask = tasks
-                .Where(t => t.WikiId == AppStateManager.ActiveWikiBookId && t.Status != DownloadTaskStatus.Completed)
-                .OrderByDescending(t => t.UpdatedTime)
-                .FirstOrDefault();
+            await AppService.RestoreDownloadTaskStateAsync(AppStateManager.ActiveWikiBookId);
         }
 
 

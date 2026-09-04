@@ -486,6 +486,7 @@ namespace Terraria_Wiki.Services
 
                 App.AppStateManager.ActiveWikiBookId = book.Id;
                 App.AppStateManager.ActiveWikiBook = book;
+                await RestoreDownloadTaskStateAsync(book.Id);
                 App.AppStateManager.ResetWikiNavigation();
                 await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 App.AppStateManager.NotifyWikiBookSwitched();
@@ -503,6 +504,18 @@ namespace Terraria_Wiki.Services
             {
                 _wikiSwitchLock.Release();
             }
+        }
+
+        public static async Task RestoreDownloadTaskStateAsync(int wikiId)
+        {
+            var task = (await App.ManagerDb!.GetItemsAsync<AppTask>())
+                .Where(t => t.WikiId == wikiId &&
+                            t.IsDownloadTask() &&
+                            t.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted or AppTaskStatus.Failed)
+                .OrderByDescending(t => t.UpdatedTime)
+                .FirstOrDefault();
+
+            App.AppStateManager!.SetCurrentDownloadTask(task);
         }
 
 

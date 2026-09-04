@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text;
 
 namespace Terraria_Wiki.Services;
@@ -73,15 +72,15 @@ public sealed class BatchLineItem
     private readonly BatchLineProvider _provider;
     private int _completed;
 
-    internal BatchLineItem(BatchLineProvider provider, string line, object batch)
+    internal BatchLineItem(BatchLineProvider provider, string line, int lineNumber)
     {
         _provider = provider;
         Line = line;
-        Batch = batch;
+        LineNumber = lineNumber;
     }
 
     public string Line { get; }
-    internal object Batch { get; }
+    internal int LineNumber { get; }
 
     public void Complete()
     {
@@ -92,63 +91,61 @@ public sealed class BatchLineItem
 
 public sealed class BatchLineProvider : IDisposable
 {
-    private sealed class BatchState
-    {
-        public required long TruncatePosition { get; init; }
-        public int Remaining;
-    }
-
     private readonly string _filePath;
-    private readonly int _batchSize;
-    private readonly ConcurrentQueue<BatchLineItem> _memoryQueue = new();
     private readonly object _fileLock = new();
-    private TaskCompletionSource<bool> _stateChanged = NewSignal();
-    private BatchState? _currentBatch;
+    private readonly HashSet<int> _completedOutOfOrder = [];
+    private int _nextLine;
+    private int _completedLine;
+    private int _completedItemCount;
     private bool _isFileExhausted;
     private bool _disposed;
 
-    public BatchLineProvider(string filePath, int batchSize = 50)
+    public BatchLineProvider(string filePath, int batchSize = 50, int startLine = 0, int initialCompletedCount = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batchSize);
+        ArgumentOutOfRangeException.ThrowIfNegative(startLine);
+        ArgumentOutOfRangeException.ThrowIfNegative(initialCompletedCount);
         _filePath = filePath;
-        _batchSize = batchSize;
+        _nextLine = startLine;
+        _completedLine = startLine;
+        _completedItemCount = initialCompletedCount;
     }
 
-    public async Task<BatchLineItem?> GetNextItemAsync(CancellationToken cancellationToken = default)
+    public int CompletedItemCount
     {
-        while (true)
+        get
         {
-            Task waitTask;
-            lock (_fileLock)
+            lock (_fileLock) return _completedItemCount;
+        }
+    }
+
+    public int CompletedLineCount
+    {
+        get
+        {
+            lock (_fileLock) return _completedLine;
+        }
+    }
+
+    public Task<BatchLineItem?> GetNextItemAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_fileLock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_isFileExhausted) return Task.FromResult<BatchLineItem?>(null);
+
+            var lines = ReadNextLines(_filePath, _nextLine, 1);
+            if (lines.Count == 0)
             {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-                if (_memoryQueue.TryDequeue(out var item)) return item;
-                if (_isFileExhausted) return null;
-
-                if (_currentBatch is null)
-                {
-                    var (lines, position) = PeekLastNLines(_filePath, _batchSize);
-                    if (lines.Count == 0)
-                    {
-                        _isFileExhausted = true;
-                        return null;
-                    }
-
-                    _currentBatch = new BatchState
-                    {
-                        TruncatePosition = position,
-                        Remaining = lines.Count
-                    };
-                    foreach (var line in lines)
-                        _memoryQueue.Enqueue(new BatchLineItem(this, line, _currentBatch));
-                    return _memoryQueue.TryDequeue(out item) ? item : null;
-                }
-
-                waitTask = _stateChanged.Task;
+                _isFileExhausted = true;
+                return Task.FromResult<BatchLineItem?>(null);
             }
 
-            await waitTask.WaitAsync(cancellationToken);
+            var item = new BatchLineItem(this, lines[0], _nextLine);
+            _nextLine++;
+            return Task.FromResult<BatchLineItem?>(item);
         }
     }
 
@@ -156,12 +153,11 @@ public sealed class BatchLineProvider : IDisposable
     {
         lock (_fileLock)
         {
-            if (item.Batch is not BatchState batch || !ReferenceEquals(batch, _currentBatch)) return;
-            if (--batch.Remaining != 0) return;
-
-            TruncateFile(_filePath, batch.TruncatePosition);
-            _currentBatch = null;
-            SignalStateChanged();
+            if (item.LineNumber < _completedLine) return;
+            _completedItemCount++;
+            _completedOutOfOrder.Add(item.LineNumber);
+            while (_completedOutOfOrder.Remove(_completedLine))
+                _completedLine++;
         }
     }
 
@@ -171,53 +167,17 @@ public sealed class BatchLineProvider : IDisposable
         {
             if (_disposed) return;
             _disposed = true;
-            SignalStateChanged();
         }
         GC.SuppressFinalize(this);
     }
 
-    private static TaskCompletionSource<bool> NewSignal() =>
-        new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    private void SignalStateChanged()
+    private static List<string> ReadNextLines(string filePath, int startLine, int count)
     {
-        _stateChanged.TrySetResult(true);
-        _stateChanged = NewSignal();
-    }
-
-    private static (List<string> lines, long newPosition) PeekLastNLines(string filePath, int count)
-    {
-        if (!File.Exists(filePath)) return ([], 0);
-        using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        if (fs.Length == 0) return ([], 0);
-
-        long pos = fs.Length - 1;
-        int linesFound = 0;
-        while (pos >= 0)
-        {
-            fs.Position = pos;
-            if (fs.ReadByte() == '\n' && ++linesFound > count)
-            {
-                pos++;
-                break;
-            }
-            pos--;
-        }
-
-        if (pos < 0) pos = 0;
-        fs.Position = pos;
-        byte[] buffer = new byte[fs.Length - pos];
-        fs.ReadExactly(buffer);
-        var resultLines = Encoding.UTF8.GetString(buffer).Trim()
-            .Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
+        if (!File.Exists(filePath)) return [];
+        return File.ReadLines(filePath)
+            .Skip(startLine)
+            .Take(count)
+            .Where(line => !string.IsNullOrWhiteSpace(line))
             .ToList();
-        return (resultLines, pos);
-    }
-
-    private static void TruncateFile(string filePath, long length)
-    {
-        if (!File.Exists(filePath)) return;
-        using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-        fs.SetLength(length);
     }
 }
