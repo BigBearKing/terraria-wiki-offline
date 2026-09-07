@@ -65,7 +65,7 @@
                         @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ExportData) ? AppState.Tasks[AppTaskType.ExportData].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.ExportData"))
                     </div>
 
-                    @if (_hasFailedItems)
+                    @if (_hasFailedItems && !IsUpdateTaskInProgress)
                     {
                         <div class="primary-btn btn-blue" @onclick="RetryFailedItems">
                             <Icon Name="sync" Size="16" />
@@ -200,6 +200,9 @@
     private bool IsDownloadRunning => CurrentDownloadTask?.Status == AppTaskStatus.Running;
     private bool IsResourceDownloadRunning => CurrentDownloadTask?.TaskType == AppTaskType.DownloadResources && IsDownloadRunning;
     private bool IsUpdateRunning => CurrentDownloadTask?.TaskType is AppTaskType.UpdatePages or AppTaskType.UpdateAll && IsDownloadRunning;
+    private bool IsUpdateTaskInProgress =>
+        CurrentDownloadTask?.TaskType is AppTaskType.UpdatePages or AppTaskType.UpdateAll &&
+        CurrentDownloadTask.Status is AppTaskStatus.Running or AppTaskStatus.Paused or AppTaskStatus.Interrupted;
     private bool IsTaskPaused(AppTaskType taskType) =>
         CurrentDownloadTask?.TaskType == taskType && CurrentDownloadTask.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted;
 
@@ -254,24 +257,36 @@
             await UpdateData();
     }
 
-    private string GetDownloadPhaseText() => CurrentDownloadTask?.Phase switch
+    private string GetDownloadPhaseText()
     {
-        AppTaskPhase.FetchingLists => Loc.Get("DataManagementDetails.FetchingLists"),
-        AppTaskPhase.DownloadingPages => Loc.Get("DataManagementDetails.DownloadingPages"),
-        AppTaskPhase.DownloadingResources => Loc.Get("DataManagementDetails.DownloadingResources"),
-        AppTaskPhase.PostProcessing => Loc.Get("DataManagementDetails.PostProcessing"),
-        _ => Loc.Get("DataManagementDetails.Downloading")
-    };
+        if (CurrentDownloadTask?.Status == AppTaskStatus.Failed)
+            return Loc.Get("DataManagement.TaskFailed");
+
+        return CurrentDownloadTask?.Phase switch
+        {
+            AppTaskPhase.FetchingLists => Loc.Get("DataManagementDetails.FetchingLists"),
+            AppTaskPhase.DownloadingPages => Loc.Get("DataManagementDetails.DownloadingPages"),
+            AppTaskPhase.DownloadingResources => Loc.Get("DataManagementDetails.DownloadingResources"),
+            AppTaskPhase.PostProcessing => Loc.Get("DataManagementDetails.PostProcessing"),
+            _ => Loc.Get("DataManagementDetails.Downloading")
+        };
+    }
 
     private string GetDownloadProgressText() =>
+        CurrentDownloadTask?.Status != AppTaskStatus.Failed &&
         CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
             ? Loc.Get("DataManagementDetails.ProgressIndeterminate")
             : $"{CurrentDownloadTask?.Progress:F1}%";
 
     private string GetProgressBarClass() =>
-        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists ? "indeterminate" : string.Empty;
+        CurrentDownloadTask?.Status == AppTaskStatus.Failed
+            ? "failed"
+            : CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
+                ? "indeterminate"
+                : string.Empty;
 
     private string GetProgressStyle() =>
+        CurrentDownloadTask?.Status != AppTaskStatus.Failed &&
         CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
             ? string.Empty
             : $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
@@ -290,6 +305,9 @@
 
     private async Task RetryFailedItems()
     {
+        if (IsUpdateTaskInProgress)
+            return;
+
         await App.DataManager.RetryFailedItemsAsync();
     }
 
@@ -362,6 +380,10 @@
     .download-progress-fill.indeterminate {
         width: 35%;
         animation: download-progress-indeterminate 1.4s ease-in-out infinite;
+    }
+
+    .download-progress-fill.failed {
+        background-color: #d9534f;
     }
 
     @@keyframes download-progress-indeterminate {

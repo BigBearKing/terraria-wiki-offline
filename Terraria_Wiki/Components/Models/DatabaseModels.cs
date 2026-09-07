@@ -28,6 +28,8 @@ public class WikiBook
     public string ApiBaseUrl { get; set; }
     // 页面根域名，例如 "https://terraria.wiki.gg"
     public string BaseUrl { get; set; }
+    // 是否使用 TLS 指纹客户端发送网络请求
+    public bool UseTls { get; set; }
     // 重定向列表相对路径，例如 "/zh/wiki/Special:ListRedirects?limit=5000"
     public string RedirectListUrl { get; set; }
     // 主命名空间 ID（通常为 0）

@@ -1,5 +1,6 @@
 using LuYao.TlsClient;
 using System.Net;
+using System.Text;
 
 namespace Terraria_Wiki.Services;
 
@@ -26,15 +27,11 @@ public static class NetworkService
         Timeout = TimeSpan.FromSeconds(150)
     };
 
-    private static readonly HttpClient TlsHttpClient = new(
-        new TlsClientHttpMessageHandler(TlsClient))
-    {
-        Timeout = TimeSpan.FromSeconds(15)
-    };
-
     private const string BrowserUserAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
         "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+    private const string BrowserClientHints =
+        "\"Not_A Brand\";v=\"99\", \"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\"";
     private const string CrawlerUserAgent =
         "TerrariaWikiScraper/1.0 (contact: bigbearkingus@gmail.com)";
 
@@ -50,13 +47,14 @@ public static class NetworkService
     {
         if (useTls)
         {
-            using var request = CreateRequest(url, useTls: true);
-            using var response = await TlsHttpClient.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync(cancellationToken);
+            var request = TlsClient.CreateRequest();
+            request.RequestUrl = EncodeUrl(url);
+            request.RequestMethod = "GET";
+            AddTlsBrowserHeaders(request);
+
+            var response = await Task.Run(() => TlsClient.Request(request), cancellationToken);
+            EnsureSuccessStatusCode(response.Status, url);
+            return response.Body;
         }
 
         var encodedUrl = EncodeUrl(url);
@@ -84,30 +82,52 @@ public static class NetworkService
         DateTime? ifModifiedSince = null,
         CancellationToken cancellationToken = default)
     {
-        using var request = CreateRequest(url, useTls);
+        if (useTls)
+        {
+            var request = TlsClient.CreateRequest();
+            request.RequestUrl = EncodeUrl(url);
+            request.RequestMethod = "GET";
+            AddTlsBrowserHeaders(request);
+            if (ifModifiedSince.HasValue)
+            {
+                request.Headers["If-Modified-Since"] = new DateTimeOffset(
+                    DateTime.SpecifyKind(ifModifiedSince.Value, DateTimeKind.Utc)).ToString("R");
+            }
+
+            var response = await Task.Run(() => TlsClient.Request(request), cancellationToken);
+            if (response.Status != (int)HttpStatusCode.NotModified)
+                EnsureSuccessStatusCode(response.Status, url);
+
+            var contentType = GetResponseHeader(response.Headers, "Content-Type") ?? "application/octet-stream";
+            var lastModified = ParseLastModified(GetResponseHeader(response.Headers, "Last-Modified"));
+            var data = response.Status == (int)HttpStatusCode.NotModified
+                ? []
+                : Encoding.UTF8.GetBytes(response.Body);
+
+            return new NetworkResponse(data, (HttpStatusCode)response.Status, contentType, lastModified);
+        }
+
+        using var requestMessage = CreateRequest(url, useTls: false);
         if (ifModifiedSince.HasValue)
         {
-            request.Headers.IfModifiedSince = new DateTimeOffset(
+            requestMessage.Headers.IfModifiedSince = new DateTimeOffset(
                 DateTime.SpecifyKind(ifModifiedSince.Value, DateTimeKind.Utc));
         }
 
-        var client = useTls ? TlsHttpClient : HttpClient;
-        using var responseMessage = await client.SendAsync(
-            request,
+        using var responseMessage = await HttpClient.SendAsync(
+            requestMessage,
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
 
         if (responseMessage.StatusCode != HttpStatusCode.NotModified)
-        {
             responseMessage.EnsureSuccessStatusCode();
-        }
 
-        var data = responseMessage.StatusCode == HttpStatusCode.NotModified
+        var dataBytes = responseMessage.StatusCode == HttpStatusCode.NotModified
             ? []
             : await responseMessage.Content.ReadAsByteArrayAsync(cancellationToken);
 
         return new NetworkResponse(
-            data,
+            dataBytes,
             responseMessage.StatusCode,
             responseMessage.Content.Headers.ContentType?.MediaType ?? "application/octet-stream",
             responseMessage.Content.Headers.LastModified?.UtcDateTime);
@@ -117,14 +137,51 @@ public static class NetworkService
     {
         var request = new HttpRequestMessage(HttpMethod.Get, EncodeUrl(url));
         if (useTls)
-        {
-            request.Headers.UserAgent.ParseAdd(BrowserUserAgent);
-            request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            request.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9");
-        }
-
+            AddHttpBrowserHeaders(request);
         return request;
     }
+
+    private static void AddTlsBrowserHeaders(dynamic request)
+    {
+        request.Headers["User-Agent"] = BrowserUserAgent;
+        request.Headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+        request.Headers["Accept-Language"] = "zh-CN,zh;q=0.9";
+        request.Headers["Sec-CH-UA"] = BrowserClientHints;
+        request.Headers["Sec-CH-UA-Mobile"] = "?0";
+        request.Headers["Sec-CH-UA-Platform"] = "\"Windows\"";
+    }
+
+    private static void AddHttpBrowserHeaders(HttpRequestMessage request)
+    {
+        request.Headers.UserAgent.ParseAdd(BrowserUserAgent);
+        request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        request.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9");
+        request.Headers.TryAddWithoutValidation("Sec-CH-UA", BrowserClientHints);
+        request.Headers.TryAddWithoutValidation("Sec-CH-UA-Mobile", "?0");
+        request.Headers.TryAddWithoutValidation("Sec-CH-UA-Platform", "\"Windows\"");
+    }
+
+    private static void EnsureSuccessStatusCode(int status, string url)
+    {
+        if (status < 200 || status >= 300)
+            throw new HttpRequestException($"TLS request failed with status {status} for {url}", null, (HttpStatusCode)status);
+    }
+
+    private static string? GetResponseHeader(dynamic headers, string name)
+    {
+        if (headers is null)
+            return null;
+
+        dynamic values = null;
+        return headers.TryGetValue(name, out values) && values.Count > 0
+            ? values[0]
+            : null;
+    }
+
+    private static DateTime? ParseLastModified(string? value)
+        => DateTime.TryParse(value, out var dateTime)
+            ? dateTime.ToUniversalTime()
+            : null;
 
     private static string EncodeUrl(string url)
     {

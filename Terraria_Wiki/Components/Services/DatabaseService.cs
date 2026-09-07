@@ -136,6 +136,7 @@ public class DatabaseService
         {
             ["ApiBaseUrl"] = "TEXT",
             ["PageBaseUrl"] = "TEXT",
+            ["UseTls"] = "INTEGER DEFAULT 0",
             ["RedirectListUrl"] = "TEXT",
             ["MainNamespace"] = "INTEGER DEFAULT 0",
             ["GuideNamespace"] = "INTEGER DEFAULT 0",
@@ -192,6 +193,7 @@ public class DatabaseService
             IsResourceDownloaded = false,
             BaseUrl = "https://calamity.huijiwiki.com",
             ApiBaseUrl = "https://calamity.huijiwiki.com/api.php",
+            UseTls = true,
             RedirectListUrl = "/wiki/%E7%89%B9%E6%AE%8A:%E9%87%8D%E5%AE%9A%E5%90%91%E9%A1%B5%E5%88%97%E8%A1%A8?limit=5000",
             MainNamespace = 0,
             AdditionalNamespaces = "",
@@ -266,6 +268,7 @@ public class DatabaseService
             if (existing.Description != def.Description) { existing.Description = def.Description; needsUpdate = true; }
             if (existing.BaseUrl != def.BaseUrl) { existing.BaseUrl = def.BaseUrl; needsUpdate = true; }
             if (existing.ApiBaseUrl != def.ApiBaseUrl) { existing.ApiBaseUrl = def.ApiBaseUrl; needsUpdate = true; }
+            if (existing.UseTls != def.UseTls) { existing.UseTls = def.UseTls; needsUpdate = true; }
             if (existing.RedirectListUrl != def.RedirectListUrl) { existing.RedirectListUrl = def.RedirectListUrl; needsUpdate = true; }
             if (existing.MainNamespace != def.MainNamespace) { existing.MainNamespace = def.MainNamespace; needsUpdate = true; }
             if (existing.AdditionalNamespaces != def.AdditionalNamespaces) { existing.AdditionalNamespaces = def.AdditionalNamespaces; needsUpdate = true; }

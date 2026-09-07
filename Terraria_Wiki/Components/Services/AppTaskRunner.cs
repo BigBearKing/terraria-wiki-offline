@@ -207,7 +207,10 @@ public sealed class AppTaskRunner
         {
             await _managerDb.SaveItemAsync(task);
             if (task.IsDownloadTask())
+            {
+                _appState.CurrentDownloadTask = null;
                 _appState.CurrentDownloadTask = task;
+            }
         }
         catch (Exception saveError)
         {

@@ -157,6 +157,15 @@ namespace Terraria_Wiki.Services
                 AppTaskAccess.Exclusive);
         }
 
+    private bool CanStartDownloadTask(AppTaskType taskType)
+    {
+        var currentTask = App.AppStateManager?.CurrentDownloadTask;
+        if (currentTask is null || currentTask.Status is AppTaskStatus.Completed or AppTaskStatus.Failed)
+            return true;
+
+        return currentTask.TaskType == taskType;
+    }
+
         private void ResetFailedTask(AppTask task)
         {
             task.Status = AppTaskStatus.Pending;
@@ -179,6 +188,7 @@ namespace Terraria_Wiki.Services
 
         private async Task RunDownloadAsync(bool includeResources, AppTaskType taskType)
         {
+        if (!CanStartDownloadTask(taskType)) return;
             if (!await _downloadLock.WaitAsync(0)) return;
             try
             {
@@ -235,7 +245,9 @@ namespace Terraria_Wiki.Services
         private async Task<bool> CheckNetworkBeforeRetryAsync(
             int workerId, BatchLineItem item, int retry, Exception ex, CancellationToken token)
         {
-            _log.Error(_loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line));
+            _log.Error(
+                _loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line),
+                ex);
             if (NetworkService.IsNetworkAvailable)
                 return true;
 
@@ -378,6 +390,7 @@ namespace Terraria_Wiki.Services
         public async Task UpdateDataAsync(bool includeResources, CancellationToken cancellationToken = default)
         {
             var taskType = includeResources ? AppTaskType.UpdateAll : AppTaskType.UpdatePages;
+            if (!CanStartDownloadTask(taskType)) return;
             if (!await _downloadLock.WaitAsync(0)) return;
 
             if (includeResources)
@@ -611,6 +624,7 @@ namespace Terraria_Wiki.Services
         //重试失败列表
         public async Task RetryFailedItemsAsync(CancellationToken cancellationToken = default)
         {
+            if (!CanStartDownloadTask(AppTaskType.RetryFailed)) return;
             if (!await _downloadLock.WaitAsync(0)) return;
             try
             {
@@ -818,7 +832,7 @@ namespace Terraria_Wiki.Services
                     try
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        string jsonResponse = await NetworkService.GetStringAsync(currentUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2, cancellationToken: cancellationToken);
+                        string jsonResponse = await NetworkService.GetStringAsync(currentUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
                         retryCount = 0;
 
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -854,7 +868,9 @@ namespace Terraria_Wiki.Services
                                                (e is HttpRequestException or TaskCanceledException))
                     {
                         if (++retryCount > _maxRetryAttempts) throw;
-                        _log.Error(_loc.Get("DataService.Log.RequestFailedRetrying", e.Message, retryCount, _maxRetryAttempts));
+                        _log.Error(
+                            _loc.Get("DataService.Log.RequestFailedRetrying", retryCount, _maxRetryAttempts),
+                            e);
                         await Task.Delay(1000, cancellationToken);
                     }
                 }
@@ -883,7 +899,7 @@ namespace Terraria_Wiki.Services
                     {
                         string fullUrl = _baseUrl + nextUrl;
                         cancellationToken.ThrowIfCancellationRequested();
-                        string html = await NetworkService.GetStringAsync(fullUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2, cancellationToken: cancellationToken);
+                        string html = await NetworkService.GetStringAsync(fullUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
                         var doc = new HtmlDocument();
                         doc.LoadHtml(html);
                         var listItems = doc.DocumentNode.SelectNodes("//div[@class='mw-spcontent']//ol/li");
@@ -961,7 +977,6 @@ namespace Terraria_Wiki.Services
             using var writer = new BatchLineWriter(resListPath, 200);
             using var failedWriter = new BatchLineWriter(failedPageListPath, 200);
             int totalCount = 0;
-            int currentCount = 0;
             if (File.Exists(pageListPath))
             {
                 totalCount = File.ReadLines(pageListPath).Count();
@@ -1004,12 +1019,16 @@ namespace Terraria_Wiki.Services
                 }
                 finally
                 {
-                    int c = Interlocked.Increment(ref currentCount);
                     if (processed)
                     {
                         await MarkPageCompletedAsync();
+                        _log.Info(_loc.Get(
+                            "DataService.Log.PageCompleted",
+                            workerId,
+                            provider.CompletedItemCount,
+                            totalCount,
+                            page.Title));
                     }
-                    _log.Info(_loc.Get("DataService.Log.PageCompleted", workerId, c, totalCount, page.Title));
                 }
 
 
@@ -1054,7 +1073,6 @@ namespace Terraria_Wiki.Services
         private async Task DownloadResourcesBatchAsync(string resListPath, string failedResListPath, int maxConcurrency, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
             int totalCount = 0;
-            int currentCount = 0;
             if (File.Exists(resListPath))
             {
                 totalCount = File.ReadLines(resListPath).Count();
@@ -1102,18 +1120,17 @@ namespace Terraria_Wiki.Services
                 }
                 finally
                 {
-                    int c = Interlocked.Increment(ref currentCount);
                     if (processed)
                     {
                         await MarkResourceCompletedAsync();
-                    }
-                    if (changeData)
-                    {
-                        _log.Info(_loc.Get("DataService.Log.AssetCompleted", workerId, c, totalCount, fileName));
-                    }
-                    else
-                    {
-                        _log.Info(_loc.Get("DataService.Log.AssetSkipped", workerId, c, totalCount, fileName));
+                        _log.Info(_loc.Get(
+                            changeData
+                                ? "DataService.Log.AssetCompleted"
+                                : "DataService.Log.AssetSkipped",
+                            workerId,
+                            provider.CompletedItemCount,
+                            totalCount,
+                            fileName));
                     }
                 }
 
@@ -1184,7 +1201,7 @@ namespace Terraria_Wiki.Services
 
             var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
 
-            string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2, cancellationToken: cancellationToken);
+            string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
 
             var xmldoc = XDocument.Parse(xml);
 
@@ -1335,7 +1352,7 @@ namespace Terraria_Wiki.Services
             // 2. 下载资源，并在已有记录时使用 Last-Modified 进行条件请求
             var response = await NetworkService.GetBytesResponseAsync(
                 url,
-                useTls: App.AppStateManager?.ActiveWikiBook?.Id == 2,
+                useTls: false,
                 ifModifiedSince: existingAsset?.LastModified,
                 cancellationToken: cancellationToken);
 
