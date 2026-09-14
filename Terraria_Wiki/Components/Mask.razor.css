@@ -49,3 +49,9 @@
         height: calc(100vh - 2*var(--header-height));
     }
 }
+
+@media (min-width: 769px) and (max-height: 768px) {
+    .app-mask.mobile-only {
+        display: block;
+    }
+}

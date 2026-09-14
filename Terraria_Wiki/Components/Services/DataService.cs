@@ -193,7 +193,11 @@ namespace Terraria_Wiki.Services
             try
             {
                 InitializeSettings();
-                var wikiId = App.AppStateManager!.ActiveWikiBookId;
+                var wikiBook = App.AppStateManager!.ActiveWikiBook
+                    ?? throw new InvalidOperationException("当前 Wiki 不存在。");
+                var wikiId = wikiBook.Id;
+                var hadPages = wikiBook.IsPageDownloaded;
+                var hadResources = wikiBook.IsResourceDownloaded;
                 var existingResourceList = _resListPath;
                 var task = await GetOrCreateTaskAsync(
                     wikiId,
@@ -202,7 +206,7 @@ namespace Terraria_Wiki.Services
                     taskType == AppTaskType.DownloadResources
                         ? AppTaskPhase.DownloadingResources
                         : AppTaskPhase.FetchingLists);
-                await RunManagedTaskAsync(
+                var completed = await RunManagedTaskAsync(
                     task,
                     async token =>
                     {
@@ -214,6 +218,15 @@ namespace Terraria_Wiki.Services
                         await ExecuteDownloadAsync(task, token);
                     },
                     showError: true);
+
+                var finishedFirstDownload = completed &&
+                    ((!hadPages && wikiBook.IsPageDownloaded) ||
+                     (!hadResources && wikiBook.IsResourceDownloaded));
+                if (finishedFirstDownload)
+                {
+                    App.AppStateManager.ResetWikiNavigation();
+                    await AppService.WikiRefreshAsync();
+                }
             }
             finally
             {

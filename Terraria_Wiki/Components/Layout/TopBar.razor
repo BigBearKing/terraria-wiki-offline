@@ -3,7 +3,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @inject IJSRuntime JS
-<header class="top-bar">
+<header class="top-bar @(AppState.IsWindows ? "windows-top-bar" : "")">
 
     <div class="actions-wrapper">
         <button class="action-btn button mobile-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar">
@@ -83,6 +83,11 @@
     protected override async Task OnParametersSetAsync()
     {
         _isFavorite = await IsFavoritePageAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("fitTopBarTitle");
     }
 
     //刷新机制

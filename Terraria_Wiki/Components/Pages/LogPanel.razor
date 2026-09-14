@@ -176,6 +176,7 @@
         display: flex;
         flex-direction: column;
         bottom: 4px;
+        margin-right: var(--safe-area-right);
         transition: width 0.3s, left 0.3s;
         height: 50vh;
         background: var(--bg-color);
@@ -256,8 +257,9 @@
         .log-panel.collapsed {
             /* 1. 宽度占满屏幕 */
             left: 0;
-            right: 0;
-            width: 100vw;
+            right: var(--safe-area-right);
+            width: calc(100vw - var(--safe-area-right));
+            margin-right: 0;
             /* 2. 位居页面最下方 */
             bottom: 0;
             /* 3. 高度为屏幕一半 */

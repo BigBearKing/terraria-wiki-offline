@@ -67,8 +67,8 @@ body.has-hover .result-item:hover {
         bottom: max(56px, calc(var(--search-wrapper-bottom) + 40px)) !important;
         top: auto !important;
         left: 12px;
-        right: 12px;
-        width: calc(100% - 24px);
+        right: calc(12px + var(--safe-area-right));
+        width: calc(100% - 24px - var(--safe-area-right));
         max-height: 48vh;
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }

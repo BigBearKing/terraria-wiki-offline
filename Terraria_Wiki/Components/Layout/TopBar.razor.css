@@ -6,7 +6,7 @@
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
-    padding: max(6px, calc(var(--safe-area-top) + 2px)) 8px 6px 8px;
+    padding: var(--topbar-top-padding) 8px 6px 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */
@@ -145,6 +145,12 @@ body.has-hover .action-btn:hover {
     }
 
     .mobile-btn {
+        display: flex;
+    }
+}
+
+@media (min-width: 769px) and (max-height: 768px) {
+    .top-bar:not(.windows-top-bar) .mobile-btn {
         display: flex;
     }
 }

@@ -449,7 +449,18 @@ namespace Terraria_Wiki.Services
             }
             else
             {
-                tab.CurrentPage = null;
+                var defaultPageTitle = App.AppStateManager.ActiveWikiBook?.DefaultPageTitle
+                    ?? App.AppStateManager.ActiveWikiBook?.Title;
+
+                if (!string.IsNullOrWhiteSpace(defaultPageTitle))
+                {
+                    tab.Title = defaultPageTitle;
+                    tab.CurrentPage = new PageViewInfo
+                    {
+                        Title = defaultPageTitle,
+                        Position = 0
+                    };
+                }
             }
             return tab;
         }

@@ -3,9 +3,11 @@
     /* --- 默认：白色极简 (Light) --- */
     --sidebar-width-collapsed: 72px;
     --sidebar-width-expanded: 200px;
-    /* TabBar 高度：仅 Windows 上为 32px（html.windows 覆盖），其余平台为 0 */
+    /* 顶部布局：TabBar + TopBar 基础内容 + 顶部安全区 */
     --tabbar-height: 0px;
-    --header-height: calc(var(--tabbar-height) + max(6px, calc(var(--safe-area-top) + 2px)) + 42px);
+    --topbar-top-padding: max(6px, calc(var(--safe-area-top) + 2px));
+    --topbar-content-height: 42px;
+    --header-height: calc(var(--tabbar-height) + var(--topbar-top-padding) + var(--topbar-content-height));
     --bg-color: #ffffff;
     --bg-color-secondary: #f6f6f6;
     --text-primary: #111827;
@@ -142,6 +144,7 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    padding-right: var(--safe-area-right);
 }
 
 .content-container {

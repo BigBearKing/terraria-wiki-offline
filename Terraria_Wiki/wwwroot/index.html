@@ -88,6 +88,33 @@
             document.documentElement.style.setProperty('--global-keyboard-offset', height + 'px');
         };
 
+        window.fitTopBarTitle = () => {
+            const title = document.querySelector('.top-bar .page-title');
+            if (!title) return;
+
+            if (!title._fitTopBarTitle) {
+                const fit = () => {
+                    if (title._fitTopBarTitleFrame) return;
+                    title._fitTopBarTitleFrame = requestAnimationFrame(() => {
+                        title._fitTopBarTitleFrame = 0;
+                        title.style.fontSize = '';
+                        let fontSize = parseFloat(getComputedStyle(title).fontSize);
+
+                        while (title.scrollWidth > title.clientWidth && fontSize > 12) {
+                            fontSize -= 0.5;
+                            title.style.fontSize = `${fontSize}px`;
+                        }
+                    });
+                };
+
+                title._fitTopBarTitle = fit;
+                const observer = new ResizeObserver(fit);
+                if (title.parentElement) observer.observe(title.parentElement);
+            }
+
+            title._fitTopBarTitle();
+        };
+
 
     </script>
 </head>

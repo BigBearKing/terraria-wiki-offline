@@ -104,21 +104,11 @@
     display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 768px) {
     /* 隐藏顶部横向标签栏 */
     .tab-bar {
         display: none !important;
     }
-
-    /* Windows 上保留 32px 占位（含 data-tauri-drag-region 拖拽区），仅隐藏标签内容，避免拖窄窗口时布局跳动 */
-    .tab-bar.win-placeholder {
-        display: flex !important;
-    }
-
-        .tab-bar.win-placeholder .tab-list,
-        .tab-bar.win-placeholder .tab-add {
-            display: none;
-        }
 
     /* 垂直标签面板：从右上角下拉 */
     .tab-panel {
@@ -126,7 +116,7 @@
         flex-direction: column;
         position: fixed;
         top: calc(var(--header-height) + 4px);
-        right: 10px;
+        right: calc(10px + var(--safe-area-right));
         width: min(320px, calc(100vw - 32px));
         max-height: 50vh;
         background: var(--bg-color);
@@ -264,4 +254,21 @@
             background: var(--hover-bg);
             color: var(--text-primary);
         }
+}
+
+@media (max-width: 768px) {
+    .tab-bar.win-placeholder {
+        display: flex !important;
+    }
+
+    .tab-bar.win-placeholder .tab-list,
+    .tab-bar.win-placeholder .tab-add {
+        display: none;
+    }
+}
+
+@media (min-width: 769px) and (max-height: 768px) {
+    .tab-bar.win-placeholder {
+        display: flex !important;
+    }
 }
