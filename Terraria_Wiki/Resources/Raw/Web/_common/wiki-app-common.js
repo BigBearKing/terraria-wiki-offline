@@ -38,7 +38,7 @@
         }
     }
 
-    function refreshLocalizedUi() {
+    function refreshLocalizedUi(config) {
         const contextMenu = document.getElementById('custom-context-menu');
         if (contextMenu) {
             contextMenu.querySelector('#menu-copy').textContent = t('Web.Copy', 'Copy');
@@ -48,20 +48,15 @@
 
         const lastModified = document.getElementById('footer-info-lastmod');
         if (lastModified && lastModifiedValue) {
-            lastModified.textContent = t('Web.LastEdited', 'This page was last edited on ') + lastModifiedValue;
+            lastModified.textContent = (config?.lastModifiedPrefix || t('Web.LastEdited', 'This page was last edited on ')) + lastModifiedValue;
         }
     }
 
     /**
-     * 开始一次新的导航：隐藏加载遮罩并使导航版本号自增。
+     * 开始一次新的导航并使导航版本号自增。
      * @returns {number} 本次导航的版本号
      */
     function beginNavigation() {
-        const loadingMask = document.getElementById("loading-mask");
-        if (loadingMask) {
-            loadingMask.style.display = "none";
-        }
-
         navigationVersion += 1;
         return navigationVersion;
     }
@@ -93,8 +88,8 @@
         }
 
         await loadLocalization();
-        ensureCommonUI(); // 注入公共 UI（加载遮罩、右键菜单结构、公共样式）
-        refreshLocalizedUi();
+        ensureCommonUI(); // 注入公共 UI（右键菜单结构、公共样式）
+        refreshLocalizedUi(config);
 
         window.pageTitle = null; // 当前页面标题，初始为空
         registerHandlers(config); // 注册 C# -> JS 的消息处理器
@@ -120,7 +115,7 @@
             } catch (error) {
                 console.warn('Failed to apply iframe localization:', error);
             }
-            refreshLocalizedUi();
+            refreshLocalizedUi(config);
             config.refresh();
             return null;
         });
@@ -140,19 +135,8 @@
 
         // 返回首页并滚到顶部
         window.iframeBridge.registerHandler("BackHome", async () => {
-            // 显示加载遮罩，避免内容替换瞬间的视觉跳跃
-            const loadingMask = document.getElementById("loading-mask");
-            if (loadingMask) {
-                loadingMask.style.display = "block";
-            }
-            try {
-                await redirect(config.homePage, config);
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            } finally {
-                if (loadingMask) {
-                    loadingMask.style.display = "none";
-                }
-            }
+            await redirect(config.homePage, config);
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             return null;
         });
 
@@ -238,35 +222,19 @@
             title: window.pageTitle,
             position: window.pageYOffset
         };
-        const loadingMask = document.getElementById("loading-mask");
-        // 显示加载遮罩（仅当仍是当前导航时）
-        if (loadingMask && isCurrentNavigation(navigationId)) {
-            loadingMask.style.display = "block";
-        }
+        // 向 C# 查询：标题可能被重定向（如别名 -> 正式名），还可能带 #锚点
+        const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
+        if (!isCurrentNavigation(navigationId)) return;
 
-        try {
-            // 向 C# 查询：标题可能被重定向（如别名 -> 正式名），还可能带 #锚点
-            const titleWithAnchor = JSON.parse(await callCSharpAsync("GetRedirectedTitleAndAnchorAsync", title));
-            if (!isCurrentNavigation(navigationId)) return;
-
-            // 渲染重定向后的页面；若返回 null 说明导航已失效则中止
-            if (await redirect(titleWithAnchor.title, config, navigationId) == null || !isCurrentNavigation(navigationId)) return;
-            // 等待页面内所有图片加载完成，确保滚动定位基于最终布局高度
-            await waitForImages(document.getElementById("mw-content-text"));
-            if (!isCurrentNavigation(navigationId)) return;
-            // 跳到页面顶部
-            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            // 若带锚点，则平滑滚动到对应元素
-            if (titleWithAnchor.anchor) {
-                const element = document.getElementById(titleWithAnchor.anchor);
-                if (element) {
-                    element.scrollIntoView({ behavior: "smooth" });
-                }
-            }
-        } finally {
-            // 无论成功与否，隐藏加载遮罩
-            if (loadingMask && isCurrentNavigation(navigationId)) {
-                loadingMask.style.display = "none";
+        // 渲染重定向后的页面；若返回 null 说明导航已失效则中止
+        if (await redirect(titleWithAnchor.title, config, navigationId) == null || !isCurrentNavigation(navigationId)) return;
+        // 跳到页面顶部
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        // 若带锚点，则平滑滚动到对应元素
+        if (titleWithAnchor.anchor) {
+            const element = document.getElementById(titleWithAnchor.anchor);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth" });
             }
         }
 
@@ -277,29 +245,6 @@
     }
 
     /**
-     * 等待指定容器内的所有图片加载完成（成功或失败均视为完成），
-     * 确保页面布局高度已稳定后再进行滚动定位。
-     * @param {HTMLElement} root 需要等待图片的容器
-     * @returns {Promise<void>}
-     */
-    function waitForImages(root) {
-        const images = root.querySelectorAll('img');
-        const pending = Array.from(images).map((img) => {
-            // 已加载完成（含加载失败的空图）直接视为完成
-            if (img.complete) return Promise.resolve();
-            // 强制立即加载，防止 loading="lazy" 的图片在视口外不加载导致等待挂起
-            img.loading = 'eager';
-            return new Promise((resolve) => {
-                img.addEventListener('load', resolve, { once: true });
-                img.addEventListener('error', resolve, { once: true });
-                // 超时兜底，避免异常情况下永久挂起
-                setTimeout(resolve, 5000);
-            });
-        });
-        return Promise.all(pending);
-    }
-
-    /**
      * 返回到历史记录中的某一页：渲染该页并恢复其滚动位置。
      * @param {string} title 目标词条标题
      * @param {number} position 需要恢复的滚动位置（像素）
@@ -307,25 +252,9 @@
      * @param {number} [navigationId] 导航版本号
      */
     async function backToPage(title, position, config, navigationId = beginNavigation()) {
-        // 显示加载遮罩：页面内容替换与滚动定位在遮罩下完成，避免视觉跳跃
-        const loadingMask = document.getElementById("loading-mask");
-        if (loadingMask && isCurrentNavigation(navigationId)) {
-            loadingMask.style.display = "block";
-        }
-
-        try {
-            if (await redirect(title, config, navigationId) == null || !isCurrentNavigation(navigationId)) return;
-            // 等待页面内所有图片加载完成，确保滚动位置对应最终布局高度
-            await waitForImages(document.getElementById("mw-content-text"));
-            if (!isCurrentNavigation(navigationId)) return;
-            // 恢复滚动位置（瞬时滚动，不带动画）
-            window.scrollTo({ top: position, left: 0, behavior: 'instant' });
-        } finally {
-            // 新页面内容与滚动位置全部就绪后再隐藏遮罩，避免“跳一下”
-            if (loadingMask && isCurrentNavigation(navigationId)) {
-                loadingMask.style.display = "none";
-            }
-        }
+        if (await redirect(title, config, navigationId) == null || !isCurrentNavigation(navigationId)) return;
+        // 恢复滚动位置（瞬时滚动，不带动画）
+        window.scrollTo({ top: position, left: 0, behavior: 'instant' });
     }
 
     /**
@@ -346,7 +275,7 @@
         document.getElementById("mw-content-text").innerHTML = result.content;
         lastModifiedValue = result.lastModified;
         document.getElementById("footer-info-lastmod").textContent =
-            t('Web.LastEdited', config.lastModifiedPrefix || 'This page was last edited on ') + result.lastModified;
+            (config.lastModifiedPrefix || t('Web.LastEdited', 'This page was last edited on ')) + result.lastModified;
 
         // 首页特殊处理：通过 body 上的类名控制首页样式
         const isHomePage = title === config.homePage;
@@ -364,7 +293,6 @@
 
         // 调用配置中的刷新回调（例如重新运行页面脚本、刷新锚点等）
         config.refresh();
-        await waitForImages(document.getElementById("mw-content-text"));
         window.parent.postMessage({ type: "event", method: "IframePageReady", data: null }, '*');
         return true;
     }
@@ -410,20 +338,11 @@
     /**
      * 注入所有 wiki 页面共用的 UI 元素与样式。
      *
-     * 原先这些内容（加载遮罩、自定义右键菜单的 HTML 结构，以及滚动条、
+     * 原先这些内容（自定义右键菜单的 HTML 结构，以及滚动条、
      * Viewer 动画、右键菜单等公共 CSS）在各站点的 index.html 中重复出现，
      * 现统一由本函数动态创建，保证所有页面外观与行为一致。
      */
     function ensureCommonUI() {
-        // ---- 加载遮罩：页面切换时用于遮挡内容替换过程 ----
-        if (!document.getElementById("loading-mask")) {
-            const loadingMask = document.createElement("div");
-            loadingMask.id = "loading-mask";
-            loadingMask.style.cssText =
-                "display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; -webkit-backdrop-filter: blur(150px); backdrop-filter: blur(150px);";
-            document.body.appendChild(loadingMask);
-        }
-
         // ---- 自定义右键菜单结构（仅桌面端使用，initContextMenu 中绑定行为）----
         if (!document.getElementById("custom-context-menu")) {
             const menu = document.createElement("div");

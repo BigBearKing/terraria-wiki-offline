@@ -40,6 +40,7 @@
 		<!-- Versions -->
 		<ApplicationDisplayVersion>0.4.0</ApplicationDisplayVersion>
 		<ApplicationVersion>4</ApplicationVersion>
+		<PackageVersion>0.4.0</PackageVersion>
 		<Company>BigBearKingdom</Company>
 
 		<Authors>BigBearKing</Authors>

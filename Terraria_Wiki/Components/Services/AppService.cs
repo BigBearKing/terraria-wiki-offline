@@ -156,6 +156,7 @@ namespace Terraria_Wiki.Services
         private void RegisterIframeActions()
         {
             IframeBridge.Actions["PageRedirectAsync"] = PageRedirectAsync;
+            IframeBridge.Actions["SyncCurrentWikiPage"] = SyncCurrentWikiPageAsync;
             IframeBridge.Actions["GetRedirectedTitleAndAnchorAsync"] = GetRedirectedTitleAndAnchorAsync;
             IframeBridge.Actions["SaveToTabHistory"] = SaveToTabHistoryAsync;
             IframeBridge.Actions["WikiBackAsync"] = WikiBackActionAsync;
@@ -172,23 +173,32 @@ namespace Terraria_Wiki.Services
             return Task.FromResult(IframeBridge.ObjToJson(translations));
         }
 
+        private Task<string> SyncCurrentWikiPageAsync(string title)
+        {
+            App.AppStateManager.CurrentWikiPage = title;
+
+            var tab = App.AppStateManager.GetActiveTab();
+            if (tab != null)
+                tab.CurrentPage = new PageViewInfo { Title = title, Position = 0 };
+
+            return Task.FromResult<string>(null);
+        }
+
         private async Task<string> PageRedirectAsync(string title)
         {
-            WikiPage page;
-            if (await App.ContentDb.ItemExistsAsync<WikiPage>(title))
-                page = await App.ContentDb.GetItemAsync<WikiPage>(title);
-            else if (await App.ContentDb.ItemExistsAsync<WikiRedirect>(title))
+            var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
+            if (page == null)
             {
                 var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
-                page = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
+                if (redirect != null)
+                    page = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
             }
-            else
+
+            if (page == null)
             {
                 App.AppStateManager.TriggerAlert(App.Localization!.Get("Common.Notice"), App.Localization!.Get("AppService.PageNotFound"));
                 return null;
             }
-
-            if (page == null) return null;
 
             var result = new WikiPageStringTime
             {

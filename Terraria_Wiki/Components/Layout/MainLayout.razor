@@ -19,7 +19,7 @@
             <div class="iframe-container page-anim"
                  style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
 
-                <iframe src="@src"
+                <iframe @key="src" src="@src"
                         class="wiki-frame" id="wiki-frame">
                 </iframe>
             </div>
@@ -34,6 +34,7 @@
 
     string iframeTheme;
     string src;
+    string wikiFrameVersion = Guid.NewGuid().ToString("N");
     bool isMobile;
     bool isAppReady;
 
@@ -68,11 +69,13 @@
 
     private string BuildWikiFrameUrl()
     {
-        return $"http://127.0.0.1:55000?theme={iframeTheme}&isMobile={isMobile}&v={DateTime.UtcNow.Ticks}";
+        var wikiFolder = Uri.EscapeDataString(AppState.ActiveWikiBook?.DataFolder ?? "default");
+        return $"http://127.0.0.1:55000/?theme={iframeTheme}&isMobile={isMobile}&book={wikiFolder}&v={wikiFrameVersion}";
     }
 
     private void OnWikiBookSwitched()
     {
+        wikiFrameVersion = Guid.NewGuid().ToString("N");
         src = BuildWikiFrameUrl();
         RefreshUI();
     }
@@ -129,6 +132,7 @@
     private async Task InitializeAfterBlazorBeforePageDisplayAsync()
     {
         await ((App)Application.Current!).InitializationTask;
+        src = BuildWikiFrameUrl();
 
         AppState.Init(JS);
         IframeBridge.Init(JS);

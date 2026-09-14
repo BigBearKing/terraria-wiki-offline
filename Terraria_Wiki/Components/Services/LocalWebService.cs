@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Collections.Concurrent;
 using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services
@@ -10,6 +11,7 @@ namespace Terraria_Wiki.Services
         private HttpListener _listener;
         private readonly ContentDbService _dbService;
         private readonly string _prefix;
+        private readonly ConcurrentDictionary<string, (byte[] Data, string ContentType)> _staticFileCache = new();
 
         // 构造函数注入数据库服务
         public LocalWebServer(ContentDbService dbService)
@@ -91,17 +93,18 @@ namespace Terraria_Wiki.Services
             var request = context.Request;
             var response = context.Response;
 
-            // 获取路径，例如 "/index.html" 或 "/db/sword.png"
-            // UrlDecode 很重要，防止文件名中有空格被转义成 %20
-            string rawPath = request.Url?.AbsolutePath ?? "/";
-            string path = WebUtility.UrlDecode(rawPath);
-
             byte[]? buffer = null;
             string contentType = "text/plain";
             int statusCode = 200;
+            string path = "/";
 
             try
             {
+                // 获取路径，例如 "/index.html" 或 "/src/sword.png"。
+                // UrlDecode 很重要，防止文件名中有空格被转义成 %20。
+                // 注意：解析必须在 try 内，否则异常会逃逸成"未观察到的任务异常"，
+                // 导致该请求拿到零响应（浏览器侧表现为 ERR_EMPTY_RESPONSE）。
+                path = WebUtility.UrlDecode(request.Url?.AbsolutePath ?? "/");
                 // ==========================================
                 // 路由策略 1: 数据库资源 (/db/...)
                 // ==========================================
@@ -120,15 +123,15 @@ namespace Terraria_Wiki.Services
                     }
                     else
                     {
-                        contentType = GetMimeType(fileName);
-                        if (contentType == "image/svg+xml")
-                        {
-                            buffer = Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>");
-                        }
-                        else
-                        {
-                            buffer = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
-                        }
+                        // 数据库里没有这条资源：返回 1×1 透明占位图，避免页面布局塌陷。
+                        // ContentType 必须与占位图字节一致，否则浏览器按图片解码会失败。
+                        Debug.WriteLine($"[Asset Miss] {fileName}");
+
+                        bool wantSvg = GetMimeType(fileName) == "image/svg+xml";
+                        contentType = wantSvg ? "image/svg+xml" : "image/png";
+                        buffer = wantSvg
+                            ? Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>")
+                            : Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
                     }
                 }
                 // ==========================================
@@ -182,6 +185,12 @@ namespace Terraria_Wiki.Services
                         buffer = ms.ToArray();
 
                         contentType = GetMimeType(path);
+
+                        if (path.Equals("/index.html", StringComparison.OrdinalIgnoreCase))
+                            buffer = AddWikiResourceVersion(buffer);
+
+                        if (IsCacheableStaticFile(path))
+                            _staticFileCache.TryAdd(assetPath, (buffer, contentType));
                     }
                     else
                     {
@@ -194,7 +203,7 @@ namespace Terraria_Wiki.Services
             catch (Exception ex)
             {
                 statusCode = 500;
-                Debug.WriteLine($"[Server Error] {ex.Message}");
+                Debug.WriteLine($"[Server Error] {path} : {ex.Message}");
             }
 
             // ==========================================
@@ -208,15 +217,46 @@ namespace Terraria_Wiki.Services
                 // 解决跨域问题 (CORS)，防止 WebView 报错
                 response.Headers.Add("Access-Control-Allow-Origin", "*");
 
+                if (buffer != null && statusCode == 200)
+                {
+                    // ETag 必须是纯 ASCII：中文、全角标点等字符在写入表头时会被按 Latin-1
+                    // 截断成低字节，例如全角括号 "（"(U+FF08) 会变成控制字符 0x08，
+                    // 使 WebHeaderCollection 抛 ArgumentException 并中断整个响应。
+                    // 灾厄中文 wiki 大量使用中文文件名 + 全角括号消歧义后缀，正是踩中这一点。
+                    var wikiKey = Uri.EscapeDataString(App.AppStateManager.ActiveWikiBook?.DataFolder ?? "default");
+                    var etag = $"\"{wikiKey}:{Uri.EscapeDataString(path)}:{buffer.Length:x}\"";
+                    response.Headers["ETag"] = etag;
+
+                    if (string.Equals(request.Headers["If-None-Match"], etag, StringComparison.Ordinal))
+                    {
+                        response.StatusCode = 304;
+                        response.ContentLength64 = 0;
+                        return;
+                    }
+
+                    response.Headers["Cache-Control"] = IsLongLivedStaticFile(path)
+                        ? "public, max-age=31536000, immutable"
+                        : "no-cache";
+                }
+
                 if (buffer != null)
                 {
                     response.ContentLength64 = buffer.Length;
                     await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                 }
-
-                response.Close();
             }
-            catch { /* 忽略响应发送失败（比如客户端断开连接） */ }
+            catch (Exception ex)
+            {
+                // 不要静默吞掉：客户端断开是常见情况，但写表头失败等错误必须留下线索。
+                Debug.WriteLine($"[Response Error] {path} : {ex.Message}");
+            }
+            finally
+            {
+                // 无论成功、异常还是提前 return，都必须关闭响应。
+                // 否则连接会被一直占用，同域连接（Chromium 为 6 条）耗尽后，
+                // 后续图片请求只会排队而不会发出。
+                try { response.Close(); } catch { }
+            }
         }
 
         // 简单的 MIME 类型映射辅助方法
@@ -238,6 +278,48 @@ namespace Terraria_Wiki.Services
                 ".json" => "application/json",
                 _ => "application/octet-stream"
             };
+        }
+
+        private static bool IsCacheableStaticFile(string path)
+        {
+            var extension = Path.GetExtension(path);
+            return extension.Equals(".css", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".js", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".woff", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".woff2", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".svg", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".gif", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsLongLivedStaticFile(string path)
+        {
+            return path.StartsWith("/_common/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static byte[] AddWikiResourceVersion(byte[] html)
+        {
+            var bookKey = App.AppStateManager.ActiveWikiBook?.DataFolder ?? "default";
+            var version = Uri.EscapeDataString(bookKey);
+            var content = Encoding.UTF8.GetString(html);
+
+            content = content.Replace("src=\"/_common/iframe-bridge.js\"", $"src=\"/_common/iframe-bridge.js?book={version}\"")
+                .Replace("src=\"/_common/wiki-app-common.js\"", $"src=\"/_common/wiki-app-common.js?book={version}\"")
+                .Replace("src=\"/_common/wiki-math.js\"", $"src=\"/_common/wiki-math.js?book={version}\"")
+                .Replace("src=\"/_common/handy-scroll.js\"", $"src=\"/_common/handy-scroll.js?book={version}\"")
+                .Replace("src=\"/_common/viewer/viewer.min.js\"", $"src=\"/_common/viewer/viewer.min.js?book={version}\"")
+                .Replace("href=\"/_common/viewer/viewer.min.css\"", $"href=\"/_common/viewer/viewer.min.css?book={version}\"")
+                .Replace("src=\"app.js\"", $"src=\"app.js?book={version}\"")
+                .Replace("href=\"vector.css\"", $"href=\"vector.css?book={version}\"")
+                .Replace("href=\"common.css\"", $"href=\"common.css?book={version}\"")
+                .Replace("href=\"Nunito.css\"", $"href=\"Nunito.css?book={version}\"")
+                .Replace("href=\"layout.css\"", $"href=\"layout.css?book={version}\"")
+                .Replace("href=\"theme/dark.css\"", $"href=\"theme/dark.css?book={version}\"")
+                .Replace("href=\"theme/light.css\"", $"href=\"theme/light.css?book={version}\"");
+
+            return Encoding.UTF8.GetBytes(content);
         }
     }
 }
