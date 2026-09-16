@@ -63,6 +63,7 @@
     private List<WikiBook> _wikiBookList = [];
     private List<WikiBook> _filteredWikiList = [];
     private string _langFilter = "all";
+    private bool _hasCustomLangFilter;
     private readonly Dictionary<int, AppTask> _downloadTasks = [];
 
     protected override void OnInitialized()
@@ -77,12 +78,26 @@
         Loc.OnChange -= RefreshUI;
     }
 
-    private void RefreshUI() => InvokeAsync(StateHasChanged);
+    private void RefreshUI()
+    {
+        if (!_hasCustomLangFilter)
+        {
+            _langFilter = GetDefaultLangFilter();
+            ApplyLangFilter();
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只关心 ActiveWikiBookId 变化（切换 wiki 时重新加载列表）
-        if (e.PropertyName is nameof(AppState.ActiveWikiBookId) or nameof(AppState.CurrentDownloadTask))
+        if (e.PropertyName == nameof(AppState.ActiveWikiBookId))
+        {
+            _hasCustomLangFilter = false;
+            RefreshUI();
+        }
+        else if (e.PropertyName == nameof(AppState.CurrentDownloadTask))
         {
             if (AppState.CurrentDownloadTask?.WikiId is int wikiId)
                 _downloadTasks[wikiId] = AppState.CurrentDownloadTask;
@@ -99,6 +114,7 @@
                                     .GroupBy(t => t.WikiId!.Value)
                                     .Select(g => g.OrderByDescending(t => t.UpdatedTime).First()))
             _downloadTasks[task.WikiId!.Value] = task;
+        _langFilter = GetDefaultLangFilter();
         ApplyLangFilter();
     }
 
@@ -128,15 +144,33 @@
     private void SetLangFilter(string filter)
     {
         _langFilter = filter;
+        _hasCustomLangFilter = true;
         ApplyLangFilter();
     }
+
+    private string GetDefaultLangFilter()
+    {
+        var activeWiki = AppState.ActiveWikiBook
+            ?? _wikiBookList.FirstOrDefault(w => w.Id == AppState.ActiveWikiBookId);
+
+        return GetLangFilter(activeWiki?.Language)
+            ?? GetLangFilter(AppState.CurrentLanguage)
+            ?? "all";
+    }
+
+    private static string? GetLangFilter(string? language) =>
+        language?.StartsWith("zh", StringComparison.OrdinalIgnoreCase) == true
+            ? "zh"
+            : language?.StartsWith("en", StringComparison.OrdinalIgnoreCase) == true
+                ? "en"
+                : null;
 
     private void ApplyLangFilter()
     {
         _filteredWikiList = _langFilter switch
         {
-            "zh" => _wikiBookList.Where(w => w.Language == "zh").ToList(),
-            "en" => _wikiBookList.Where(w => w.Language == "en").ToList(),
+            "zh" => _wikiBookList.Where(w => string.Equals(w.Language, "zh", StringComparison.OrdinalIgnoreCase)).ToList(),
+            "en" => _wikiBookList.Where(w => string.Equals(w.Language, "en", StringComparison.OrdinalIgnoreCase)).ToList(),
             _ => _wikiBookList
         };
     }

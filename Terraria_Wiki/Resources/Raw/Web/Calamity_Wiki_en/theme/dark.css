@@ -1,6 +1,6 @@
 html.dark {
     --wiki-body-background-color: #1E1F21;
-    --wiki-body-background-image: url(./images/main/Site-background.jpg);
+    --wiki-body-background-image: url(/images/main/Site-background.jpg);
     --wiki-body-background-position: top center;
     --wiki-body-background-size: cover;
     --wiki-body-background-repeat: no-repeat;

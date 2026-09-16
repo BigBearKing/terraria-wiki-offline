@@ -720,21 +720,22 @@ table.calamityajax {
 .catalyst-crystal {
     width: 82px;
     height: 50px;
-    background: url('https://huiji-public.huijistatic.com/calamity/uploads/e/e6/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
+    background: url('images/main/catalyst-crystal.gif') center center no-repeat;
     background-size: cover;
 }
  
 .catalyst-rainbow {
     width: 200px;
     height: 50px;
-    background: url('https://huiji-public.huijistatic.com/calamity/uploads/6/6f/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E5%BD%A9%E8%99%B9%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
+    background: url('images/main/catalyst-rainbow.gif') center center no-repeat;
     background-size: cover;
 }
  
+/* 原图 https://huiji-public.huijistatic.com/calamity/uploads/f/f2/稀有度-灾劫-烈焰水晶.webp
+   已从灰机 CDN 删除（404），无法下载离线化，故移除远程引用（渲染效果与现行官网一致）。 */
 .catalyst-blazing {
     width: 200px;
     height: 50px;
-    background: url('https://huiji-public.huijistatic.com/calamity/uploads/f/f2/%E7%A8%80%E6%9C%89%E5%BA%A6-%E7%81%BE%E5%8A%AB-%E7%83%88%E7%84%B0%E6%B0%B4%E6%99%B6.webp') center center no-repeat;
     background-size: cover;
 }
  

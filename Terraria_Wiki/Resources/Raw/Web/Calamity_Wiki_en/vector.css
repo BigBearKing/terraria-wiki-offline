@@ -216,7 +216,7 @@ div.thumbinner {
         overflow: hidden;
         width: 15px;
         height: 11px;
-        background-image: url(/mw-1.43/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e);
+        background-image: url(images/mediawiki/magnify-clip-ltr.svg);
         -webkit-user-select: none;
         -moz-user-select: none;
         user-select: none
@@ -227,7 +227,7 @@ div.thumbinner {
     }
 
     .mw-content-ltr .magnify a {
-        background-image: url(/mw-1.43/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e)
+        background-image: url(images/mediawiki/magnify-clip-ltr.svg)
     }
 
     .mw-content-rtl .magnify {
@@ -235,7 +235,7 @@ div.thumbinner {
     }
 
     .mw-content-rtl .magnify a {
-        background-image: url(/mw-1.43/resources/src/mediawiki.skinning/images/magnify-clip-rtl.svg?38fd5)
+        background-image: url(images/mediawiki/magnify-clip-rtl.svg)
     }
 
     a.new {
@@ -809,7 +809,7 @@ div.thumbinner {
     }
 
     ul {
-        list-style-image: url(/mw-1.43/skins/Vector/resources/skins.vector.styles.legacy/images/bullet-icon.svg?d4515)
+        list-style-image: url(images/mediawiki/bullet-icon.svg)
     }
 
     pre,
@@ -991,7 +991,7 @@ div.thumbinner {
     }
 
     .mw-parser-output a.external {
-        background-image: url(/mw-1.43/skins/Vector/resources/skins.vector.styles.legacy/images/link-external-small-ltr-progressive.svg?fb64d);
+        background-image: url(images/mediawiki/link-external-small-ltr-progressive.svg);
         background-position: center right;
         background-repeat: no-repeat;
         background-size: 0.857em;
