@@ -31,7 +31,7 @@
     --safe-area-left: 0px;
     --safe-area-right: 0px;
     --global-keyboard-offset: 0px;
-    --search-wrapper-bottom: max(16px, var(--safe-area-bottom), calc(var(--global-keyboard-offset) + 4px));
+    --search-wrapper-bottom: max(16px, var(--safe-area-bottom) + 4px, calc(var(--global-keyboard-offset) + 4px));
 }
 /* --- Windows 桌面：顶部还有 32px 高的 TabBar，计入 --header-height --- */
 html.windows {
@@ -90,7 +90,6 @@ html, body {
     position: relative;
     /* 防止移动端点击出现高亮背景块 */
     -webkit-tap-highlight-color: transparent;
-
 }
 
 /* 全局基础样式 */
@@ -210,7 +209,7 @@ body {
 .page-title {
     font-size: 1.4rem;
     font-weight: 700;
-    color:var(--text-primary);
+    color: var(--text-primary);
 }
 
 .sub-text {
@@ -281,4 +280,4 @@ body.has-hover .button:hover {
         .sidebar.expanded {
             transform: translateX(0);
         }
-    }
+}

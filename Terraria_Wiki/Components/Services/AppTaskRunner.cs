@@ -234,10 +234,23 @@ public sealed class AppTaskRunner
             return true;
 
 #if ANDROID
-        if (!await AndroidNotificationPermissionService.EnsureGrantedAsync())
+        if (!AndroidPermissionService.AreDownloadPermissionsGranted())
         {
-            ShowAlert("Common.Notice", "AppTask.NotificationPermissionRequired");
-            return false;
+            var page = Application.Current?.Windows.FirstOrDefault()?.Page;
+            if (page is null)
+                return false;
+
+            var openSettings = await page.DisplayAlertAsync(
+                _loc.Get("AppTask.PermissionsRequiredTitle"),
+                _loc.Get("AppTask.PermissionsRequired"),
+                _loc.Get("AppTask.OpenSettings"),
+                _loc.Get("AppTask.Ignore"));
+
+            if (openSettings)
+            {
+                AndroidPermissionService.OpenAppSettings();
+                return false;
+            }
         }
 #endif
 

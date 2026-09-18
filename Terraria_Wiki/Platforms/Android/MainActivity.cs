@@ -50,6 +50,13 @@ namespace Terraria_Wiki
 
 
         }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            AndroidPermissionService.NotifyResumed();
+        }
+
         public void ChangeStatusBarColor()
         {
             // 3. 处理图标文字的颜色（和之前一样）

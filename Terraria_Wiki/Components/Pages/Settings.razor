@@ -46,6 +46,49 @@
             </div>
         </div>
 
+        @if (AppState.IsAndroid)
+        {
+            <div class="category-card">
+                <span class="category-title">@Loc.Get("Settings.Permissions")</span>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.NetworkPermission")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.NetworkPermissionDesc")</span>
+                    </div>
+                    <button class="button setting-btn"
+                            disabled="@IsPermissionGranted(AndroidPermissionType.Network)"
+                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Network)">
+                        @GetPermissionButtonText(AndroidPermissionType.Network)
+                    </button>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.NotificationPermission")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.NotificationPermissionDesc")</span>
+                    </div>
+                    <button class="button setting-btn"
+                            disabled="@IsPermissionGranted(AndroidPermissionType.Notifications)"
+                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Notifications)">
+                        @GetPermissionButtonText(AndroidPermissionType.Notifications)
+                    </button>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.BackgroundPermission")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.BackgroundPermissionDesc")</span>
+                    </div>
+                    <button class="button setting-btn"
+                            disabled="@IsPermissionGranted(AndroidPermissionType.Background)"
+                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Background)">
+                        @GetPermissionButtonText(AndroidPermissionType.Background)
+                    </button>
+                </div>
+            </div>
+        }
+
         <div class="category-card">
             <span class="category-title">@Loc.Get("Settings.Shortcuts")</span>
             <div class="setting-item">
@@ -238,6 +281,9 @@
         }
         AppState.PropertyChanged += OnAppStatePropertyChanged;
         Loc.OnChange += RefreshUI;
+#if ANDROID
+        AndroidPermissionService.PermissionStateChanged += RefreshUI;
+#endif
     }
 
     private StorageLocationMode _pendingStorageMode;
@@ -317,11 +363,36 @@
     {
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
         Loc.OnChange -= RefreshUI;
+#if ANDROID
+        AndroidPermissionService.PermissionStateChanged -= RefreshUI;
+#endif
     }
 
     private void RefreshUI()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsPermissionGranted(AndroidPermissionType permission)
+    {
+#if ANDROID
+        return AndroidPermissionService.IsGranted(permission);
+#else
+        return false;
+#endif
+    }
+
+    private string GetPermissionButtonText(AndroidPermissionType permission) =>
+        IsPermissionGranted(permission)
+            ? Loc.Get("Settings.PermissionGranted")
+            : Loc.Get("Settings.PermissionRequest");
+
+    private async Task RequestPermissionAsync(AndroidPermissionType permission)
+    {
+#if ANDROID
+        await AndroidPermissionService.RequestAsync(permission);
+        await InvokeAsync(StateHasChanged);
+#endif
     }
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
