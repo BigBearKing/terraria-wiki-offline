@@ -98,28 +98,12 @@ namespace Terraria_Wiki
             return blazorWebView.Handler?.PlatformView != null;
         }
 
-        public async Task ShowWebViewMissingAlertAsync()
+        public Task ShowWebViewMissingAlertAsync()
         {
-#if WINDOWS
-            bool install = await DisplayAlertAsync(
-                App.Localization!.Get("MainPage.WebViewMissingTitle"),
-                App.Localization.Get("MainPage.WebViewMissingDescription"),
-                App.Localization.Get("MainPage.WebViewInstall"),
-                App.Localization.Get("Common.Cancel"));
+            if (Application.Current?.Windows[0] is { } window)
+                window.Page = new WebViewUnavailablePage(App.Localization!);
 
-            if (install)
-            {
-                await Browser.Default.OpenAsync(
-                    "https://developer.microsoft.com/microsoft-edge/webview2/",
-                    BrowserLaunchMode.SystemPreferred);
-            }
-#else
-            await DisplayAlertAsync(
-                App.Localization!.Get("MainPage.WebViewMissingTitle"),
-                App.Localization.Get("MainPage.WebViewUnavailableDescription"),
-                App.Localization.Get("Common.OK"));
-#endif
-            Application.Current.Quit();
+            return Task.CompletedTask;
         }
 
         public void ShowLoadingPopup(string title, string message)
@@ -400,4 +384,3 @@ namespace Terraria_Wiki
 
     }
 }
-

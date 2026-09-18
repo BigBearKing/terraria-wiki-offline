@@ -71,29 +71,22 @@ public class LegacyUpgradeHandler
 
     private void MigrateFailedListsOnce(WikiBook activeBook)
     {
-        var dataDir = Path.Combine(_appDataDir, activeBook.DataFolder);
         var taskDir = Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "legacy-upgrade");
-        Directory.CreateDirectory(taskDir);
 
-        MoveIfExists(
-            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_pages.txt"),
-            Path.Combine(taskDir, "failed_pages.txt"));
-        MoveIfExists(
-            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_resources.txt"),
-            Path.Combine(taskDir, "failed_resources.txt"));
-        MoveIfExists(
-            Path.Combine(taskDir, "failed_pages.pending.txt"),
-            Path.Combine(taskDir, "failed_pages.pending.txt"));
-        MoveIfExists(
-            Path.Combine(taskDir, "failed_resources.pending.txt"),
-            Path.Combine(taskDir, "failed_resources.pending.txt"));
+        // Current downloads use the Wiki task root for public failure lists.
+        // Only restore files moved by the previous migration logic; never move
+        // current failure lists out of the location used by DataService.
+        RestoreIfMissing(
+            Path.Combine(taskDir, "failed_pages.txt"),
+            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_pages.txt"));
+        RestoreIfMissing(
+            Path.Combine(taskDir, "failed_resources.txt"),
+            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_resources.txt"));
     }
 
-    private static void MoveIfExists(string sourcePath, string targetPath)
+    private static void RestoreIfMissing(string sourcePath, string targetPath)
     {
-        if (!File.Exists(sourcePath)) return;
-        if (File.Exists(targetPath))
-            File.Delete(targetPath);
+        if (!File.Exists(sourcePath) || File.Exists(targetPath)) return;
         File.Move(sourcePath, targetPath);
     }
 

@@ -188,7 +188,15 @@ namespace Terraria_Wiki.Services
 
         private async Task RunDownloadAsync(bool includeResources, AppTaskType taskType)
         {
-        if (!CanStartDownloadTask(taskType)) return;
+            if (!NetworkService.IsNetworkAvailable)
+            {
+                App.AppStateManager?.TriggerAlert(
+                    _loc.Get("Common.Notice"),
+                    _loc.Get("AppTask.NetworkUnavailable"));
+                return;
+            }
+
+            if (!CanStartDownloadTask(taskType)) return;
             if (!await _downloadLock.WaitAsync(0)) return;
             try
             {
@@ -717,13 +725,15 @@ namespace Terraria_Wiki.Services
             }
 
             bool hasFailedItems = FileHelper.IsFileValid(_failedPageListPath) || FileHelper.IsFileValid(_failedResListPath);
-            task.Status = hasFailedItems ? AppTaskStatus.Paused : AppTaskStatus.Completed;
-            if (!hasFailedItems)
-                task.Phase = AppTaskPhase.PostProcessing;
+            task.Status = AppTaskStatus.Completed;
+            task.Phase = AppTaskPhase.PostProcessing;
             await SaveAppTaskAsync();
             await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
-            _log.Success(_loc.Get("DataService.Log.RetryCompleted"));
-            App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get("DataService.Log.RetryCompleted"));
+            var retryMessageKey = hasFailedItems
+                ? "DataService.Log.RetryCompletedWithFailures"
+                : "DataService.Log.RetryCompleted";
+            _log.Success(_loc.Get(retryMessageKey));
+            App.AppStateManager?.TriggerAlert(_loc.Get("Common.Notice"), _loc.Get(retryMessageKey));
         }
 
         public async Task ClearFailedListAsync()

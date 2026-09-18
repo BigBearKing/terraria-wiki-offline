@@ -135,7 +135,9 @@
                 <div class="download-progress-panel">
                     <div class="download-progress-heading">
                         <span>@GetDownloadPhaseText()</span>
-                        <span>@GetDownloadProgressText()</span>
+                        <span>
+                            @GetDownloadProgressText()
+                        </span>
                     </div>
                     <div class="download-progress-track" role="progressbar" aria-valuenow="@CurrentDownloadTask.Progress" aria-valuemin="0" aria-valuemax="100">
                         <div class="download-progress-fill @GetProgressBarClass()" style="@GetProgressStyle()"></div>
@@ -164,6 +166,9 @@
     {
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
         Loc.OnChange -= RefreshUI;
+
+        if (CurrentDownloadTask?.IsInitialListFailure() == true)
+            AppState.SetCurrentDownloadTask(null);
     }
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -272,11 +277,16 @@
         };
     }
 
-    private string GetDownloadProgressText() =>
-        CurrentDownloadTask?.Status != AppTaskStatus.Failed &&
-        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
-            ? Loc.Get("DataManagementDetails.ProgressIndeterminate")
-            : $"{CurrentDownloadTask?.Progress:F1}%";
+    private string GetDownloadProgressText()
+    {
+        if (CurrentDownloadTask?.Status == AppTaskStatus.Paused)
+            return Loc.Get("DataManagement.TaskPaused");
+
+        return CurrentDownloadTask?.Status != AppTaskStatus.Failed &&
+            CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
+                ? Loc.Get("DataManagementDetails.ProgressIndeterminate")
+                : $"{CurrentDownloadTask?.Progress:F1}%";
+    }
 
     private string GetProgressBarClass() =>
         CurrentDownloadTask?.Status == AppTaskStatus.Failed

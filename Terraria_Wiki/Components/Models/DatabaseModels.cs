@@ -106,6 +106,12 @@ public class AppTask
     public bool IsDownloadTask() => TaskType is AppTaskType.DownloadPages or AppTaskType.DownloadResources or
         AppTaskType.DownloadAll or AppTaskType.UpdatePages or AppTaskType.UpdateAll or AppTaskType.RetryFailed;
 
+    public bool IsInitialListFailure() =>
+        Status == AppTaskStatus.Failed &&
+        Phase == AppTaskPhase.FetchingLists &&
+        CompletedPages == 0 &&
+        CompletedResources == 0;
+
     public void LoadTaskData()
     {
         AppTaskData data;

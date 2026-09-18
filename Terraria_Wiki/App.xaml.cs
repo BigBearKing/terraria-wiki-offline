@@ -36,11 +36,19 @@ namespace Terraria_Wiki
 
             InitializeNativeStateBeforeBlazor();
 
+#if WINDOWS
+            if (!IsWindowsWebViewAvailable())
+            {
+                MainPage = new WebViewUnavailablePage(localizationService);
+                InitializationTask = InitializeUnavailablePageAsync();
+                return;
+            }
+#endif
 #if ANDROID
             if (!AndroidSystemWebViewService.IsAvailable)
             {
-                MainPage = new WebViewUnavailablePage();
-                InitializationTask = Task.CompletedTask;
+                MainPage = new WebViewUnavailablePage(localizationService);
+                InitializationTask = InitializeUnavailablePageAsync();
                 return;
             }
 #endif
@@ -50,10 +58,31 @@ namespace Terraria_Wiki
             InitializationTask = InitializeBeforeBlazorAsync();
         }
 
+        private async Task InitializeUnavailablePageAsync()
+        {
+            await Localization!.InitializeAsync();
+        }
+
         private void InitializeNativeStateBeforeBlazor()
         {
             ThemeService.InitTheme();
         }
+
+#if WINDOWS
+        private static bool IsWindowsWebViewAvailable()
+        {
+            try
+            {
+                return !string.IsNullOrWhiteSpace(
+                    Microsoft.Web.WebView2.Core.CoreWebView2Environment.GetAvailableBrowserVersionString());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Windows WebView2 is unavailable: {ex}");
+                return false;
+            }
+        }
+#endif
 
         private async Task InitializeBeforeBlazorAsync()
         {

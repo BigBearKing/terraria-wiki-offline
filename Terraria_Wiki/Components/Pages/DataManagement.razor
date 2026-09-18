@@ -37,7 +37,9 @@
 
                         @if (GetVisibleTask(wiki.Id) is AppTask AppTask)
                         {
-                            <div class="manage-card-progress">@GetTaskStatusText(AppTask) @AppTask.Progress.ToString("F1")%</div>
+                            <div class="manage-card-progress">
+                                @GetTaskStatusText(AppTask) @AppTask.Progress.ToString("F1")%
+                            </div>
                         }
                         else
                         {
@@ -132,10 +134,11 @@
     private AppTask? GetVisibleTask(int wikiId)
     {
         var activeTask = AppState.GetCurrentDownloadTask(wikiId);
-        if (activeTask is not null)
+        if (activeTask is not null && !activeTask.IsInitialListFailure())
             return activeTask;
 
         return _downloadTasks.TryGetValue(wikiId, out var historyTask) &&
+               !historyTask.IsInitialListFailure() &&
                historyTask.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted or AppTaskStatus.Failed
             ? historyTask
             : null;
