@@ -1,0 +1,213 @@
+.download-progress-panel {
+    background-color: var(--bg-color-secondary);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.download-progress-heading {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.download-progress-track {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    background-color: var(--hover-bg);
+    border-radius: 999px;
+}
+
+.download-progress-fill {
+    height: 100%;
+    background-color: var(--blue-primary);
+    border-radius: inherit;
+    transition: width 0.25s ease;
+}
+
+.download-progress-fill.indeterminate {
+    width: 35%;
+    animation: download-progress-indeterminate 1.4s ease-in-out infinite;
+}
+
+.download-progress-fill.failed {
+    background-color: #d9534f;
+}
+
+@keyframes download-progress-indeterminate {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(285%); }
+}
+
+.download-progress-count {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-top: 6px;
+}
+
+.icon-btn {
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-with-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: large;
+    font-weight: 500;
+}
+
+.detail-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 0 max(12px, var(--safe-area-bottom));
+}
+
+.stats-panel {
+    background-color: var(--bg-color-secondary);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.stat-item {
+    flex: 1 1 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: pre-line;
+    text-align: center;
+}
+
+.action-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.primary-btn {
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 8px;
+    transition: filter 0.2s, transform 0.2s;
+    border: none;
+}
+
+body.has-hover .primary-btn:hover {
+    filter: brightness(1.2);
+}
+
+.primary-btn:active {
+    filter: brightness(1);
+    transform: scale(0.97);
+}
+
+.btn-blue {
+    background-color: var(--blue-tertiary);
+    color: var(--blue-primary);
+}
+
+.btn-green {
+    background-color: var(--green-tertiary);
+    color: var(--green-primary);
+}
+
+.btn-red {
+    background-color: var(--red-tertiary);
+    color: var(--red-primary);
+}
+
+.title-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+.title-placeholder h3 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
+.title-placeholder p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.download-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 24px;
+}
+
+.download-card {
+    background-color: var(--bg-color-secondary);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dl-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.dl-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .action-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 365px) {
+    .action-row {
+        grid-template-columns: 1fr;
+    }
+}

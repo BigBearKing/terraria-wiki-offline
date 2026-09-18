@@ -1,0 +1,96 @@
+.custom-select-container {
+    position: relative;
+    width: max-content;
+    min-width: 125px;
+    flex-shrink: 0;
+}
+
+.custom-select-trigger {
+    position: relative;
+    z-index: 995;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 32px 8px 16px;
+    border-radius: 10px;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+    border: 0;
+    outline: none;
+    transition: background-color 0.2s;
+}
+
+.custom-select-trigger:hover {
+    background-color: var(--hover-bg);
+}
+
+.custom-select-value {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.custom-select-arrow {
+    position: absolute;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s;
+}
+
+.custom-select-container:has(.custom-select-menu) .custom-select-arrow {
+    transform: translateY(2px) rotate(225deg);
+}
+
+.custom-select-menu {
+    position: absolute;
+    z-index: 996;
+    top: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    width: max-content;
+    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    max-height: 240px;
+    padding: 4px;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 10px;
+    background-color: var(--bg-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    gap: 4px;
+}
+
+.custom-select-option {
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.custom-select-option:hover,
+.custom-select-option.selected {
+    background-color: var(--hover-bg);
+}
+
+.custom-select-option.selected {
+    color: var(--blue-primary);
+    font-weight: 600;
+}

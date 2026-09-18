@@ -1,0 +1,57 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+html.is-switching-theme,
+html.is-switching-theme *,
+html.is-switching-theme *::before,
+html.is-switching-theme *::after {
+    pointer-events: none;
+    transition: background-color 0.35s ease, color 0.35s ease !important;
+}
+
+html,
+body {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    height: 100lvh;
+    overflow: hidden;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+body.is-mouse-down iframe {
+    pointer-events: none !important;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 14px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--hover-bg);
+    border-radius: 9999px;
+    border: 4px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--pressed-bg);
+}

@@ -7,7 +7,7 @@
 <div class="page-anim page-content">
 
 	<header class="page-header">
-		<span class="page-title">@Loc.Get("History.Title")</span>
+		<span class="content-title">@Loc.Get("History.Title")</span>
 		<span class="clear-btn sub-text" @onclick="ClearHistory">@Loc.Get("History.ClearHistory")</span>
 	</header>
 
@@ -172,69 +172,3 @@
 	}
 
 }
-
-<style>
-	.history-list{
-		gap:4px;
-		padding: 0 0 max(12px, var(--safe-area-bottom));
-	}
-	.clear-btn {
-		background: transparent;
-		border: none;
-		color: var(--blue-primary);
-		cursor: pointer;
-		font-weight: 500;
-	}
-	
-	.timeline-row {
-		display: flex;
-		align-items: center;
-		position: relative;
-		z-index: 1;
-	}
-
-	/* 标题行样式 */
-	.header-row {
-		/* 不需要 margin-bottom，用高度撑开 */
-		padding-top: 8px; /* 稍微调整文字位置 */
-	}
-
-	.group-title {
-		padding-right: 12px;
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: var(--text-secondary);
-		text-transform: uppercase;
-		/* 确保它在最左边遮住线条 */
-		display: inline-block;
-	}
-
-	/* 内容行样式 */
-	.item-row {
-		padding-left: 24px; /* 缩进 */
-		width: 100%;
-	}
-
-	.history-item {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		padding: 10px 12px; /* 减小 padding 以适应 48px 高度 */
-		border-radius: 8px;
-
-	}
-
-
-	.time-stamp {
-		font-size: 0.8rem;
-		color: var(--text-secondary);
-		width: 60px;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.item-name {
-		font-size: 1rem;
-		color: var(--text-primary);
-		font-weight: 500;
-	}
-</style>

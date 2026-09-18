@@ -1,0 +1,114 @@
+.sidebar {
+    height: 100vh;
+    background-color: var(--bg-color-secondary);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-left: var(--safe-area-left);
+    padding-top: max(4px, var(--safe-area-top));
+    box-shadow: calc(-1 * var(--safe-area-left)) 0 0 0 var(--bg-color-secondary);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-width-collapsed);
+}
+
+.sidebar.expanded {
+    width: var(--sidebar-width-expanded);
+}
+
+.sidebar-header {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    cursor: pointer;
+    margin: 0 12px 4px;
+}
+
+.nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+
+.nav-items::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    height: 48px;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--text-secondary);
+}
+
+body.has-hover .nav-item:hover {
+    color: var(--text-primary);
+}
+
+.nav-item.actived {
+    background-color: var(--blue-tertiary) !important;
+    color: var(--blue-primary) !important;
+}
+
+.icon-container {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.app-icon {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.text-container {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-left: 4px;
+    opacity: 1;
+    transition: opacity 0.25s ease-in-out;
+}
+
+.app-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.sidebar.collapsed .text-container {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 12px max(12px, var(--safe-area-bottom));
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.rotating {
+    animation: spin 2s infinite linear;
+}

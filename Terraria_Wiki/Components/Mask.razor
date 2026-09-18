@@ -1,7 +1,11 @@
 @* 统一遮罩层组件：半透明/透明遮罩、淡入淡出、点击关闭（或放行点击） *@
+@implements IDisposable
 <div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(MobileOnly ? "mobile-only" : "")"
      style="z-index: @ZIndex;"
-     @onclick="OnClick"></div>
+     @onclick="OnClick"
+     @onpointerdown="OnPointerDown"
+     @ontouchmove="OnTouchMove"
+     @onwheel="OnWheel"></div>
 
 @code {
     /// <summary>是否显示（淡入 + 拦截点击）</summary>
@@ -22,6 +26,37 @@
     /// <summary>层级（默认 900）</summary>
     [Parameter] public int ZIndex { get; set; } = 900;
 
+    /// <summary>返回键层级；未指定时使用遮罩层级。</summary>
+    [Parameter] public int? BackPriority { get; set; }
+
     /// <summary>点击遮罩时回调（用于关闭对应面板）</summary>
     [Parameter] public EventCallback OnClick { get; set; }
+
+    /// <summary>指针按下时回调。</summary>
+    [Parameter] public EventCallback<PointerEventArgs> OnPointerDown { get; set; }
+
+    /// <summary>触摸滑动时回调。</summary>
+    [Parameter] public EventCallback<TouchEventArgs> OnTouchMove { get; set; }
+
+    /// <summary>滚轮滚动时回调。</summary>
+    [Parameter] public EventCallback<WheelEventArgs> OnWheel { get; set; }
+
+    private readonly Guid _backLayerId = Guid.NewGuid();
+
+    protected override void OnParametersSet()
+    {
+        if (Show && !Locked)
+        {
+            BackLayerCoordinator.Register(
+                _backLayerId,
+                BackPriority ?? ZIndex,
+                () => _ = OnClick.InvokeAsync());
+        }
+        else
+        {
+            BackLayerCoordinator.Unregister(_backLayerId);
+        }
+    }
+
+    public void Dispose() => BackLayerCoordinator.Unregister(_backLayerId);
 }

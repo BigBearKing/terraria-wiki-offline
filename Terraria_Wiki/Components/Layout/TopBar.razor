@@ -22,7 +22,7 @@
             </button>
         }
     </div>
-    <div class="page-title @(ShouldShowActionButtons() ? "" : "page-title-without-actions")" @onclick="WikiToTopAsync">@GetPageTitle()</div>
+    <div class="topbar-title @(ShouldShowActionButtons() ? "" : "topbar-title-without-actions")" @onclick="WikiToTopAsync">@GetPageTitle()</div>
 
 
     @if (ShouldShowSearch())

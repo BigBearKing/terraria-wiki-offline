@@ -1,0 +1,28 @@
+.all-pages-list {
+    gap: 2px;
+    padding: 0 0 max(12px, var(--safe-area-bottom));
+}
+
+.list-item {
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.page-time {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}

@@ -66,6 +66,10 @@
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<AssemblyMetadata Include="ApplicationBuildNumber" Value="$(ApplicationVersion)" />
+	</ItemGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-ios|AnyCPU'" />
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-ios|AnyCPU'" />
@@ -75,6 +79,10 @@
 	  <CodesignKey>iPhone Developer</CodesignKey>
 	</PropertyGroup>
 
+
+	<ItemGroup>
+		<ScopedCss Include="Components\**\*.razor.css" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->

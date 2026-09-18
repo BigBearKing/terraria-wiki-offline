@@ -41,7 +41,7 @@ body.has-hover .action-btn:hover {
     color: var(--text-primary);
 }
 /* --- 2. 中间标题 (核心改动) --- */
-.page-title {
+.topbar-title {
     flex: 1; /* ★ 关键：占据所有剩余空间 */
     font-size: 1.1rem;
     font-weight: 600;
@@ -55,7 +55,7 @@ body.has-hover .action-btn:hover {
     min-width: 0; /* 修复 Flex 布局下省略号失效的 Bug */
 }
 
-.page-title-without-actions {
+.topbar-title-without-actions {
     padding-left: 16px;
 }
 /* --- 3. 右侧搜索框 (核心改动) --- */
@@ -140,7 +140,7 @@ body.has-hover .action-btn:hover {
         width: calc(100% - 20px);
     }
 
-    .page-title {
+    .topbar-title {
         text-align: right;
     }
 

@@ -32,7 +32,7 @@
 
 @if (AppState.CurrentPage == "home")
 {
-    <Mask Show="AppState.MobileTabPanelOpen" MobileOnly="true" ZIndex="1000" OnClick="CloseMobileTabPanel" />
+    <Mask Show="AppState.MobileTabPanelOpen" MobileOnly="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMobileTabPanel" />
     <div class="tab-panel @(AppState.MobileTabPanelOpen ? "show" : "")">
         <div class="tab-panel-header">
             <span class="tab-panel-title">@App.Localization!.Get("TabBar.Tabs")</span>

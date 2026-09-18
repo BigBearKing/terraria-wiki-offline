@@ -1,0 +1,128 @@
+@typeparam TValue
+@implements IDisposable
+
+<div class="custom-select-container">
+    <button type="button"
+            class="custom-select-trigger"
+            aria-haspopup="listbox"
+            aria-expanded="@_isOpen"
+            @onclick="ToggleOpen"
+            @onkeydown="HandleKeyDown">
+        <span class="custom-select-value">@SelectedLabel</span>
+        <span class="custom-select-arrow" aria-hidden="true"></span>
+    </button>
+
+    @if (_isOpen)
+    {
+        <Mask Show="true"
+              Transparent="true"
+              ZIndex="997"
+              BackPriority="1001"
+              OnClick="Close"
+              OnPointerDown="Close"
+              OnTouchMove="Close"
+              OnWheel="Close" />
+        <div class="custom-select-menu" role="listbox">
+            @foreach (var option in Options)
+            {
+                <button type="button"
+                        class="custom-select-option @(IsSelected(option) ? "selected" : "")"
+                        role="option"
+                        aria-selected="@IsSelected(option)"
+                        @onclick="() => SelectAsync(option.Value)">
+                    @option.Label
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<SelectOption<TValue>> Options { get; set; } = [];
+
+    [Parameter]
+    public TValue Value { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TValue> ValueChanged { get; set; }
+
+    private readonly Guid _instanceId = Guid.NewGuid();
+    private bool _isOpen;
+
+    protected override void OnInitialized()
+    {
+        CustomSelectCoordinator.SelectOpened += OnOtherSelectOpened;
+    }
+
+    private string SelectedLabel =>
+        Options.FirstOrDefault(option => EqualityComparer<TValue>.Default.Equals(option.Value, Value))?.Label
+        ?? string.Empty;
+
+    private bool IsSelected(SelectOption<TValue> option) =>
+        EqualityComparer<TValue>.Default.Equals(option.Value, Value);
+
+    private void ToggleOpen()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            CustomSelectCoordinator.NotifyOpened(_instanceId);
+        }
+    }
+
+    private void OnOtherSelectOpened(Guid instanceId)
+    {
+        if (instanceId != _instanceId && _isOpen)
+        {
+            Close();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void Close() => _isOpen = false;
+
+    public void Dispose()
+    {
+        CustomSelectCoordinator.SelectOpened -= OnOtherSelectOpened;
+    }
+
+    private async Task SelectAsync(TValue value)
+    {
+        Close();
+        if (!EqualityComparer<TValue>.Default.Equals(Value, value))
+        {
+            Value = value;
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key is "Escape")
+        {
+            Close();
+            return;
+        }
+
+        if (args.Key is "Enter" or " ")
+        {
+            ToggleOpen();
+            return;
+        }
+
+        if (!_isOpen || Options.Count == 0 || args.Key is not ("ArrowDown" or "ArrowUp"))
+        {
+            return;
+        }
+
+        var currentIndex = Options
+            .Select((option, index) => (option, index))
+            .FirstOrDefault(item => IsSelected(item.option)).index;
+        var nextIndex = args.Key == "ArrowDown"
+            ? Math.Min(currentIndex + 1, Options.Count - 1)
+            : Math.Max(currentIndex - 1, 0);
+
+        await SelectAsync(Options[nextIndex].Value);
+    }
+}

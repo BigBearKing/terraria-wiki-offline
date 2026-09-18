@@ -9,16 +9,8 @@ namespace Terraria_Wiki.Services
 
         public static async Task BackEvents()
         {
-
-            if (App.AppStateManager.MobileTabPanelOpen && App.AppStateManager.IsSmallScreen)
+            if (BackLayerCoordinator.TryCloseTop())
             {
-                App.AppStateManager.MobileTabPanelOpen = false;
-                return;
-            }
-
-            if (App.AppStateManager.SidebarIsExpanded && App.AppStateManager.IsSmallScreen)
-            {
-                App.AppStateManager.SidebarIsExpanded = false;
                 return;
             }
 

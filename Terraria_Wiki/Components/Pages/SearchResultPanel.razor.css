@@ -9,7 +9,7 @@
     background: var(--bg-color);
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     border-radius: 8px;
-    z-index: 901; /* 必须比遮罩层高 */
+    z-index: 999; /* 必须比遮罩层高 */
 }
 
 /* --- 下面是内部元素的排版 --- */
@@ -61,7 +61,7 @@ body.has-hover .result-item:hover {
     font-weight: bold;
 }
 
-@media(max-width:768px) {
+@media (max-width: 768px) {
     /* 搜索面板必须向上弹出 */
     .search-popup-panel {
         bottom: max(56px, calc(var(--search-wrapper-bottom) + 40px)) !important;
@@ -72,5 +72,4 @@ body.has-hover .result-item:hover {
         max-height: 48vh;
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
-
-    }
+}

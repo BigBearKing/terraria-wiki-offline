@@ -7,7 +7,7 @@
 <div class="page-anim page-content">
 
     <header class="page-header">
-        <span class="page-title">@Loc.Get("AllPages.Index")</span>
+        <span class="content-title">@Loc.Get("AllPages.Index")</span>
 
         <span class="sub-text">@Loc.Get("AllPages.FoundCount", totalPageCount)</span>
     </header>
@@ -109,36 +109,3 @@
 
 
 }
-
-<style>
-
-    .all-pages-list {
-        gap: 2px;
-        padding: 0 0 max(12px, var(--safe-area-bottom));
-    }
-    /* 列表项样式 */
-    .list-item {
-        padding: 12px 12px;
-        border-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-
-    .page-name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        color: var(--text-primary);
-    }
-
-    .page-time {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-    }
-</style>

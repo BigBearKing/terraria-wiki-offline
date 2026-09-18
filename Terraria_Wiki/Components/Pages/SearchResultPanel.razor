@@ -4,7 +4,7 @@
 
 @if (!string.IsNullOrWhiteSpace(query))
 {
-	<Mask Show="true" Locked="isSearching" Transparent="true" FromHeader="true" ZIndex="900" OnClick="ClosePanel" />
+	<Mask Show="true" Locked="isSearching" Transparent="true" FromHeader="true" ZIndex="998" BackPriority="1002" OnClick="ClosePanel" />
 
 	<div class="search-popup-panel">
 		@if (isSearching)
