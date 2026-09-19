@@ -12,8 +12,8 @@ public sealed record NetworkResponse(
 
 public static class NetworkService
 {
-    public static bool IsNetworkAvailable =>
-        Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+    private static readonly Uri ConnectivityProbeUri =
+        new("https://www.msftconnecttest.com/connecttest.txt");
 
     private static readonly TlsClient TlsClient = new()
     {
@@ -26,6 +26,38 @@ public static class NetworkService
     {
         Timeout = TimeSpan.FromSeconds(150)
     };
+
+    private static readonly HttpClient ConnectivityHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+
+    public static async Task<bool> IsNetworkAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+            return false;
+
+        try
+        {
+            using var response = await ConnectivityHttpClient.GetAsync(
+                ConnectivityProbeUri,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return false;
+
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            return string.Equals(body.Trim(), "Microsoft Connect Test", StringComparison.Ordinal);
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
 
     private const string BrowserUserAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +

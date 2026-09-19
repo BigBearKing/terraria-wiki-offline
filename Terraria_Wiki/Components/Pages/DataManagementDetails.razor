@@ -1,4 +1,5 @@
 @page "/data/{WikiId:int}"
+@implements IDisposable
 @using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
@@ -288,18 +289,24 @@
                 : $"{CurrentDownloadTask?.Progress:F1}%";
     }
 
-    private string GetProgressBarClass() =>
-        CurrentDownloadTask?.Status == AppTaskStatus.Failed
-            ? "failed"
-            : CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
+    private string GetProgressBarClass()
+    {
+        if (CurrentDownloadTask?.Status == AppTaskStatus.Failed)
+            return "failed";
+
+        return CurrentDownloadTask?.Status == AppTaskStatus.Running &&
+            CurrentDownloadTask.Phase == AppTaskPhase.FetchingLists
                 ? "indeterminate"
                 : string.Empty;
+    }
 
-    private string GetProgressStyle() =>
-        CurrentDownloadTask?.Status != AppTaskStatus.Failed &&
-        CurrentDownloadTask?.Phase == AppTaskPhase.FetchingLists
-            ? string.Empty
-            : $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
+    private string GetProgressStyle()
+    {
+        return CurrentDownloadTask?.Status == AppTaskStatus.Running &&
+            CurrentDownloadTask.Phase == AppTaskPhase.FetchingLists
+                ? string.Empty
+                : $"width:{Math.Clamp(CurrentDownloadTask?.Progress ?? 0, 0, 100):F2}%";
+    }
 
     private string GetDownloadCountText()
     {

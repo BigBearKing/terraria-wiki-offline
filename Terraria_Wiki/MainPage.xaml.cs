@@ -58,13 +58,16 @@ namespace Terraria_Wiki
         }
         private void Current_MainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
         {
-            // 稍微延迟一下，等待安卓底层的 Insets 刷新完毕再读取
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await Task.Delay(50);
-                UpdateSafeAreaToWeb();
-            });
+            _ = RefreshSafeAreaAsync();
         }
+
+        public async Task RefreshSafeAreaAsync()
+        {
+            // 等待系统 Insets 刷新完成后再读取，避免回到前台时拿到旧值。
+            await Task.Delay(50);
+            await MainThread.InvokeOnMainThreadAsync(UpdateSafeAreaToWeb);
+        }
+
         public void HideLoadingScreen()
         {
 

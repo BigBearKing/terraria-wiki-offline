@@ -188,14 +188,6 @@ namespace Terraria_Wiki.Services
 
         private async Task RunDownloadAsync(bool includeResources, AppTaskType taskType)
         {
-            if (!NetworkService.IsNetworkAvailable)
-            {
-                App.AppStateManager?.TriggerAlert(
-                    _loc.Get("Common.Notice"),
-                    _loc.Get("AppTask.NetworkUnavailable"));
-                return;
-            }
-
             if (!CanStartDownloadTask(taskType)) return;
             if (!await _downloadLock.WaitAsync(0)) return;
             try
@@ -249,18 +241,25 @@ namespace Terraria_Wiki.Services
 
         private async Task<bool> EnsureNetworkAvailableAsync(AppTask task)
         {
-            if (NetworkService.IsNetworkAvailable)
+            if (await NetworkService.IsNetworkAvailableAsync())
                 return true;
 
-            task.Status = AppTaskStatus.Paused;
+            await MarkNetworkUnavailableAsync(task);
+            return false;
+        }
+
+        private async Task MarkNetworkUnavailableAsync(AppTask task)
+        {
+            task.Status = task.Phase == AppTaskPhase.FetchingLists
+                ? AppTaskStatus.Failed
+                : AppTaskStatus.Paused;
             task.LastError = _loc.Get("DataService.NetworkUnavailable");
             task.UpdatedTime = DateTime.Now;
             await App.ManagerDb!.SaveItemAsync(task);
-            App.AppStateManager!.CurrentDownloadTask = task;
-            App.AppStateManager?.TriggerAlert(
+            App.AppStateManager!.SetCurrentDownloadTask(task);
+            App.AppStateManager.TriggerAlert(
                 _loc.Get("Common.Notice"),
                 _loc.Get("DataService.NetworkUnavailable"));
-            return false;
         }
 
         private async Task<bool> CheckNetworkBeforeRetryAsync(
@@ -269,14 +268,15 @@ namespace Terraria_Wiki.Services
             _log.Error(
                 _loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line),
                 ex);
-            if (NetworkService.IsNetworkAvailable)
+            if (await NetworkService.IsNetworkAvailableAsync(token))
                 return true;
 
             if (_activeDownloadTask is not null)
-                await _taskRunner.PauseAsync(_activeDownloadTask.Id);
-            App.AppStateManager?.TriggerAlert(
-                _loc.Get("Common.Notice"),
-                _loc.Get("DataService.NetworkUnavailable"));
+                await MarkNetworkUnavailableAsync(_activeDownloadTask);
+            else
+                App.AppStateManager?.TriggerAlert(
+                    _loc.Get("Common.Notice"),
+                    _loc.Get("DataService.NetworkUnavailable"));
             token.ThrowIfCancellationRequested();
             return false;
         }

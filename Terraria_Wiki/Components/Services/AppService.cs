@@ -533,7 +533,7 @@ namespace Terraria_Wiki.Services
             var task = (await App.ManagerDb!.GetItemsAsync<AppTask>())
                 .Where(t => t.WikiId == wikiId &&
                             t.IsDownloadTask() &&
-                            t.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted or AppTaskStatus.Failed)
+                            t.Status is AppTaskStatus.Paused or AppTaskStatus.Interrupted)
                 .OrderByDescending(t => t.UpdatedTime)
                 .FirstOrDefault();
 

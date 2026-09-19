@@ -49,14 +49,14 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 12px 0 24px;
+    padding: 0 12px 0 40px;
     max-width: 800px;
     margin: 0 auto;
 }
 
 @supports (-webkit-touch-callout: none) {
     .page-content {
-        padding: 0 24px;
+        padding: 0 24px !important;
     }
 }
 
@@ -109,6 +109,16 @@ body.has-hover .button:hover {
 }
 
 @media (max-width: 768px) {
+    .page-content {
+        padding: 0 12px 0 24px;
+    }
+
+    @supports (-webkit-touch-callout: none) {
+        .page-content {
+            padding: 0 12px 0 40px !important;
+        }
+    }
+
     .mobile-menu-btn {
         display: flex !important;
         align-items: center;

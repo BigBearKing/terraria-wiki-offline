@@ -53,7 +53,7 @@
 
 .custom-select-menu {
     position: absolute;
-    z-index: 996;
+    z-index: 998;
     top: calc(100% + 6px);
     right: 0;
     left: auto;

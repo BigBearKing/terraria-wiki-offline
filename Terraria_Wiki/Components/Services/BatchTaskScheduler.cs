@@ -72,11 +72,14 @@ public sealed class BatchTaskScheduler<T>
                     catch (Exception ex)
                     {
                         var nextRetry = retry + 1;
+                        if (nextRetry > _maxRetryAttempts)
+                            throw;
+
                         if (onRetry is not null &&
                             !await onRetry(workerId, task, nextRetry, ex, cancellationToken))
                             throw new OperationCanceledException(cancellationToken);
+
                         retry = nextRetry;
-                        if (retry > _maxRetryAttempts) throw;
                         await Task.Delay(1000, cancellationToken);
                     }
                 }

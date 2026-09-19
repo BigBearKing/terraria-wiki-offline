@@ -153,6 +153,8 @@ namespace Terraria_Wiki
             window.Resumed += async (s, e) =>
             {
                 await WebServer.Start();
+                if (MainPage is MainPage mainPage)
+                    await mainPage.RefreshSafeAreaAsync();
             };
 
             // 应用刚启动时也可以确保开启

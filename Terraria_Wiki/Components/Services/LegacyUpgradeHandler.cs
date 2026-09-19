@@ -24,17 +24,14 @@ public class LegacyUpgradeHandler
         App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Started") ?? "开始执行旧版数据迁移。");
         try
         {
-            await RenameDataFolderAsync(activeBook);
             MigrateFailedListsOnce(activeBook);
+            await RenameDataFolderAsync(activeBook);
             App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Completed") ?? "旧版数据迁移完成。");
         }
         catch (Exception ex)
         {
             App.LogManager?.Error(App.Localization?.Get("LegacyUpgrade.Failed") ?? "旧版数据迁移失败", ex);
             throw;
-        }
-        finally
-        {
         }
     }
 
@@ -69,22 +66,24 @@ public class LegacyUpgradeHandler
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// 将 0.3 版本保存在旧 Terraria_Wiki 数据目录中的失败列表迁移到当前任务目录。
+    /// </summary>
     private void MigrateFailedListsOnce(WikiBook activeBook)
     {
-        var taskDir = Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "legacy-upgrade");
+        var legacyDataDir = Path.Combine(_appDataDir, "Terraria_Wiki");
+        var taskDir = Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString());
+        Directory.CreateDirectory(taskDir);
 
-        // Current downloads use the Wiki task root for public failure lists.
-        // Only restore files moved by the previous migration logic; never move
-        // current failure lists out of the location used by DataService.
-        RestoreIfMissing(
-            Path.Combine(taskDir, "failed_pages.txt"),
-            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_pages.txt"));
-        RestoreIfMissing(
-            Path.Combine(taskDir, "failed_resources.txt"),
-            Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString(), "failed_resources.txt"));
+        MoveIfMissing(
+            Path.Combine(legacyDataDir, "failed_pages.txt"),
+            Path.Combine(taskDir, "failed_pages.txt"));
+        MoveIfMissing(
+            Path.Combine(legacyDataDir, "failed_res.txt"),
+            Path.Combine(taskDir, "failed_resources.txt"));
     }
 
-    private static void RestoreIfMissing(string sourcePath, string targetPath)
+    private static void MoveIfMissing(string sourcePath, string targetPath)
     {
         if (!File.Exists(sourcePath) || File.Exists(targetPath)) return;
         File.Move(sourcePath, targetPath);

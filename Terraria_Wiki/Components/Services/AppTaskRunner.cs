@@ -59,7 +59,7 @@ public sealed class AppTaskRunner
         ArgumentNullException.ThrowIfNull(action);
         options ??= new AppTaskOptions();
 
-        if (!await EnsureDownloadTaskRequirementsAsync(task.TaskType))
+        if (!await EnsureDownloadTaskRequirementsAsync(task.TaskType, checkNetwork: false))
             return false;
 
         var lockTaken = access == AppTaskAccess.Exclusive && await _databaseTaskLock.WaitAsync(0, cancellationToken);
@@ -226,7 +226,7 @@ public sealed class AppTaskRunner
         _appState.TriggerAlert(_loc.Get(titleKey), _loc.Get(messageKey, args));
     }
 
-    private async Task<bool> EnsureDownloadTaskRequirementsAsync(AppTaskType taskType)
+    private async Task<bool> EnsureDownloadTaskRequirementsAsync(AppTaskType taskType, bool checkNetwork = true)
     {
         if (taskType is not (AppTaskType.DownloadPages or AppTaskType.DownloadResources or
             AppTaskType.DownloadAll or AppTaskType.UpdatePages or AppTaskType.UpdateAll or
@@ -254,7 +254,7 @@ public sealed class AppTaskRunner
         }
 #endif
 
-        if (NetworkService.IsNetworkAvailable)
+        if (!checkNetwork || await NetworkService.IsNetworkAvailableAsync())
             return true;
 
         ShowAlert("Common.Notice", "AppTask.NetworkUnavailable");
