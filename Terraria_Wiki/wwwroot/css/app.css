@@ -87,9 +87,17 @@
     scrollbar-gutter: stable;
 }
 
-.button {
+.button,
+button,
+[role="button"] {
+    min-width: 0;
     border: none;
     display: block;
+    font-size: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
     transition: color 0.2s, background-color 0.2s;
     user-select: none;
     cursor: pointer;
@@ -104,8 +112,19 @@ body.has-hover .button:hover {
     transition: none;
 }
 
-.button > * {
+.button > *,
+button > *,
+[role="button"] > * {
+    line-height: inherit;
+    white-space: inherit;
+    text-overflow: clip;
     transition: inherit;
+}
+
+.button.is-responsive-text-fitted > *,
+button.is-responsive-text-fitted > *,
+[role="button"].is-responsive-text-fitted > * {
+    font-size: inherit;
 }
 
 @media (max-width: 768px) {

@@ -90,32 +90,53 @@
             document.documentElement.style.setProperty('--global-keyboard-offset', height + 'px');
         };
 
-        window.fitTopBarTitle = () => {
-            const title = document.querySelector('.top-bar .page-title');
-            if (!title) return;
 
-            if (!title._fitTopBarTitle) {
-                const fit = () => {
-                    if (title._fitTopBarTitleFrame) return;
-                    title._fitTopBarTitleFrame = requestAnimationFrame(() => {
-                        title._fitTopBarTitleFrame = 0;
-                        title.style.fontSize = '';
-                        let fontSize = parseFloat(getComputedStyle(title).fontSize);
+            window.fitResponsiveText = () => {
+                const selector = '.top-bar .topbar-title, .button, button, [role="button"]';
+                const fit = element => {
+                    if (element.classList.contains('action-btn')) return;
 
-                        while (title.scrollWidth > title.clientWidth && fontSize > 12) {
-                            fontSize -= 0.5;
-                            title.style.fontSize = `${fontSize}px`;
-                        }
-                    });
+                    element.classList.remove('is-responsive-text-fitted');
+                    element.style.fontSize = '';
+                    let fontSize = parseFloat(getComputedStyle(element).fontSize);
+
+                    if (element.scrollWidth <= element.clientWidth) return;
+
+                    element.classList.add('is-responsive-text-fitted');
+                    while (element.scrollWidth > element.clientWidth && fontSize > 8) {
+                        fontSize -= 0.5;
+                        element.style.fontSize = `${fontSize}px`;
+                    }
                 };
 
-                title._fitTopBarTitle = fit;
-                const observer = new ResizeObserver(fit);
-                if (title.parentElement) observer.observe(title.parentElement);
-            }
+                document.querySelectorAll(selector).forEach(element => {
+                    if (!element._fitResponsiveText) {
+                        element._fitResponsiveText = () => {
+                            if (element._fitResponsiveTextFrame) return;
+                            element._fitResponsiveTextFrame = requestAnimationFrame(() => {
+                                element._fitResponsiveTextFrame = 0;
+                                fit(element);
+                            });
+                        };
 
-            title._fitTopBarTitle();
-        };
+                        element._fitResponsiveTextObserver = new ResizeObserver(element._fitResponsiveText);
+                        element._fitResponsiveTextObserver.observe(element);
+                    }
+
+                    element._fitResponsiveText();
+                });
+
+                if (!document.body._responsiveTextObserver) {
+                    document.body._responsiveTextObserver = new MutationObserver(() => window.fitResponsiveText());
+                    document.body._responsiveTextObserver.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    });
+                }
+            };
+
+            window.fitTopBarTitle = window.fitResponsiveText;
 
 
     </script>

@@ -124,6 +124,10 @@ body.has-hover .modern-select:hover {
     background-color: var(--hover-bg);
     color: var(--text-primary);
     font-size: 0.9rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .setting-btn:active {

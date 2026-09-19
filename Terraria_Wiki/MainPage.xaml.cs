@@ -133,6 +133,7 @@ namespace Terraria_Wiki
 #if ANDROID
             if (blazorWebView.Handler?.PlatformView is Android.Webkit.WebView androidWebView)
             {
+                androidWebView.Settings.TextZoom = 100;
                 // 传入当前页面的 Dispatcher
                 androidWebView.SetOnKeyListener(new WebViewBackInterceptor(this.Dispatcher));
             }

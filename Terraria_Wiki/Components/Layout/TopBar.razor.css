@@ -42,17 +42,17 @@ body.has-hover .action-btn:hover {
 }
 /* --- 2. 中间标题 (核心改动) --- */
 .topbar-title {
-    flex: 1; /* ★ 关键：占据所有剩余空间 */
+    flex: 1;
+    min-width: 0;
     font-size: 1.1rem;
     font-weight: 600;
+    line-height: 1.2;
     color: var(--text-primary);
-    padding-bottom: 2px;
-    white-space: nowrap; /* 防止标题换行 */
-    overflow: hidden; /* 超出省略 */
-    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
     -webkit-user-select: none;
     user-select: none;
-    min-width: 0; /* 修复 Flex 布局下省略号失效的 Bug */
 }
 
 .topbar-title-without-actions {
