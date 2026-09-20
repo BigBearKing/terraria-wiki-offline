@@ -70,7 +70,8 @@
     private string BuildWikiFrameUrl()
     {
         var wikiFolder = Uri.EscapeDataString(AppState.ActiveWikiBook?.DataFolder ?? "default");
-        return $"http://127.0.0.1:55000/?theme={iframeTheme}&isMobile={isMobile}&book={wikiFolder}&v={wikiFrameVersion}";
+        var wikiZoom = Preferences.Default.Get("WikiZoom", 100);
+        return $"http://127.0.0.1:55000/?theme={iframeTheme}&isMobile={isMobile}&book={wikiFolder}&zoom={wikiZoom}&v={wikiFrameVersion}";
     }
 
     private void OnWikiBookSwitched()

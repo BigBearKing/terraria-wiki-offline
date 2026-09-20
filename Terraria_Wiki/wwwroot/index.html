@@ -90,6 +90,23 @@
             document.documentElement.style.setProperty('--global-keyboard-offset', height + 'px');
         };
 
+        // 禁止 WebView 中除复制、粘贴和查找之外的 Ctrl/Alt 浏览器快捷键。
+        document.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            const isAllowedCtrlShortcut = event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey
+                && (key === 'c' || key === 'v' || key === 'f');
+
+            if ((event.ctrlKey || event.altKey) && !isAllowedCtrlShortcut) {
+                event.preventDefault();
+            }
+        }, { capture: true });
+
+        document.addEventListener('wheel', (event) => {
+            if (event.ctrlKey) {
+                event.preventDefault();
+            }
+        }, { capture: true, passive: false });
+
 
             window.fitResponsiveText = () => {
                 const selector = '.top-bar .topbar-title, .button, button, [role="button"]';

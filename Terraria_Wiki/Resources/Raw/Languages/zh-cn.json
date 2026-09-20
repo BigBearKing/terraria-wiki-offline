@@ -129,6 +129,8 @@
     "Settings.LightMode": "浅色模式",
     "Settings.DarkMode": "深色模式",
     "Settings.ContentColorTheme": "内容颜色主题",
+    "Settings.WikiZoom": "Wiki缩放",
+    "Settings.Default100": "100%（默认）",
     "Settings.FollowUI": "跟随界面",
     "Settings.WikiOriginal": "Wiki原版",
     "Settings.Permissions": "权限管理",

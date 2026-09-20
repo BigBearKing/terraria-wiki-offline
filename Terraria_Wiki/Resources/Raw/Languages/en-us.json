@@ -129,6 +129,8 @@
     "Settings.LightMode": "Light Mode",
     "Settings.DarkMode": "Dark Mode",
     "Settings.ContentColorTheme": "Content Color Theme",
+    "Settings.WikiZoom": "Wiki zoom",
+    "Settings.Default100": "100% (Default)",
     "Settings.FollowUI": "Follow UI",
     "Settings.WikiOriginal": "Wiki Original",
     "Settings.Permissions": "Permissions",

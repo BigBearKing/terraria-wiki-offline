@@ -32,7 +32,7 @@
     transition: background-color 0.2s;
 }
 
-.custom-select-trigger:hover {
+body.has-hover .custom-select-trigger:hover {
     background-color: var(--hover-bg);
 }
 
@@ -94,7 +94,7 @@
     text-overflow: clip;
 }
 
-.custom-select-option:hover,
+body.has-hover .custom-select-option:hover,
 .custom-select-option.selected {
     background-color: var(--hover-bg);
 }

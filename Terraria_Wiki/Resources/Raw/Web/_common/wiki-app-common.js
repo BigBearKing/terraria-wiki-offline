@@ -79,6 +79,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const initialTheme = urlParams.get('theme');
         const isMobile = urlParams.get('isMobile');
+        const initialZoom = Number.parseInt(urlParams.get('zoom') || '100', 10);
+        applyWikiZoom(initialZoom);
 
         // 应用初始主题（若 URL 中指定了 theme 参数）
         if (initialTheme === "dark") {
@@ -108,7 +110,18 @@
      * 注册 C# 原生代码调用的消息处理器（C# -> JS 方向）。
      * @param {object} config 配置对象
      */
+    function applyWikiZoom(value) {
+        const zoom = Number.isFinite(value) ? Math.min(200, Math.max(50, value)) : 100;
+        document.documentElement.style.zoom = `${zoom}%`;
+        console.log("zoom是" + zoom);
+    }
+
     function registerHandlers(config) {
+        window.iframeBridge.registerHandler("SetZoom", (value) => {
+            applyWikiZoom(Number.parseInt(value, 10));
+            return null;
+        });
+
         window.iframeBridge.registerHandler("SetLocalization", (json) => {
             try {
                 localization = typeof json === 'string' ? JSON.parse(json) : (json || {});
@@ -165,6 +178,23 @@
      * @param {object} config 配置对象
      */
     function bindNavigation(config) {
+        // 禁止 WebView 中除复制、粘贴和查找之外的 Ctrl/Alt 浏览器快捷键。
+        document.addEventListener('keydown', function (e) {
+            const key = e.key.toLowerCase();
+            const isAllowedCtrlShortcut = e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey
+                && (key === 'c' || key === 'v' || key === 'f');
+
+            if ((e.ctrlKey || e.altKey) && !isAllowedCtrlShortcut) {
+                e.preventDefault();
+            }
+        }, { capture: true });
+
+        document.addEventListener('wheel', function (e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { capture: true, passive: false });
+
         // 处理所有链接点击
         document.addEventListener('click', function (e) {
             const targetLink = e.target.closest('a');
