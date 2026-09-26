@@ -151,6 +151,16 @@
             </div>
             <div class="setting-item">
                 <div class="setting-info">
+                    <span class="setting-name">@Loc.Get("Settings.AutoUpdatePages")</span>
+                    <span class="setting-desc">@Loc.Get("Settings.AutoUpdatePagesDesc")</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" @bind="AutoUpdatePages">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.ClearFailedList")</span>
                     <span class="setting-desc">@Loc.Get("Settings.ClearFailedListDesc")</span>
                 </div>
@@ -161,7 +171,7 @@
 
         </div>
         <div class="category-card">
-            <span class="category-title">@Loc.Get("Settings.Database")</span>
+            <span class="category-title">@Loc.Get("Settings.Data")</span>
 
             <div class="setting-item">
                 <div class="setting-info">
@@ -172,13 +182,9 @@
                     @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData) ? AppState.Tasks[AppTaskType.ImportData].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
                 </button>
             </div>
-        </div>
 
-        @if (AppState.IsWindows)
-        {
-            <div class="category-card">
-                <span class="category-title">@Loc.Get("Settings.DataLocation")</span>
-
+            @if (AppState.IsWindows)
+            {
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">@Loc.Get("Settings.DataLocationMode")</span>
@@ -214,60 +220,60 @@
                         </button>
                     </div>
                 }
+            }
             </div>
-        }
-        <div class="category-card">
-            <span class="category-title">@Loc.Get("Common.Log")</span>
-            <div class="setting-item">
-                <div class="setting-info">
-                    <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
-                    <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
+            <div class="category-card">
+                <span class="category-title">@Loc.Get("Common.Log")</span>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
+                    </div>
+                    <button class="button setting-btn" @onclick="ExportLog">
+                        @Loc.Get("Common.Export")
+                    </button>
                 </div>
-                <button class="button setting-btn" @onclick="ExportLog">
-                    @Loc.Get("Common.Export")
-                </button>
-            </div>
-            <div class="setting-item">
-                <div class="setting-info">
-                    <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
-                    <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
+                    </div>
+                    <button class="button setting-btn" @onclick="DeleteLog">
+                        @Loc.Get("Settings.DeleteLog")
+                    </button>
                 </div>
-                <button class="button setting-btn" @onclick="DeleteLog">
-                    @Loc.Get("Settings.DeleteLog")
-                </button>
             </div>
-        </div>
-        <div class="category-card">
-            <span class="category-title">@Loc.Get("Settings.About")</span>
+            <div class="category-card">
+                <span class="category-title">@Loc.Get("Settings.About")</span>
 
-            <div class="setting-item">
-                <div class="setting-info" @onclick="OnVersionLabelClicked">
-                    <span class="setting-name">@Loc.Get("Common.Version")</span>
-                    <span class="setting-desc">
-                        v@(AppVersion)
-                        @if (AppState.IsWindows)
-                        {
-                            <text> (Build @BuildNumber)</text>
-                        }
-                    </span>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Common.Version")</span>
+                        <span class="setting-desc">
+                            v@(AppVersion)
+                            @if (AppState.IsWindows)
+                            {
+                                <text> (Build @BuildNumber)</text>
+                            }
+                        </span>
+                    </div>
+                    <button class="button setting-btn" @onclick="CheckUpdateCommand">
+                        @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.CheckUpdate) ? AppState.Tasks[AppTaskType.CheckUpdate].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
+                    </button>
                 </div>
-                <button class="button setting-btn" @onclick="CheckUpdateCommand">
-                    @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.CheckUpdate) ? AppState.Tasks[AppTaskType.CheckUpdate].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
-                </button>
-            </div>
-            <div class="setting-item">
-                <div class="setting-info">
-                    <span class="setting-name">@Loc.Get("Settings.Author")</span>
-                    <span class="setting-desc">@Author</span>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.Author")</span>
+                        <span class="setting-desc">@Author</span>
+                    </div>
+                    <button class="button setting-btn" @onclick="GotoGithub">
+                        <Icon Name="github" />
+                    </button>
                 </div>
-                <button class="button setting-btn" @onclick="GotoGithub">
-                    <Icon Name="github" />
-                </button>
             </div>
-        </div>
 
+        </div>
     </div>
-</div>
 
 @code {
     protected override void OnInitialized()
@@ -543,6 +549,13 @@
             Preferences.Default.Set("MaxRetryAttempts", value);
         }
     }
+
+    private bool AutoUpdatePages
+    {
+        get => Preferences.Default.Get("AutoUpdatePages", false);
+        set => Preferences.Default.Set("AutoUpdatePages", value);
+    }
+
     private int MaxSearchItemCount
     {
         get => Preferences.Default.Get("MaxSearchItemCount", 50);
@@ -631,28 +644,5 @@
             await FileHelper.ClearAppCacheAsync();
         }
     }
-    private int _clickCount = 0;
-    private DateTime _lastClickTime;
 
-    private void OnVersionLabelClicked()
-    {
-        var now = DateTime.Now;
-
-        // 如果两次点击间隔超过 500ms，重置计数（防止用户平时误触累积）
-        if ((now - _lastClickTime).TotalMilliseconds > 500)
-        {
-            _clickCount = 0;
-        }
-
-        _clickCount++;
-        _lastClickTime = now;
-
-        if (_clickCount == 7) // 连点 7 次触发
-        {
-            _clickCount = 0;
-
-            AppService.NavigateTo("test");
-
-        }
-    }
 }

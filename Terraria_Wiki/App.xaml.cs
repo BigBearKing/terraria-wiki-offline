@@ -107,6 +107,19 @@ namespace Terraria_Wiki
             await ContentDb.Init(false, activeBook);
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
             await RestoreDownloadTaskStateAsync();
+            _ = RunAutomaticPageUpdateAsync();
+        }
+
+        private static async Task RunAutomaticPageUpdateAsync()
+        {
+            if (!Preferences.Default.Get("AutoUpdatePages", false) ||
+                !await NetworkService.IsNetworkAvailableAsync() ||
+                AppStateManager?.ActiveWikiBook?.IsPageDownloaded != true)
+            {
+                return;
+            }
+
+            await DataManager!.UpdateDataAsync(includeResources: false);
         }
 
         private static async Task RestoreDownloadTaskStateAsync()

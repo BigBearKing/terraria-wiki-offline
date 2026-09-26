@@ -1,4 +1,6 @@
 ﻿@using System.ComponentModel
+@using System.Text.Encodings.Web
+@using System.Text.RegularExpressions
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 
@@ -22,11 +24,11 @@
 				{
 					<li class="result-item" @onclick="() => SelectResult(string.IsNullOrEmpty(item.RedirectTo) ? item.Title : item.RedirectTo)">
 						<div class="result-title">
-							@item.Title
+							@HighlightMatches(item.Title)
 							@if (!string.IsNullOrEmpty(item.RedirectTo))
 							{
 								<span style="color: var(--text-secondary); font-size: 0.8em; margin-left: 12px;">
-                                    ➔ @Loc.Get("SearchResultPanel.RedirectTo"): @item.RedirectTo
+									➔ @Loc.Get("SearchResultPanel.RedirectTo"): @HighlightMatches(item.RedirectTo)
 								</span>
 							}
 						</div>
@@ -98,6 +100,38 @@
 			isSearching = false;
 			StateHasChanged();
 		}
+	}
+
+	private MarkupString HighlightMatches(string? text)
+	{
+		if (string.IsNullOrEmpty(text))
+			return new MarkupString(string.Empty);
+
+		var terms = query
+			.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+			.Distinct(StringComparer.OrdinalIgnoreCase)
+			.OrderByDescending(term => term.Length)
+			.Select(Regex.Escape)
+			.ToArray();
+
+		if (terms.Length == 0)
+			return new MarkupString(HtmlEncoder.Default.Encode(text));
+
+		var pattern = string.Join("|", terms);
+		var result = Regex.Replace(
+			text,
+			pattern,
+			match => $"<mark class=\"search-highlight\">{HtmlEncoder.Default.Encode(match.Value)}</mark>",
+			RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+		var encodedParts = Regex.Split(result, "(<mark class=\\\"search-highlight\\\">.*?</mark>)", RegexOptions.Singleline);
+		for (var i = 0; i < encodedParts.Length; i++)
+		{
+			if (!encodedParts[i].StartsWith("<mark class=\"search-highlight\">", StringComparison.Ordinal))
+				encodedParts[i] = HtmlEncoder.Default.Encode(encodedParts[i]);
+		}
+
+		return new MarkupString(string.Concat(encodedParts));
 	}
 
 	private async Task SelectResult(string title)
