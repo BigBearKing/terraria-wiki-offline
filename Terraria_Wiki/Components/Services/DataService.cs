@@ -1249,6 +1249,7 @@ namespace Terraria_Wiki.Services
                 LastModified = pageInfo.LastModified
             };
             await App.ContentDb.SaveItemAsync(wikiPage);
+            AppService.InvalidatePageCache();
             var plainContent = ExtractSearchableText(contentNode);
             await App.ContentDb.SaveSearchIndexAsync(pageInfo.Title, plainContent);
 

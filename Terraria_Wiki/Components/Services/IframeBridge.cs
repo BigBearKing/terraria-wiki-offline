@@ -11,6 +11,7 @@ public static class IframeBridge
     private static readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingTasks = new();
 
     public static readonly Dictionary<string, Func<string, Task<string>>> Actions = new();
+    public static readonly Dictionary<string, Func<string, Task<object?>>> StructuredActions = new();
     public static event Action? OnIframePageReady;
 
 
@@ -58,12 +59,20 @@ public static class IframeBridge
         }
         else if (msg.Type == "req") // B. 这是 JS 请求调用 C#
         {
-            string result = "";
-            if (Actions.TryGetValue(msg.Method, out var func))
-                result = await func(msg.Data);
+            if (StructuredActions.TryGetValue(msg.Method, out var structuredFunc))
+            {
+                var result = await structuredFunc(msg.Data);
+                await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "res", id = msg.Id, data = result });
+            }
+            else
+            {
+                string result = "";
+                if (Actions.TryGetValue(msg.Method, out var func))
+                    result = await func(msg.Data);
 
-            // 发送返回值给 JS
-            await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "res", id = msg.Id, data = result });
+                // 发送返回值给 JS
+                await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "res", id = msg.Id, data = result });
+            }
         }
         else if (msg.Type == "event" && msg.Method == "IframePageReady")
         {

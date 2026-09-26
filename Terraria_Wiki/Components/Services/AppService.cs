@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using System.Collections.Concurrent;
 using Terraria_Wiki.Models;
 #if ANDROID
 using Terraria_Wiki.Platforms.Android;
@@ -19,8 +20,10 @@ namespace Terraria_Wiki.Services
     {
         private static NavigationManager _navManager;
         private static IJSRuntime _js;
+        private const int MaxCachedPages = 32;
         private static readonly SemaphoreSlim _wikiSwitchLock = new(1, 1);
         private static readonly SemaphoreSlim _storageSwitchLock = new(1, 1);
+        private static readonly ConcurrentDictionary<string, Lazy<Task<WikiPage?>>> _pageCache = new();
 
 
         public AppService()
@@ -70,6 +73,7 @@ namespace Terraria_Wiki.Services
 
                 App.WebServer?.Stop();
                 await App.ContentDb!.CloseConnection();
+                InvalidatePageCache();
                 await App.ManagerDb!.CloseConnection();
                 await storage.MigrateAsync(mode, customPath);
                 App.LogManager.Info(App.Localization.Get("AppService.DataMigrationCopied"));
@@ -155,7 +159,7 @@ namespace Terraria_Wiki.Services
 
         private void RegisterIframeActions()
         {
-            IframeBridge.Actions["PageRedirectAsync"] = PageRedirectAsync;
+            IframeBridge.StructuredActions["PageRedirectAsync"] = async title => await PageRedirectAsync(title);
             IframeBridge.Actions["SyncCurrentWikiPage"] = SyncCurrentWikiPageAsync;
             IframeBridge.Actions["GetRedirectedTitleAndAnchorAsync"] = GetRedirectedTitleAndAnchorAsync;
             IframeBridge.Actions["SaveToTabHistory"] = SaveToTabHistoryAsync;
@@ -184,15 +188,10 @@ namespace Terraria_Wiki.Services
             return Task.FromResult<string>(null);
         }
 
-        private async Task<string> PageRedirectAsync(string title)
+        private async Task<WikiPageStringTime?> PageRedirectAsync(string title)
         {
-            var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
-            if (page == null)
-            {
-                var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
-                if (redirect != null)
-                    page = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
-            }
+            var cacheKey = GetPageCacheKey(title);
+            var page = await GetCachedPageAsync(title, cacheKey);
 
             if (page == null)
             {
@@ -215,7 +214,61 @@ namespace Terraria_Wiki.Services
             if (page.Title != App.AppStateManager.ActiveWikiBook.DefaultPageTitle)
                 Task.Run(async () => await SaveToHistoryAsync(page.Title));
 
-            return IframeBridge.ObjToJson(result);
+            return result;
+        }
+
+        private static string GetPageCacheKey(string title)
+        {
+            var bookKey = App.AppStateManager.ActiveWikiBook?.DataFolder ?? string.Empty;
+            return $"{bookKey}\n{title}";
+        }
+
+        private static async Task<WikiPage?> GetCachedPageAsync(string title, string cacheKey)
+        {
+            if (_pageCache.Count >= MaxCachedPages && !_pageCache.ContainsKey(cacheKey))
+                _pageCache.Clear();
+
+            var lazyPage = _pageCache.GetOrAdd(
+                cacheKey,
+                _ => new Lazy<Task<WikiPage?>>(
+                    () => LoadPageAsync(title),
+                    LazyThreadSafetyMode.ExecutionAndPublication));
+
+            try
+            {
+                var page = await lazyPage.Value;
+                if (page == null)
+                    _pageCache.TryRemove(cacheKey, out _);
+                return page;
+            }
+            catch
+            {
+                _pageCache.TryRemove(cacheKey, out _);
+                throw;
+            }
+        }
+
+        private static async Task<WikiPage?> LoadPageAsync(string title)
+        {
+            var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
+            if (page != null)
+                return page;
+
+            var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
+            return redirect == null
+                ? null
+                : await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
+        }
+
+        public static void InvalidatePageCache(string? title = null)
+        {
+            if (title == null)
+            {
+                _pageCache.Clear();
+                return;
+            }
+
+            _pageCache.TryRemove(GetPageCacheKey(title), out _);
         }
 
         private async Task<string> GetRedirectedTitleAndAnchorAsync(string input)
@@ -345,11 +398,28 @@ namespace Terraria_Wiki.Services
         public static async Task WikiBackHomeAsync()
         {
             var list = App.AppStateManager.TabHistory;
-            var listcount = list.Count;
-            if (listcount != 0)
+            var currentPage = App.AppStateManager.CurrentWikiPage;
+            var defaultPage = App.AppStateManager.ActiveWikiBook?.DefaultPageTitle
+                ?? App.AppStateManager.ActiveWikiBook?.Title
+                ?? string.Empty;
+            var isCurrentPageHome = string.IsNullOrWhiteSpace(currentPage)
+                || string.Equals(currentPage, defaultPage, StringComparison.OrdinalIgnoreCase);
+
+            if (list.Count != 0 || !isCurrentPageHome)
             {
                 await IframeBridge.CallJsAsync("BackHome", "");
                 list.Clear();
+                App.AppStateManager.CurrentWikiPage = defaultPage;
+
+                var activeTab = App.AppStateManager.GetActiveTab();
+                if (activeTab != null)
+                {
+                    activeTab.CurrentPage = new PageViewInfo
+                    {
+                        Title = defaultPage,
+                        Position = 0
+                    };
+                }
             }
             else
             {
@@ -505,6 +575,7 @@ namespace Terraria_Wiki.Services
                     book.DataFolder,
                     "data.db");
 
+                InvalidatePageCache();
                 await App.ContentDb.SwitchDatabaseAsync(contentDbPath);
                 await App.ContentDb.Init(false, book);
 

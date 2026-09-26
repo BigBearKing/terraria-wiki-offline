@@ -296,7 +296,7 @@
      */
     async function redirect(title, config, navigationId = beginNavigation()) {
         // 请求 C# 渲染词条 HTML，返回 { title, content, lastModified }
-        const result = JSON.parse(await callCSharpAsync("PageRedirectAsync", title));
+        const result = await callCSharpAsync("PageRedirectAsync", title);
         if (result == null || !isCurrentNavigation(navigationId)) return null;
 
         // 更新页面标题、正文内容与最后修改时间
