@@ -1,0 +1,224 @@
+/* light theme — the wiki's light theme, mapped onto the app's html.light class */
+/**** Theme vars START ***********************************************************/
+/*** base default theme (Overworld/dark) ***/
+html.light {
+  /* common */
+  --theme-highlight-background: rgba(20,20,20, 0.25);
+  /******* "real" wiki content ********/
+  /* modetabs */
+  --theme-modetabs-classic-background: var(--theme-box-background);
+  --theme-modetabs-classic-border-color: var(--theme-border-color);
+  --theme-modetabs-classic-text-color: var(--theme-text-color-highlight);
+  --theme-modetabs-classic-text-color-label: var(--theme-modetabs-classic-text-color);
+  --theme-modetabs-expert-background: #a1743a80;
+  --theme-modetabs-expert-border-color: #ffca67;
+  --theme-modetabs-expert-text-color: var(--theme-modetabs-classic-text-color);
+  --theme-modetabs-expert-text-color-label: #dab2fa;
+  --theme-modetabs-master-background: #a9545467;
+  --theme-modetabs-master-border-color: #ffbaba;
+  --theme-modetabs-master-text-color: var(--theme-modetabs-classic-text-color);
+  --theme-modetabs-master-text-color-label: #ff6c60;
+}
+
+html.light {
+  /* floating scroll for wide table */
+  --theme-wide-table-shadow-color: #999;
+  /* background & logo */
+  --theme-site-background: #b8bad0 url(/images/main/Site-background-overworld.jpg) center top / cover no-repeat fixed;
+  --theme-site-logo-image: url(/images/main/Site-logo-overworld.png);
+  --theme-site-logo-width: 421px;
+  --theme-site-logo-height: 140px;
+  --theme-site-logo-filter: none;
+  /* content background */
+  --theme-background: #5a433a;
+  /* background for accent block */
+  --theme-background-accent: rgba(20,20,20,0.5);
+  /* the "grass" */
+  --theme-top-background: url(/images/main/Grass-top-overworld.png) top left repeat-x; /* the "grass" */
+  --theme-top-background-height: 13px; /* height of the image above. */
+  --theme-top-background-offset: -6px; /* top */
+  /* text color */
+  /* main text color */
+  --theme-text-color: #eae3d1;
+  --theme-text-color--rgb: 234, 227, 209;
+  --theme-text-color-note: #b5bdb2; /* subdued, "note"-style text color */
+  --theme-text-color-em: #c4ebd0; /* more prominent text color for emphasis */
+  --theme-text-color-highlight: #fff;
+
+  --theme-text-color-placeholder: rgba(234,227,209,0.4);
+  --theme-heading-color: var(--theme-text-color);
+  --theme-text-color-green: #00d400;
+
+  --theme-text-color-red: #fe9b9b;
+  /* color behind text (normal and "note") to highlight it */
+  --theme-text-background-color-highlight: #645130;
+  /* link text color */
+  --theme-link-color: #9fecf0;
+  --theme-link-color--rgb: 159, 236, 240;
+  --theme-link-color-hover: #86dcdf;
+  --theme-link-color-visited: #86dcdf;
+  --theme-link-color-redlink: #f66;
+  --theme-link-color-accent: var(--theme-text-color-em);
+  /* icon color */
+  --theme-icon-color: var(--theme-text-color);
+  --theme-icon-color-link: var(--theme-link-color);
+  --theme-icon-color-hover: var(--theme-link-color-hover);
+
+  /* icon color of the toggle for collapsible elements */
+  --theme-collapsible-toggle-icon-color: var(--theme-text-color-note);
+  --theme-collapsible-toggle-icon-color-hover: var(--theme-link-color-hover);
+  /* hover mask */
+  --theme-highlight-background: rgba(20,20,20,0.25);
+  /* "box" style for interface */
+  --theme-widget-shadow: 0px 0px 15px 0px rgba(10,10,10, 0.7);
+  --theme-widget-border-color: rgba(255,255,255, 0.1) rgba(13, 4, 2, 0.2) rgba(13, 4, 2, 0.2) rgba(255,255,255, 0.1);
+  --theme-widget-border-radius: 6px;
+  --theme-widget-background: linear-gradient(rgba(20,20,20, 0.1), rgba(20,20,20, 0.1)),
+  #60473b url(/images/main/Content-background-overworld.jpg);
+  /* "box" style for content */
+  --theme-box-border-color: #000;
+  --theme-box-border-color--rgb: 0, 0, 0;
+  --theme-box-border-color-light: rgba(255, 255, 255, 0.1);
+  --theme-box-border-color-inner: var(--theme-box-border-color);
+  --theme-box-background: rgba(20,20,20,0.12);
+  --theme-box-border-radius: 5px;
+  --theme-box-border-radius-inner: 8px;
+
+  --theme-border-color: var(--theme-box-border-color); /* inner, separate border line */
+  --theme-border-color--rgb: var(--theme-box-border-color--rgb); /* inner, separate border line */
+  --theme-border-color-accent: #999;
+  /* "horizontal rule" */
+  --theme-hr-color-top: rgb(20,20,20);
+  --theme-hr-color-bottom: rgba(255,255,255, 0.1);
+  /* dropdown menu body */
+  --theme-dropdown-border-width: 1px; /* single value */
+  --theme-dropdown-border-style: solid;
+  --theme-dropdown-border-radius: var(--theme-widget-border-radius);
+  --theme-dropdown-border-color: var(--theme-widget-border-color);
+  --theme-dropdown-background: #60473b url(/images/main/Content-background-overworld.jpg);
+
+  /* border and background colors for various "notices", e.g. boxes like [[Template:Msgbox]] */
+  --theme-notice-blue-background-color: hsla(200, 80%, 90%, 20%);
+  --theme-notice-blue-border-color: hsl(200, 60%, 72%);
+  --theme-notice-red-text-color: hsl(0, 100%, 70%);
+  --theme-notice-red-background-color: hsla(0, 80%, 90%, 20%);
+  --theme-notice-red-border-color: hsl(0, 60%, 72%);
+  --theme-notice-purple-background-color: hsla(228, 80%, 90%, 20%);
+  --theme-notice-purple-border-color: hsl(243, 60%, 72%);
+  --theme-notice-green-background-color: hsla(84, 80%, 90%, 20%);
+  --theme-notice-green-border-color: hsl(84, 60%, 72%);
+  --theme-notice-yellow-background-color: hsla(58, 80%, 90%, 20%);
+  --theme-notice-yellow-border-color: hsl(58, 60%, 72%);
+
+  --theme-notice-orange-background-color: hsla(28, 80%, 90%, 20%);
+  --theme-notice-orange-border-color: hsl(28, 60%, 72%);
+  --theme-notice-pink-background-color: hsla(324, 80%, 90%, 20%);
+  --theme-notice-pink-border-color: hsl(324, 60%, 72%);
+}
+
+/* navbar */
+html.light #mw-head {
+  --theme-link-color: var(--theme-link-color-accent);
+  --theme-link-color-visited: var(--theme-link-color-accent);
+  --theme-link-color-hover: var(--theme-link-color-accent);
+  --theme-icon-color-hover: var(--theme-link-color-accent);
+  --theme-icon-color-link: var(--theme-link-color-accent);
+  --theme-background: linear-gradient(rgba(20,20,20, 0.1), rgba(20,20,20, 0.1)), #60473b url(/images/main/Navbar-background-overworld.jpg);
+
+  --theme-border-bottom-color: rgba(255,255,255, 0.1);
+
+}
+
+html.light #footer {
+  --theme-background: linear-gradient(rgba(20,20,20, 0.3), rgba(20,20,20, 0.3)), #60473b url(/images/main/Navbar-background-overworld.jpg) center top / auto 100%;
+  --theme-inner-shadow: inset var(--theme-widget-shadow);
+}
+
+/* catlinks */
+html.light .catlinks {
+  --theme-background: rgba(10, 10, 10, 0.3);
+  --theme-border-color: rgba(13,4,2,0.5) rgba(255,255,255,0.1) rgba(255,255,255,0.1) rgba(13,4,2,0.5);
+}
+
+/********* OOUI theming *********/
+html.light {
+  /* These helper variables are defined for reuse in the variable definitions below */
+  --oouihelper--red: #b32424;
+  --oouihelper--red-darker: #551111;
+  --oouihelper--red-lighter: #f04848;
+  --oouihelper--yellow: #ac6600;
+  --oouihelper--yellow-darker: #4d2e00;
+  --oouihelper--green: #006633;
+  --oouihelper--green-darker: #00331a;
+  --oouihelper--progressive: #9fecf0;
+  --oouihelper--progressive-transparent: rgba(159, 236, 240, 0.6); /* #9fecf099; */
+  --oouihelper--disabled: #b3b3b3;
+  --oouihelper--disabled-lighter-transparent: rgba(196, 196, 196, 0.5);
+  --oouihelper--borderdark: #000;
+  --oouihelper--borderdark-lighter: #0e0c0c;
+  --oouihelper--textinput-background: rgba(20, 20, 20, 0.65);
+  --oouihelper--textinput-background-lighter: rgba(30, 30, 30, 0.65);
+  --oouihelper--textinput-background-darker: rgba(20, 20, 20, 0.8);
+  --oouihelper--themerelated: #a58350;
+  --oouihelper--themerelated-lighter: #cdab78;
+  --oouihelper--themerelated-lighter-transparent: rgba(171, 120, 84, 0.6);
+  --oouihelper--themerelated-darkest: #342919;
+  --oouihelper--themerelated-disabled-transparent: rgba(230, 219, 203, 0.05);
+  --oouihelper--text-background: #2c2421;
+  /* ---------------------------------------------- */
+  /* Actual OOUI variables, grouped by element type */
+  /* misc */
+  /* all buttons */
+  /* "normal" button */
+  /* "progressive" button */
+  /* "destructive" button */
+  /* disabled button */
+  /* frameless button */
+  /* textarea */
+  --ooui--textarea-background-color: var(--oouihelper--textinput-background);
+  --ooui--textarea-border-color: var(--oouihelper--borderdark);
+  /* checkbox */
+  /* radiobutton */
+  /* toggleswitch */
+  /* dropdown */
+  /* selectfile */
+  /* tag item */
+  /* multioption */
+  /* progressbar */
+  /* messagewidget */
+  --ooui--messagewidget-notice-background-color: #4e3a32;
+  --ooui--messagewidget-notice-border-color: #2f231e;
+  --ooui--messagewidget-error-background-color: var(--oouihelper--red);
+  --ooui--messagewidget-error-border-color: var(--oouihelper--red-darker);
+  --ooui--messagewidget-error-color: var(--oouihelper--red-lighter);
+  --ooui--messagewidget-warning-background-color: var(--oouihelper--yellow);
+  --ooui--messagewidget-warning-border-color: var(--oouihelper--yellow-darker);
+  --ooui--messagewidget-success-background-color: var(--oouihelper--green);
+  --ooui--messagewidget-success-border-color: var(--oouihelper--green-darker);
+  /* menuselectwidget */
+  --ooui--menuselect-selected-background-color: var(--oouihelper--textinput-background-darker);
+  --ooui--menuselect-highlighted-background-color: var(--oouihelper--textinput-background-lighter);
+  /* tabselectwidget */
+  --ooui--tabselect-background-color: var(--oouihelper--text-background);
+  /* outlineselectwidget */
+  /* popupwidget */
+  /* layouts */
+  /* dialog */
+  --ooui--dialog-border-color--lighter: var(--oouihelper--borderdark-lighter);
+  /* window */
+  /* indicators */
+  /* tools like https://isotropic.co/tool/hex-color-to-css-filter/ allow converting the desired color into a filter */
+  /* icons */
+  --ooui--icon-normal-filter: brightness(0) invert(90%) sepia(28%) saturate(107%) hue-rotate(5deg) brightness(96%) contrast(93%);
+  --ooui--icon-progressive-filter: brightness(0) invert(90%) sepia(21%) saturate(662%) hue-rotate(140deg) brightness(99%) contrast(91%);
+}
+
+/********* Theming of Codex design tokens *********/
+html.light {
+  --color-base: #eae3d1;
+
+}
+
+/***************************************************************************************************/
+/***************************************************************************************************/
+/****************************** 

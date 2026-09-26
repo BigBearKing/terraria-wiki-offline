@@ -1,3 +1,12 @@
+/* wiki.gg 顶部栏高度。上游由 wiki.gg 的头脚本注入；离线构建里没有该脚本，
+   若此处不定义，common.css 里 calc(var(--wikigg-header-height) + ...) 的
+   --wiki-menu-top-offset 会整条失效 → 窄屏(<=720px)下 #mw-panel 的
+   position:absolute 退化为 top:auto，静态位置被 .content-wrapper 的
+   column-reverse 推到页面底部。其余 6 个 wiki 的 vector.css 首行均有该定义。 */
+:root {
+    --wikigg-header-height: 35px
+}
+
 @media (prefers-reduced-motion:reduce) {
 
     *,
@@ -1017,7 +1026,7 @@ div.thumbinner {
 
     .mw-body,
     #mw-data-after-content {
-        margin-left: 10em
+        margin-left: 1em
     }
 
     .mw-body {
@@ -1151,7 +1160,7 @@ div.thumbinner {
     #mw-head-base,
     #mw-data-after-content,
     .mw-footer {
-        margin-left: 11em
+        margin-left: 1em
     }
 
     .mw-body {

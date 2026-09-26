@@ -238,6 +238,18 @@ namespace Terraria_Wiki
         }
 #endif
 
+        public async Task ClearWebViewCacheAsync()
+        {
+#if WINDOWS
+            if (blazorWebView.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.WebView2 webView &&
+                webView.CoreWebView2 is { Profile: not null } coreWebView2)
+            {
+                await coreWebView2.Profile.ClearBrowsingDataAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2BrowsingDataKinds.DiskCache);
+            }
+#endif
+        }
+
 #if ANDROID
         // 专门为 Android WebView 编写的按键拦截器
         private class WebViewBackInterceptor : Java.Lang.Object, Android.Views.View.IOnKeyListener

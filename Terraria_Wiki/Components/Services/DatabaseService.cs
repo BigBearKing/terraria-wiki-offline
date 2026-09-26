@@ -1,4 +1,4 @@
-﻿using SQLite;
+using SQLite;
 using Terraria_Wiki.Models;
 namespace Terraria_Wiki.Services;
 
@@ -238,6 +238,78 @@ public class DatabaseService
             DataFolder = "Calamity_Wiki_en",
             DefaultPageContent = "please download data first",
             DefaultPageTitle = "Calamity Mod Wiki",
+        },
+        new WikiBook
+        {
+            Id=5,
+            Title = "法狗中文百科",
+            Description = "Fargo's Mod（俗称法狗）在泰拉瑞亚游戏流程的各时期加入各种内容，主要分为「Fargo突变」与「Fargo魂石」两个模组：突变侧重减少肝度的功能与出售召唤物的城镇 NPC；魂石则加入魔石、魂石等大量可合成饰品，并大幅重做原版内容。",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://fargosmods.wiki.gg/zh/api.php",
+            BaseUrl = "https://fargosmods.wiki.gg",
+            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "",
+            JunkXPath = "//span[@class='mw-editsection']|//comment()",
+            Language = "zh",
+            DataFolder = "Fargo_Wiki_zh",
+            DefaultPageContent = "请先下载数据",
+            DefaultPageTitle = "Fargo's Mods Wiki",
+        },
+        new WikiBook
+        {
+            Id=6,
+            Title = "瑟银中文百科",
+            Description = "瑟银模组是泰拉瑞亚最大的模组之一，加入了超过 2600 件新物品、11 场全新的 Boss 战斗、一批新敌怪、一个全新生物群落，以及三个新职业。",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://thoriummod.wiki.gg/zh/api.php",
+            BaseUrl = "https://thoriummod.wiki.gg",
+            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "10000",
+            JunkXPath = "//span[@class='mw-editsection']|//comment()",
+            Language = "zh",
+            DataFolder = "Thorium_Wiki_zh",
+            DefaultPageContent = "请先下载数据",
+            DefaultPageTitle = "Thorium Mod Wiki",
+        },
+        new WikiBook
+        {
+            Id=7,
+            Title = "Fargo's Mods Wiki",
+            Description = "Fargo's Mods are a set of Terraria mods that collectively add content across all stages of progression. The project consists of two primary mods: Fargo's Mutant Mod, mainly centered around QOL, and Fargo's Souls Mod, which adds content and significantly revamps vanilla content. Fargo's Souls Mod also has three officially supported addons: Fargo's Music Mod, Calamity - Fargo's Souls DLC and Fargo's Best of Both Worlds.",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://fargosmods.wiki.gg/api.php",
+            BaseUrl = "https://fargosmods.wiki.gg",
+            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "",
+            JunkXPath = "//span[@class='mw-editsection']|//comment()",
+            Language = "en",
+            DataFolder = "Fargo_Wiki_en",
+            DefaultPageContent = "please download data first",
+            DefaultPageTitle = "Fargo's Mods Wiki",
+        },
+        new WikiBook
+        {
+            Id=8,
+            Title = "Thorium Mod Wiki",
+            Description = "Thorium Mod is one of the largest content mods for Terraria, adding over 2,600 new items, 11 challenging new boss fights, a host of new enemies, an entirely new biome and three new classes, along with many new mechanics to explore.",
+            IsPageDownloaded = false,
+            IsResourceDownloaded = false,
+            ApiBaseUrl = "https://thoriummod.wiki.gg/api.php",
+            BaseUrl = "https://thoriummod.wiki.gg",
+            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
+            MainNamespace = 0,
+            AdditionalNamespaces = "10000",
+            JunkXPath = "//span[@class='mw-editsection']|//comment()",
+            Language = "en",
+            DataFolder = "Thorium_Wiki_en",
+            DefaultPageContent = "please download data first",
+            DefaultPageTitle = "Thorium Mod Wiki",
         },
     };
 

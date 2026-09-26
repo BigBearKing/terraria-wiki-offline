@@ -1,0 +1,85 @@
+html.dark .hp>div .text-red {
+    color: #fe7c7c
+}
+
+html.dark .hp>div .text-golden {
+    color: #db9d40
+}
+
+html.dark {
+    --theme-site-background: #000 url(/images/main/Site-background-underground.jpg) center top / cover no-repeat fixed;
+}
+
+html.dark {
+    /* --theme-background: #332f32; */
+    --theme-background: #1E1F21;
+}
+
+
+html.dark {
+    --theme-text-color: #f7e8d1;
+    --theme-text-color--rgb: 247, 232, 209;
+    --theme-text-color-note: #b5bdb2;
+    --theme-text-color-em: #f7e8d1;
+    --theme-text-color-green: #00be00;
+    --theme-text-color-red: #fe7c7c
+}
+
+html.dark {
+    --theme-text-background-color-highlight: #4b586e
+}
+
+html.dark {
+    --theme-link-color: #9cfffd;
+    --theme-link-color--rgb: 156, 255, 253;
+    --theme-link-color-hover: #9cfffd;
+    --theme-link-color-visited: #9cfffd
+}
+
+html.dark {
+    --theme-widget-background: linear-gradient(rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.1)), #444041 url(/images/main/Content-background-underground.jpg)
+}
+
+html.dark {
+    --theme-dropdown-background: #444041 url(/images/main/Content-background-underground.jpg)
+}
+
+html.dark #mw-panel {
+
+    /* 原为全角分号“；”，导致该声明无效，已修正为半角 */
+    --theme-background: #1E1F21;
+}
+
+html.dark #mw-head {
+    --theme-background: #1E1F21;
+
+}
+
+html.dark #footer {
+    --theme-background: #1E1F21;
+}
+
+
+html.dark {
+    --background-color-base: #3e393d
+}
+
+html.dark {
+    --color-base: #f7e8d1
+}
+
+html.dark {
+    --color-emphasized: #f7e8d1;
+    --color-subtle: #b5bdb2
+}
+
+html.dark {
+    --color-progressive: #9cfffd;
+    --color-progressive--hover: #9cfffd;
+    --color-progressive--focus: #9cfffd
+}
+
+html.dark {
+    --color-error: #fe7c7c;
+    --color-success: #00be00
+}

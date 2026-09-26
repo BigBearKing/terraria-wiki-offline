@@ -1,0 +1,141 @@
+html.light #drilldown-header img,
+html.light div.drilldown-filters-wrapper img {
+    filter: none
+}
+
+html.light .hp>div .text-red {
+    color: #d61616
+}
+
+html.light .hp>div .text-golden {
+    color: #946114
+}
+
+html.light .message-box::before {
+    background: var(--message-box-highlight-color, var(--theme-box-border-color))
+}
+
+html.light {
+    --theme-modetabs-classic-background: var(--theme-highlight-background);
+    --theme-modetabs-expert-background: #ffeece;
+    --theme-modetabs-expert-border-color: #ffca67;
+    --theme-modetabs-expert-text-color: #3a3119;
+    --theme-modetabs-expert-text-color-label: #9b5700;
+    --theme-modetabs-master-background: #ffe9e9;
+    --theme-modetabs-master-border-color: #ffbaba;
+    --theme-modetabs-master-text-color: #462b08;
+    --theme-modetabs-master-text-color-label: #dd1414;
+    --custom-template-expert-color: #9b5700;
+    --custom-template-master-color: #dd1414;
+    --custom-template-journey-color: #c70a7d
+}
+
+html.light {
+    --theme-site-background: #9079c8 url(/images/main/Site-background-snow.jpg) center top / cover no-repeat fixed;
+
+}
+
+html.light {
+    --theme-background: #f6f6f6;
+}
+
+html.light {
+    --theme-background-accent: rgba(20, 20, 20, 0.2)
+}
+
+
+html.light {
+    --theme-text-color: #080a13;
+    --theme-text-color--rgb: 8, 10, 19;
+    --theme-text-color-note: #666;
+    --theme-text-color-em: #080a13;
+    --theme-text-color-highlight: #000;
+    --theme-text-color-green: #007e00;
+    --theme-text-color-orange: #9d5900;
+    --theme-text-color-red: #d61616
+}
+
+html.light {
+    --theme-text-background-color-highlight: #d1e1e6
+}
+
+html.light {
+    --theme-link-color: #2d4068;
+    --theme-link-color--rgb: 45, 64, 104;
+    --theme-link-color-hover: #2d4068;
+    --theme-link-color-visited: #2d4068;
+    --theme-link-color-redlink: #9f0000
+}
+
+html.light {
+    --theme-highlight-background: rgba(20, 20, 20, 0.1)
+}
+
+html.light {
+    --theme-widget-shadow: 0px 0px 15px 0px rgba(10, 10, 40, 0.45);
+    --theme-widget-background: linear-gradient(rgba(20, 20, 20, 0.1), rgba(20, 20, 20, 0.1)), #d6dbdf url(/images/main/Content-background-snow.jpg)
+}
+
+html.light {
+    --theme-box-border-color: #aaa;
+    --theme-box-border-color--rgb: 170, 170, 170;
+    --theme-box-border-color-light: rgba(0, 0, 0, 0.1);
+    --theme-box-background: rgba(200, 200, 210, 0.15);
+    --theme-box-inset-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.05);
+    --theme-border-color-accent: #333
+}
+
+html.light {
+    --theme-hr-color-bottom: rgba(255, 255, 255, 0.5)
+}
+
+html.light {
+    --theme-dropdown-background: #d6dbdf url(/images/main/Content-background-snow.jpg)
+}
+
+html.light #mw-head {
+    --theme-background: #f6f6f6;
+
+}
+
+html.light #footer {
+    --theme-background: #f6f6f6;
+}
+
+html.light .catlinks {
+    --theme-background: #f6f6f6;
+}
+
+html.light {
+    --background-color-base: #eaeef1
+}
+
+html.light {
+    --color-base: #080a13
+}
+
+html.light {
+    --color-emphasized: #080a13;
+    --color-subtle: #666
+}
+
+html.light {
+    --color-progressive: #2d4068;
+    --color-progressive--hover: #2d4068;
+    --color-progressive--focus: #2d4068
+}
+
+html.light {
+    --color-destructive: #9f0000;
+    --color-destructive--focus: #9f0000
+}
+
+html.light {
+    --color-error: #d61616;
+    --color-warning: #9d5900;
+    --color-success: #007e00
+}
+
+html.light {
+    --border-color-base: #aaa
+}

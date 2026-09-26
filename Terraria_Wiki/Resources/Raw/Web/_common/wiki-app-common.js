@@ -96,6 +96,7 @@
         window.pageTitle = null; // 当前页面标题，初始为空
         registerHandlers(config); // 注册 C# -> JS 的消息处理器
         bindNavigation(config);   // 绑定链接点击、鼠标侧键等导航交互
+        window.addEventListener('hashchange', expandCollapsiblesForHash);
 
         // 仅桌面端启用自定义右键菜单
         if (isMobile === "False") {
@@ -113,7 +114,6 @@
     function applyWikiZoom(value) {
         const zoom = Number.isFinite(value) ? Math.min(200, Math.max(50, value)) : 100;
         document.documentElement.style.zoom = `${zoom}%`;
-        console.log("zoom是" + zoom);
     }
 
     function registerHandlers(config) {
@@ -323,6 +323,8 @@
 
         // 调用配置中的刷新回调（例如重新运行页面脚本、刷新锚点等）
         config.refresh();
+        // 启用正文里的可折叠元素（必须在 refresh 之后，此时 DOM 结构已稳定）
+        initCollapsibles();
         window.parent.postMessage({ type: "event", method: "IframePageReady", data: null }, '*');
         return true;
     }
@@ -503,9 +505,465 @@
             html.dark .menu-divider {
                 background-color: #444;
             }
+
+            /* ---- MediaWiki 可折叠元素（jquery.makeCollapsible.styles）----
+               离线包没有 ResourceLoader，核心样式表也没打包。这里补上 wiki.gg 实际
+               下发的规则，否则 <button> 会带浏览器默认外观（灰底圆角+外框）。 */
+            .mw-collapsible-toggle {
+                float: right;
+                -webkit-user-select: none;
+                user-select: none;
+                cursor: pointer;
+            }
+
+            .mw-collapsible-toggle-default {
+                -webkit-appearance: none;
+                appearance: none;
+                background: none;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                font: inherit;
+                cursor: pointer;
+            }
+
+            .mw-collapsible-toggle-default .mw-collapsible-text {
+                /* 依次回退到各 wiki 自己的链接色变量，都没有则继承 */
+                color: var(--color-link, var(--wiki-content-link-color, var(--theme-link-color, inherit)));
+                text-decoration: none;
+            }
+
+            .mw-collapsible-toggle-default .mw-collapsible-text:hover,
+            .mw-collapsible-toggle-default .mw-collapsible-text:active {
+                text-decoration: underline;
+            }
+
+            .mw-collapsible-toggle-default::before {
+                content: '[';
+            }
+
+            .mw-collapsible-toggle-default::after {
+                content: ']';
+            }
+
+            .mw-customtoggle {
+                cursor: pointer;
+            }
+
+            caption .mw-collapsible-toggle {
+                float: none;
+            }
             `;
             document.head.appendChild(style);
         }
+    }
+
+    // ============================================================
+    // 可折叠元素（mw-collapsible）
+    //
+    // 原生 JS 移植版，逐函数对应 MediaWiki 核心模块 jquery.makeCollapsible
+    // (REL1_43)，只是把 jQuery 操作换成 DOM API：
+    //   https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+/refs/heads/REL1_43/resources/src/jquery/jquery.makeCollapsible.js
+    // 入口与官方一致：mediawiki.page.ready 里的
+    //   $content.find('.mw-collapsible').makeCollapsible()
+    //
+    // 为什么要自己实现：折叠完全依赖 ResourceLoader 下发的核心 JS，
+    // 离线包里既没有 ResourceLoader 也没有任何替代实现，于是
+    // .mw-collapsible / .mw-collapsed 退化成惰性类名 ——
+    // 没有 toggle 元素可点、没有事件、也没有任何隐藏样式。
+    // ============================================================
+
+    /** 查询单个元素。 */
+    function qs(selector, root) {
+        return (root || document).querySelector(selector);
+    }
+
+    /** 查询多个元素并返回真正的数组（便于 filter 等操作）。 */
+    function qsa(selector, root) {
+        return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
+
+    /** 取直接子元素中匹配选择器的那些（等价于 jQuery 的 "> sel"）。 */
+    function directChildren(el, selector) {
+        return Array.prototype.filter.call(el.children, function (child) {
+            return child.matches(selector);
+        });
+    }
+
+    /**
+     * 在 root 中查找「预制」toggle。
+     *
+     * 对应官方选择器 `'> .mw-collapsible-toggle, .mw-collapsible-toggle-placeholder'`
+     * —— 注意选择器列表里**只有第一项带 `>`**：
+     *   · `.mw-collapsible-toggle`        只找**直接子元素**
+     *   · `.mw-collapsible-toggle-placeholder`  在**全部后代**里找
+     * 各 wiki 的模板正依赖第二点，例如 Terraria 的
+     * `.ranger-navbox > .ranger-title > .mw-collapsible-toggle-placeholder`
+     * 与 `.ranger-section > .ranger-header > .mw-collapsible-toggle-placeholder`，
+     * 配套 CSS 也写成 `.ranger-navbox .ranger-header > .mw-collapsible-toggle`。
+     *
+     * @param {HTMLElement|HTMLElement[]} roots 一个或多个查找起点
+     * @returns {HTMLElement|null}
+     */
+    function findToggle(roots) {
+        const list = Array.isArray(roots) ? roots : [roots];
+        let direct = null;
+        let placeholder = null;
+        list.forEach(function (root) {
+            if (!root) return;
+            if (!direct) {
+                direct = Array.prototype.find.call(root.children, function (child) {
+                    return child.classList.contains('mw-collapsible-toggle');
+                }) || null;
+            }
+            if (!placeholder) {
+                placeholder = root.querySelector('.mw-collapsible-toggle-placeholder');
+            }
+        });
+        // 两者都存在时按文档顺序取靠前的（与官方 .first() 一致）
+        if (direct && placeholder) {
+            return (direct.compareDocumentPosition(placeholder) & Node.DOCUMENT_POSITION_FOLLOWING)
+                ? direct
+                : placeholder;
+        }
+        return direct || placeholder || null;
+    }
+
+    /** CSS.escape 兜底（把 id 拼成选择器时用）。 */
+    function escapeSelector(value) {
+        if (window.CSS && CSS.escape) return CSS.escape(value);
+        return String(value).replace(/[^\w-]/g, '\\$&');
+    }
+
+    /** 是否中文页面：官方消息 collapsible-collapse / collapsible-expand 取页面内容语言。 */
+    function isZhContent() {
+        return (document.documentElement.getAttribute('lang') || 'en').toLowerCase().indexOf('zh') === 0;
+    }
+
+    /** 折叠时 toggle 上的文字（collapsible-collapse）。 */
+    function collapsibleCollapseText() {
+        return isZhContent() ? '折叠' : 'Collapse';
+    }
+
+    /** 展开时 toggle 上的文字（collapsible-expand）。 */
+    function collapsibleExpandText() {
+        return isZhContent() ? '展开' : 'Expand';
+    }
+
+    /**
+     * 生成默认 toggle（官方 buildDefaultToggleLink）：
+     * <button type="button" class="mw-collapsible-toggle mw-collapsible-toggle-default">
+     *     <span class="mw-collapsible-text">折叠</span>
+     * </button>
+     * @param {string} text 初始文字（官方固定用 collapseText）
+     * @returns {HTMLButtonElement}
+     */
+    function buildDefaultToggleLink(text) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'mw-collapsible-toggle mw-collapsible-toggle-default';
+        const span = document.createElement('span');
+        span.className = 'mw-collapsible-text';
+        span.textContent = text;
+        button.appendChild(span);
+        return button;
+    }
+
+    /**
+     * 真正展开/折叠容器内容（官方 toggleElement）。
+     * @param {HTMLElement} collapsible .mw-collapsible 元素
+     * @param {boolean} expand true 展开，false 折叠
+     * @param {HTMLElement|null} defaultToggle 默认 toggle（表格/列表要排除它所在的那一行/项）
+     * @param {object} [options] 支持 plainMode
+     */
+    function toggleCollapsibleElement(collapsible, expand, defaultToggle, options) {
+        options = options || {};
+        if (defaultToggle === undefined) defaultToggle = null;
+
+        const tag = collapsible.tagName.toLowerCase();
+        let containers;
+
+        if (!options.plainMode && tag === 'table') {
+            // 表格：有 caption 就折叠除 caption 外的所有行，否则折叠 tbody 的行
+            if (directChildren(collapsible, 'caption').length) {
+                containers = qsa(':scope > * > tr', collapsible);
+            } else {
+                containers = qsa(':scope > tbody > tr', collapsible);
+            }
+            if (defaultToggle) {
+                const toggleRow = defaultToggle.closest('tr');
+                containers = containers.filter(function (row) { return row !== toggleRow; });
+            }
+        } else if (!options.plainMode && (tag === 'ul' || tag === 'ol')) {
+            // 列表：折叠每一项（toggle 自己所在项除外）
+            containers = directChildren(collapsible, 'li');
+            if (defaultToggle) {
+                const toggleItem = defaultToggle.parentElement;
+                containers = containers.filter(function (item) { return item !== toggleItem; });
+            }
+        } else {
+            // 其余（div/p 等）：优先折叠 .mw-collapsible-content；
+            // 没有它说明是「自定义 toggle + 整块切换」的 remote 场景，折叠元素自身
+            const content = directChildren(collapsible, '.mw-collapsible-content');
+            containers = (!options.plainMode && content.length) ? content : [collapsible];
+        }
+
+        containers.forEach(function (el) {
+            el.style.display = expand ? '' : 'none';
+        });
+    }
+
+    /**
+     * 处理一次折叠/展开（官方 togglingHandler）。
+     * @param {HTMLElement} toggle 被操作的 toggle
+     * @param {HTMLElement} collapsible 受控容器
+     * @param {Event|null} e 触发事件（初始化时传 null）
+     * @param {object} [options] toggleClasses / toggleARIA / toggleText / wasCollapsed
+     */
+    function handleCollapsibleToggle(toggle, collapsible, e, options) {
+        options = options || {};
+
+        if (e) {
+            // 点到 toggle 内部的链接（预置 toggle 的情况）→ 放行，不折叠
+            if (e.type === 'click'
+                && e.target.nodeName.toLowerCase() === 'a'
+                && e.target.getAttribute('href')) {
+                return;
+            }
+            // 键盘只认 Enter / Space（官方用 e.which 13 / 32）
+            if (e.type === 'keydown'
+                && e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // options.wasCollapsed 用于初始化时绕开类名判断
+        const wasCollapsed = options.wasCollapsed !== undefined
+            ? options.wasCollapsed
+            : collapsible.classList.contains('mw-collapsed');
+
+        collapsible.classList.toggle('mw-collapsed', !wasCollapsed);
+
+        if (options.toggleClasses) {
+            toggle.classList.toggle('mw-collapsible-toggle-collapsed', !wasCollapsed);
+            toggle.classList.toggle('mw-collapsible-toggle-expanded', wasCollapsed);
+        }
+        if (options.toggleARIA) {
+            toggle.setAttribute('aria-expanded', wasCollapsed ? 'true' : 'false');
+        }
+        if (options.toggleText) {
+            const textContainer = qs('.mw-collapsible-text', toggle);
+            if (textContainer) {
+                textContainer.textContent = wasCollapsed
+                    ? options.toggleText.collapseText
+                    : options.toggleText.expandText;
+            }
+        }
+
+        toggleCollapsibleElement(collapsible, !!wasCollapsed, toggle, options);
+    }
+
+    /**
+     * 找到（或创建）默认 toggle，并把 .mw-collapsible-toggle-placeholder 换成真正的 toggle。
+     * 对应官方 makeCollapsible 里 else 分支的元素分类逻辑。
+     * @param {HTMLElement} collapsible 目标元素
+     * @param {string} collapseText 初始文字
+     * @returns {HTMLElement} 最终的 toggle 元素
+     */
+    function createDefaultToggle(collapsible, collapseText) {
+        function build() { return buildDefaultToggleLink(collapseText); }
+
+        const tag = collapsible.tagName.toLowerCase();
+        let toggle = null;
+
+        if (tag === 'table') {
+            const caption = directChildren(collapsible, 'caption')[0];
+            if (caption) {
+                // 有 caption：toggle 放在 caption 末尾
+                toggle = findToggle(caption);
+                if (!toggle) {
+                    toggle = build();
+                    caption.appendChild(toggle);
+                }
+            } else {
+                // 没有 caption：toggle 放在第一行最后一个 th/td 的最前面
+                // table.rows 按 thead → tbody → tfoot 顺序返回，rows[0] 即第一行
+                const firstRow = collapsible.rows.length ? collapsible.rows[0] : null;
+                const cells = firstRow ? Array.prototype.slice.call(firstRow.cells) : [];
+                const lastCell = cells[cells.length - 1];
+                toggle = findToggle(cells);
+                if (!toggle && lastCell) {
+                    toggle = build();
+                    lastCell.insertBefore(toggle, lastCell.firstChild);
+                }
+            }
+        } else if (collapsible.parentElement
+            && collapsible.parentElement.tagName.toLowerCase() === 'li'
+            && directChildren(collapsible.parentElement, '.mw-collapsible').length === 1
+            && !findToggle(collapsible)) {
+            // 特例：<li> 中只有一个可折叠元素 → toggle 直接放在它前面
+            toggle = build();
+            collapsible.parentElement.insertBefore(toggle, collapsible);
+        } else if (tag === 'ul' || tag === 'ol') {
+            // 列表：toggle 放在第一个 li 里；没有则包一层 li 放到列表最前
+            const firstItem = qs('li', collapsible);
+            toggle = findToggle(firstItem);
+            if (!toggle) {
+                if (firstItem) {
+                    // 保证序号不被挤乱：把第一项强制成 1（value 属性已被占用则不动）
+                    const value = firstItem.getAttribute('value');
+                    if (value === null || value === '' || value === '-1') {
+                        firstItem.setAttribute('value', '1');
+                    }
+                }
+                toggle = build();
+                const wrapper = document.createElement('li');
+                wrapper.className = 'mw-collapsible-toggle-li';
+                wrapper.appendChild(toggle);
+                collapsible.insertBefore(wrapper, collapsible.firstChild);
+            }
+        } else {
+            // div / p 等：toggle 作为第一个子元素，其余内容整体包进 .mw-collapsible-content
+            toggle = findToggle(collapsible);
+            if (!directChildren(collapsible, '.mw-collapsible-content').length) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mw-collapsible-content';
+                while (collapsible.firstChild) wrapper.appendChild(collapsible.firstChild);
+                collapsible.appendChild(wrapper);
+            }
+            if (!toggle) {
+                toggle = build();
+                collapsible.insertBefore(toggle, collapsible.firstChild);
+            }
+        }
+
+        // 占位符 → 真正的 toggle
+        if (toggle && toggle.classList.contains('mw-collapsible-toggle-placeholder')) {
+            const real = build();
+            toggle.parentNode.replaceChild(real, toggle);
+            toggle = real;
+        }
+        return toggle;
+    }
+
+    /**
+     * 让一个元素变成可折叠（官方 $.fn.makeCollapsible）。
+     * @param {HTMLElement} collapsible 目标元素
+     * @param {object} [options] collapseText / expandText / collapsed / plainMode / $customTogglers
+     */
+    function makeCollapsible(collapsible, options) {
+        options = options || {};
+        collapsible.classList.add('mw-collapsible');
+
+        // 已初始化过就直接返回，避免重复绑定
+        if (collapsible.dataset.mwMadeCollapsible) return;
+        collapsible.classList.add('mw-made-collapsible');
+        collapsible.dataset.mwMadeCollapsible = '1';
+
+        // 文字优先取 options，再取 data-* 属性，最后用官方消息
+        const collapseText = options.collapseText
+            || collapsible.getAttribute('data-collapsetext') || collapsibleCollapseText();
+        const expandText = options.expandText
+            || collapsible.getAttribute('data-expandtext') || collapsibleExpandText();
+
+        /** 为某个 toggle 生成事件处理器（官方 actionHandler）。 */
+        function makeActionHandler(toggleEl, baseOptions) {
+            return function (e, overrides) {
+                // 处理克隆内容（如引用弹窗）：toggle 不在原容器内时，改用它所属的容器
+                const target = collapsible.contains(toggleEl)
+                    ? collapsible
+                    : (toggleEl.closest('.mw-collapsible') || collapsible);
+                handleCollapsibleToggle(toggleEl, target, e, Object.assign({}, baseOptions, overrides));
+            };
+        }
+
+        // 自定义 toggle：id="mw-customcollapsible-XXX" 对应 class="mw-customtoggle-XXX"
+        let customToggles = null;
+        if (options.$customTogglers) {
+            customToggles = options.$customTogglers;
+        } else {
+            const id = collapsible.getAttribute('id') || '';
+            if (id.indexOf('mw-customcollapsible-') === 0) {
+                customToggles = qsa('.' + escapeSelector(id.replace('mw-customcollapsible', 'mw-customtoggle')));
+                customToggles.forEach(function (t) { t.classList.add('mw-customtoggle'); });
+            }
+        }
+
+        let toggles;
+        let defaultOptions;
+        if (customToggles && customToggles.length) {
+            // 自定义 toggle 不套用默认的 toggleText / toggleClasses / ARIA
+            defaultOptions = {};
+            toggles = customToggles;
+        } else {
+            defaultOptions = {
+                toggleClasses: true,
+                toggleARIA: true,
+                toggleText: { collapseText: collapseText, expandText: expandText }
+            };
+            toggles = [createDefaultToggle(collapsible, collapseText)];
+        }
+
+        // 绑定点击/键盘，并设置无障碍属性
+        toggles.forEach(function (toggleEl) {
+            const handler = makeActionHandler(toggleEl, defaultOptions);
+            toggleEl.addEventListener('click', handler);
+            toggleEl.addEventListener('keydown', handler);
+            toggleEl.setAttribute('aria-expanded', 'true');
+            toggleEl.tabIndex = 0;
+        });
+
+        // 暴露折叠 API（对应官方 $.data('mw-collapsible')）
+        const firstHandler = makeActionHandler(toggles[0], defaultOptions);
+        collapsible.__mwCollapsible = {
+            collapse: function () { firstHandler(null, { wasCollapsed: false }); },
+            expand: function () { firstHandler(null, { wasCollapsed: true }); },
+            toggle: function () { firstHandler(null, null); }
+        };
+
+        // 初始状态：带 mw-collapsed 类（或 options.collapsed）则立即折叠
+        if (options.collapsed || collapsible.classList.contains('mw-collapsed')) {
+            firstHandler(null, { wasCollapsed: false });
+        }
+    }
+
+    /**
+     * 对容器内所有 .mw-collapsible 启用折叠。
+     * 等价于官方 mediawiki.page.ready 中的
+     * `$content.find('.mw-collapsible').makeCollapsible()`（$content = #mw-content-text）。
+     * @param {HTMLElement} [root] 搜索范围，默认 #mw-content-text
+     */
+    function initCollapsibles(root) {
+        const container = root || document.getElementById('mw-content-text');
+        if (!container) return;
+        qsa('.mw-collapsible', container).forEach(function (el) { makeCollapsible(el); });
+    }
+
+    /**
+     * 把 URL 片段（#id）所在的折叠容器全部展开并滚动过去（官方 hashHandler）。
+     * 用于正文里点击 #cite_note-xxx 之类的锚点链接时，自动展开被折叠的祖先。
+     */
+    function expandCollapsiblesForHash() {
+        const hash = decodeURIComponent(window.location.hash || '').slice(1);
+        if (!hash) return;
+        const target = document.getElementById(hash)
+            || qs('[name="' + escapeSelector(hash) + '"]');
+        if (!target) return;
+
+        // 收集所有处于折叠状态的祖先容器
+        const collapsedParents = [];
+        for (let node = target.parentElement; node; node = node.parentElement) {
+            if (node.classList && node.classList.contains('mw-collapsed')) collapsedParents.push(node);
+        }
+        if (!collapsedParents.length) return;
+
+        collapsedParents.forEach(function (el) {
+            if (el.__mwCollapsible) el.__mwCollapsible.expand();
+            else el.classList.remove('mw-collapsed');
+        });
+        target.scrollIntoView();
     }
 
     /**

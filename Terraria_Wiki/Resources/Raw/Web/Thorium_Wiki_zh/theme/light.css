@@ -1,0 +1,23 @@
+html.light {
+    /* 原为相对路径 images/main/...，而本文件位于 /theme/ 下，
+       会解析成 /theme/images/main/...（404）；改为站点绝对路径。 */
+    --theme-body-background: #d0e2d4 url(/images/main/Site-background-overworld.jpg) center top / cover no-repeat fixed;
+    --theme-page-background-color--secondary: #F6F6F6;
+    --theme-box-background: #F6F6F6;
+    --theme-text-color:#000;
+    --theme-accent-color: #DFDFDF;
+    --theme-navbar-background: #F6F6F6;
+    --theme-text-color-note: #666;
+
+    --theme-link-color: #2d4068;
+    --theme-link-color--hover: #2d4068;
+
+}
+
+html.light .infocard .main-heading .hgroup > .main {
+    color: #000;
+}
+
+html.light .mw-body {
+    border:none;
+}

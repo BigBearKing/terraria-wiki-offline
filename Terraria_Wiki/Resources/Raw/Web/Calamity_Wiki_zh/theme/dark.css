@@ -1,130 +1,134 @@
-/* ============================================================
-   theme/dark.css — 深色主题
-   所有颜色均来自已有 dark.css 主题变量
-   ============================================================ */
+html.dark .huiji-css-hook {
+    background-color: #424242;
 
-html.dark { --bg-color: #131313; --bg-color-secondary: #1E1F21; }
-
-/* === 基础元素 === */
-html.dark body { color: #f7e8d1; background-color: #1E1F21; }
-html.dark a { color: #9cfffd; }
-html.dark a:hover { color: #b7c7e6; }
-html.dark code { color: #fe7c7c; background-color: #3e393d; }
-html.dark kbd { color: #f7e8d1; background-color: #444041; box-shadow: inset 0 -1px 0 rgba(20,20,20,.1); }
-html.dark pre { color: #f7e8d1; background-color: #3e393d; border-color: #1f1c1e; }
-html.dark mark, html.dark .mark { background-color: #4b586e; }
-html.dark hr { border-top-color: #1f1c1e; background: #1f1c1e; }
-html.dark img.thumbborder { border-color: #1f1c1e; }
-html.dark body::selection { background: #9cfffd; color: #1E1F21; }
-
-/* === 工具类 === */
-html.dark .text-muted { color: #b5bdb2; }
-html.dark .text-red { color: #fe7c7c; }
-html.dark .text-green { color: #00be00; }
-
-/* === 页面布局 === */
-html.dark .page-header { border-bottom-color: #1f1c1e; }
-html.dark .bottom.footer { background-color: #1E1F21; }
-html.dark .bottom.footer footer { color: #b5bdb2; }
-
-/* === huiji-css-hook === */
-html.dark .huiji-css-hook { background-color: #1E1F21; }
-html.dark .huiji-css-hook .wiki-body { background-color: #3e393d; color: #f7e8d1; }
-html.dark .huiji-css-hook #contentSub { color: #b5bdb2; }
-html.dark .huiji-css-hook .toc-sidebar li a { color: #b5bdb2; }
-html.dark .huiji-css-hook .toc-sidebar li a:hover { color: #9cfffd; border-color: #9cfffd; }
-html.dark .huiji-css-hook .toc-sidebar li.active>a { color: #9cfffd; border-color: #9cfffd; }
-html.dark .huiji-css-hook .bottom.footer { background: #1E1F21; color: #b5bdb2; }
-html.dark .huiji-css-hook .wikitable,
-html.dark .huiji-css-hook .mw-datatable,
-html.dark .huiji-css-hook .mw_metadata,
-html.dark .huiji-css-hook .mw-json,
-html.dark .huiji-css-hook .property-page-results { background-color: #3e393d; color: #f7e8d1; }
-html.dark .huiji-css-hook .infobox { background-color: #3e393d; color: #f7e8d1; }
-html.dark .huiji-css-hook .infobox th,
-html.dark .huiji-css-hook .infobox td { border-bottom-color: #1f1c1e; }
-html.dark .huiji-css-hook .infobox .infobox-title { background-color: #4b586e; }
-html.dark .huiji-css-hook .infobox .infobox-title a { color: #9cfffd; }
-html.dark .huiji-css-hook .infobox .infobox-title a:hover { color: #b7c7e6; }
-html.dark .huiji-css-hook .infobox .infobox-item-title th,
-html.dark .huiji-css-hook .infobox .infobox-header th { background-color: #4b586e; }
-html.dark .huiji-css-hook .infobox .infobox-item-title th a,
-html.dark .huiji-css-hook .infobox .infobox-header th a { color: #9cfffd; }
-html.dark .huiji-css-hook .infobox .infobox-item-title th a:hover,
-html.dark .huiji-css-hook .infobox .infobox-header th a:hover { color: #b7c7e6; }
-
-/* === Bootstrap Nav (Tabber) === */
-html.dark .nav>li>a:hover,
-html.dark .nav>li>a:focus { background-color: #4b586e; }
-html.dark .nav-tabs { border-bottom-color: #1f1c1e; }
-html.dark .nav-tabs>li>a:hover { border-color: #1f1c1e; }
-html.dark .nav-tabs>li.active>a,
-html.dark .nav-tabs>li.active>a:hover,
-html.dark .nav-tabs>li.active>a:focus {
-    color: #f7e8d1; background-color: #3e393d; border-color: #1f1c1e;
-}
-html.dark .nav-tabs.nav-justified>.active>a { border-color: #1f1c1e; }
-@media (min-width:768px) {
-    html.dark .nav-tabs.nav-justified>.active>a { border-bottom-color: #3e393d; }
 }
 
-/* === 灾厄信息框 === */
-html.dark .table_body, html.dark .infobox_body, html.dark .main,
-html.dark table.mainbody, html.dark div.mainbody,
-html.dark table.calamityinfo, html.dark .guideblock {
-    background: #343031 !important; color: #f7e8d1 !important;
-}
-html.dark .table_body, html.dark .infobox_body,
-html.dark div.mainbody, html.dark .guideblock { border-color: #1f1c1e; }
-html.dark .main { border-color: #1f1c1e; }
-
-/* === 灾厄表头 === */
-html.dark .infobox_head, html.dark th.mainhead, html.dark div.mainhead,
-html.dark .guidetitle, html.dark .tabber-filter-item.active {
-    background: #62708a; color: #f7e8d1;
-}
-html.dark th.mainhead, html.dark div.mainhead { border-color: #1f1c1e; }
-html.dark .guidetitle { border-color: #1f1c1e; }
-
-/* === 灾厄表格表头行 === */
-html.dark .calamityinfo th, html.dark .calamity th,
-html.dark .calamitas th, html.dark .calamityajax th {
-    background: #4b586e; color: #f7e8d1;
+html.dark .huiji-css-hook .wiki-body {
+    background-color: #1E1F21 !important;
+    color: #fff;
 }
 
-/* === 灾厄表格主体 === */
-html.dark table.calamity, html.dark .calamity,
-html.dark table.calamitas, html.dark table.calamityajax, html.dark .calamityajax {
-    background: #3e393d; border-color: #1f1c1e;
-}
-html.dark .calamity th, html.dark .calamity td,
-html.dark .calamitas th, html.dark .calamitas td,
-html.dark .calamityajax th, html.dark .calamityajax td {
-    border-color: #1f1c1e;
+html.dark table.mainbody {
+    background-color: #1E1F21;
+    color: #fff;
 }
 
-/* === 其他 === */
-html.dark .doubleborder { border-top-color: #1f1c1e; border-bottom-color: #1f1c1e; }
-html.dark .tr-tooltip { color: #f7e8d1; background: #4b586e; }
-html.dark .mw-collapsible-content .template-loading-hint { background: #3e393d; border-color: #1f1c1e; }
-html.dark .catlinks li { border-left-color: #1f1c1e; }
+html.dark div.mainbody {
+    background: #1E1F21;
+    color: #fff;
+    border: 1px solid #6d6d6d;
+}
 
-/* === 音频 === */
-html.dark .sound-play-icon { color: #f7e8d1; }
-html.dark .sound-playing .sound-play-icon { color: #9cfffd; }
+html.dark .huiji-css-hook .bottom.footer {
+    background: #1E1F21;
+}
 
-/* === Tabber === */
-html.dark .tabber-filter-item { background: #4b586e !important; }
-html.dark .tabber-filter-item a { background: inherit !important; color: #f7e8d1 !important; }
 
-/* === Diagram === */
-html.dark table.diagram td.l { border-color: #1f1c1e; }
-html.dark table.diagram td.cf:after { border-bottom-color: #1f1c1e; }
-html.dark .diagram-box { border-color: #4b586e; }
+html.dark th.mainhead,
+html.dark div.mainhead {
+    background-color: #1B1C1E;
+    color: #ffffff;
+    border: none;
+}
 
-/* === 彩蛋 === */
-html.dark .yyc, html.dark .yyc a, html.dark a .yyc, html.dark .yyc a.new { background-color: #1E1F21; color: #1E1F21; }
-html.dark body:not(.yyc_toggle_on) .yyc:hover { background-color: rgba(20,20,20,.1); }
-html.dark body:not(.yyc_toggle_on) .yyc:hover a { color: #9cfffd; background-color: rgba(20,20,20,.1); }
-html.dark body:not(.yyc_toggle_on) .yyc.off .new { color: #fe7c7c; background-color: rgba(20,20,20,.1); }
-html.dark div#dc { background: #444041; }
+
+html.dark .tabber-filter-item.active {
+    background-color: #444444 !important;
+    color: #fff !important;
+    border: none;
+}
+
+html.dark .tabber-filter-item {
+    background-color: #1E1F21 !important;
+    color: #fff !important;
+    border: none;
+}
+
+html.dark .tabber-filter-item a {
+    color: #fff !important;
+}
+
+
+html.dark table.calamityinfo {
+    background-color: #1E1F21;
+    color: #fff;
+}
+
+
+html.dark .calamityinfo th {
+    background-color: #1B1C1E;
+}
+
+
+html.dark a {
+    color: #9cfffd;
+}
+
+html.dark .huiji-css-hook .toc-sidebar li.active>a {
+    color: #9cfffd;
+}
+
+html.dark .huiji-css-hook .toc-sidebar li>a:hover {
+    color: #9cfffd;
+}
+
+html.dark .infobox_body {
+    background-color: #1E1F21 !important;
+    color: #fff !important;
+    border: 1px solid #6d6d6d;
+}
+
+html.dark .infobox_head {
+    background-color: #1B1C1E !important;
+    color: #fff !important;
+    border: none;
+}
+
+html.dark .calamitas th {
+    background-color: #1B1C1E !important;
+}
+
+html.dark table.calamitas {
+    border: 1px solid #6d6d6d;
+    background: #1E1F21;
+}
+
+html.dark .sound-play-icon {
+    color: #1B1C1E;
+}
+
+html.dark .calamity th {
+    background: #1B1C1E;
+    color: #7ccbff;
+}
+
+html.dark table.calamitas th {
+    color: #7ccbff;
+}
+
+html.dark table.calamity {
+    border: 1px solid #6d6d6d;
+    background: #1E1F21;
+}
+
+html.dark .calamityajax th {
+    background: #1B1C1E;
+    color: #fff;
+}
+
+html.dark table.calamityajax {
+    background: #1e1f21;
+    color: #fff;
+    border: none;
+}
+
+html.dark .guideblock {
+    background: #1e1f21;
+    border:1px solid #6d6d6d;
+}
+
+html.dark .guidetitle{
+    background: #1B1C1E;
+    color: #fff;
+    border: none;
+}

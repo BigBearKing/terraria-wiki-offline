@@ -14,13 +14,16 @@ namespace Terraria_Wiki.Services
         private readonly ConcurrentDictionary<string, (byte[] Data, string ContentType)> _staticFileCache = new();
 
         // 构造函数注入数据库服务
-        public LocalWebServer(ContentDbService dbService)
+        // port 可指定监听端口，默认 55000（与 MainLayout 里 iframe 的地址一致，行为不变）。
+        // 之所以允许改：Windows 上 HTTP.SYS 对端口是独占的，App 运行时 55000 被占，
+        // 开发用的浏览器预览服务器需要能在 App 同时开着的情况下换个端口起服务。
+        public LocalWebServer(ContentDbService dbService, int port = 55000)
         {
             _dbService = dbService;
             _listener = new HttpListener();
 
-            // 监听本地 55000 端口
-            _prefix = "http://127.0.0.1:55000/";
+            // 监听本地端口
+            _prefix = $"http://127.0.0.1:{port}/";
             _listener.Prefixes.Add(_prefix);
         }
 

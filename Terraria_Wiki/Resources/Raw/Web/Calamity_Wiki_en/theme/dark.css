@@ -1,97 +1,92 @@
-html.dark {
-    --wiki-body-background-color: #1E1F21;
-    --wiki-body-background-image: url(/images/main/Site-background.jpg);
+html.dark{
+        /* 原为深红 #43100e（实测占据页面 ~76% 像素，是主要的"红色"来源）→ 纯黑 */
+        --wiki-body-background-color: #000000;
+    --wiki-body-background-image: url(/images/main/Site-background-dark.jpg);
+    --wiki-content-background-color: #202020;
+    /* 原为 90%：common.css 用 color-mix(...,var(--wiki-content-background-opacity),transparent)
+       给 .mw-body/.mw-footer 上背景色，90% 会让背景图透出来。改为不透明（与 light.css 一致）。 */
+    --wiki-content-background-opacity: 100%;
+    /* 原为橙 #F37F20；正文外框 .mw-body / 页脚 / .toc / 信息框 / hr 的边框 → 纯黑 */
+    --wiki-content-border-color: #000000;
+    --wiki-content-link-color: #5A93CC;
+    /* 原为红 #8B221B；首页 #mf-wikiheader(7px) 与 .fp-box 的边框 → 纯黑 */
+    --wiki-accent-color: #000000;
+    --wiki-accent-label-color: #fff;
+    --wiki-accent-link-color: #77BFF4;
+    --wiki-icon-to-link-filter: invert(52%) sepia(94%) saturate(324%) hue-rotate(170deg) brightness(90%) contrast(75%);
     --wiki-body-background-position: top center;
     --wiki-body-background-size: cover;
     --wiki-body-background-repeat: no-repeat;
     --wiki-body-background-attachment: fixed;
-    --wiki-content-background-color: #3e393d;
-    --wiki-content-background-opacity: 90%;
-    --wiki-content-background-color--secondary: color-mix(in srgb, var(--wiki-content-background-color) 96%, var(--wiki-content-dynamic-color));
-    --wiki-content-border-color: #4b586e;
-    --wiki-content-border-color--secondary: color-mix(in srgb, var(--wiki-content-border-color) 50%, transparent);
-    --wiki-content-border-color--accent: color-mix(in srgb, var(--wiki-accent-color) 50%, transparent);
-    --wiki-content-text-color: #f7e8d1;
-    --wiki-content-link-color: #9cfffd;
-    --wiki-content-link-color--visited: #9cfffd;
-    --wiki-content-link-color--hover: #9cfffd;
-    --wiki-content-redlink-color: #fe7c7c;
-    --wiki-content-diff-text-color: #ffffff;
-    --wiki-content-heading-color: #f7e8d1;
-    --wiki-content-link-label-color: #000000;
-    --wiki-content-dynamic-color: #f7e8d1;
-    --wiki-content-dynamic-color--inverted: #1E1F21;
-    --wiki-content-dynamic-color--secondary: #b5bdb2;
-    --wiki-content-dynamic-color--secondary--inverted: #444041;
-    --wiki-accent-color: #4b586e;
-    --wiki-accent-color--hover: color-mix(in srgb, var(--wiki-accent-color) 90%, var(--wiki-accent-label-color));
-    --wiki-accent-label-color: #f7e8d1;
-    --wiki-accent-link-color: #9cfffd;
-    --wiki-icon-to-link-filter: invert(52%) sepia(94%) saturate(324%) hue-rotate(170deg) brightness(90%) contrast(75%);
-    --wiki-sidebar-background-color: #1E1F21;
-    --wiki-sidebar-background-opacity: 80%;
-    --wiki-sidebar-border-color: #4b586e;
-    --wiki-sidebar-link-color: #9cfffd;
-    --wiki-sidebar-link-color--hover: #9cfffd;
-    --wiki-sidebar-heading-color: #f7e8d1;
-    --wiki-navigation-background-color: color-mix(in srgb, var(--wiki-content-background-color) 96%, var(--wiki-content-dynamic-color));
+    --wiki-content-background-color--secondary: color-mix(in srgb,var(--wiki-content-background-color) 96%,var(--wiki-content-dynamic-color));
+    --wiki-content-text-color: #ededed;
+    --wiki-content-link-color--visited: #666FFF;
+    --wiki-content-link-color--hover: var(--wiki-content-link-color);
+    --wiki-content-redlink-color: #DD001A;
+    --wiki-content-diff-text-color: #FFFFFF;
+    --wiki-content-heading-color: var(--wiki-content-text-color);
+    --wiki-accent-color--hover: color-mix(in srgb,var(--wiki-accent-color) 90%,var(--wiki-accent-label-color));
+    --wiki-sidebar-background-color: #101010;
+    /* 原为 0%（完全透明，侧边栏面板背景不可见）；与 light.css 保持一致改为不透明 */
+    --wiki-sidebar-background-opacity: 100%;
+    --wiki-sidebar-border-color: var(--wiki-content-border-color);
+    --wiki-sidebar-link-color: var(--wiki-content-link-color);
+    --wiki-sidebar-link-color--hover: var(--wiki-content-link-color--hover);
+    --wiki-sidebar-heading-color: var(--wiki-content-heading-color);
+    --wiki-navigation-background-color: var(--wiki-content-background-color--secondary);
     --wiki-navigation-background-color--secondary: var(--wiki-content-background-color);
-    --wiki-navigation-border-color: #4b586e;
-    --wiki-navigation-text-color: #9cfffd;
-    --wiki-navigation-text-color--hover: #9cfffd;
+    --wiki-navigation-border-color: var(--wiki-content-border-color);
+    --wiki-navigation-text-color: var(--wiki-content-link-color);
+    --wiki-navigation-text-color--hover: var(--wiki-content-link-color--hover);
     --wiki-navigation-selected-background-color: var(--wiki-content-background-color);
     --wiki-navigation-selected-border-color: var(--wiki-navigation-border-color);
-    --wiki-navigation-selected-text-color: #f7e8d1;
+    --wiki-navigation-selected-text-color: var(--wiki-content-text-color);
     --wiki-neutral-color: var(--wiki-content-text-mix-color);
-    --wiki-alert-color: #fe7c7c;
-    --wiki-warning-color: #db9d40;
-    --wiki-success-color: #00be00;
-    --wiki-body-dynamic-color: #f7e8d1;
-    --wiki-body-dynamic-color--inverted: #1E1F21;
-    --wiki-body-dynamic-color--secondary: #b5bdb2;
-    --wiki-body-dynamic-color--secondary--inverted: #444041;
+    --wiki-alert-color: #DD001A;
+    --wiki-warning-color: #cf721c;
+    --wiki-success-color: #0D8134;
+    --wiki-body-dynamic-color: #ffffff;
+    --wiki-body-dynamic-color--inverted: #000000;
+    --wiki-body-dynamic-color--secondary: #cccccc;
+    --wiki-body-dynamic-color--secondary--inverted: #333333;
+    --wiki-content-border-color--secondary: color-mix(in srgb,var(--wiki-content-border-color) 50%,transparent);
+    --wiki-content-border-color--accent: color-mix(in srgb,var(--wiki-accent-color) 50%,transparent);
+    --wiki-content-link-label-color: #000;
+    --wiki-content-dynamic-color: #ffffff;
+    --wiki-content-dynamic-color--inverted: #000000;
+    --wiki-content-dynamic-color--secondary: #cccccc;
+    --wiki-content-dynamic-color--secondary--inverted: #333333;
     --wiki-alert-label-color: #000000;
     --wiki-warning-label-color: #000000;
     --wiki-success-label-color: #000000;
     --wiki-icon-general-filter: invert(100%);
-    --wiki-tooltip-background-color: #1E1F21;
-    --wiki-tooltip-box-shadow: rgba(0, 0, 0, 0.15);
-    --wiki-tooltip-border-color: #4b586e;
-    --theme-page-background-color--secondary: #444041;
-    --theme-border-color: #4b586e;
-    --theme-page-background-color: #3e393d;
-    --theme-page-text-color: #f7e8d1;
-    --theme-widget-shadow: 0px 0px 15px 0px rgba(10, 10, 10, 0.7);
-    --theme-widget-border-color: rgba(255, 255, 255, 0.1) rgba(13, 4, 2, 0.2) rgba(13, 4, 2, 0.2) rgba(255, 255, 255, 0.1);
+    --theme-page-background-color--secondary: #414141;
+    --theme-border-color: var(--wiki-content-border-color);
+    --theme-page-background-color: var(--wiki-content-background-color);
+    --theme-page-text-color: var(--wiki-content-text-color);
+    --wiki-tooltip-background-color: black;
+    --wiki-tooltip-box-shadow: rgba(0,0,0,0.15);
+    --wiki-tooltip-border-color: #a2a9b1;
+    --template-background-color-1: color-mix(in srgb,var(--wiki-content-background-color) 78%,var(--wiki-content-dynamic-color));
+    --template-background-color-2: var(--wiki-content-background-color);
+    --template-background-color-3: var(--wiki-content-background-color--secondary);
+    --template-background-color-4: color-mix(in srgb,var(--wiki-content-background-color) 23%,var(--wiki-content-dynamic-color));
+    --template-heading-background-color-1: color-mix(in srgb,var(--wiki-content-dynamic-color--secondary--inverted) 90%,var(--wiki-content-link-color));
+    --template-heading-background-color-2: var(--wiki-content-background-color--secondary);
+    --template-heading-text-color-1: var(--wiki-content-dynamic-color);
+    --template-heading-text-color-2: var(--wiki-content-dynamic-color--inverted);
+    --template-accent-color: var(--wiki-accent-color);
+    --template-border-color: var(--wiki-content-border-color);
+    --template-border-color-2: color-mix(in srgb,var(--template-border-color) 90%,var(--wiki-content-dynamic-color));
+    --table-separator-color-1: color-mix(in srgb,var(--wiki-content-background-color) 69%,var(--wiki-content-dynamic-color));
+    --table-separator-color-2: var(--wiki-neutral-color);
+    --note-color: var(--template-heading-text-color-1);
+    --diagram-color: var(--wiki-neutral-color);
+    --diagram-box-color: color-mix(in srgb,var(--wiki-content-link-color) 50%,var(--wiki-content-dynamic-color));
+    --theme-widget-shadow: 0px 0px 15px 0px rgba(10,10,10,0.7);
+    --theme-widget-border-color: rgba(255,255,255,0.1) rgba(13,4,2,0.2) rgba(13,4,2,0.2) rgba(255,255,255,0.1);
     --theme-box-border-color: var(--table-separator-color-2);
-    --theme-box-background: color-mix(in srgb, var(--wiki-content-background-color--secondary) 60%, transparent);
-    --custom-template-journey-color: #c70a7d;
-    --template-background-color-1: #665f5d;
-    --template-background-color-2: #3e393d;
-    --template-background-color-3: #454043;
-    --template-background-color-4: #ccbfaf;
-    --template-heading-background-color-1: #4c5354;
-    --template-heading-background-color-2: #454043;
-    --template-heading-text-color-1: #f7e8d1;
-    --template-heading-text-color-2: #1E1F21;
-    --template-accent-color: #4b586e;
-    --template-border-color: #4b586e;
-    --template-border-color-2: #5c6677;
-    --table-separator-color-1: #776f6b;
-    --table-separator-color-2: #b0a598;
-    --note-color: #f7e8d1;
-    --diagram-color: #b0a598;
-    --diagram-box-color: #c9f3e7;
-    --pi-background: #3e393d;
-    --pi-secondary-background: #4b586e;
-    --pi-secondary-background-label: #f7e8d1;
-    --pi-border-color: rgba(75, 88, 110, 0.5)
-}
+    --theme-box-background: color-mix(in srgb,var(--wiki-content-background-color--secondary) 60%,transparent);
+    --custom-template-journey-color: #E00B8F
 
-html.dark .hp>div .text-red {
-    color: #fe7c7c
-}
-
-html.dark .hp>div .text-golden {
-    color: #db9d40
 }

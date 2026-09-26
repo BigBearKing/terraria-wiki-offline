@@ -367,6 +367,8 @@ namespace Terraria_Wiki.Services
         public static async Task WikiRefreshAsync()
         {
             App.AppStateManager.TabHistory.Clear();
+            if (Application.Current?.Windows.FirstOrDefault()?.Page is MainPage mainPage)
+                await mainPage.ClearWebViewCacheAsync();
             await IframeBridge.CallJsAsync("ClearPage", "");
             await IframeBridge.CallJsAsync("BackHome", "");
         }
