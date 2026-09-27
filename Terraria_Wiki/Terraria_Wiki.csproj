@@ -112,6 +112,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Remove="Resources\Raw\default-wikibooks.json" />
 	  <Content Remove="Resources\Raw\Languages\en-us.json" />
 	  <Content Remove="Resources\Raw\Languages\zh-cn.json" />
 	</ItemGroup>

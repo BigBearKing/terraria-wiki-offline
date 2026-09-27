@@ -163,192 +163,44 @@ public class DatabaseService
 
     private async Task SeedWikiBooksAsync()
     {
-        // 第一步：准备好你所有的“默认数据”清单
-        var defaultWikiBooks = new List<WikiBook>
-    {
-        new WikiBook
-        {
-            Id=1,
-            Title = "泰拉瑞亚中文百科",
-            Description = "《泰拉瑞亚》是冒险之地！是神秘之地！是可让你塑造、捍卫、享受的大地。在泰拉瑞亚，你有无穷选择。手指发痒的动作游戏迷？建筑大师？收藏家？探险家？每个人都能找到自己想要的。",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://terraria.wiki.gg/zh/api.php",
-            BaseUrl = "https://terraria.wiki.gg",
-            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "10000",
-            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
-            Language = "zh",
-            DataFolder = "Terraria_Wiki_zh",
-            DefaultPageContent = "请先下载数据",
-            DefaultPageTitle = "Terraria Wiki",
-        },
-        new WikiBook
-        {
-            Id=2,
-            Title = "灾厄中文百科",
-            Description = "灾厄模组是泰拉瑞亚的最大内容添加类模组，在原版毕业之后加入了数个小时的新流程，还有大量新敌怪和数量超越原版的新Boss。",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            BaseUrl = "https://calamity.huijiwiki.com",
-            ApiBaseUrl = "https://calamity.huijiwiki.com/api.php",
-            UseTls = true,
-            RedirectListUrl = "/wiki/%E7%89%B9%E6%AE%8A:%E9%87%8D%E5%AE%9A%E5%90%91%E9%A1%B5%E5%88%97%E8%A1%A8?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "",
-            JunkXPath = "//span[@class='mw-editsection']|//comment()",
-            Language = "zh",
-            DataFolder = "Calamity_Wiki_zh",
-            DefaultPageContent = "请先下载数据",
-            DefaultPageTitle = "首页",
-        },
-        new WikiBook
-        {
-            Id=3,
-            Title = "Terraria Wiki",
-            Description = "Terraria is a land of adventure! A land of mystery! A land that's yours to shape, defend, and enjoy. Your options in Terraria are limitless. Are you an action gamer with an itchy trigger finger? A master builder? A collector? An explorer? There's something for everyone.",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://terraria.wiki.gg/api.php",
-            BaseUrl = "https://terraria.wiki.gg",
-            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "110",
-            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
-            Language = "en",
-            DataFolder = "Terraria_Wiki_en",
-            DefaultPageContent = "please download data first",
-            DefaultPageTitle = "Terraria Wiki",
-        },
-        new WikiBook
-        {
-            Id=4,
-            Title = "Calamity Mod Wiki",
-            Description = "The Calamity Mod is a large content mod for Terraria which adds many hours of endgame content and dozens of enemies and bosses dispersed throughout the vanilla game's progression. The Calamity Mod also features several harder difficulty modes, five new biomes and new structures, a new class, more than fifty new songs, over fifty recipes for previously uncraftable vanilla items, and other assorted changes to vanilla gameplay.",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://calamitymod.wiki.gg/api.php",
-            BaseUrl = "https://calamitymod.wiki.gg",
-            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "10000",
-            JunkXPath = "//div[@id='marker-for-new-portlet-link']|//span[@class='mw-editsection']|//comment()",
-            Language = "en",
-            DataFolder = "Calamity_Wiki_en",
-            DefaultPageContent = "please download data first",
-            DefaultPageTitle = "Calamity Mod Wiki",
-        },
-        new WikiBook
-        {
-            Id=5,
-            Title = "法狗中文百科",
-            Description = "Fargo's Mod（俗称法狗）在泰拉瑞亚游戏流程的各时期加入各种内容，主要分为「Fargo突变」与「Fargo魂石」两个模组：突变侧重减少肝度的功能与出售召唤物的城镇 NPC；魂石则加入魔石、魂石等大量可合成饰品，并大幅重做原版内容。",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://fargosmods.wiki.gg/zh/api.php",
-            BaseUrl = "https://fargosmods.wiki.gg",
-            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "",
-            JunkXPath = "//span[@class='mw-editsection']|//comment()",
-            Language = "zh",
-            DataFolder = "Fargo_Wiki_zh",
-            DefaultPageContent = "请先下载数据",
-            DefaultPageTitle = "Fargo's Mods Wiki",
-        },
-        new WikiBook
-        {
-            Id=6,
-            Title = "瑟银中文百科",
-            Description = "瑟银模组是泰拉瑞亚最大的模组之一，加入了超过 2600 件新物品、11 场全新的 Boss 战斗、一批新敌怪、一个全新生物群落，以及三个新职业。",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://thoriummod.wiki.gg/zh/api.php",
-            BaseUrl = "https://thoriummod.wiki.gg",
-            RedirectListUrl = "/zh/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "10000",
-            JunkXPath = "//span[@class='mw-editsection']|//comment()",
-            Language = "zh",
-            DataFolder = "Thorium_Wiki_zh",
-            DefaultPageContent = "请先下载数据",
-            DefaultPageTitle = "Thorium Mod Wiki",
-        },
-        new WikiBook
-        {
-            Id=7,
-            Title = "Fargo's Mods Wiki",
-            Description = "Fargo's Mods are a set of Terraria mods that collectively add content across all stages of progression. The project consists of two primary mods: Fargo's Mutant Mod, mainly centered around QOL, and Fargo's Souls Mod, which adds content and significantly revamps vanilla content. Fargo's Souls Mod also has three officially supported addons: Fargo's Music Mod, Calamity - Fargo's Souls DLC and Fargo's Best of Both Worlds.",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://fargosmods.wiki.gg/api.php",
-            BaseUrl = "https://fargosmods.wiki.gg",
-            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "",
-            JunkXPath = "//span[@class='mw-editsection']|//comment()",
-            Language = "en",
-            DataFolder = "Fargo_Wiki_en",
-            DefaultPageContent = "please download data first",
-            DefaultPageTitle = "Fargo's Mods Wiki",
-        },
-        new WikiBook
-        {
-            Id=8,
-            Title = "Thorium Mod Wiki",
-            Description = "Thorium Mod is one of the largest content mods for Terraria, adding over 2,600 new items, 11 challenging new boss fights, a host of new enemies, an entirely new biome and three new classes, along with many new mechanics to explore.",
-            IsPageDownloaded = false,
-            IsResourceDownloaded = false,
-            ApiBaseUrl = "https://thoriummod.wiki.gg/api.php",
-            BaseUrl = "https://thoriummod.wiki.gg",
-            RedirectListUrl = "/wiki/Special:ListRedirects?limit=5000",
-            MainNamespace = 0,
-            AdditionalNamespaces = "10000",
-            JunkXPath = "//span[@class='mw-editsection']|//comment()",
-            Language = "en",
-            DataFolder = "Thorium_Wiki_en",
-            DefaultPageContent = "please download data first",
-            DefaultPageTitle = "Thorium Mod Wiki",
-        },
-    };
+        await using var stream = await FileSystem.OpenAppPackageFileAsync("default-wikibooks.json");
+        var defaultWikiBooks = await System.Text.Json.JsonSerializer.DeserializeAsync<List<WikiBook>>(stream)
+            ?? throw new InvalidDataException("默认 WikiBook 配置不能为空。");
 
-        // 第二步：查询当前数据库里已经存在的数据
+        if (defaultWikiBooks.Count == 0 || defaultWikiBooks.Any(book => book.Id <= 0)
+            || defaultWikiBooks.Select(book => book.Id).Distinct().Count() != defaultWikiBooks.Count)
+        {
+            throw new InvalidDataException("默认 WikiBook 配置必须包含有效且唯一的 ID。");
+        }
+
         var existingBooks = await _db.Table<WikiBook>().ToListAsync();
-        // 提取出所有已经存在的 Id，存进 HashSet 方便快速查找
-        var existingIds = existingBooks.Select(b => b.Id).ToHashSet();
+        var existingIds = existingBooks.Select(book => book.Id).ToHashSet();
+        var missingBooks = defaultWikiBooks.Where(book => !existingIds.Contains(book.Id)).ToList();
 
-        // 第三步：比对并筛选出“缺失”的数据
-        // 遍历默认数据，如果它的 Id 不在 existingIds 里，说明缺失了
-        var missingBooks = defaultWikiBooks.Where(b => !existingIds.Contains(b.Id)).ToList();
-
-        // 第四步：如果发现有缺失的，把缺失的部分统一存进去
-        if (missingBooks.Any())
+        if (missingBooks.Count > 0)
         {
             await _db.InsertAllAsync(missingBooks);
         }
 
-        // 第五步：比对种子数据，如果任何一个 seed 字段不匹配则强行覆盖
-        var defaultDict = defaultWikiBooks.ToDictionary(b => b.Id);
+        var defaultDict = defaultWikiBooks.ToDictionary(book => book.Id);
         foreach (var existing in existingBooks)
         {
-            if (!defaultDict.TryGetValue(existing.Id, out var def)) continue;
+            if (!defaultDict.TryGetValue(existing.Id, out var definition)) continue;
 
             bool needsUpdate = false;
-
-            if (existing.Title != def.Title) { existing.Title = def.Title; needsUpdate = true; }
-            if (existing.Description != def.Description) { existing.Description = def.Description; needsUpdate = true; }
-            if (existing.BaseUrl != def.BaseUrl) { existing.BaseUrl = def.BaseUrl; needsUpdate = true; }
-            if (existing.ApiBaseUrl != def.ApiBaseUrl) { existing.ApiBaseUrl = def.ApiBaseUrl; needsUpdate = true; }
-            if (existing.UseTls != def.UseTls) { existing.UseTls = def.UseTls; needsUpdate = true; }
-            if (existing.RedirectListUrl != def.RedirectListUrl) { existing.RedirectListUrl = def.RedirectListUrl; needsUpdate = true; }
-            if (existing.MainNamespace != def.MainNamespace) { existing.MainNamespace = def.MainNamespace; needsUpdate = true; }
-            if (existing.AdditionalNamespaces != def.AdditionalNamespaces) { existing.AdditionalNamespaces = def.AdditionalNamespaces; needsUpdate = true; }
-            if (existing.JunkXPath != def.JunkXPath) { existing.JunkXPath = def.JunkXPath; needsUpdate = true; }
-            if (existing.Language != def.Language) { existing.Language = def.Language; needsUpdate = true; }
-            if (existing.DataFolder != def.DataFolder) { existing.DataFolder = def.DataFolder; needsUpdate = true; }
-            if (existing.DefaultPageContent != def.DefaultPageContent) { existing.DefaultPageContent = def.DefaultPageContent; needsUpdate = true; }
-            if (existing.DefaultPageTitle != def.DefaultPageTitle) { existing.DefaultPageTitle = def.DefaultPageTitle; needsUpdate = true; }
+            if (existing.Title != definition.Title) { existing.Title = definition.Title; needsUpdate = true; }
+            if (existing.Description != definition.Description) { existing.Description = definition.Description; needsUpdate = true; }
+            if (existing.BaseUrl != definition.BaseUrl) { existing.BaseUrl = definition.BaseUrl; needsUpdate = true; }
+            if (existing.ApiBaseUrl != definition.ApiBaseUrl) { existing.ApiBaseUrl = definition.ApiBaseUrl; needsUpdate = true; }
+            if (existing.UseTls != definition.UseTls) { existing.UseTls = definition.UseTls; needsUpdate = true; }
+            if (existing.RedirectListUrl != definition.RedirectListUrl) { existing.RedirectListUrl = definition.RedirectListUrl; needsUpdate = true; }
+            if (existing.MainNamespace != definition.MainNamespace) { existing.MainNamespace = definition.MainNamespace; needsUpdate = true; }
+            if (existing.AdditionalNamespaces != definition.AdditionalNamespaces) { existing.AdditionalNamespaces = definition.AdditionalNamespaces; needsUpdate = true; }
+            if (existing.JunkXPath != definition.JunkXPath) { existing.JunkXPath = definition.JunkXPath; needsUpdate = true; }
+            if (existing.Language != definition.Language) { existing.Language = definition.Language; needsUpdate = true; }
+            if (existing.DataFolder != definition.DataFolder) { existing.DataFolder = definition.DataFolder; needsUpdate = true; }
+            if (existing.DefaultPageContent != definition.DefaultPageContent) { existing.DefaultPageContent = definition.DefaultPageContent; needsUpdate = true; }
+            if (existing.DefaultPageTitle != definition.DefaultPageTitle) { existing.DefaultPageTitle = definition.DefaultPageTitle; needsUpdate = true; }
 
             if (needsUpdate)
             {
@@ -356,7 +208,6 @@ public class DatabaseService
             }
         }
     }
-
     private async Task SeedWikiPageAsync(WikiBook? seedBook = null)
     {
         var defaultTitle = seedBook?.DefaultPageTitle ?? seedBook?.Title;
