@@ -1,8 +1,8 @@
 .custom-select-container {
     position: relative;
-    width: max-content;
-    min-width: 125px;
-    flex-shrink: 0;
+    width: 125px;
+    min-width: 0;
+    flex: 0 1 125px;
 }
 
 .custom-select-trigger {
@@ -37,7 +37,10 @@ body.has-hover .custom-select-trigger:hover {
 }
 
 .custom-select-value {
+    display: block;
+    flex: 1;
     min-width: 0;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: clip;
 }
