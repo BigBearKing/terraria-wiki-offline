@@ -1,0 +1,109 @@
+@using System.ComponentModel
+
+@if (AppState.MobileTabPanelOpen)
+{
+    <Mask Show="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMobileTabPanel" />
+    <div class="more-list" data-tauri-drag-region>
+        <div class="more-list-actions">
+            @if (AppState.IsWindows || AppState.IsMacCatalyst)
+            {
+                <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
+                    <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
+                </button>
+            }
+        </div>
+
+    @if (AppState.CurrentPage == "home")
+    {
+        <div class="tab-panel @(AppState.MobileTabPanelOpen ? "show" : "")">
+            <div class="tab-panel-header">
+                <span class="tab-panel-title">@App.Localization!.Get("TabBar.Tabs")</span>
+                <button class="tab-panel-close" @onclick="CloseMobileTabPanel" title="@App.Localization!.Get("TabBar.Close")">
+                    <Icon Name="dismiss" Size="16"></Icon>
+                </button>
+            </div>
+            <div class="tab-panel-list">
+                @foreach (var tab in AppState.Tabs)
+                {
+                    var isActive = tab.Id == AppState.ActiveTabId;
+                    var tabId = tab.Id;
+                    <div class="tab-panel-item @(isActive ? "active" : "")" @onclick="() => OnTabClick(tabId)">
+                        <span class="tab-panel-item-title">@GetTabTitle(tab)</span>
+                        @if (AppState.Tabs.Count > 1)
+                        {
+                            <button class="tab-panel-item-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
+                                <Icon Name="dismiss" Size="14"></Icon>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+            @if (AppState.CanAddTab)
+            {
+                <button class="tab-panel-add" @onclick="OnAddTab">
+                    <Icon Name="add" Size="16"></Icon>
+                    <span>@App.Localization!.Get("TabBar.NewTab")</span>
+                </button>
+            }
+        </div>
+    }
+</div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
+    }
+
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MobileTabPanelOpen) or nameof(AppState.IsPinned))
+            _ = InvokeAsync(StateHasChanged);
+
+        if (e.PropertyName == nameof(AppState.CurrentPage) && AppState.CurrentPage != "home")
+            AppState.MobileTabPanelOpen = false;
+    }
+
+    private string GetTabTitle(TabModel tab)
+    {
+        return string.IsNullOrWhiteSpace(tab.Title)
+            ? AppState.ActiveWikiBook?.DefaultPageTitle ?? AppState.ActiveWikiBook?.Title ?? string.Empty
+            : tab.Title;
+    }
+
+    private void CloseMobileTabPanel()
+    {
+        AppState.MobileTabPanelOpen = false;
+    }
+
+    private async Task OnTabClick(string tabId)
+    {
+        if (tabId != AppState.ActiveTabId)
+            await AppService.SwitchToTabAsync(tabId);
+        CloseMobileTabPanel();
+    }
+
+    private async Task OnTabClose(string tabId)
+    {
+        await AppService.CloseTabAsync(tabId);
+    }
+
+    private async Task OnAddTab()
+    {
+        var tab = await AppService.AddTabAsync();
+        await AppService.SwitchToTabAsync(tab.Id);
+    }
+
+    private void TogglePinStateAsync()
+    {
+        var isPinned = !AppState.IsPinned;
+        WindowHelper.SetAlwaysOnTop(isPinned);
+        AppState.IsPinned = isPinned;
+    }
+}

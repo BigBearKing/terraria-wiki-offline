@@ -37,15 +37,6 @@
         </div>
     }
 
-    @if (ShouldShowPinButton())
-    {
-        <div class="actions-wrapper">
-            <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
-                <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
-            </button>
-        </div>
-    }
-
     @if (AppState.CurrentPage == "home")
     {
         <div class="actions-wrapper">
@@ -54,7 +45,6 @@
             </button>
         </div>
     }
-
 
 </header>
 
@@ -142,7 +132,6 @@
         AppState.SidebarIsExpanded = true;
     }
 
-    // 新增：移动端切换垂直标签面板
     private void ToggleMobileTabPanel()
     {
         AppState.MobileTabPanelOpen = !AppState.MobileTabPanelOpen;
@@ -309,26 +298,6 @@
     {
         SearchText = "";
         AppState.SearchQuery = "";
-    }
-
-    private bool ShouldShowPinButton()
-    {
-        return AppState.IsWindows || AppState.IsMacCatalyst;
-    }
-
-    private async Task TogglePinStateAsync()
-    {
-        if (AppState.IsPinned)
-        {
-            WindowHelper.SetAlwaysOnTop(false);
-            AppState.IsPinned = false;
-
-        }
-        else
-        {
-            WindowHelper.SetAlwaysOnTop(true);
-            AppState.IsPinned = true;
-        }
     }
 
     private void HandleKeyboardHeightChanged(double keyboardHeightDp)

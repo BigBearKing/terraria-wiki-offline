@@ -1,6 +1,4 @@
 @using System.ComponentModel
-@using Terraria_Wiki.Services
-@using Terraria_Wiki.Models
 
 <div class="tab-bar @(IsWindows ? "win-placeholder" : "")" data-tauri-drag-region>
     @if (AppState.CurrentPage == "home")
@@ -30,42 +28,6 @@
     }
 </div>
 
-@if (AppState.CurrentPage == "home")
-{
-    <Mask Show="AppState.MobileTabPanelOpen" MobileOnly="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMobileTabPanel" />
-    <div class="tab-panel @(AppState.MobileTabPanelOpen ? "show" : "")">
-        <div class="tab-panel-header">
-            <span class="tab-panel-title">@App.Localization!.Get("TabBar.Tabs")</span>
-            <button class="tab-panel-close" @onclick="CloseMobileTabPanel" title="@App.Localization!.Get("TabBar.Close")">
-                <Icon Name="dismiss" Size="16"></Icon>
-            </button>
-        </div>
-        <div class="tab-panel-list">
-            @foreach (var tab in AppState.Tabs)
-            {
-                var isActive = tab.Id == AppState.ActiveTabId;
-                var tabId = tab.Id;
-                <div class="tab-panel-item @(isActive ? "active" : "")" @onclick="() => OnMobileTabClick(tabId)">
-                    <span class="tab-panel-item-title">@GetTabTitle(tab)</span>
-                    @if (AppState.Tabs.Count > 1)
-                    {
-                        <button class="tab-panel-item-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
-                            <Icon Name="dismiss" Size="14"></Icon>
-                        </button>
-                    }
-                </div>
-            }
-        </div>
-        @if (AppState.CanAddTab)
-        {
-            <button class="tab-panel-add" @onclick="OnAddTab">
-                <Icon Name="add" Size="16"></Icon>
-                <span>@App.Localization!.Get("TabBar.NewTab")</span>
-            </button>
-        }
-    </div>
-}
-
 @code {
     private bool IsWindows => AppState.IsWindows;
 
@@ -86,47 +48,24 @@
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
     }
 
-    private void RefreshUI()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // 只关心 Tab 相关与页面切换（等价原 OnTabsChanged + OnCurrentPageChanged）
-        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.CurrentWikiPage) or nameof(AppState.MobileTabPanelOpen))
-            RefreshUI();
-
-        // 离开 home 页时自动关闭垂直标签面板
-        if (e.PropertyName == nameof(AppState.CurrentPage) && AppState.CurrentPage != "home")
-            AppState.MobileTabPanelOpen = false;
+        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.CurrentWikiPage))
+            _ = InvokeAsync(StateHasChanged);
     }
 
-    private async void OnTabClick(string tabId)
-    {
-        if (tabId == AppState.ActiveTabId) return;
-        await AppService.SwitchToTabAsync(tabId);
-    }
-
-    // 移动端：点击垂直面板中的标签 → 切换并关闭面板
-    private async void OnMobileTabClick(string tabId)
+    private async Task OnTabClick(string tabId)
     {
         if (tabId != AppState.ActiveTabId)
             await AppService.SwitchToTabAsync(tabId);
-        CloseMobileTabPanel();
     }
 
-    private void CloseMobileTabPanel()
-    {
-        AppState.MobileTabPanelOpen = false;
-    }
-
-    private async void OnTabClose(string tabId)
+    private async Task OnTabClose(string tabId)
     {
         await AppService.CloseTabAsync(tabId);
     }
 
-    private async void OnAddTab()
+    private async Task OnAddTab()
     {
         var tab = await AppService.AddTabAsync();
         await AppService.SwitchToTabAsync(tab.Id);
