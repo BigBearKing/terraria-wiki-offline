@@ -117,6 +117,7 @@ body.has-hover .modern-select:hover {
 
 .setting-btn {
     display: flex;
+    gap:8px;
     justify-content: center;
     align-items: center;
     padding: 6px 12px;

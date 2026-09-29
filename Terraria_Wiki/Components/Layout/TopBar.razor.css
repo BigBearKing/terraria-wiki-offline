@@ -1,5 +1,6 @@
 ﻿
 .top-bar {
+    height:48px;
     display: flex;
     align-items: center;
     gap: 16px; /* 元素之间的最小间距 */

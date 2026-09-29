@@ -132,3 +132,6 @@ html.dark .guidetitle{
     color: #fff;
     border: none;
 }
+html.dark .huiji-css-hook .bottom.footer{
+    color: #fff;
+}

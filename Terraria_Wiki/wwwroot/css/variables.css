@@ -2,7 +2,7 @@
     --sidebar-width-collapsed: 72px;
     --sidebar-width-expanded: 200px;
     --tabbar-height: 0px;
-    --topbar-top-padding: max(6px, calc(var(--safe-area-top) + 2px));
+    --topbar-top-padding: calc(var(--safe-area-top) + 6px);
     --topbar-content-height: 42px;
     --header-height: calc(var(--tabbar-height) + var(--topbar-top-padding) + var(--topbar-content-height));
     --bg-color: #ffffff;

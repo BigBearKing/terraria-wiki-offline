@@ -27,6 +27,7 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<AppTaskRunner>();
             builder.Services.AddSingleton<GlobalExceptionHandler>();
+            builder.Services.AddSingleton<INativeFindInPageService, NativeFindInPageService>();
             builder.Services.AddSingleton<DataService>();
             builder.Services.AddSingleton<PackageService>();
             builder.Services.AddSingleton<AppService>();

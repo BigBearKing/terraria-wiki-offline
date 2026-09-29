@@ -1,4 +1,4 @@
-﻿@using System.ComponentModel
+@using System.ComponentModel
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
@@ -115,7 +115,7 @@
                             or nameof(AppState.IsPinned) 
                             or nameof(AppState.Tabs) 
                             or nameof(AppState.ActiveTabId)
-                            or nameof(AppState.MobileTabPanelOpen))
+                            or nameof(AppState.MoreListOpen))
             RefreshUI();
     }
 
@@ -134,7 +134,7 @@
 
     private void ToggleMobileTabPanel()
     {
-        AppState.MobileTabPanelOpen = !AppState.MobileTabPanelOpen;
+        AppState.MoreListOpen = !AppState.MoreListOpen;
     }
 
     //

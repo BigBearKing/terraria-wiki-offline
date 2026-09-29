@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Terraria_Wiki"
@@ -11,6 +11,53 @@
                 <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
             </BlazorWebView.RootComponents>
         </BlazorWebView>
+
+        <!-- ===== 页内搜索：原生自绘弹窗 =====
+             面板、输入框文字/光标/选区、图标、hover 与按下反馈、开关动画全部由 GraphicsView 绘制；
+             图标路径 1:1 取自 Icon.razor（search / arrow / dismiss）。
+             叠在其上的 Entry 只作为输入接收器（保留键盘、光标位置、中文输入法）。
+             自绘的原因：原生 XAML 控件走 WinUI 合成层，窗口尺寸变化时与窗口重排不同步；
+             而画布绘制由我们在 UI 线程主动 Invalidate 触发，可与窗口变化同帧刷新。 -->
+        <!-- 外层容器：星号列吃满剩余宽度，Auto 列把面板推到最右，从而保证"面板距窗口右"
+             等于我们给的外边距。不用 HorizontalOptions="End"（实测会被拉伸到 X=0），
+             也不用 Translation（会落后于窗口重排）。 -->
+        <Grid x:Name="FindPanelContainer"
+              IsVisible="False"
+              InputTransparent="True"
+              CascadeInputTransparent="False"
+              HorizontalOptions="Fill"
+              VerticalOptions="Fill">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid x:Name="FindPanelHost"
+                  Grid.Column="1"
+                  HorizontalOptions="End"
+                  VerticalOptions="Start">
+                <GraphicsView x:Name="FindPanelView"
+                              StartInteraction="OnFindPanelStartInteraction"
+                              DragInteraction="OnFindPanelDragInteraction"
+                              EndInteraction="OnFindPanelEndInteraction"
+                              MoveHoverInteraction="OnFindPanelHover"
+                              EndHoverInteraction="OnFindPanelHoverExit" />
+                <Entry x:Name="FindEntry"
+                       IsVisible="False"
+                       HorizontalOptions="Start"
+                       VerticalOptions="Start"
+                       BackgroundColor="Transparent"
+                       TextColor="Transparent"
+                       Opacity="0"
+                       FontSize="14"
+                       Margin="0"
+                       ReturnType="Search"
+                       IsSpellCheckEnabled="False"
+                       IsTextPredictionEnabled="False"
+                       TextChanged="OnFindEntryTextChanged"
+                       Focused="OnFindEntryFocused"
+                       Unfocused="OnFindEntryUnfocused" />
+            </Grid>
+        </Grid>
 
         <ContentView x:Name="LoadingOverlay" 
              BackgroundColor="{AppThemeBinding Light=White, Dark=#131313}">
@@ -95,3 +142,5 @@
 
 
 </ContentPage>
+
+

@@ -1,0 +1,39 @@
+@implements IDisposable
+@inject AppState AppState
+@inject INativeFindInPageService FindService
+
+@*
+    页内搜索的界面已完全由原生自绘弹窗承担（见 MainPage.xaml 的 FindPanelHost +
+    FindPanelDrawable）：面板从搜索框背景、放大镜、三个按钮到命中计数全部自绘，
+    文字输入交给叠在画布上的透明 Entry。
+
+    因此这里不再渲染任何网页侧搜索界面：一是避免与原生面板重复显示，
+    二是搜索词根本不进入 WebView 文本层，原生查找永远不会命中它自己。
+    本组件保留下来只负责一件事：在关闭搜索时清理查找状态。
+*@
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.PropertyChanged += OnAppStateChanged;
+    }
+
+    private void OnAppStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(AppState.FindInPageOpen)) return;
+
+        if (AppState.FindInPageOpen)
+        {
+            AppState.FindInPageQuery = string.Empty;
+        }
+        else
+        {
+            _ = FindService.ClearAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        AppState.PropertyChanged -= OnAppStateChanged;
+    }
+}

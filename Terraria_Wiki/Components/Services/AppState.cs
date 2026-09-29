@@ -63,7 +63,9 @@ public class AppState : INotifyPropertyChanged
     private string _currentPage = "home";
     private bool _sidebarIsExpanded = false;
     private bool _logPanelIsOpen = false;
-    private bool _mobileTabPanelOpen = false;
+    private bool _moreListOpen = false;
+    private bool _findInPageOpen = false;
+    private string _findInPageQuery = string.Empty;
     private bool _isDarkTheme;
     private readonly ConcurrentDictionary<int, ActiveTaskInfo> _activeTasks = new();
     private AppTask? _currentDownloadTask;
@@ -170,7 +172,9 @@ public class AppState : INotifyPropertyChanged
         _currentWikiPage = string.Empty;
         _currentPage = "home";
         _searchQuery = string.Empty;
-        _mobileTabPanelOpen = false;
+        _moreListOpen = false;
+        _findInPageOpen = false;
+        _findInPageQuery = string.Empty;
 
         OnPropertyChanged(nameof(Tabs));
         OnPropertyChanged(nameof(ActiveTabId));
@@ -178,7 +182,9 @@ public class AppState : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentWikiPage));
         OnPropertyChanged(nameof(CurrentPage));
         OnPropertyChanged(nameof(SearchQuery));
-        OnPropertyChanged(nameof(MobileTabPanelOpen));
+        OnPropertyChanged(nameof(MoreListOpen));
+        OnPropertyChanged(nameof(FindInPageOpen));
+        OnPropertyChanged(nameof(FindInPageQuery));
     }
 
     public void NotifyWikiBookSwitched()
@@ -217,10 +223,26 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _sidebarIsExpanded, value);
     }
 
-    public bool MobileTabPanelOpen
+    public bool MoreListOpen
     {
-        get => _mobileTabPanelOpen;
-        set => SetProperty(ref _mobileTabPanelOpen, value);
+        get => _moreListOpen;
+        set => SetProperty(ref _moreListOpen, value);
+    }
+
+    public bool FindInPageOpen
+    {
+        get => _findInPageOpen;
+        set => SetProperty(ref _findInPageOpen, value);
+    }
+
+    /// <summary>
+    /// 页内搜索的查询词。输入由 MAUI 原生输入框承担（叠在 WebView 之上），
+    /// 因此这里作为原生侧与 Blazor 组件之间的共享状态。
+    /// </summary>
+    public string FindInPageQuery
+    {
+        get => _findInPageQuery;
+        set => SetProperty(ref _findInPageQuery, value ?? string.Empty);
     }
 
     public bool LogPanelIsOpen

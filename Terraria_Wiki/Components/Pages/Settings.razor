@@ -179,6 +179,7 @@
                     <span class="setting-desc">@Loc.Get("Settings.ImportDataDesc")</span>
                 </div>
                 <button class="button setting-btn" @onclick="ImportData">
+                    <Icon Name="open-file" Size="16"></Icon>
                     @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData) ? AppState.Tasks[AppTaskType.ImportData].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
                 </button>
             </div>
