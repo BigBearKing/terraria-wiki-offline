@@ -4,21 +4,67 @@
 {
     <Mask Show="true" Transparent="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMoreList" />
     <div class="more-list" data-tauri-drag-region>
+        @* 每个功能项两套文字：.btn-title 给宽屏（在按钮内部），
+           .narrow-title 里的 .btn-title-narrow 给窄屏（在按钮外部下方）。由 CSS 按断点各自显隐。 *@
         <div class="more-list-actions">
-            <button class="action-btn button" title="@App.Localization!.Get("Common.FindInPage")" @onclick="FindInPage">
-                <Icon Name="text-search" Size="20"></Icon>
-                <div class="btn-title">@App.Localization!.Get("Common.FindInPage")</div>
-            </button>
+            <div class="action-item">
+                <button class="action-btn button" title="@App.Localization!.Get("Common.FindInPage")" @onclick="FindInPage">
+                    <Icon Name="text-search" Size="24"></Icon>
+                    <div class="btn-title">@App.Localization!.Get("Common.FindInPage")</div>
+                </button>
+                <div class="narrow-title">
+                    <div class="btn-title-narrow">@App.Localization!.Get("Common.FindInPage")</div>
+                </div>
+            </div>
             @if (AppState.IsWindows || AppState.IsMacCatalyst)
             {
-                <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
-                    <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="20"></Icon>
-                    <div class="btn-title">@App.Localization!.Get("TopBar.PinToTop")</div>
-                </button>
+                <div class="action-item">
+                    <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
+                        <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="24"></Icon>
+                        <div class="btn-title">@App.Localization!.Get("TopBar.PinToTop")</div>
+                    </button>
+                    <div class="narrow-title">
+                        <div class="btn-title-narrow">@App.Localization!.Get("TopBar.PinToTop")</div>
+                    </div>
+                </div>
             }
+            @* 缩放：宽屏 .zoom-wrapper 一整行「缩放 ……… − 100% +」；
+               窄屏 .zoom-wrapper 隐藏，改用后面两个 .zoom-narrow 项，各自带框外文字 *@
+            <div class="zoom-wrapper">
+                <Icon Name="zoom-in" Size="24"></Icon>
+                <div class="btn-title">@App.Localization!.Get("Settings.WikiZoom")</div>
+                <div class="zoom-actions">
+                    <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
+                        -
+                        <div class="btn-title">@App.Localization!.Get("MoreList.ZoomOut")</div>
+                    </button>
+                    <span class="zoom-percent">@(AppState.WikiZoom)%</span>
+                    <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
+                        +
+                        <div class="btn-title">@App.Localization!.Get("MoreList.ZoomIn")</div>
+                    </button>
+                </div>
+            </div>
+            <div class="action-item zoom-narrow">
+                <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
+                    <Icon Name="zoom-out" Size="24"></Icon>
+                </button>
+                <div class="narrow-title">
+                    <div class="btn-title-narrow">@App.Localization!.Get("MoreList.ZoomOut")</div>
+                </div>
+            </div>
+            <div class="action-item zoom-narrow">
+                <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
+                    <Icon Name="zoom-in" Size="24"></Icon>
+                </button>
+                <div class="narrow-title">
+                    <div class="btn-title-narrow">@App.Localization!.Get("MoreList.ZoomIn")</div>
+                </div>
+            </div>
         </div>
 
-        @if (AppState.CurrentPage == "home")
+        @* 标签归属：与上方横条互斥，读的是同一个真值 AppState.TabsInMoreList *@
+        @if (AppState.CurrentPage == "home" && AppState.TabsInMoreList)
         {
             <div class="more-list-tabs">
                 <div class="more-list-tabs-header">
@@ -65,8 +111,16 @@
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MoreListOpen) or nameof(AppState.IsPinned))
+        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MoreListOpen) or nameof(AppState.IsPinned) or nameof(AppState.WikiZoom))
             _ = InvokeAsync(StateHasChanged);
+
+        // 标签交还上方横条时主动收起面板，避免两处同时可见
+        if (e.PropertyName is nameof(AppState.IsSmallScreen) or nameof(AppState.IsShortScreen) or nameof(AppState.IsWindows))
+        {
+            if (!AppState.TabsInMoreList)
+                AppState.MoreListOpen = false;
+            _ = InvokeAsync(StateHasChanged);
+        }
 
         if (e.PropertyName == nameof(AppState.CurrentPage) && AppState.CurrentPage != "home")
             AppState.MoreListOpen = false;
@@ -112,4 +166,15 @@
         WindowHelper.SetAlwaysOnTop(isPinned);
         AppState.IsPinned = isPinned;
     }
+
+    // ===== 缩放：宽裕（IsLargeScreen）时一行「缩放 | 百分比 | + | −」，窄屏（IsSmallScreen）只留两个放大镜按钮 =====
+    private bool IsMaxZoom => AppState.WikiZoom >= AppState.MaxWikiZoom;
+
+    private bool IsMinZoom => AppState.WikiZoom <= AppState.MinWikiZoom;
+
+    private void ZoomIn() => AppState.WikiZoom += AppState.WikiZoomStep;
+
+    private void ZoomOut() => AppState.WikiZoom -= AppState.WikiZoomStep;
+
+    private void ResetZoom() => AppState.WikiZoom = 100;
 }

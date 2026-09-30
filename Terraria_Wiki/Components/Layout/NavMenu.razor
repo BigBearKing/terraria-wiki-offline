@@ -1,9 +1,9 @@
-﻿@using System.ComponentModel
+@using System.ComponentModel
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
-<Mask Show="AppState.SidebarIsExpanded" MobileOnly="true" ZIndex="1004" BackPriority="1005" OnClick="CloseSidebar" />
+<Mask Show="AppState.SidebarIsExpanded" CompactOnly="true" ZIndex="1004" BackPriority="1005" OnClick="CloseSidebar" />
 
 <div class="sidebar @(AppState.SidebarIsExpanded ? "expanded" : "collapsed")">
 

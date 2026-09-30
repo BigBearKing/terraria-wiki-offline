@@ -1,6 +1,6 @@
 @* 统一遮罩层组件：半透明/透明遮罩、淡入淡出、点击关闭（或放行点击） *@
 @implements IDisposable
-<div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(MobileOnly ? "mobile-only" : "")"
+<div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(CompactOnly ? "compact-only" : "")"
      style="z-index: @ZIndex;"
      @onclick="OnClick"
      @onpointerdown="OnPointerDown"
@@ -20,8 +20,11 @@
     /// <summary>从顶部栏下方开始覆盖（top: var(--header-height)）</summary>
     [Parameter] public bool FromHeader { get; set; }
 
-    /// <summary>仅移动端（≤768px）显示，桌面端隐藏</summary>
-    [Parameter] public bool MobileOnly { get; set; }
+    /// <summary>
+    /// 仅在紧凑屏幕显示（宽 ≤768 或 高 ≤768），又宽又高时隐藏。
+    /// 对应 .compact-only，判断口径与 AppState.IsCompactScreen 一致；注意不要与 IsMobile（平台）混淆。
+    /// </summary>
+    [Parameter] public bool CompactOnly { get; set; }
 
     /// <summary>层级（默认 900）</summary>
     [Parameter] public int ZIndex { get; set; } = 900;

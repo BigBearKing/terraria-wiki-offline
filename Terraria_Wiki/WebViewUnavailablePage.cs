@@ -50,7 +50,7 @@ public sealed class WebViewUnavailablePage : ContentPage, IDisposable
 #endif
         actions.Children.Add(_exitButton);
 
-        Title = _localization.Get("MainPage.WebViewUnavailableTitle");
+        Title = _localization.Get("WebViewUnavailablePage.WebUnavailableTitle");
         BackgroundColor = Colors.White;
         ApplyLocalization();
 
@@ -82,12 +82,12 @@ public sealed class WebViewUnavailablePage : ContentPage, IDisposable
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            Title = _localization.Get("MainPage.WebViewUnavailableTitle");
-            _title.Text = _localization.Get("MainPage.WebViewUnavailableTitle");
-            _message.Text = _localization.Get("MainPage.WebViewUnavailableDescription");
-            _exitButton.Text = _localization.Get("MainPage.WebViewExit");
+            Title = _localization.Get("WebViewUnavailablePage.WebUnavailableTitle");
+            _title.Text = _localization.Get("WebViewUnavailablePage.WebUnavailableTitle");
+            _message.Text = _localization.Get("WebViewUnavailablePage.WebUnavailableDescription");
+            _exitButton.Text = _localization.Get("WebViewUnavailablePage.WebExit");
 #if WINDOWS
-            _installButton.Text = _localization.Get("MainPage.WebViewInstall");
+            _installButton.Text = _localization.Get("WebViewUnavailablePage.WebInstall");
 #endif
         });
     }

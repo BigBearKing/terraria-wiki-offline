@@ -56,22 +56,40 @@
         };
 
 
+        // 视口尺寸监听：宽度与高度共用 768 阈值，两者都传给 C#。
+        // 宽度变化交给 matchMedia；高度没有对应的媒体查询事件，用 resize 兜住。
+        // 另外在 <html> 上维护 .short-height，供 CSS 侧（--tabbar-height 等）单独使用。
         window.initGlobalScreenListener = () => {
-            const mq = window.matchMedia('(max-width: 768px)');
+            const WIDTH_QUERY = '(max-width: 768px)';
+            const HEIGHT_QUERY = '(max-height: 768px)';
+            const mqWidth = window.matchMedia(WIDTH_QUERY);
+            const mqHeight = window.matchMedia(HEIGHT_QUERY);
 
-            // 定义一个统一的通知函数
-            const sendUpdate = (isSmall) => {
-                DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', isSmall);
+            let lastSmall = mqWidth.matches;
+            let lastShort = mqHeight.matches;
+
+            const applyShortHeightClass = (isShort) => {
+                document.documentElement.classList.toggle('short-height', isShort);
             };
 
-            // 监听变化事件
-            mq.addEventListener('change', (e) => {
-                sendUpdate(e.matches);
-            });
+            const sendUpdate = () => {
+                const isSmall = mqWidth.matches;
+                const isShort = mqHeight.matches;
+                // 宽度一变，往 MoreList 塞进来的标签数可能超限，所以宽高一起重算
+                if (isSmall === lastSmall && isShort === lastShort) return;
+                lastSmall = isSmall;
+                lastShort = isShort;
+                applyShortHeightClass(isShort);
+                DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', isSmall, isShort);
+            };
 
-            // 【核心修正】初始化时立刻手动执行一次！
-            // 确保 C# 在启动瞬间就能拿到状态
-            sendUpdate(mq.matches);
+            mqWidth.addEventListener('change', sendUpdate);
+            mqHeight.addEventListener('change', sendUpdate);
+            window.addEventListener('resize', sendUpdate);
+
+            // 初始化时立刻执行一次，确保 C# 在启动瞬间就能拿到完整状态
+            applyShortHeightClass(lastShort);
+            DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', lastSmall, lastShort);
         };
 
         window.setSafeAreaTop = (top) => {

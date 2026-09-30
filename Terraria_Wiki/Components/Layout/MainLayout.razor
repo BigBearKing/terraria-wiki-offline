@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject NavigationManager NavManager
 @using System.ComponentModel
@@ -90,6 +90,11 @@
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
                 mainPage.HideLoadingScreen();
         });
+
+        // iframe 刚就绪：把当前缩放补推一次。
+        // 若用户在 iframe 注册处理器之前点过 ±，那次推送会超时被丢弃，
+        // 而 URL 里的 zoom 仍是旧值，这里补齐可保证网页缩放与功能栏百分比始终一致。
+        AppState.PushZoomToIframe(Preferences.Default.Get("WikiZoom", 100));
     }
 
     private async void OnLocalizationChanged()
@@ -101,13 +106,9 @@
             try
             {
                 var translations = IframeBridge.ObjToJson(App.Localization!.GetWebTranslations());
-                await JS.InvokeVoidAsync("hostBridge.sendToIframe", new
-                {
-                    type = "req",
-                    id = Guid.NewGuid().ToString(),
-                    method = "SetLocalization",
-                    data = translations
-                });
+                // 用带超时的推送：iframe 未就绪时不会有回复，避免这条消息一直挂起
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await IframeBridge.CallJsAsync("SetLocalization", translations, cts.Token);
             }
             catch (JSException)
             {
@@ -154,6 +155,7 @@
         {
             await JS.InvokeVoidAsync("initHover", "True");
         }
+        // 视口宽高监听（含 <html>.short-height 类），C# 侧据此决定标签放在横条还是 MoreList
         _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
         App.DataManager.InitializeSettings();

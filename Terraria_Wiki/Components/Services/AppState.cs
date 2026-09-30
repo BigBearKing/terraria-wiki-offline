@@ -45,6 +45,20 @@ public class AppState : INotifyPropertyChanged
     public bool IsAndroid => Platform == DevicePlatform.Android;
     public bool IsIOS => Platform == DevicePlatform.iOS;
     public bool IsMacCatalyst => Platform == DevicePlatform.MacCatalyst;
+
+    // ===== 尺寸与平台的术语约定（全项目统一，改动前先看这里）=====
+    // 平台：IsMobile = 跑在 Android/iOS 上，与窗口大小无关。
+    // 尺寸（阈值一律 768px，边界值算"紧凑"）：
+    //   IsSmallScreen   宽 ≤768      窄
+    //   IsShortScreen   高 ≤768      矮
+    //   IsCompactScreen 窄或矮       抽屉/遮罩等"手机上才需要"的界面在这一档启用
+    //   IsLargeScreen   又宽又高
+    // 标签放哪由 TabsInBar / TabsInMoreList 两个属性表达（不是简单的取反，见各自注释）：
+    //   Windows：宽度决定——≥769 在横条，≤768 在 MoreList；高度不影响
+    //   其他平台：又宽又高才在横条，否则在 MoreList
+    // 标记/CSS 层沿用同一词根：Mask 的 CompactOnly 参数、.compact-only 遮罩；
+    // 顶部栏两个按钮判断依据不同所以各自独立——.narrow-menu-btn 只认宽度（IsSmallScreen），
+    // .compact-more-btn 恒定显示（见 TopBar.razor.css）。
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
     private string _dataRootPath = string.Empty;
@@ -79,6 +93,8 @@ public class AppState : INotifyPropertyChanged
     private string _currentLanguage = "zh-cn";
     private bool _isPinned = false;
     private bool _isSmallScreen = false;
+    private bool _isShortScreen = false;
+    private int _wikiZoom = Preferences.Default.Get("WikiZoom", 100);
     private double _safeAreaTop = 0;
     private double _safeAreaBottom = 0;
     private double _safeAreaLeft = 0;
@@ -113,6 +129,13 @@ public class AppState : INotifyPropertyChanged
     }
 
     public const int MaxTabs = 5;
+
+    /// <summary>缩放上下限，与网页端 applyWikiZoom 的钳制范围一致。</summary>
+    public const int MinWikiZoom = 50;
+    public const int MaxWikiZoom = 200;
+
+    /// <summary>功能栏 +/- 每次调整的步进。</summary>
+    public const int WikiZoomStep = 10;
 
     public List<TabModel> Tabs
     {
@@ -227,6 +250,34 @@ public class AppState : INotifyPropertyChanged
     {
         get => _moreListOpen;
         set => SetProperty(ref _moreListOpen, value);
+    }
+
+    /// <summary>
+    /// 当前 Wiki 页面的缩放百分比（50-200，步进 10）。
+    /// 百分比本身只存在 Preferences 里，这里做一份镜像以便功能栏即时显示与刷新。
+    /// </summary>
+    public int WikiZoom
+    {
+        get => _wikiZoom;
+        set
+        {
+            int clamped = Math.Clamp(value, MinWikiZoom, MaxWikiZoom);
+            if (SetProperty(ref _wikiZoom, clamped))
+            {
+                Preferences.Default.Set("WikiZoom", clamped);
+                PushZoomToIframe(clamped);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 把当前缩放推给 iframe。iframe 未就绪时不会有回复，所以限制等待时长后静默放弃；
+    /// 此时 iframe 加载完成后会通过 ApplyZoomToIframeAsync 补齐，界面与网页不会不一致。
+    /// </summary>
+    public static void PushZoomToIframe(int zoom)
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        _ = IframeBridge.CallJsAsync("SetZoom", zoom.ToString(), cts.Token);
     }
 
     public bool FindInPageOpen
@@ -384,16 +435,45 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _isPinned, value);
     }
 
+    /// <summary>视口宽度 ≤768px（窄屏）。标签栏在此时让位给 MoreList。</summary>
     public bool IsSmallScreen
     {
         get => _isSmallScreen;
         set => SetProperty(ref _isSmallScreen, value);
     }
 
+    /// <summary>视口高度 ≤768px（矮屏）。</summary>
+    public bool IsShortScreen
+    {
+        get => _isShortScreen;
+        set => SetProperty(ref _isShortScreen, value);
+    }
+
+    /// <summary>窄或矮：面板/遮罩一类"手机上才需要"的界面在这一档启用。</summary>
+    public bool IsCompactScreen => IsSmallScreen || IsShortScreen;
+
+    /// <summary>
+    /// 标签是否占用上方横条。Windows 只看宽度（横条本就是无边框窗口的拖动/系统按钮区，
+    /// 窗口再矮也始终在，矮屏照旧显示标签）；其他平台要又宽又高才显示。
+    /// </summary>
+    public bool TabsInBar =>
+        IsWindows ? !IsSmallScreen : IsLargeScreen;
+
+    /// <summary>
+    /// 标签是否放 MoreList。与 TabsInBar 分开写而不是取反：Windows 矮屏时标签在横条上，
+    /// MoreList 里就不该再出现一份（所以这里只认宽度）；其他平台除了"又宽又高"以外都归 MoreList。
+    /// </summary>
+    public bool TabsInMoreList =>
+        IsWindows ? IsSmallScreen : !IsLargeScreen;
+
+    /// <summary>又宽又高（宽 &gt;768 且 高 &gt;768）：其他平台只有这一种情况显示上方横条。</summary>
+    public bool IsLargeScreen => !IsCompactScreen;
+
     [JSInvokable]
-    public static void OnScreenChanged(bool isSmall)
+    public static void OnScreenChanged(bool isSmall, bool isShort)
     {
         App.AppStateManager.IsSmallScreen = isSmall;
+        App.AppStateManager.IsShortScreen = isShort;
     }
 
     public double SafeAreaTop

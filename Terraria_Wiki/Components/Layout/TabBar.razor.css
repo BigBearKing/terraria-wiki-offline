@@ -99,25 +99,6 @@
     color: var(--text-primary);
 }
 
-@media (max-width: 768px), (max-height: 768px) {
-    .tab-bar {
-        display: none !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .tab-bar.win-placeholder {
-        display: flex !important;
-    }
-
-    .tab-bar.win-placeholder .tab-list,
-    .tab-bar.win-placeholder .tab-add {
-        display: none;
-    }
-}
-
-@media (min-width: 769px) and (max-height: 768px) {
-    .tab-bar.win-placeholder {
-        display: flex !important;
-    }
-}
+/* 横条的显隐、标签的归属全部由 C# 状态决定（AppState.IsWindows / IsLargeScreen / TabsInBar），
+   这里不再用媒体查询重复判断，避免 CSS 与组件两套规则打架。
+   .win-placeholder 仅表示"Windows 上这条横条还要兼作拖动区"，样式上与普通横条无差别。 */

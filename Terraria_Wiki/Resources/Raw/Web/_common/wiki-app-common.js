@@ -111,6 +111,23 @@
      * 注册 C# 原生代码调用的消息处理器（C# -> JS 方向）。
      * @param {object} config 配置对象
      */
+    /**
+     * 解析 C# 传来的缩放值。
+     * 宿主 hostBridge.sendToIframe 会把参数再 JSON 序列化一次，因此这里可能收到
+     * 数字 125、"125" 或双重编码的 "\"125\""，三种都要能解出数值。
+     * @param {*} value 原始参数
+     * @returns {number} 无法解析时返回 NaN
+     */
+    function parseZoomValue(value) {
+        if (typeof value === 'number') return value;
+        if (typeof value !== 'string') return Number.NaN;
+        let text = value.trim();
+        if (text.startsWith('"') && text.endsWith('"')) {
+            try { text = JSON.parse(text); } catch (error) { /* 保持原样继续尝试 */ }
+        }
+        return Number.parseInt(text, 10);
+    }
+
     function applyWikiZoom(value) {
         const zoom = Number.isFinite(value) ? Math.min(200, Math.max(50, value)) : 100;
         document.documentElement.style.zoom = `${zoom}%`;
@@ -118,7 +135,7 @@
 
     function registerHandlers(config) {
         window.iframeBridge.registerHandler("SetZoom", (value) => {
-            applyWikiZoom(Number.parseInt(value, 10));
+            applyWikiZoom(parseZoomValue(value));
             return null;
         });
 

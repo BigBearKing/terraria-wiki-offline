@@ -39,6 +39,41 @@
     flex-direction: column;
 }
 
+/* 宽屏：功能项撑满整行，框内文字绝对定位在图标右侧 */
+.action-item {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
+.action-item .action-btn {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.action-item .action-btn .btn-title {
+    position: absolute;
+    left: 48px; /* 8px 内边距 + 24px 图标 + 12px 间距 */
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: left; /* 绝对定位盒子被 left/right 撑满，必须显式左对齐，否则会继承居中 */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+}
+
+/* 宽屏 ± 按钮只显示图标，按钮内文字隐藏 */
+.zoom-actions .action-btn .btn-title {
+    display: none;
+}
+
+/* .narrow-title 只是个包壳；里面的 .btn-title-narrow 在宽屏是 display:none，所以包壳不占位置 */
+.narrow-title {
+    display: contents;
+}
+
 .action-btn {
     width: auto;
     height: 36px;
@@ -58,6 +93,25 @@
     font-size: 14px;
 }
 
+/* ===== 文字与容器的两套 =====
+   .btn-title        宽屏用：在按钮内部（跟在图标右侧）
+   .btn-title-narrow 窄屏用：在按钮外部下方
+   互斥显隐：
+     宽屏 —— .action-item 是撑满整行的 flex 项，框内文字绝对定位在图标右侧
+     窄屏 —— .action-item 竖排成"方形按钮 + 框外文字"，框内文字隐藏
+   .zoom-narrow（窄屏专用的 − / + 两项）默认彻底不显示，只在窄屏断点里出现。 */
+.btn-title-narrow,
+.zoom-narrow {
+    display: none !important;
+}
+
+/* 宽屏：功能项撑满整行 */
+.action-item {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
 .action-btn:hover {
     background-color: var(--hover-bg);
     color: var(--text-primary);
@@ -72,21 +126,158 @@
     display: none;
 }
 
+/* ===== 宽屏缩放控件 =====
+   .zoom-wrapper 是列表里的一行，与普通按钮等高（36px）：
+   「缩放」文字占满左侧，.zoom-actions 靠右；两个 ± 是 36×36 方按钮，顺序「− 百分比 +」。 */
+
+/* 加减按钮的边长：宽屏 = 普通按钮高度 36px；窄屏那边会覆盖成 ± 用的方形尺寸 */
+.more-list {
+    --zoom-square: 36px;
+}
+
+.zoom-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 36px;
+    /* 右侧留 8px：与 36px 方形按钮的外边缘对齐时，正好落在 .action-btn 的 8px 内边距上 */
+    padding: 0 8px 0 8px;
+    min-width: 0;
+}
+
+    /* 「缩放」文字占满中间，把右侧按钮组推到最右 */
+    .zoom-wrapper > .btn-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: clip;
+    }
+
+.zoom-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+    /* ± 方形按钮：边长交给 --zoom-square，宽屏时等于普通按钮高度 36px */
+    .zoom-actions .action-btn {
+        width: var(--zoom-square, 36px);
+        height: var(--zoom-square, 36px);
+        min-width: var(--zoom-square, 36px);
+        padding: 0;
+        gap: 0;
+        font-size: 18px;
+        line-height: 1;
+        justify-content: center;
+    }
+
+        /* + / − 是文字，压成单行才能落在按钮正中 */
+        .zoom-actions .action-btn > * {
+            line-height: 1;
+        }
+
+        /* 宽屏不需要按钮里的「放大 / 缩小」文字，靠 title 提示 */
+        .zoom-actions .action-btn > .btn-title {
+            display: none;
+        }
+
+/* 百分比：等宽数字，夹在两个 ± 之间 */
+.zoom-percent {
+    min-width: 48px;
+    text-align: center;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* 宽屏：显示 .zoom-wrapper，隐藏后面两个给窄屏用的 .zoom-btn */
+.more-list-actions > .zoom-btn {
+    display: none;
+}
+
 @media (max-width: 768px) {
 
+    /* 窄屏（IsSmallScreen，宽 ≤768）：一行放不下就换行，不硬挤 */
     .more-list-actions {
         flex-direction: row;
-        align-items: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 6px 10px 10px;
     }
 
-    .action-btn {
-        width: 36px;
-        justify-content: center;
-        padding: 0;
+    /* ===== 窄屏这一套样式：按钮缩小成正方形（只放图标），文字用 .btn-title-narrow 排在方框下方 ===== */
+    .more-list {
+        --action-square: 42px;
     }
 
+    /* 宽屏那套文字让位（按钮体内的 .btn-title、以及宽屏缩放行的标题） */
     .btn-title {
         display: none;
+    }
+
+    .narrow-title {
+        display: block; /* 覆盖宽屏的 display:contents */
+    }
+
+    /* 功能项竖排：上=方形按钮，下=框外文字 */
+    .action-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        flex: 0 0 auto;
+    }
+
+    .action-item .action-btn {
+        position: static;
+        display: flex;
+        flex: 0 0 auto;
+        width: var(--action-square, 42px);
+        height: var(--action-square, 42px);
+        min-width: var(--action-square, 42px);
+        min-height: var(--action-square, 42px);
+        padding: 0;
+        gap: 0;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    .action-item .action-btn svg {
+        flex-shrink: 0;
+    }
+
+    /* 框外文字 */
+    .btn-title-narrow {
+        display: block !important; /* 覆盖基础规则里的 !important 隐藏 */
+        max-width: calc(var(--action-square, 42px) + 12px);
+        min-width: 0;
+        font-size: 9.5px;
+        line-height: 1.2;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+        color:var(--text-secondary);
+    }
+
+    /* 宽屏那套缩放行整行隐藏，改用两个 .zoom-narrow 项 */
+    .zoom-wrapper {
+        display: none;
+    }
+
+    /* 窄屏专用的 − / + 两项在这里才出现 */
+    .zoom-narrow {
+        display: flex !important; /* 覆盖基础规则里的 !important 隐藏 */
     }
 
     .more-list-tabs {

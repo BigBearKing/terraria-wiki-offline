@@ -1,4 +1,4 @@
-﻿
+
 .top-bar {
     height:48px;
     display: flex;
@@ -97,17 +97,27 @@ body.has-hover .action-btn:hover {
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
 }
 
-.mobile-menu-btn {
+/* 顶部栏两个按钮的显隐各自独立（判断依据不同，所以不共用一条规则）：
+   .narrow-menu-btn（左上角 wiki logo → 侧边栏）：只认宽度 AppState.IsSmallScreen，矮屏照样显示
+   .compact-more-btn（右上角 → MoreList）：任何尺寸都显示，面板里是否有标签分组由 C# 决定
+   尺寸术语见 AppState 里的说明。 */
+.narrow-menu-btn {
     display: none;
 }
 
-    .mobile-menu-btn:hover {
+    .narrow-menu-btn:hover {
         background-color: transparent !important;
     }
 
-    .mobile-menu-btn:active {
+    .narrow-menu-btn:active {
         background-color: transparent !important;
     }
+
+@media (max-width: 768px) {
+    .narrow-menu-btn {
+        display: flex;
+    }
+}
 
 @media (max-width: 768px) {
 
@@ -139,15 +149,5 @@ body.has-hover .action-btn:hover {
 
     .topbar-title {
         text-align: right;
-    }
-
-    .mobile-btn {
-        display: flex;
-    }
-}
-
-@media (min-width: 769px) and (max-height: 768px) {
-    .top-bar:not(.windows-top-bar) .mobile-btn {
-        display: flex;
     }
 }

@@ -127,6 +127,7 @@ button.is-responsive-text-fitted > *,
     font-size: inherit;
 }
 
+/* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机布局。尺寸术语见 AppState 里的说明。 */
 @media (max-width: 768px) {
     .page-content {
         padding: 0 12px 0 24px;
@@ -138,8 +139,8 @@ button.is-responsive-text-fitted > *,
         }
     }
 
-    .mobile-menu-btn {
-        display: flex !important;
+    /* 窄屏下补足 logo 菜单键的布局；显隐见 TopBar.razor.css 的 .narrow-menu-btn */
+    .narrow-menu-btn {
         align-items: center;
         justify-content: center;
         padding: 0 12px;

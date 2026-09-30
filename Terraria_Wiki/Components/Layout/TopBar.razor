@@ -6,7 +6,7 @@
 <header class="top-bar @(AppState.IsWindows ? "windows-top-bar" : "")">
 
     <div class="actions-wrapper">
-        <button class="action-btn button mobile-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar">
+        <button class="action-btn button narrow-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar">
             <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
         </button>
         @if (ShouldShowActionButtons())
@@ -37,14 +37,12 @@
         </div>
     }
 
-    @if (AppState.CurrentPage == "home")
-    {
-        <div class="actions-wrapper">
-            <button class="action-btn button mobile-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
-                <Icon Name="more" Size="24"></Icon>
-            </button>
-        </div>
-    }
+    @* 更多按钮：任何页面、任何尺寸都显示；窄屏时它里面才有标签分组（见 AppState.TabsInMoreList） *@
+    <div class="actions-wrapper">
+        <button class="action-btn button compact-more-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
+            <Icon Name="more" Size="24"></Icon>
+        </button>
+    </div>
 
 </header>
 
@@ -126,7 +124,7 @@
         ClearSearch();
     }
 
-    // 新增：移动端打开侧边栏
+    // 窄屏（IsSmallScreen）点击菜单键打开侧边栏
     private void OpenMobileSidebar()
     {
         AppState.SidebarIsExpanded = true;

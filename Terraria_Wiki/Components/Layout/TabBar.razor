@@ -1,36 +1,39 @@
 @using System.ComponentModel
 
-<div class="tab-bar @(IsWindows ? "win-placeholder" : "")" data-tauri-drag-region>
-    @if (AppState.CurrentPage == "home")
-    {
-        <div class="tab-list">
-            @foreach (var tab in AppState.Tabs)
-            {
-                var isActive = tab.Id == AppState.ActiveTabId;
-                var tabId = tab.Id;
-                <div class="tab-item @(isActive ? "active" : "")" @onclick="() => OnTabClick(tabId)" @onclick:preventDefault>
-                    <span class="tab-title">@GetTabTitle(tab)</span>
-                    @if (AppState.Tabs.Count > 1)
-                    {
-                        <button class="tab-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
-                            <Icon Name="dismiss"></Icon>
-                        </button>
-                    }
-                </div>
-            }
-        </div>
-        @if (AppState.CanAddTab)
+@* Windows：横条是无边框窗口的拖动/系统按钮区，任何尺寸都保留；其他平台只在又宽又高时出现。 *@
+@if (AppState.IsWindows || AppState.IsLargeScreen)
+{
+    <div class="tab-bar @(AppState.IsWindows ? "win-placeholder" : "")" data-tauri-drag-region>
+        @* 标签只在归属横条时渲染；窄屏整块交给 MoreList，两者不共存 *@
+        @if (AppState.CurrentPage == "home" && AppState.TabsInBar)
         {
-            <button class="tab-add" @onclick="OnAddTab" title="@App.Localization!.Get("TabBar.NewTab")">
-                <Icon Name="add"></Icon>
-            </button>
+            <div class="tab-list">
+                @foreach (var tab in AppState.Tabs)
+                {
+                    var isActive = tab.Id == AppState.ActiveTabId;
+                    var tabId = tab.Id;
+                    <div class="tab-item @(isActive ? "active" : "")" @onclick="() => OnTabClick(tabId)" @onclick:preventDefault>
+                        <span class="tab-title">@GetTabTitle(tab)</span>
+                        @if (AppState.Tabs.Count > 1)
+                        {
+                            <button class="tab-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
+                                <Icon Name="dismiss"></Icon>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+            @if (AppState.CanAddTab)
+            {
+                <button class="tab-add" @onclick="OnAddTab" title="@App.Localization!.Get("TabBar.NewTab")">
+                    <Icon Name="add"></Icon>
+                </button>
+            }
         }
-    }
-</div>
+    </div>
+}
 
 @code {
-    private bool IsWindows => AppState.IsWindows;
-
     private string GetTabTitle(TabModel tab)
     {
         return string.IsNullOrWhiteSpace(tab.Title)
@@ -50,7 +53,9 @@
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.CurrentWikiPage))
+        // 横条显隐与标签归属都取决于屏幕尺寸状态，这里必须一并监听
+        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.CurrentWikiPage)
+            or nameof(AppState.IsSmallScreen) or nameof(AppState.IsShortScreen) or nameof(AppState.IsWindows))
             _ = InvokeAsync(StateHasChanged);
     }
 

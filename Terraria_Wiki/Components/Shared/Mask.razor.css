@@ -35,13 +35,13 @@
     height: calc(100vh - var(--header-height));
 }
 
-/* 仅移动端显示（侧边栏抽屉、垂直标签面板的遮罩） */
-.app-mask.mobile-only {
+/* 仅紧凑屏幕显示：AppState.IsCompactScreen（宽 ≤768 或 高 ≤768，见 AppState 里的尺寸术语说明） */
+.app-mask.compact-only {
     display: none;
 }
 
 @media (max-width: 768px) {
-    .app-mask.mobile-only {
+    .app-mask.compact-only {
         display: block;
     }
 
@@ -51,7 +51,7 @@
 }
 
 @media (min-width: 769px) and (max-height: 768px) {
-    .app-mask.mobile-only {
+    .app-mask.compact-only {
         display: block;
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Terraria_Wiki.Models;
@@ -31,7 +31,10 @@ public static class IframeBridge
     }
 
     // 2. C# 调用 Iframe：发送请求并等待结果
-    public static async Task<string> CallJsAsync(string methodName, string argsJson)
+    // cancellationToken 用于给「发完就不管结果」的调用（如 SetZoom）加上等待上限：
+    // iframe 尚未注册处理器时不会有回复，超时后必须把挂起的 TaskCompletionSource 摘掉，
+    // 否则消息会一直压在 _pendingTasks 里直到 JS 互操作超时。
+    public static async Task<string> CallJsAsync(string methodName, string argsJson, CancellationToken cancellationToken = default)
     {
         var id = Guid.NewGuid().ToString();
         var tcs = new TaskCompletionSource<string>();
@@ -40,6 +43,13 @@ public static class IframeBridge
         // 调用宿主页面的 JS helper，让它转发给 iframe
         await _js!.InvokeVoidAsync("hostBridge.sendToIframe", new { type = "req", id, method = methodName, data = argsJson });
 
+        using var registration = cancellationToken.Register(() =>
+        {
+            if (_pendingTasks.TryRemove(id, out var pending))
+                pending.TrySetResult(string.Empty);
+        });
+
+        // 等待超时后挂起项已被摘除，此处对已完成的 TCS 取值不会抛异常
         return await tcs.Task; // 等待 Iframe 回复
     }
 

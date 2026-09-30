@@ -1,4 +1,4 @@
-﻿@page "/settings"
+@page "/settings"
 @inject IJSRuntime JS
 @inject AppTaskRunner TaskRunner
 @inject PackageService PackageService
@@ -39,15 +39,6 @@
                 <CustomSelect TValue="string"
                               Options="ContentThemeOptions"
                               @bind-Value="ContentTheme" />
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <span class="setting-name">@Loc.Get("Settings.WikiZoom")</span>
-                </div>
-                <CustomSelect TValue="int"
-                              Options="WikiZoomOptions"
-                              @bind-Value="WikiZoom" />
             </div>
         </div>
 
@@ -425,16 +416,6 @@
         new("original", Loc.Get("Settings.WikiOriginal"))
     ];
 
-    private IReadOnlyList<SelectOption<int>> WikiZoomOptions =>
-    [
-        new(75, "75%"),
-        new(90, "90%"),
-        new(100, Loc.Get("Settings.Default100")),
-        new(110, "110%"),
-        new(125, "125%"),
-        new(150, "150%")
-    ];
-
     private IReadOnlyList<SelectOption<int>> MaxSearchItemCountOptions =>
     [
         new(25, "25"),
@@ -499,16 +480,6 @@
         set
         {
             _ = ThemeService.SetContentThemeAsync(value);
-        }
-    }
-
-    private int WikiZoom
-    {
-        get => Preferences.Default.Get("WikiZoom", 100);
-        set
-        {
-            Preferences.Default.Set("WikiZoom", value);
-            IframeBridge.CallJsAsync("SetZoom", value.ToString());
         }
     }
 
