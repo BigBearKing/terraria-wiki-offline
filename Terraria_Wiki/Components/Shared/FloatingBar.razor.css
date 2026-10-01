@@ -2,7 +2,9 @@
 
 /* 悬浮小条形态里 iframe 上方的那条 32px 拖动条。
    高度与 Windows 的 --tabbar-height 对齐（同一视觉语言），可整条按住拖动窗口。
-   不加左右内边距：条上的按钮要从最左边紧贴排列。 */
+   不加左右内边距：条上的按钮要从最左边紧贴排列。
+   注意这里<b>故意不设 position</b>：条内搜索框要浮在 iframe 视图的底部（窗口底部），
+   一旦给条加上 relative，它就会改为贴在这 32px 横条的下沿 —— 那就跑到 iframe 上面去了。 */
 .floating-bar {
     height: 32px;
     flex-shrink: 0;
@@ -55,6 +57,94 @@
     line-height: 1;
     color: var(--text-secondary);
     user-select: none;
+}
+
+/* ===== 条内搜索：浮在 iframe 视图的底部（窗口底部），形态与 TopBar 的 ≤768px 那套一致 =====
+   .floating-bar 不设 position → .search-wrapper 没有定位祖先，和 TopBar 里一样
+   靠 right + bottom: var(--search-wrapper-bottom) 相对视口定位，于是它落在窗口右下角、
+   也就是 iframe 的下方；.search-wrapper 自己再当定位祖先，让结果面板跟着搜索框一起收放。 */
+.floating-bar .search-wrapper {
+    width: 36px;
+    height: 36px;
+    position: absolute;
+    right: 10px;
+    background-color: transparent;
+    z-index: 901;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: width 0.3s ease, bottom 0.1s ease-out, transform 0.2s ease-out;
+    bottom: var(--search-wrapper-bottom);
+}
+
+.floating-bar .search-input {
+    width: 100%;
+    padding: 0 0 0 36px;
+    height: 100%;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    background-color: var(--hover-bg);
+    outline: none;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    transition: border-color 0.2s;
+    box-shadow: 0 -2px 12px 2px rgba(0, 0, 0, 0.28);
+}
+
+.floating-bar .search-input:focus {
+    background-color: var(--bg-color);
+    border-color: var(--blue-primary);
+}
+
+/* 聚焦后横向铺开，但最宽 500px（小条本身只有 420dip，所以通常就是铺满） */
+.floating-bar .search-wrapper:focus-within {
+    width: min(500px, calc(100% - 20px));
+}
+
+/* 图标定位（与 TopBar 的 ::deep .search-icon 同值） */
+.floating-bar .search-wrapper ::deep .search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-secondary);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;   /* 点击穿透图标直接激活输入框 */
+}
+
+/* ===== 结果面板：挂在搜索框上（跟着它走），字体比主窗口那版小一号 =====
+   ::deep 才能作用到子组件 SearchResultPanel 内部的 .search-popup-panel。 */
+.floating-bar .search-wrapper ::deep .search-popup-panel {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    top: auto;
+    left: 0;
+    right: auto;
+    width: 100%;
+    max-height: min(48vh, 360px);
+    overflow-y: auto;
+    background: var(--bg-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    z-index: 999;
+}
+
+.floating-bar .search-wrapper ::deep .search-status {
+    padding: 12px;
+    font-size: 0.8rem;
+}
+
+.floating-bar .search-wrapper ::deep .result-item {
+    padding: 9px 12px;
+}
+
+.floating-bar .search-wrapper ::deep .result-title {
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+}
+
+.floating-bar .search-wrapper ::deep .result-snippet {
+    font-size: 0.75rem;
 }
 
 /* 条最右边的"退出悬浮窗模式"：hover 变红（图标用红色、底色用红色低透明） */

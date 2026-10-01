@@ -1,11 +1,13 @@
 @* Components/Shared/FloatingBar.razor *@
 @using System.ComponentModel
 @using Terraria_Wiki.Services
+@using Terraria_Wiki.Components.Shared
 @* 悬浮小条形态（仅 Windows）里 iframe 上方的那条 32px 拖动条。
    左边按顺序：后退、home、缩放 −/+（小条专有缩放，存在 "FloatingZoom"，与主窗口的 WikiZoom 互不影响）；
-   中间：当前页面标题（超长省略号）；右边：收起为圆球（减号）、退出悬浮窗模式（箭头出口）。
+   中间：当前页面标题（超长省略）；右边：搜索（永久用"窄屏 ≤768px"那套：
+   平时缩成 36px 图标、聚焦展开整行）、收起为圆球（减号）、退出悬浮窗模式（箭头出口）。
    整条是拖动区：JS 的 data-tauri-drag-region 逻辑会把 button/a/input 这类可点元素排除掉，
-   所以按钮不会误触发窗口拖动，按钮之外的空白处整条都能按住拖动窗口。 *@
+   所以按钮/输入框不会误触发窗口拖动，其余空白处整条都能按住拖动窗口。 *@
 <div class="floating-bar" data-tauri-drag-region="deep">
     <button class="bar-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="GoBackAsync">
         <Icon Name="arrow-left" Size="18"></Icon>
@@ -23,6 +25,19 @@
 
     @* 当前页面标题：占住中间剩余宽度，过长省略；本身是拖动区，按住这段也能拖窗口 *@
     <div class="bar-title" title="@PageTitle">@PageTitle</div>
+
+    @* 搜索：形态与 TopBar 窄屏那套一致（同样的类名与三层结构）。
+       它是绝对定位、没有定位祖先，所以靠 right + bottom 落在窗口右下角，
+       也就是浮在 iframe 视图的下方；结果面板挂在它上面、跟着一起收放。 *@
+    <div id="search-wrapper" class="search-wrapper">
+        <Icon class="search-icon" Name="search"></Icon>
+        <input type="text" class="search-input" placeholder="@App.Localization!.Get("TopBar.SearchPlaceholder")"
+               value="@SearchText" @oninput="OnSearchInput" />
+        @if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            <SearchResultPanel OnResultSelected="HandleResultClick" OnCloseRequested="ClearSearch" />
+        }
+    </div>
 
     <button class="bar-btn bar-btn-collapse button" title="收起为圆球" @onclick="OnCollapseClick">
         <Icon Name="subtract" Size="18"></Icon>
@@ -59,6 +74,44 @@
     private void ZoomIn() => AppState.FloatingZoom += AppState.WikiZoomStep;
 
     private void ZoomOut() => AppState.FloatingZoom -= AppState.WikiZoomStep;
+
+    // ===== 搜索（与小条同一条 32px 横条内，复用主窗口那套 SearchResultPanel）=====
+
+    /// <summary>
+    /// 搜索框绑的就是全局的 <see cref="AppState.SearchQuery"/>，
+    /// 所以输入即触发 <see cref="SearchResultPanel"/> 的面板（它监听同一个属性）。
+    /// </summary>
+    private string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (_searchText == value)
+                return;
+
+            _searchText = value;
+            AppState.SearchQuery = value;
+        }
+    }
+
+    private string _searchText = "";
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? "";
+    }
+
+    private async Task HandleResultClick(string title)
+    {
+        ClearSearch();
+        await AppService.OpenPageAsync(title);
+    }
+
+    private void ClearSearch()
+    {
+        _searchText = "";
+        AppState.SearchQuery = "";
+    }
 
     private void GoBackAsync()
     {
