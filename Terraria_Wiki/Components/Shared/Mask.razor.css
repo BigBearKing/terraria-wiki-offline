@@ -35,23 +35,19 @@
     height: calc(100vh - var(--header-height));
 }
 
-/* 仅紧凑屏幕显示：AppState.IsCompactScreen（宽 ≤768 或 高 ≤768，见 AppState 里的尺寸术语说明） */
-.app-mask.compact-only {
+/* 仅窄屏显示：宽 ≤768（等价 AppState.IsSmallScreen）。侧边栏只有在这一档才变成浮层抽屉，
+   所以"点空白处关闭抽屉"的遮罩也只该在这一档出现；窗口只是矮（高 ≤768）时侧边栏仍是内联常驻，
+   不需要遮罩，更不该挡住主区域点击。 */
+.app-mask.narrow-only {
     display: none;
 }
 
 @media (max-width: 768px) {
-    .app-mask.compact-only {
+    .app-mask.narrow-only {
         display: block;
     }
 
     .app-mask.from-header {
         height: calc(100vh - 2*var(--header-height));
-    }
-}
-
-@media (min-width: 769px) and (max-height: 768px) {
-    .app-mask.compact-only {
-        display: block;
     }
 }

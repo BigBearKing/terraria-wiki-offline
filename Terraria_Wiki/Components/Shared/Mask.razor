@@ -1,6 +1,6 @@
 @* 统一遮罩层组件：半透明/透明遮罩、淡入淡出、点击关闭（或放行点击） *@
 @implements IDisposable
-<div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(CompactOnly ? "compact-only" : "")"
+<div class="app-mask @(Show ? "show" : "") @(Locked ? "locked" : "") @(Transparent ? "transparent" : "") @(FromHeader ? "from-header" : "") @(NarrowOnly ? "narrow-only" : "")"
      style="z-index: @ZIndex;"
      @onclick="OnClick"
      @onpointerdown="OnPointerDown"
@@ -21,10 +21,11 @@
     [Parameter] public bool FromHeader { get; set; }
 
     /// <summary>
-    /// 仅在紧凑屏幕显示（宽 ≤768 或 高 ≤768），又宽又高时隐藏。
-    /// 对应 .compact-only，判断口径与 AppState.IsCompactScreen 一致；注意不要与 IsMobile（平台）混淆。
+    /// 仅在窄屏显示（宽 ≤768，等价 AppState.IsSmallScreen）；又宽又高、以及"宽而矮"都不显示。
+    /// 用于侧边栏抽屉这类"只有窄屏才浮在内容之上、需要点空白处关闭"的场景，对应 .narrow-only。
+    /// 注意不要与 IsMobile（平台）混淆。
     /// </summary>
-    [Parameter] public bool CompactOnly { get; set; }
+    [Parameter] public bool NarrowOnly { get; set; }
 
     /// <summary>层级（默认 900）</summary>
     [Parameter] public int ZIndex { get; set; } = 900;

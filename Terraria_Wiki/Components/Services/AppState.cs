@@ -51,14 +51,16 @@ public class AppState : INotifyPropertyChanged
     // 尺寸（阈值一律 768px，边界值算"紧凑"）：
     //   IsSmallScreen   宽 ≤768      窄
     //   IsShortScreen   高 ≤768      矮
-    //   IsCompactScreen 窄或矮       抽屉/遮罩等"手机上才需要"的界面在这一档启用
+    //   IsCompactScreen 窄或矮
     //   IsLargeScreen   又宽又高
+    // 谁用哪一档看"该界面在哪一档才改变形态"：
+    //   侧边栏抽屉 —— 只在窄（IsSmallScreen）浮层化，所以它的遮罩用 .narrow-only，不看高度
+    //   标签归属   —— 见下面 TabsInBar / TabsInMoreList
     // 标签放哪由 TabsInBar / TabsInMoreList 两个属性表达（不是简单的取反，见各自注释）：
     //   Windows：宽度决定——≥769 在横条，≤768 在 MoreList；高度不影响
     //   其他平台：又宽又高才在横条，否则在 MoreList
-    // 标记/CSS 层沿用同一词根：Mask 的 CompactOnly 参数、.compact-only 遮罩；
-    // 顶部栏两个按钮判断依据不同所以各自独立——.narrow-menu-btn 只认宽度（IsSmallScreen），
-    // .compact-more-btn 恒定显示（见 TopBar.razor.css）。
+    // 标记/CSS 层：Mask 的 NarrowOnly 参数 / .narrow-only 遮罩，
+    // 顶部栏 .narrow-menu-btn（只认宽度）与 .compact-more-btn（恒定显示，见 TopBar.razor.css）。
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
     private string _dataRootPath = string.Empty;
