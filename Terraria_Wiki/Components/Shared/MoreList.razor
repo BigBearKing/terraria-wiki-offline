@@ -48,12 +48,12 @@
                 <div class="btn-title">@App.Localization!.Get("Settings.WikiZoom")</div>
                 <div class="zoom-actions">
                     <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
-                        -
+                        <Icon Name="subtract" Size="20"></Icon>
                         <div class="btn-title">@App.Localization!.Get("MoreList.ZoomOut")</div>
                     </button>
                     <span class="zoom-percent">@(AppState.WikiZoom)%</span>
                     <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
-                        +
+                        <Icon Name="add" Size="20"></Icon>
                         <div class="btn-title">@App.Localization!.Get("MoreList.ZoomIn")</div>
                     </button>
                 </div>

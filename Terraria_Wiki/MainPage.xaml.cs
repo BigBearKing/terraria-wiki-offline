@@ -716,7 +716,16 @@ namespace Terraria_Wiki
                 (int)Math.Round(webView.ActualWidth * scale),
                 (int)Math.Round(TabBarHeightDip * scale));
 
-            appWindow.TitleBar.SetDragRectangles(new[] { tabBarDragRect });
+            try
+            {
+                appWindow.TitleBar.SetDragRectangles(new[] { tabBarDragRect });
+            }
+            catch (Exception ex)
+            {
+                // 拖动区属于"锦上添花"：presenter 关掉标题栏后标题栏高度可能为 0，
+                // 某些环境会在这里抛参数异常——不能让尺寸变化回调把它甩到未处理异常里。
+                System.Diagnostics.Debug.WriteLine($"SetDragRectangles failed: {ex}");
+            }
         }
 
         private void RegisterDragBridge(Microsoft.Web.WebView2.Core.CoreWebView2 core)

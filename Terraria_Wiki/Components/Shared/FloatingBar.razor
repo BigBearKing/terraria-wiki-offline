@@ -1,5 +1,95 @@
 @* Components/Shared/FloatingBar.razor *@
+@using System.ComponentModel
+@using Terraria_Wiki.Services
 @* 悬浮小条形态（仅 Windows）里 iframe 上方的那条 32px 拖动条。
-   现在只有拖动区，按钮后续再加；整个条用 data-tauri-drag-region 交给原生窗口拖动。 *@
+   左边按顺序：后退、home、缩放 −/+（小条专有缩放，存在 "FloatingZoom"，与主窗口的 WikiZoom 互不影响）；
+   中间：当前页面标题（超长省略号）；右边：收起为圆球（减号）、退出悬浮窗模式（箭头出口）。
+   整条是拖动区：JS 的 data-tauri-drag-region 逻辑会把 button/a/input 这类可点元素排除掉，
+   所以按钮不会误触发窗口拖动，按钮之外的空白处整条都能按住拖动窗口。 *@
 <div class="floating-bar" data-tauri-drag-region="deep">
+    <button class="bar-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="GoBackAsync">
+        <Icon Name="arrow-left" Size="18"></Icon>
+    </button>
+    <button class="bar-btn button" title="@App.Localization!.Get("Common.Home")" @onclick="GoHomeAsync">
+        <Icon Name="home" Size="18"></Icon>
+    </button>
+
+    <button class="bar-btn button" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
+        <Icon Name="zoom-out" Size="18"></Icon>
+    </button>
+    <button class="bar-btn button" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
+        <Icon Name="zoom-in" Size="18"></Icon>
+    </button>
+
+    @* 当前页面标题：占住中间剩余宽度，过长省略；本身是拖动区，按住这段也能拖窗口 *@
+    <div class="bar-title" title="@PageTitle">@PageTitle</div>
+
+    <button class="bar-btn bar-btn-collapse button" title="收起为圆球" @onclick="OnCollapseClick">
+        <Icon Name="subtract" Size="18"></Icon>
+    </button>
+    <button class="bar-btn bar-btn-exit button" title="@App.Localization!.Get("MoreList.FloatingWindow")" @onclick="OnExitClick">
+        <Icon Name="arrow-exit" Size="18"></Icon>
+    </button>
 </div>
+
+@code {
+    /// <summary>收起为桌面图标球（小条 → 球）。由 MainLayout 注入，避免这里直接依赖窗口层。</summary>
+    [Parameter]
+    public EventCallback OnCollapseToBall { get; set; }
+
+    /// <summary>退出悬浮窗模式（还原主窗口）。由 MainLayout 注入。</summary>
+    [Parameter]
+    public EventCallback OnExitFloating { get; set; }
+
+    private bool IsMinZoom => AppState.FloatingZoom <= AppState.MinWikiZoom;
+
+    private bool IsMaxZoom => AppState.FloatingZoom >= AppState.MaxWikiZoom;
+
+    /// <summary>
+    /// 条中间显示的当前页面标题。取的就是 wiki 当前页（<see cref="AppState.CurrentWikiPage"/>），
+    /// 与主窗口顶栏标题同源；没拿到就退回当前 Wiki 书的默认页标题，再没有就留空。
+    /// </summary>
+    private string PageTitle =>
+        AppState.CurrentWikiPage
+        ?? AppState.ActiveWikiBook?.DefaultPageTitle
+        ?? AppState.ActiveWikiBook?.Title
+        ?? string.Empty;
+
+    /// <summary>小条里的 ± 改的是小条专有缩放（AppState.FloatingZoom → "FloatingZoom" 偏好）。</summary>
+    private void ZoomIn() => AppState.FloatingZoom += AppState.WikiZoomStep;
+
+    private void ZoomOut() => AppState.FloatingZoom -= AppState.WikiZoomStep;
+
+    private void GoBackAsync()
+    {
+        _ = AppService.WikiBackAsync();
+    }
+
+    private void GoHomeAsync()
+    {
+        _ = AppService.WikiBackHomeAsync();
+    }
+
+    private Task OnCollapseClick() => OnCollapseToBall.InvokeAsync();
+
+    private Task OnExitClick() => OnExitFloating.InvokeAsync();
+
+    protected override void OnInitialized()
+    {
+        AppState.PropertyChanged += OnAppStatePropertyChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.PropertyChanged -= OnAppStatePropertyChanged;
+    }
+
+    /// <summary>缩放/标题变了要刷新：± 的 disabled 依赖百分比，中间那段显示当前页标题。</summary>
+    private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppState.WikiZoom) or nameof(AppState.FloatingZoom)
+            or nameof(AppState.FloatingBarActive) or nameof(AppState.CurrentWikiPage)
+            or nameof(AppState.ActiveWikiBook))
+            _ = InvokeAsync(StateHasChanged);
+    }
+}

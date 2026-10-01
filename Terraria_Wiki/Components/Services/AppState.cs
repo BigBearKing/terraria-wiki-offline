@@ -99,6 +99,12 @@ public class AppState : INotifyPropertyChanged
     private bool _isSmallScreen = false;
     private bool _isShortScreen = false;
     private int _wikiZoom = Preferences.Default.Get("WikiZoom", 100);
+
+    /// <summary>
+    /// 悬浮小条形态<b>专有</b>的缩放，与主窗口的 <see cref="WikiZoom"/> 互不影响，各存各的偏好。
+    /// 惰性同步成"当前生效的缩放"：主窗口形态下读它拿到的就是 WikiZoom。
+    /// </summary>
+    private int _floatingZoom = Preferences.Default.Get("FloatingZoom", 100);
     private double _safeAreaTop = 0;
     private double _safeAreaBottom = 0;
     private double _safeAreaLeft = 0;
@@ -281,8 +287,11 @@ public class AppState : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// 当前 Wiki 页面的缩放百分比（50-200，步进 10）。
-    /// 百分比本身只存在 Preferences 里，这里做一份镜像以便功能栏即时显示与刷新。
+    /// 主窗口形态的 Wiki 缩放百分比（50-200，步进 10），对应偏好键 "WikiZoom"。
+    ///
+    /// ★ 这里存的始终是<b>主窗口自己的值</b>，悬浮小条期间不会被小条的操作改写；
+    ///   小条用的是 <see cref="FloatingZoom"/>（"FloatingZoom"），两者各存各的、互不影响。
+    ///   "当前 iframe 实际用的缩放"另由 <see cref="_activeZoom"/> 记录，见 <see cref="PushZoomForCurrentMode"/>。
     /// </summary>
     public int WikiZoom
     {
@@ -290,12 +299,76 @@ public class AppState : INotifyPropertyChanged
         set
         {
             int clamped = Math.Clamp(value, MinWikiZoom, MaxWikiZoom);
+
+            // 小条形态：改的应该是小条专有缩放，主窗口的值原样留着
+            if (FloatingBarActive)
+            {
+                FloatingZoom = clamped;
+                return;
+            }
+
             if (SetProperty(ref _wikiZoom, clamped))
             {
                 Preferences.Default.Set("WikiZoom", clamped);
+                _activeZoom = clamped;
                 PushZoomToIframe(clamped);
             }
         }
+    }
+
+    /// <summary>
+    /// 悬浮小条形态专有的缩放百分比（50-200，步进 10），独立存偏好 "FloatingZoom"。
+    /// 主窗口形态下读它等于 <see cref="WikiZoom"/>（"读到的就是当前生效值"），
+    /// 进入小条时才会切到小条自己记着的值。
+    /// </summary>
+    public int FloatingZoom
+    {
+        get => FloatingBarActive ? Math.Clamp(_floatingZoom, MinWikiZoom, MaxWikiZoom) : _wikiZoom;
+        set
+        {
+            int clamped = Math.Clamp(value, MinWikiZoom, MaxWikiZoom);
+            _floatingZoom = clamped;
+            Preferences.Default.Set("FloatingZoom", clamped);
+
+            // 只在小条形态下改"当前生效值"：主窗口自己的 _wikiZoom 一个字节都不动
+            if (FloatingBarActive)
+            {
+                if (SetProperty(ref _activeZoom, clamped, nameof(ActiveZoom)))
+                    OnPropertyChanged(nameof(FloatingZoom));
+
+                PushZoomToIframe(clamped);
+                return;
+            }
+
+            OnPropertyChanged(nameof(FloatingZoom));
+        }
+    }
+
+    /// <summary>
+    /// 该 iframe 当前实际生效的缩放百分比。进入/退出小条时由
+    /// <see cref="PushZoomForCurrentMode"/> 在"主窗口值"和"小条值"之间切换。
+    /// </summary>
+    private int _activeZoom = Preferences.Default.Get("WikiZoom", 100);
+
+    /// <summary>当前 iframe 实际生效的缩放（只读，供调试/展示）。</summary>
+    public int ActiveZoom => _activeZoom;
+
+    /// <summary>
+    /// 按"当前形态"重新推缩放给 iframe：
+    /// 小条形态用 "FloatingZoom"，主窗口形态用 "WikiZoom"。
+    /// 模式切换时必须调用——同一个 iframe 节点不重载，不推的话网页会停在另一个模式的值上
+    /// （典型表现：退出悬浮窗后主窗口还显示着小条的缩放）。
+    /// </summary>
+    public void PushZoomForCurrentMode()
+    {
+        int zoom = FloatingBarActive
+            ? Math.Clamp(_floatingZoom, MinWikiZoom, MaxWikiZoom)
+            : _wikiZoom;
+
+        if (SetProperty(ref _activeZoom, zoom, nameof(ActiveZoom)))
+            OnPropertyChanged(nameof(FloatingZoom));
+
+        PushZoomToIframe(zoom);
     }
 
     /// <summary>

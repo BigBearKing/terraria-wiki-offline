@@ -19,8 +19,8 @@
     <main class="main-area">      
         @if (IsFloatingBar)
         {
-            @* 悬浮小条形态：iframe 上方一条 32px 拖动条（按钮后续再加） *@
-            <FloatingBar />
+            @* 悬浮小条形态：iframe 上方一条 32px 拖动条（后退 / home | 收起为圆球 / 退出悬浮窗模式） *@
+            <FloatingBar OnCollapseToBall="CollapseToBall" OnExitFloating="ExitFloatingMode" />
         }
         else
         {
@@ -90,6 +90,29 @@
         InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>
+    /// 小条右边"收起为圆球"：主窗口整个隐藏，桌面上只剩图标球（点球可再展开回小条）。
+    /// Windows 以外的平台 FloatingWindow 是空实现，不会走到这里。
+    /// </summary>
+    private void CollapseToBall()
+    {
+#if WINDOWS
+        FloatingWindow.CollapseBar();
+#endif
+    }
+
+    /// <summary>
+    /// 小条最右边"退出悬浮窗模式"：彻底退出悬浮窗（还原主窗口、撤掉球与托盘图标）并把主窗口叫到前台。
+    /// Windows 以外的平台 FloatingWindow 是空实现，不会走到这里。
+    /// </summary>
+    private void ExitFloatingMode()
+    {
+#if WINDOWS
+        FloatingWindow.Close();
+        WindowHelper.ActivateMainWindow();
+#endif
+    }
+
     private string BuildWikiFrameUrl()
     {
         var wikiFolder = Uri.EscapeDataString(AppState.ActiveWikiBook?.DataFolder ?? "default");
@@ -112,10 +135,10 @@
                 mainPage.HideLoadingScreen();
         });
 
-        // iframe 刚就绪：把当前缩放补推一次。
+        // iframe 刚就绪：把"当前形态该用的缩放"补推一次（小条形态用 FloatingZoom，否则用 WikiZoom）。
         // 若用户在 iframe 注册处理器之前点过 ±，那次推送会超时被丢弃，
-        // 而 URL 里的 zoom 仍是旧值，这里补齐可保证网页缩放与功能栏百分比始终一致。
-        AppState.PushZoomToIframe(Preferences.Default.Get("WikiZoom", 100));
+        // 而 URL 里的 zoom 仍是旧值，这里补齐可保证网页缩放与界面的百分比始终一致。
+        AppState.PushZoomForCurrentMode();
     }
 
     private async void OnLocalizationChanged()

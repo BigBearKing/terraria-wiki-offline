@@ -14,7 +14,7 @@ namespace Terraria_Wiki;
 internal sealed class FloatingIconWindow
 {
     /// <summary>悬浮窗边长（dip），实际像素按屏幕 DPI 换算。</summary>
-    public const int IconSizeDip = 56;
+    public const int IconSizeDip = 40;
 
     /// <summary>窗口文件名（随程序输出到 Utils 目录）。</summary>
     private const string IconRelativePath = @"Utils\appicon.png";
@@ -51,7 +51,7 @@ internal sealed class FloatingIconWindow
     public event Action? Closed;
 
     /// <summary>图标文件完整路径。</summary>
-    public static string IconPath => Path.Combine(AppContext.BaseDirectory, IconRelativePath);
+    public static string IconPath => IconArt.IconPath;
 
     /// <summary>当前是否有一个活着的图标窗。</summary>
     public static bool IsAnyOpen
@@ -499,7 +499,18 @@ internal sealed class FloatingIconWindow
 
                 return 0;
 
-            // 右键不绑任何行为：消息交给 DefWindowProc，保持"没事件"
+            // 右键：弹出菜单（展开小窗 / 退出悬浮窗模式）
+            case NativeMethods.WM_RBUTTONUP:
+                NativeMethods.ReleaseCapture();
+                Win32Menu.ShowAtCursor(hwnd, FloatingWindow.IsBarActive);
+                return 0;
+
+            // 菜单命令回到自己的消息循环里执行：收起/退出都可能销毁本窗口，
+            // 在菜单回调里直接做会踩到"WndProc 还在栈上、实例已释放"。
+            case NativeMethods.WM_MENU_COMMAND:
+                Win32Menu.HandleCommand((uint)wParam);
+                return 0;
+
             case NativeMethods.WM_SETCURSOR:
                 // 鼠标在窗口上时保持标准箭头（避免窗口类光标被系统换成别的形状）
                 if ((lParam & 0xFFFF) == NativeMethods.HTCLIENT)
@@ -579,7 +590,11 @@ internal sealed class FloatingIconWindow
         public const uint WM_MOUSEMOVE = 0x0200;
         public const uint WM_LBUTTONDOWN = 0x0201;
         public const uint WM_LBUTTONUP = 0x0202;
+        public const uint WM_RBUTTONUP = 0x0205;
         public const uint WM_CAPTURECHANGED = 0x0215;
+
+        /// <summary>与 Win32Menu 约定的菜单命令消息。</summary>
+        public const uint WM_MENU_COMMAND = 0x0400 + 0x10;
 
         /// <summary>标准箭头光标（MAKEINTRESOURCE(IDC_ARROW)）。</summary>
         public const int IDC_ARROW = 32512;

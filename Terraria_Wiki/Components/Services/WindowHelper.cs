@@ -33,6 +33,10 @@ public static class WindowHelper
     private static extern bool ReleaseCapture();
 
     [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll")]
@@ -63,7 +67,6 @@ public static class WindowHelper
     private const int WS_CAPTION = 0x00C00000;
     private const int WS_THICKFRAME = 0x00040000;
     private const int WS_SYSMENU = 0x00080000;
-    private const int WS_MAXIMIZEBOX = 0x00010000;
     private const int WS_MINIMIZEBOX = 0x00020000;
     private const int WS_EX_TOOLWINDOW = 0x00000080;
     private const int WS_EX_APPWINDOW = 0x00040000;
@@ -87,7 +90,8 @@ public static class WindowHelper
     // ========== 公开方法 ==========
 
     /// <summary>
-    /// 无边框 + 可调整大小（OverlappedPresenter 保留系统原生缩放能力，ExtendsContentIntoTitleBar 避免顶部白条）。
+    /// 主窗口形态：三个系统按钮（最小化/最大化/关闭）压在 tab-bar（win-placeholder）那条上，
+    /// 不显示系统标题栏底、不显示标题文字。
     /// </summary>
     public static void EnableResizableBorderless(Microsoft.UI.Xaml.Window nativeWindow)
     {
@@ -95,20 +99,30 @@ public static class WindowHelper
             return;
 
         _nativeWindow = nativeWindow;
-        ApplyBorderless(nativeWindow, isMaximizable: true);
+        ApplyBorderless(nativeWindow, isMaximizable: true, hasBorder: true, hasTitleBar: true);
     }
 
     /// <summary>
-    /// 套用"无边框"外观（可重复调用，幂等）：
-    ///   · 新建 OverlappedPresenter（保留 IsResizable → 系统原生缩放；不动它就不会重排非客户区）
-    ///   · 去掉 WS_CAPTION、内容延伸进标题栏、DWM 圆角
+    /// 套用窗口外观（可重复调用，幂等）。每次都会<b>整份重建 presenter</b>，因为边框/标题栏开关
+    /// 只在 SetPresenter 那一刻生效——挂在窗口上的 presenter 之后再改 SetBorderAndTitleBar，
+    /// 实测完全没有效果（读回 presenter.HasTitleBar 不变，标题栏与三大按钮照旧）。
+    ///
+    ///   · 主窗口形态：(hasBorder: true, hasTitleBar: true) —— 三个系统按钮照常绘制在右上角，
+    ///     压在自绘的 tab-bar 上；标题栏底与标题文字都不画（后者由 ExtendsContentIntoTitleBar 抑制）。
+    ///   · 悬浮小条形态：(hasBorder: true, hasTitleBar: false) —— 按钮与标题栏都不画，
+    ///     顶部只剩自绘的 32px 拖动条。
+    ///   · hasBorder 两种形态都保持 true：实测 <c>hasBorder: false</c> 会额外在窗口顶部
+    ///     留一条约 6dip 的浅色窄条；且 (false, true) 会让 WinUI 在 SetPresenter 时抛异常。
+    ///   · WS_CAPTION 一律去掉（本方法末尾）：这是"没有系统标题栏底"的关键。实测保留它会让
+    ///     系统把整条标题栏底画在 y≈4..130 全宽上，把 tab-bar 盖掉（与去掉的版本逐行 800+ 像素不同）；
+    ///     去掉之后按钮位置不变（ReunionWindowingCaptionControls 仍是右上角 276x64），只是没有底色。
     ///
     /// ★ 注意：<b>不要在已挂到窗口上的 presenter 实例上改属性</b>（例如直接写
     ///   `presenter.IsMaximizable = false`）——WinUI 会因此重新套用一次边框状态，
     ///   把无边框顶掉、系统默认标题栏又冒出来。要改这些开关就整份重建 presenter 后重设，
-    ///   再走一遍本方法把无边框补回去。
+    ///   再走一遍本方法把外观补回去。
     /// </summary>
-    private static void ApplyBorderless(Microsoft.UI.Xaml.Window nativeWindow, bool isMaximizable)
+    private static void ApplyBorderless(Microsoft.UI.Xaml.Window nativeWindow, bool isMaximizable, bool hasBorder, bool hasTitleBar)
     {
         var appWindow = nativeWindow.AppWindow;
         if (appWindow is null)
@@ -118,18 +132,23 @@ public static class WindowHelper
         nativeWindow.ExtendsContentIntoTitleBar = true;
         nativeWindow.Title = AppInfo.Name;
 
-        // OverlappedPresenter.Create() 默认 IsResizable=true（保留 WS_THICKFRAME，系统原生可缩放），
-        // 配合去掉 WS_CAPTION + ExtendsContentIntoTitleBar 实现无边框且无顶部白条
+        // OverlappedPresenter.Create() 默认 (HasBorder=true, HasTitleBar=true)：
+        // 不调用 SetBorderAndTitleBar 的话，系统标题栏与最小化/最大化/关闭按钮会在窗口顶部照旧画出来
+        // （实测读回 HasTitleBar=True、右上角有 292 个按钮字形像素）。
         var presenter = MicrosoftuiWindowing.OverlappedPresenter.Create();
         presenter.IsResizable = true;
         presenter.IsMaximizable = isMaximizable;
         presenter.IsMinimizable = true;
+
+        // 边框/标题栏开关：必须在 SetPresenter 之前落在 presenter 上（挂上去以后再改是无效的）
+        presenter.SetBorderAndTitleBar(hasBorder, hasTitleBar);
         appWindow.SetPresenter(presenter);
 
         IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
         if (hwnd != IntPtr.Zero)
         {
-            // 只去掉 WS_CAPTION（保留 WS_THICKFRAME 以支持系统原生缩放）
+            // 一律去掉 WS_CAPTION：这是"没有系统标题栏底"的关键（保留它会把整条标题栏底
+            // 画在 tab-bar 上，实测逐行 800+ 像素差异）。WS_THICKFRAME 交给 presenter 决定，这里不碰。
             int style = GetWindowLong(hwnd, GWL_STYLE);
             SetWindowLong(hwnd, GWL_STYLE, style & ~WS_CAPTION);
 
@@ -191,7 +210,12 @@ public static class WindowHelper
     }
 
     /// <summary>
-    /// 注册窗口销毁时保存状态（在 App.CreateWindow 中调用）
+    /// 注册窗口销毁时保存状态（在 App.CreateWindow 中调用）。
+    ///
+    /// 只保存<b>主窗口形态</b>的几何：悬浮窗模式下（小条 420x560，或主窗口整个藏着）当前
+    /// <c>w.X/Y/Width/Height</c> 是小条的尺寸，直接写进偏好会让下次启动的主窗口变成小条大小。
+    /// 这种情况改存 <see cref="FloatingWindow.NormalGeometry"/>（进入悬浮窗之前的主窗口几何），
+    /// 拿不到就干脆不存。
     /// </summary>
     public static void RegisterSaveOnDestroy(Microsoft.Maui.Controls.Window window)
     {
@@ -213,12 +237,18 @@ public static class WindowHelper
 
                     if (!isMaximized)
                     {
-                        if (w.X < -1000 || w.Y < -1000) return;
+                        // 悬浮窗开着 → 只记进入前的几何；没记到就跳过（绝不把悬浮窗尺寸存进去）
+                        var geometry = FloatingWindow.IsOpen
+                            ? FloatingWindow.NormalGeometry
+                            : (w.Width, w.Height, w.X, w.Y);
 
-                        Preferences.Default.Set("WindowWidth", w.Width);
-                        Preferences.Default.Set("WindowHeight", w.Height);
-                        Preferences.Default.Set("WindowX", w.X);
-                        Preferences.Default.Set("WindowY", w.Y);
+                        if (geometry is not { } g) return;
+                        if (g.X < -1000 || g.Y < -1000) return;
+
+                        Preferences.Default.Set("WindowWidth", g.Width);
+                        Preferences.Default.Set("WindowHeight", g.Height);
+                        Preferences.Default.Set("WindowX", g.X);
+                        Preferences.Default.Set("WindowY", g.Y);
                     }
                 }
             }
@@ -226,7 +256,9 @@ public static class WindowHelper
     }
 
     /// <summary>
-    /// 设置窗口置顶（无需传 Window，自动获取当前窗口）
+    /// 设置窗口置顶（无需传 Window，自动获取当前窗口）。
+    /// 置顶要求窗口可见时才稳：窗口处于隐藏态时 SetWindowPos(HWND_TOPMOST) 可能不生效，
+    /// 所以调用点都安排在"小条已经显示出来"之后。
     /// </summary>
     public static void SetAlwaysOnTop(bool isAlwaysOnTop)
     {
@@ -299,8 +331,27 @@ public static class WindowHelper
     private const double FloatingBarMargin = 24;
 
     /// <summary>
+    /// 上一次小条形态的尺寸/位置（dip）。收起成球、再展开回来时要回到这里，
+    /// 而不是每次都跳回屏幕右上角。只在进程内记（不写偏好）。
+    /// </summary>
+    private static (double Width, double Height, double X, double Y)? _savedBarGeometry;
+
+    /// <summary>记住当前小条几何（收起成球 / 退出悬浮窗时调用；只在确实是小条形态时记）。</summary>
+    internal static void RememberFloatingBarGeometry()
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow is null || !FloatingWindow.IsBarActive)
+            return;
+
+        Try(nameof(RememberFloatingBarGeometry), "记住小条几何", () =>
+            _savedBarGeometry = (mauiWindow.Width, mauiWindow.Height, mauiWindow.X, mauiWindow.Y));
+    }
+
+    /// <summary>
     /// 收起主窗口为悬浮"小条"形态：先记住当前尺寸/位置，再改成置顶小窗。
-    /// 无边框（WS_CAPTION 已去掉、内容延伸进标题栏）在启动时就设置好了，这里只调尺寸/位置/置顶。
+    /// 小条几何有记忆（<see cref="_savedBarGeometry"/>）：再次展开回到上次的位置/大小，
+    /// 第一次才落到屏幕右上角默认位。尺寸/位置/置顶都在这里设；外观（无系统标题栏 + 禁最大化）
+    /// 由 <see cref="ApplyBorderless"/> 整份重建 presenter 完成。
     /// 每一步都单独兜底：任何一步失败都不该让整个"展开小条"失败（那会导致界面没有任何可见窗口）。
     /// </summary>
     public static void EnterFloatingBar()
@@ -312,32 +363,61 @@ public static class WindowHelper
             return;
         }
 
+        // 注意顺序：必须在把小条几何写进主窗口之前，先把"主窗口几何"记下来
         Try(nameof(EnterFloatingBar), "记住原尺寸/位置", () =>
             _savedGeometry ??= (mauiWindow.Width, mauiWindow.Height, mauiWindow.X, mauiWindow.Y));
 
-        Try(nameof(EnterFloatingBar), "设置尺寸", () =>
+        Try(nameof(EnterFloatingBar), "设置尺寸与位置", () =>
         {
+            if (_savedBarGeometry is { } bar)
+            {
+                // 回到上次的小条位置/大小
+                mauiWindow.Width = bar.Width;
+                mauiWindow.Height = bar.Height;
+                if (bar.X >= -1000 && bar.Y >= -1000)
+                {
+                    mauiWindow.X = bar.X;
+                    mauiWindow.Y = bar.Y;
+                    return;                     // 已归位，不再挪到右上角
+                }
+            }
+
             mauiWindow.Width = FloatingBarWidth;
             mauiWindow.Height = FloatingBarHeight;
+            MoveToTopRight(mauiWindow, FloatingBarMargin, FloatingBarMargin);
         });
 
-        Try(nameof(EnterFloatingBar), "移动到右上角", () => MoveToTopRight(mauiWindow, FloatingBarMargin, FloatingBarMargin));
-        Try(nameof(EnterFloatingBar), "置顶", () => SetAlwaysOnTop(true));
+        // 小条不占任务栏：WS_EX_TOOLWINDOW 会把任务栏按钮与 Alt+Tab 条目一起去掉
+        Try(nameof(EnterFloatingBar), "任务栏不显示图标", () => SetTaskbarIconVisible(false));
 
-        // 小条不做最大化；整份重建 presenter 并重套无边框（不能直接改已挂载的 presenter 属性，会顶掉无边框）
-        Try(nameof(EnterFloatingBar), "重套无边框（禁最大化）", () =>
+        // 小条不做最大化、不要系统标题栏：整份重建 presenter
+        // （边框/标题栏开关只在 SetPresenter 那一刻生效，不能直接改已挂载的 presenter）
+        Try(nameof(EnterFloatingBar), "重套外观（禁最大化、无标题栏）", () =>
         {
             if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
-                ApplyBorderless(nativeWindow, isMaximizable: false);
+                ApplyBorderless(nativeWindow, isMaximizable: false, hasBorder: true, hasTitleBar: false);
         });
+
+        // 置顶必须放最后：重建 presenter 与上面的"隐藏→改样式→显示"都会把 topmost 顶掉
+        // （实测中间态 SetWindowPos(HWND_TOPMOST) 之后 exStyle 里的 WS_EX_TOPMOST 会丢）。
+        Try(nameof(EnterFloatingBar), "置顶（收尾，确保生效）", () => SetAlwaysOnTop(true));
+
+        // 托盘图标不在这里加/撤：悬浮窗模式（球态 / 小条态）全程都有，
+        // 由 FloatingWindow.Open 显示、本方法（退出悬浮窗模式）撤掉。
     }
 
-    /// <summary>还原主窗口（退出小条形态）：恢复进入前的尺寸/位置与可最大化状态。</summary>
+    /// <summary>
+    /// 还原主窗口（退出悬浮窗模式）：恢复进入前的尺寸/位置与可最大化状态。
+    /// 顺手记住当前小条几何，下次再展开小条时回到同一位置/大小。
+    /// </summary>
     public static void ExitFloatingBar()
     {
         var mauiWindow = Application.Current?.Windows.FirstOrDefault();
         if (mauiWindow is null)
             return;
+
+        // 必须在把主窗口几何写回去之前记，否则记到的已经是主窗口尺寸
+        RememberFloatingBarGeometry();
 
         if (_savedGeometry is { } saved)
         {
@@ -352,14 +432,112 @@ public static class WindowHelper
             _savedGeometry = null;
         }
 
-        Try(nameof(ExitFloatingBar), "恢复无边框（可最大化）", () =>
+        // 退回主窗口形态：撤掉托盘图标、重新占任务栏
+        Try(nameof(ExitFloatingBar), "撤掉托盘图标", () => TrayIconWindow.Hide());
+        Try(nameof(ExitFloatingBar), "恢复任务栏图标", () => SetTaskbarIconVisible(true));
+
+        // 恢复主窗口形态：可最大化 + 三大按钮可见、无标题文字（同样要整份重建 presenter 才生效）
+        Try(nameof(ExitFloatingBar), "恢复外观（可最大化、显示系统按钮）", () =>
         {
             if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
-                ApplyBorderless(nativeWindow, isMaximizable: true);
+                ApplyBorderless(nativeWindow, isMaximizable: true, hasBorder: true, hasTitleBar: true);
         });
 
         // 还原时不再强行置顶：交给用户的"置顶"开关决定
         Try(nameof(ExitFloatingBar), "恢复置顶状态", () => SetAlwaysOnTop(App.AppStateManager?.IsPinned ?? false));
+    }
+
+    /// <summary>托盘图标左键双击用：把主窗口显示出来并叫到前台。</summary>
+    public static void ActivateMainWindow()
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow is null)
+            return;
+
+        if (!IsMainWindowVisible())
+            SetMainWindowVisible(true);
+
+        Try(nameof(ActivateMainWindow), "叫到前台", () =>
+        {
+            if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+            {
+                IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                if (hwnd != IntPtr.Zero)
+                {
+                    ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOW);
+                    SetForegroundWindow(hwnd);
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// 是否在任务栏显示图标。
+    ///
+    /// 光改 WS_EX_TOOLWINDOW / WS_EX_APPWINDOW 不够：窗口显示过一次之后任务栏按钮已经建好，
+    /// 只改样式它不会立刻收回。这里按三层来保证：
+    ///   1) 扩样式加 WS_EX_TOOLWINDOW、去 WS_EX_APPWINDOW（同时移除 Alt+Tab 条目）；
+    ///   2) 隐藏窗口 → 改样式 → 再显示：任务栏按"窗口再次显示"重建按钮；
+    ///   3) ITaskbarList::DeleteTab / AddTab 明确增删按钮，兜住任务栏不理会样式变化的情况。
+    /// 最大化状态下改样式前先还原，避免小条带着最大化态。
+    /// </summary>
+    private static void SetTaskbarIconVisible(bool visible)
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+            return;
+
+        IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        if (!visible && IsZoomed(hwnd))
+            ShowWindow(hwnd, SW_RESTORE);
+
+        bool wasVisible = IsWindowVisible(hwnd);
+        if (wasVisible)
+            ShowWindow(hwnd, SW_HIDE);
+
+        int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+        exStyle = visible
+            ? (exStyle & ~WS_EX_TOOLWINDOW) | WS_EX_APPWINDOW
+            : (exStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
+        SetWindowLong(hwnd, GWL_EXSTYLE, exStyle);
+
+        // 让扩展样式改动立即生效
+        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
+        // 明确增删任务栏按钮（不依赖任务栏是否响应样式变化）
+        Try(nameof(SetTaskbarIconVisible), "ITaskbarList 增删按钮", () =>
+        {
+            var taskbar = (ITaskbarList)new TaskbarList();
+            taskbar.HrInit();
+            if (visible)
+                taskbar.AddTab(hwnd);
+            else
+                taskbar.DeleteTab(hwnd);
+        });
+
+        if (wasVisible)
+        {
+            // 之前若是最小化状态，用 SW_SHOW 可能会把它“正常化”，所以按原状态还原
+            ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOW);
+        }
+    }
+
+    // ===== 任务栏按钮的显式增删（ITaskbarList）=====
+    [ComImport, Guid("56FDF344-FD6D-11D0-958A-006097C9A090")]
+    private class TaskbarList { }
+
+    [ComImport, Guid("56FDF342-FD6D-11D0-958A-006097C9A090"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface ITaskbarList
+    {
+        void HrInit();
+        void AddTab(IntPtr hwnd);
+        void DeleteTab(IntPtr hwnd);
+        void ActivateTab(IntPtr hwnd);
+        void SetActiveAlt(IntPtr hwnd);
     }
 
     /// <summary>把窗口挪到当前显示器工作区的右上角（按设备密度换算物理像素）。</summary>
@@ -450,8 +628,8 @@ public static class WindowHelper
     }
 
     /// <summary>
-    /// 让当前窗口进入拖动状态（由 JS 在标签栏按下后调用，绕过 WebView2 子窗口对拖动区域的拦截）。
-    /// 实现与 tauri/tao 的 handle_os_dragging 完全一致：
+    /// 让当前窗口进入拖动状态（由 JS 在标签栏 / 小条顶部按下后调用）。
+    /// 实现与 tauri/tao 的 handle_os_dragging 一致：
     ///   1. 取真实光标坐标打包进 lParam（保证拖拽锚点正确）
     ///   2. ReleaseCapture 释放 WebView2 子窗口可能持有的鼠标捕获
     ///   3. SendMessage 同步发送 WM_NCLBUTTONDOWN，在鼠标按下期间进入系统拖拽循环
@@ -477,6 +655,7 @@ public static class WindowHelper
     /// <summary>
     /// 双击拖拽区最大化/还原（对应 tauri 的 internal_toggle_maximize 命令）。
     /// 先检查 is_resizable 和 is_maximizable，与 tauri 行为一致。
+    ///
     /// </summary>
     [JSInvokable]
     public static void ToggleMaximize()

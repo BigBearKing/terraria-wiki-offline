@@ -1,16 +1,74 @@
 /* Components/Shared/FloatingBar.razor.css */
 
 /* 悬浮小条形态里 iframe 上方的那条 32px 拖动条。
-   高度与 Windows 的 --tabbar-height 对齐（同一视觉语言），可整条按住拖动窗口。 */
+   高度与 Windows 的 --tabbar-height 对齐（同一视觉语言），可整条按住拖动窗口。
+   不加左右内边距：条上的按钮要从最左边紧贴排列。 */
 .floating-bar {
     height: 32px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 0 6px;
+    gap: 0;
+    padding: 0;
     background: var(--bg-color-secondary);
     border-bottom: 1px solid var(--hover-bg);
     user-select: none;
     cursor: default;
+}
+
+/* 条上的后退 / home 按钮：宽比高宽一点（不是正方形），直角、无缝紧排 */
+.floating-bar .bar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.floating-bar .bar-btn:hover {
+    background: var(--hover-bg);
+}
+
+/* 按下时与全局 .button:active 的 !important 对齐，避免出现"按下没反馈" */
+.floating-bar .bar-btn:active {
+    background: var(--pressed-bg) !important;
+}
+
+/* 中间那段：当前页面标题。吃掉剩余宽度、过长省略号；
+   它本身在拖动区内（没有 data-tauri-drag-region="false"），按住标题也能拖窗口。 */
+.floating-bar .bar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+/* 条最右边的"退出悬浮窗模式"：hover 变红（图标用红色、底色用红色低透明） */
+.floating-bar .bar-btn-exit:hover {
+    background: var(--red-tertiary);
+    color: var(--red-primary);
+}
+
+.floating-bar .bar-btn-exit:active {
+    background: var(--red-tertiary) !important;
+    color: var(--red-primary);
+}
+
+/* 右侧第一个"收起为圆球"：走全局悬停色即可，与后退/home 一致 */
+.floating-bar .bar-btn-collapse:active {
+    background: var(--pressed-bg) !important;
 }

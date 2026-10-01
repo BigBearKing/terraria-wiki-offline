@@ -29,6 +29,13 @@ public static class FloatingWindow
     /// <summary>悬浮窗是否开着（球或小条任一形态）。</summary>
     public static bool IsOpen => _active;
 
+    /// <summary>
+    /// 进入悬浮窗之前<b>主窗口</b>的几何（dip）。悬浮期间窗口尺寸/位置是小条的，
+    /// 退出时用它还原，退出销毁保存窗口状态时也用它——绝不把悬浮窗的几何写进偏好。
+    /// </summary>
+    internal static (double Width, double Height, double X, double Y)? NormalGeometry { get; private set; }
+
+
     /// <summary>是否处于小条形态。</summary>
     public static bool IsBarActive => _barActive;
 
@@ -43,11 +50,16 @@ public static class FloatingWindow
         _active = true;                  // 先立标志：即使后面某步失败，也还能走"退出"路径恢复
         _barActive = false;
 
+        // 记下主窗口进入悬浮窗之前的几何（此时还没被改成小条尺寸）
+        if (_mainWindow is { } mainWindow)
+            NormalGeometry = (mainWindow.Width, mainWindow.Height, mainWindow.X, mainWindow.Y);
+
         var window = FloatingIconWindow.Show(AppInfo.Current.Name);
         if (window is null)
         {
             // 建窗失败就别藏主窗口，否则应用会“消失”
             _active = false;
+            NormalGeometry = null;       // 没真正进入悬浮模式，别留着这份几何
             SyncState();
             return false;
         }
@@ -57,6 +69,9 @@ public static class FloatingWindow
         // 先开小窗、再藏主窗：避免出现“一个可见窗口都没有”的瞬间
         HideMainWindow();
         SyncState();
+
+        // 悬浮窗模式（球态 / 小条态）都在托盘显示图标，右键可退出悬浮窗模式
+        TrayIconWindow.Show(AppInfo.Current.Name);
         return true;
     }
 
@@ -138,8 +153,17 @@ public static class FloatingWindow
 
     private static bool CollapseBarCore()
     {
+        // 先立判断再动窗口：否则"隐藏主窗口"已经做了、却因为不满足条件直接返回，
+        // 会留下"窗口被藏、球也没出"的空档。
         if (!_active)
+        {
+            WindowHelper.SetMainWindowVisible(true);
             return false;
+        }
+
+        // 收起成球之前记住小条的位置/大小（必须在 _barActive 置 false 之前，
+        // WindowHelper 那边要靠它判断"确实是小条形态"）
+        WindowHelper.RememberFloatingBarGeometry();
 
         _barActive = false;
         HideMainWindow();
@@ -177,6 +201,7 @@ public static class FloatingWindow
             }
 
             RestoreMainWindow();
+            NormalGeometry = null;       // 已还原主窗口，这份几何用完即弃
             SyncState();
             return WindowHelper.IsMainWindowVisible();
         }
@@ -223,6 +248,10 @@ public static class FloatingWindow
 
         state.FloatingBarActive = _barActive;
         state.FloatingSearchOpen = _active;
+
+        // 模式变了就推当前形态该用的缩放：小条用 "FloatingZoom"、主窗口用 "WikiZoom"，
+        // 同一个 iframe 节点不重载，不推的话网页缩放会停在另一个模式的值上。
+        state.PushZoomForCurrentMode();
     }
 }
 #endif
