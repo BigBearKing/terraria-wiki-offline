@@ -81,6 +81,8 @@ public class AppState : INotifyPropertyChanged
     private bool _findInPageOpen = false;
     private string _findInPageQuery = string.Empty;
     private bool _isDarkTheme;
+    private bool _floatingSearchOpen = false;
+    private bool _floatingBarActive = false;
     private readonly ConcurrentDictionary<int, ActiveTaskInfo> _activeTasks = new();
     private AppTask? _currentDownloadTask;
 
@@ -198,6 +200,8 @@ public class AppState : INotifyPropertyChanged
         _moreListOpen = false;
         _findInPageOpen = false;
         _findInPageQuery = string.Empty;
+        _floatingSearchOpen = false;
+        _floatingBarActive = false;
 
         OnPropertyChanged(nameof(Tabs));
         OnPropertyChanged(nameof(ActiveTabId));
@@ -206,6 +210,8 @@ public class AppState : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentPage));
         OnPropertyChanged(nameof(SearchQuery));
         OnPropertyChanged(nameof(MoreListOpen));
+        OnPropertyChanged(nameof(FloatingSearchOpen));
+        OnPropertyChanged(nameof(FloatingBarActive));
         OnPropertyChanged(nameof(FindInPageOpen));
         OnPropertyChanged(nameof(FindInPageQuery));
     }
@@ -250,6 +256,26 @@ public class AppState : INotifyPropertyChanged
     {
         get => _moreListOpen;
         set => SetProperty(ref _moreListOpen, value);
+    }
+
+    /// <summary>
+    /// 悬浮窗开关（仅 Windows）：开启后主窗口隐藏，桌面上只留一个图标球。
+    /// 由 <see cref="FloatingWindow"/> 的真实窗口状态驱动。
+    /// </summary>
+    public bool FloatingSearchOpen
+    {
+        get => _floatingSearchOpen;
+        set => SetProperty(ref _floatingSearchOpen, value);
+    }
+
+    /// <summary>
+    /// 悬浮"小条"形态是否已展开（仅 Windows）：为 true 时主窗口缩小置顶，
+    /// 里面只渲染 32px 条 + wiki 视图；为 false 时主窗口整个隐藏、桌面上只有图标球。
+    /// </summary>
+    public bool FloatingBarActive
+    {
+        get => _floatingBarActive;
+        set => SetProperty(ref _floatingBarActive, value);
     }
 
     /// <summary>

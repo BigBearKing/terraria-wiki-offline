@@ -28,6 +28,19 @@
                     </div>
                 </div>
             }
+            @* 悬浮窗：只做 Windows（主窗口收缩后只留 wiki 视图 + 顶部小条） *@
+            @if (AppState.IsWindows)
+            {
+                <div class="action-item">
+                    <button class="action-btn button" title="@App.Localization!.Get("MoreList.FloatingWindow")" style="@(AppState.FloatingSearchOpen ? "color:var(--blue-primary)" : "")" @onclick="ToggleFloatingSearch">
+                        <Icon Name="floating-window" Size="24"></Icon>
+                        <div class="btn-title">@App.Localization!.Get("MoreList.FloatingWindow")</div>
+                    </button>
+                    <div class="narrow-title">
+                        <div class="btn-title-narrow">@App.Localization!.Get("MoreList.FloatingWindow")</div>
+                    </div>
+                </div>
+            }
             @* 缩放：宽屏 .zoom-wrapper 一整行「缩放 ……… − 100% +」；
                窄屏 .zoom-wrapper 隐藏，改用后面两个 .zoom-narrow 项，各自带框外文字 *@
             <div class="zoom-wrapper">
@@ -111,7 +124,7 @@
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MoreListOpen) or nameof(AppState.IsPinned) or nameof(AppState.WikiZoom))
+        if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MoreListOpen) or nameof(AppState.IsPinned) or nameof(AppState.WikiZoom) or nameof(AppState.FloatingSearchOpen) or nameof(AppState.FloatingBarActive))
             _ = InvokeAsync(StateHasChanged);
 
         // 标签交还上方横条时主动收起面板，避免两处同时可见
@@ -165,6 +178,42 @@
         var isPinned = !AppState.IsPinned;
         WindowHelper.SetAlwaysOnTop(isPinned);
         AppState.IsPinned = isPinned;
+    }
+
+    // ===== 悬浮窗（仅 Windows）=====
+    // 开启后主窗口隐藏、桌面上只剩一个图标球；点球则主窗口以"小条"形态出现。
+    // 小条形态下主窗口是显示的，所以这个按钮可以作为"球 ↔ 小条"的切换入口。
+    private void ToggleFloatingSearch()
+    {
+        bool isOpen;
+        bool barActive;
+#if WINDOWS
+        if (FloatingWindow.IsBarActive)
+        {
+            // 已经在小条形态：收起来，回到图标球
+            FloatingWindow.CollapseBar();
+            isOpen = true;
+            barActive = false;
+        }
+        else if (FloatingWindow.IsOpen)
+        {
+            // 只有球（此时主窗口被隐藏，正常点不到这里）
+            FloatingWindow.ExpandBar();
+            isOpen = true;
+            barActive = true;
+        }
+        else
+        {
+            isOpen = FloatingWindow.Open();
+            barActive = false;
+        }
+#else
+        isOpen = false;
+        barActive = false;
+#endif
+        AppState.FloatingSearchOpen = isOpen;
+        AppState.FloatingBarActive = barActive;
+        CloseMoreList();
     }
 
     // ===== 缩放：宽裕（IsLargeScreen）时一行「缩放 | 百分比 | + | −」，窄屏（IsSmallScreen）只留两个放大镜按钮 =====

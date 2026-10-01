@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using System.Runtime.InteropServices;
 #if WINDOWS
 using MicrosoftuiWindowing = Microsoft.UI.Windowing;
@@ -27,6 +27,9 @@ public static class WindowHelper
     private static extern bool IsIconic(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern bool ReleaseCapture();
 
     [DllImport("user32.dll")]
@@ -51,9 +54,19 @@ public static class WindowHelper
     private const uint SWP_NOZORDER = 0x0004;
     private const uint SWP_FRAMECHANGED = 0x0020;
     private const int SW_MAXIMIZE = 3;
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+    private const int SW_RESTORE = 9;
 
     private const int GWL_STYLE = -16;
+    private const int GWL_EXSTYLE = -20;
     private const int WS_CAPTION = 0x00C00000;
+    private const int WS_THICKFRAME = 0x00040000;
+    private const int WS_SYSMENU = 0x00080000;
+    private const int WS_MAXIMIZEBOX = 0x00010000;
+    private const int WS_MINIMIZEBOX = 0x00020000;
+    private const int WS_EX_TOOLWINDOW = 0x00000080;
+    private const int WS_EX_APPWINDOW = 0x00040000;
 
     private const int WM_NCLBUTTONDOWN = 0x00A1;
     private const int HTCAPTION = 0x0002;
@@ -82,7 +95,21 @@ public static class WindowHelper
             return;
 
         _nativeWindow = nativeWindow;
+        ApplyBorderless(nativeWindow, isMaximizable: true);
+    }
 
+    /// <summary>
+    /// 套用"无边框"外观（可重复调用，幂等）：
+    ///   · 新建 OverlappedPresenter（保留 IsResizable → 系统原生缩放；不动它就不会重排非客户区）
+    ///   · 去掉 WS_CAPTION、内容延伸进标题栏、DWM 圆角
+    ///
+    /// ★ 注意：<b>不要在已挂到窗口上的 presenter 实例上改属性</b>（例如直接写
+    ///   `presenter.IsMaximizable = false`）——WinUI 会因此重新套用一次边框状态，
+    ///   把无边框顶掉、系统默认标题栏又冒出来。要改这些开关就整份重建 presenter 后重设，
+    ///   再走一遍本方法把无边框补回去。
+    /// </summary>
+    private static void ApplyBorderless(Microsoft.UI.Xaml.Window nativeWindow, bool isMaximizable)
+    {
         var appWindow = nativeWindow.AppWindow;
         if (appWindow is null)
             return;
@@ -94,7 +121,8 @@ public static class WindowHelper
         // OverlappedPresenter.Create() 默认 IsResizable=true（保留 WS_THICKFRAME，系统原生可缩放），
         // 配合去掉 WS_CAPTION + ExtendsContentIntoTitleBar 实现无边框且无顶部白条
         var presenter = MicrosoftuiWindowing.OverlappedPresenter.Create();
-        presenter.IsMaximizable = true;
+        presenter.IsResizable = true;
+        presenter.IsMaximizable = isMaximizable;
         presenter.IsMinimizable = true;
         appWindow.SetPresenter(presenter);
 
@@ -218,6 +246,149 @@ public static class WindowHelper
         }
     }
 
+    // ===== 悬浮窗：主窗口显隐 =====
+
+    /// <summary>主窗口当前是否可见。</summary>
+    public static bool IsMainWindowVisible()
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+            return false;
+
+        IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+        return hwnd != IntPtr.Zero && IsWindowVisible(hwnd);
+    }
+
+    /// <summary>
+    /// 隐藏/显示主窗口（原生 ShowWindow）。悬浮窗开启时主窗口整窗隐藏（不出现在任务栏与 Alt+Tab），
+    /// 关闭悬浮窗时按原尺寸/位置/最大化状态原样显回来。
+    /// </summary>
+    public static void SetMainWindowVisible(bool visible)
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+            return;
+
+        IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        if (visible)
+        {
+            // 之前若是最小化状态，用 SW_SHOW 可能会把它“正常化”，所以按原状态还原
+            ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOW);
+        }
+        else
+        {
+            ShowWindow(hwnd, SW_HIDE);
+        }
+    }
+
+    // 悬浮图标窗本身用纯 Win32 实现（见 FloatingIconWindow.cs），这里只管主窗口的"小条形态"。
+
+    /// <summary>主窗口进入小条形态前的尺寸/位置（dip），退出时原样还原。</summary>
+    private static (double Width, double Height, double X, double Y)? _savedGeometry;
+
+    /// <summary>小条形态的默认宽（dip）。</summary>
+    private const double FloatingBarWidth = 420;
+
+    /// <summary>小条形态的默认高（dip）：32px 条 + wiki 视图。</summary>
+    private const double FloatingBarHeight = 560;
+
+    /// <summary>小条形态距屏幕工作区右上角的留白（dip）。</summary>
+    private const double FloatingBarMargin = 24;
+
+    /// <summary>
+    /// 收起主窗口为悬浮"小条"形态：先记住当前尺寸/位置，再改成置顶小窗。
+    /// 无边框（WS_CAPTION 已去掉、内容延伸进标题栏）在启动时就设置好了，这里只调尺寸/位置/置顶。
+    /// 每一步都单独兜底：任何一步失败都不该让整个"展开小条"失败（那会导致界面没有任何可见窗口）。
+    /// </summary>
+    public static void EnterFloatingBar()
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow is null)
+        {
+            App.LogManager?.Error("EnterFloatingBar: main window not found");
+            return;
+        }
+
+        Try(nameof(EnterFloatingBar), "记住原尺寸/位置", () =>
+            _savedGeometry ??= (mauiWindow.Width, mauiWindow.Height, mauiWindow.X, mauiWindow.Y));
+
+        Try(nameof(EnterFloatingBar), "设置尺寸", () =>
+        {
+            mauiWindow.Width = FloatingBarWidth;
+            mauiWindow.Height = FloatingBarHeight;
+        });
+
+        Try(nameof(EnterFloatingBar), "移动到右上角", () => MoveToTopRight(mauiWindow, FloatingBarMargin, FloatingBarMargin));
+        Try(nameof(EnterFloatingBar), "置顶", () => SetAlwaysOnTop(true));
+
+        // 小条不做最大化；整份重建 presenter 并重套无边框（不能直接改已挂载的 presenter 属性，会顶掉无边框）
+        Try(nameof(EnterFloatingBar), "重套无边框（禁最大化）", () =>
+        {
+            if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+                ApplyBorderless(nativeWindow, isMaximizable: false);
+        });
+    }
+
+    /// <summary>还原主窗口（退出小条形态）：恢复进入前的尺寸/位置与可最大化状态。</summary>
+    public static void ExitFloatingBar()
+    {
+        var mauiWindow = Application.Current?.Windows.FirstOrDefault();
+        if (mauiWindow is null)
+            return;
+
+        if (_savedGeometry is { } saved)
+        {
+            Try(nameof(ExitFloatingBar), "还原尺寸/位置", () =>
+            {
+                mauiWindow.Width = saved.Width;
+                mauiWindow.Height = saved.Height;
+                mauiWindow.X = saved.X >= -1000 ? saved.X : 100;
+                mauiWindow.Y = saved.Y >= -1000 ? saved.Y : 100;
+            });
+
+            _savedGeometry = null;
+        }
+
+        Try(nameof(ExitFloatingBar), "恢复无边框（可最大化）", () =>
+        {
+            if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+                ApplyBorderless(nativeWindow, isMaximizable: true);
+        });
+
+        // 还原时不再强行置顶：交给用户的"置顶"开关决定
+        Try(nameof(ExitFloatingBar), "恢复置顶状态", () => SetAlwaysOnTop(App.AppStateManager?.IsPinned ?? false));
+    }
+
+    /// <summary>把窗口挪到当前显示器工作区的右上角（按设备密度换算物理像素）。</summary>
+    private static void MoveToTopRight(Microsoft.Maui.Controls.Window window, double marginX, double marginY)
+    {
+        var display = DeviceDisplay.Current.MainDisplayInfo;
+        double density = display.Density > 0 ? display.Density : 1;
+
+        // 工作区 ≈ 整屏；这里只用整屏宽度减右侧留白，不依赖 Win32
+        double workRight = display.Width / density;
+
+        window.X = workRight - window.Width - marginX;
+        window.Y = marginY;
+    }
+
+    /// <summary>带日志的单步保护：某一步失败不影响整体流程。</summary>
+    private static void Try(string scope, string step, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            App.LogManager?.Error($"{scope} / {step} failed: {ex}");
+            System.Diagnostics.Debug.WriteLine($"{scope} / {step} failed: {ex}");
+        }
+    }
+
 #elif MACCATALYST
     /// <summary>
     /// 设置窗口置顶
@@ -236,6 +407,15 @@ public static class WindowHelper
 
     #else
     public static void SetAlwaysOnTop(bool _) { }
+
+    // 悬浮窗（主窗口显隐 / 小条形态）只有 Windows 有；其他平台调用无副作用。
+    public static bool IsMainWindowVisible() => true;
+
+    public static void SetMainWindowVisible(bool _) { }
+
+    public static void EnterFloatingBar() { }
+
+    public static void ExitFloatingBar() { }
 #endif
 
     /// <summary>

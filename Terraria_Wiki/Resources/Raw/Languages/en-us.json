@@ -171,6 +171,7 @@
     "MoreList.ZoomResetTitle": "Reset to 100% (default)",
     "MoreList.ZoomIn": "Zoom in",
     "MoreList.ZoomOut": "Zoom out",
+    "MoreList.FloatingWindow": "Floating window",
     "AppService.PageNotFound": "Page not found",
     "AppService.DateFormat": "yyyy-MM-dd HH:mm",
     "AppService.CannotOpenLink": "Cannot open link: {ex.Message}",

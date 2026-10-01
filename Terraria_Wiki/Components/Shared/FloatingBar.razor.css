@@ -1,0 +1,16 @@
+/* Components/Shared/FloatingBar.razor.css */
+
+/* 悬浮小条形态里 iframe 上方的那条 32px 拖动条。
+   高度与 Windows 的 --tabbar-height 对齐（同一视觉语言），可整条按住拖动窗口。 */
+.floating-bar {
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    background: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--hover-bg);
+    user-select: none;
+    cursor: default;
+}

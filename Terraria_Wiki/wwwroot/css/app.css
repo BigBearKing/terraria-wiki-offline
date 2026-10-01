@@ -4,6 +4,13 @@
     width: 100vw;
 }
 
+/* 悬浮窗模式（仅 Windows）：主窗口只剩 wiki 视图。
+   Windows 上 --tabbar-height 是给无边框窗口拖动条预留的 32px，悬浮模式下标签栏不渲染，
+   这里把这份预留一并清零，否则顶部会多出一条空白。 */
+.app-layout.floating {
+    --tabbar-height: 0px;
+}
+
 .main-area {
     flex: 1;
     display: flex;

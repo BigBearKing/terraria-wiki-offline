@@ -171,6 +171,7 @@
     "MoreList.ZoomResetTitle": "恢复 100%（默认）",
     "MoreList.ZoomIn": "放大",
     "MoreList.ZoomOut": "缩小",
+    "MoreList.FloatingWindow": "悬浮窗",
     "AppService.PageNotFound": "页面不存在",
     "AppService.DateFormat": "yyyy年MM月dd日 HH:mm",
     "AppService.CannotOpenLink": "无法打开链接：{ex.Message}",

@@ -5,20 +5,35 @@
 @using Terraria_Wiki.Components.Pages
 @using Terraria_Wiki.Services
 
-<div class="app-layout">
-    <NavMenu />
-    @if (AppState.LogPanelIsOpen)
+@* 悬浮窗模式（仅 Windows，IsFloatingBar）：侧边栏/标签栏/顶栏/功能栏/页内搜索/日志面板一律不渲染，
+   主窗口里只剩 wiki 视图；iframe 节点本身不动（不重载、不丢页面状态）。 *@
+<div class="app-layout @(IsFloatingBar ? "floating" : "")">
+    @if (!IsFloatingBar)
     {
-        <LogPanel />
+        <NavMenu />
+        @if (AppState.LogPanelIsOpen)
+        {
+            <LogPanel />
+        }
     }
     <main class="main-area">      
-        <TabBar />
-        <MoreList />
-        <TopBar />
-        <FindInPage />
+        @if (IsFloatingBar)
+        {
+            @* 悬浮小条形态：iframe 上方一条 32px 拖动条（按钮后续再加） *@
+            <FloatingBar />
+        }
+        else
+        {
+            <TabBar />
+            <MoreList />
+            <TopBar />
+            <FindInPage />
+        }
         @if (isAppReady)
         {
-            <div class="iframe-container page-anim"
+            @* 悬浮模式下不带 page-anim：那个入场动画是"重新加载页面"的观感来源，
+               而这里其实只是外壳组件消失、iframe 铺满，并没有重载。 *@
+            <div class="iframe-container @(IsFloatingBar ? "" : "page-anim")"
                  style="display: @(AppState.CurrentPage == "home" ? "block" : "none")">
 
                 <iframe @key="src" src="@src"
@@ -39,6 +54,12 @@
     string wikiFrameVersion = Guid.NewGuid().ToString("N");
     bool isMobile;
     bool isAppReady;
+
+    /// <summary>
+    /// 是否处于悬浮"小条"形态（仅 Windows）：主窗口缩小置顶，标题栏式的 32px 条 + wiki 视图。
+    /// 悬浮窗折叠成图标球时该值为 false —— 此时主窗口整个被隐藏，渲染什么都无所谓。
+    /// </summary>
+    private bool IsFloatingBar => AppState.IsWindows && AppState.FloatingSearchOpen && AppState.FloatingBarActive;
 
     //刷新机制
     protected override void OnInitialized()
@@ -117,10 +138,11 @@
         });
     }
 
-    // 仅响应 LogPanelIsOpen 和 CurrentPage 变化
+    // 仅响应 LogPanelIsOpen / CurrentPage / 悬浮窗相关状态变化
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(AppState.LogPanelIsOpen) or nameof(AppState.CurrentPage))
+        if (e.PropertyName is nameof(AppState.LogPanelIsOpen) or nameof(AppState.CurrentPage)
+            or nameof(AppState.FloatingSearchOpen) or nameof(AppState.FloatingBarActive))
             RefreshUI();
     }
 
