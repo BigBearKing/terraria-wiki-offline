@@ -76,11 +76,11 @@
     private void ZoomOut() => AppState.FloatingZoom -= AppState.WikiZoomStep;
 
     // ===== 搜索（与小条同一条 32px 横条内，复用主窗口那套 SearchResultPanel）=====
+    // 行为与 TopBar 完全对齐：输入先落 _searchText，等 500ms 没有新输入才把词写进
+    // AppState.SearchQuery（SearchResultPanel 监听该属性来查库）。没有这层防抖的话
+    // 每敲一个字就会直接打一次 SearchAsync，小条窗口又窄，体感就是"卡"。
+    // 清空输入不等（立即生效），这一条也与 TopBar 一致。
 
-    /// <summary>
-    /// 搜索框绑的就是全局的 <see cref="AppState.SearchQuery"/>，
-    /// 所以输入即触发 <see cref="SearchResultPanel"/> 的面板（它监听同一个属性）。
-    /// </summary>
     private string SearchText
     {
         get => _searchText;
@@ -90,15 +90,51 @@
                 return;
 
             _searchText = value;
-            AppState.SearchQuery = value;
+            DebounceSearchAsync(_searchText);
         }
     }
 
     private string _searchText = "";
+    private CancellationTokenSource? _debounceCts;
 
     private void OnSearchInput(ChangeEventArgs e)
     {
         SearchText = e.Value?.ToString() ?? "";
+    }
+
+    // 搜索防抖：与 TopBar.DebounceSearchAsync 同构（同为 500ms）
+    private async void DebounceSearchAsync(string query)
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        try
+        {
+            // 删空输入框时不需要等，瞬间清空面板和列表
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                ApplyDebouncedValue(query);
+                return;
+            }
+
+            await Task.Delay(500, token);
+            ApplyDebouncedValue(query);
+        }
+        catch (TaskCanceledException)
+        {
+            // 用户手速过快被打断，忽略
+        }
+    }
+
+    private void ApplyDebouncedValue(string query)
+    {
+        // 单引号会破坏 SQL 拼装，直接不发查询（与 TopBar 同规则）
+        if (query.Contains('\''))
+            return;
+
+        AppState.SearchQuery = query;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleResultClick(string title)
@@ -109,6 +145,8 @@
 
     private void ClearSearch()
     {
+        // 取消在途的防抖，避免清空后旧词又被写回 SearchQuery 把面板顶出来
+        _debounceCts?.Cancel();
         _searchText = "";
         AppState.SearchQuery = "";
     }
@@ -135,6 +173,8 @@
     public void Dispose()
     {
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
     }
 
     /// <summary>缩放/标题变了要刷新：± 的 disabled 依赖百分比，中间那段显示当前页标题。</summary>

@@ -55,6 +55,9 @@
 	public void Dispose()
 	{
 		AppState.PropertyChanged -= OnAppStatePropertyChanged;
+		// 这次订阅原先没有解绑：面板是"一开就 new、清空就 Dispose"的，
+		// 每轮搜索都漏一份，累积后同一次渲染会被触发多次 StateHasChanged。
+		Loc.OnChange -= StateHasChanged;
 	}
 
 	private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -74,11 +77,21 @@
 	private bool isSearching = false;
 	private List<SearchResultItem>? results;
 
+	/// <summary>
+	/// 查询序号：每发起一次搜索自增，回来时只有"最新的那一次"才允许写 results。
+	/// 防抖只保证"少发查询"，不保证"按序返回"——慢查询后到会把新查询的结果覆盖掉，
+	/// 表现为列表先对了又跳回旧结果。这里用序号把过期结果直接丢弃。
+	/// </summary>
+	private int _searchVersion;
+
 	private async void HandleSearchChanged()
 	{
 		query = AppState.SearchQuery?.Trim();
 		if (string.IsNullOrWhiteSpace(query))
 		{
+			// 清空输入：作废在途查询，避免它的结果回来后把空面板又填上
+			_searchVersion++;
+			isSearching = false;
 			results = null;
 			StateHasChanged();
 			return;
@@ -88,17 +101,29 @@
 
 	private async Task ExecuteSearchAsync(string searchTerm)
 	{
+		var version = ++_searchVersion;
+
 		isSearching = true;
 		StateHasChanged();
 
 		try
 		{
-			results = await App.ContentDb.SearchAsync(searchTerm);
+			var fetched = await App.ContentDb.SearchAsync(searchTerm);
+
+			// 期间又输入了新词（或输入被清空）→ 这次结果已过期，直接丢弃
+			if (version != _searchVersion)
+				return;
+
+			results = fetched;
 		}
 		finally
 		{
-			isSearching = false;
-			StateHasChanged();
+			// 只有最新一次查询才有资格收尾，否则会把新查询的 loading 态提前关掉
+			if (version == _searchVersion)
+			{
+				isSearching = false;
+				StateHasChanged();
+			}
 		}
 	}
 

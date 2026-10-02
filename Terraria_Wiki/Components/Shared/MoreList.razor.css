@@ -143,6 +143,11 @@
     /* 右侧留 8px：与 36px 方形按钮的外边缘对齐时，正好落在 .action-btn 的 8px 内边距上 */
     padding: 0 8px 0 8px;
     min-width: 0;
+    /* 整行默认次要色：左侧那个「放大镜」图标是 .zoom-wrapper 的直接子元素，
+       外面没有 .action-btn 包裹，拿不到那条 color: var(--text-secondary)，
+       会一路继承到全局 .button 规则的 text-primary，显得比同行其他元素更重。
+       在容器上声明一次，连同「缩放」文字、百分比、± 按钮保持一致。 */
+    color: var(--text-secondary);
 }
 
     /* 「缩放」文字占满中间，把右侧按钮组推到最右 */

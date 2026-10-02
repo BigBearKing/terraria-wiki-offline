@@ -60,7 +60,7 @@ public class AppState : INotifyPropertyChanged
     //   Windows：宽度决定——≥769 在横条，≤768 在 MoreList；高度不影响
     //   其他平台：又宽又高才在横条，否则在 MoreList
     // 标记/CSS 层：Mask 的 NarrowOnly 参数 / .narrow-only 遮罩，
-    // 顶部栏 .narrow-menu-btn（只认宽度）与 .compact-more-btn（恒定显示，见 TopBar.razor.css）。
+    // 顶部栏 .narrow-menu-btn（只认宽度）与 .compact-more-btn（只在主页显示，见 TopBar.razor）。
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
 
     private string _dataRootPath = string.Empty;

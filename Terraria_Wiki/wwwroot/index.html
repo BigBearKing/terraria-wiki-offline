@@ -126,50 +126,112 @@
         }, { capture: true, passive: false });
 
 
-            window.fitResponsiveText = () => {
-                const selector = '.top-bar .topbar-title, .button, button, [role="button"], .custom-select-value';
+            // 文本自适应：按钮/标题/下拉框里的文字放不下时逐级缩小字号（最小 8px），
+            // 用来替代省略号（这些元素在 CSS 里已改成 overflow: visible + text-overflow: clip）。
+            //
+            // 三个触发源都汇到同一个"排程入口"，入口保证同一帧内最多只跑一轮：
+            //   · MutationObserver（整个 body，兜底用；先判断这次变动是否碰到目标元素）
+            //   · ResizeObserver（每个元素各一个，元素尺寸变化时触发）
+            //   · C# 显式调用（TopBar.razor 渲染后调 fitTopBarTitle，保证换页标题立即重算）
+            //
+            // 为什么必须合并：fit() 里读 scrollWidth / clientWidth 会触发强制同步布局，
+            // 而 MutationObserver 监听整个 body，页面上任何 DOM 变动都会回调它。
+            // 不合并的话，渲染一批搜索结果就会把整页元素反复测量几十次。
+            //
+            // 状态全部放在这个 IIFE 里（而不是每次调用重建），否则 frameId / 观察器
+            // 会在下一次调用时被重置，去重和 observer 复用都会失效。
+            (() => {
+                const SELECTOR = '.top-bar .topbar-title, .button, button, [role="button"], .custom-select-value';
+
+                // MutationObserver 用来判断"这次变动的节点到底要不要重算"
+                const matchesTarget = node => {
+                    if (!node || node.nodeType !== 1) return false;
+                    return node.matches?.(SELECTOR) || !!node.querySelector?.(SELECTOR);
+                };
+
                 const fit = element => {
                     if (element.classList.contains('action-btn')) return;
 
+                    // 先按"不缩放"的基准量测一次；放得下就什么都不改（避免每帧反复重写样式）
                     element.classList.remove('is-responsive-text-fitted');
                     element.style.fontSize = '';
-                    let fontSize = parseFloat(getComputedStyle(element).fontSize);
 
                     if (element.scrollWidth <= element.clientWidth) return;
 
                     element.classList.add('is-responsive-text-fitted');
+                    let fontSize = parseFloat(getComputedStyle(element).fontSize);
                     while (element.scrollWidth > element.clientWidth && fontSize > 8) {
                         fontSize -= 0.5;
                         element.style.fontSize = `${fontSize}px`;
                     }
                 };
 
-                document.querySelectorAll(selector).forEach(element => {
-                    if (!element._fitResponsiveText) {
-                        element._fitResponsiveText = () => {
-                            if (element._fitResponsiveTextFrame) return;
-                            element._fitResponsiveTextFrame = requestAnimationFrame(() => {
-                                element._fitResponsiveTextFrame = 0;
-                                fit(element);
-                            });
-                        };
+                // 遍历所有匹配元素跑一轮
+                const runAll = () => {
+                    document.querySelectorAll(SELECTOR).forEach(element => {
+                        if (!element._fitResponsiveTextObserver) {
+                            element._fitResponsiveTextObserver = new ResizeObserver(() => scheduleRun());
+                            element._fitResponsiveTextObserver.observe(element);
+                        }
 
-                        element._fitResponsiveTextObserver = new ResizeObserver(element._fitResponsiveText);
-                        element._fitResponsiveTextObserver.observe(element);
-                    }
+                        fit(element);
+                    });
+                };
 
-                    element._fitResponsiveText();
+                // 每帧最多跑一次：同一帧内多次触发直接合并到下一帧
+                let frameId = 0;
+                const scheduleRun = () => {
+                    if (frameId) return;
+                    frameId = requestAnimationFrame(() => {
+                        frameId = 0;
+                        runAll();
+                    });
+                };
+
+                const observer = new MutationObserver(records => {
+                    // 关键：先看这批变动是否真的碰到了目标元素。
+                    // 搜索结果面板、语言包切换等大批量 DOM 变动绝大多数与按钮字号无关，
+                    // 提前跳过能省掉整轮强制同步布局。
+                    const relevant = records.some(record =>
+                        Array.from(record.addedNodes).some(matchesTarget)
+                        || Array.from(record.removedNodes).some(matchesTarget));
+
+                    if (relevant) scheduleRun();
                 });
 
-                if (!document.body._responsiveTextObserver) {
-                    document.body._responsiveTextObserver = new MutationObserver(() => window.fitResponsiveText());
-                    document.body._responsiveTextObserver.observe(document.body, {
+                // ★ 只监听结构变化（增删节点），不监听属性变化。
+                // fit() 自己会写 class 和 style.fontSize，一旦把属性纳入监听就会形成
+                // "fit 改样式 → 触发 observer → 再 fit" 的自激循环，整页元素每帧被反复测量。
+                // 属性变化由每个元素自己的 ResizeObserver 负责覆盖，不需要这里兜底。
+                //
+                // ★ 必须等 body 出现再 observe：这段脚本在 <head> 里，解析时 document.body 还是
+                // null，直接 observe 会抛 "parameter 1 is not of type 'Node'"，
+                // 并且会让后面的 window.fitResponsiveText 赋值执行不到（C# 那边就会报
+                // "The value 'fitTopBarTitle' is not a function"）。
+                // （原实现把 observe 放在 fitResponsiveText 函数体内，只在 C# 调用时才执行，
+                //   所以那时 body 一定已存在——重构时不能把这段提到顶层执行。）
+                let observed = false;
+                const attachObserver = () => {
+                    if (observed || !document.body) return;
+                    observed = true;
+                    observer.observe(document.body, {
                         childList: true,
-                        subtree: true,
-                        characterData: true
+                        subtree: true
                     });
-                }
-            };
+                    scheduleRun();   // 挂上后先跑一轮，覆盖 body 就绪前已渲染的内容
+                };
+
+                // 入口：外部（含 C#）调用它即可，内部自行合并到下一帧
+                window.fitResponsiveText = () => {
+                    attachObserver();
+                    scheduleRun();
+                };
+
+                // 尽快挂载：body 恰好已就绪就直接挂，否则等 DOMContentLoaded
+                attachObserver();
+                if (!observed)
+                    document.addEventListener('DOMContentLoaded', attachObserver, { once: true });
+            })();
 
             window.fitTopBarTitle = window.fitResponsiveText;
 

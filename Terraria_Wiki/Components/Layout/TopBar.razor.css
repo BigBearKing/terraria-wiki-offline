@@ -99,7 +99,8 @@ body.has-hover .action-btn:hover {
 
 /* 顶部栏两个按钮的显隐各自独立（判断依据不同，所以不共用一条规则）：
    .narrow-menu-btn（左上角 wiki logo → 侧边栏）：只认宽度 AppState.IsSmallScreen，矮屏照样显示
-   .compact-more-btn（右上角 → MoreList）：任何尺寸都显示，面板里是否有标签分组由 C# 决定
+   .compact-more-btn（右上角 → MoreList）：显隐由 C# 决定（只在主页显示，见 TopBar.razor），
+   此处不设规则；面板里是否有标签分组同样由 C# 决定
    尺寸术语见 AppState 里的说明。 */
 .narrow-menu-btn {
     display: none;

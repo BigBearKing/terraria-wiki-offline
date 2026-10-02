@@ -37,12 +37,15 @@
         </div>
     }
 
-    @* 更多按钮：任何页面、任何尺寸都显示；窄屏时它里面才有标签分组（见 AppState.TabsInMoreList） *@
-    <div class="actions-wrapper">
-        <button class="action-btn button compact-more-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
-            <Icon Name="more" Size="24"></Icon>
-        </button>
-    </div>
+    @* 更多按钮：只在主页显示（任何尺寸都显示，窄屏时它里面才有标签分组，见 AppState.TabsInMoreList） *@
+    @if (AppState.CurrentPage == "home")
+    {
+        <div class="actions-wrapper">
+            <button class="action-btn button compact-more-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
+                <Icon Name="more" Size="24"></Icon>
+            </button>
+        </div>
+    }
 
 </header>
 

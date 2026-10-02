@@ -9,6 +9,7 @@
     margin-left: var(--safe-area-left);
     padding-top: max(4px, var(--safe-area-top));
     box-shadow: calc(-1 * var(--safe-area-left)) 0 0 0 var(--bg-color-secondary);
+    border-right: 0.5px solid var(--hover-bg);
 }
 
 .sidebar.collapsed {
