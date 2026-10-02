@@ -135,7 +135,6 @@ namespace Terraria_Wiki
             await AppService.RestoreDownloadTaskStateAsync(AppStateManager.ActiveWikiBookId);
         }
 
-
 #if WINDOWS
         protected override Window CreateWindow(IActivationState? activationState)
         {

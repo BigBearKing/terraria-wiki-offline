@@ -119,7 +119,7 @@ public class AppTask
         {
             data = string.IsNullOrWhiteSpace(TaskData)
                 ? new AppTaskData()
-                : JsonSerializer.Deserialize<AppTaskData>(TaskData) ?? new AppTaskData();
+                : JsonSerializer.Deserialize(TaskData, DbJsonContext.Persistence.AppTaskData) ?? new AppTaskData();
         }
         catch (JsonException)
         {
@@ -151,7 +151,7 @@ public class AppTask
             ResumePageLine = ResumePageLine,
             ResumeResourceLine = ResumeResourceLine,
             CompletedResourceLines = CompletedResourceLines.ToList()
-        });
+        }, DbJsonContext.Persistence.AppTaskData);
     }
 
     private double CalculateProgress()

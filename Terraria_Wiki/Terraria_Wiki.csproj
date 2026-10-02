@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFrameworks>net10.0-android</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- .NET 11 起 MAUI 包按带平台版本的 TFM 打包（如 net11.0-android37.0），
+		     因此这里必须显式写出平台版本，否则 NuGet 会报 NU1012。
+		     版本号需与已安装工作负载一致：Android Ref 37 / iOS 26.5 / MacCatalyst 26.5。 -->
+		<TargetFrameworks>net11.0-android37.0</TargetFrameworks>
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios26.5;net11.0-maccatalyst26.5</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
 		<SupportedCultures>zh-CN;en-US</SupportedCultures>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<!-- Note for MacCatalyst:
@@ -59,7 +62,43 @@
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
 		<PublishAot>true</PublishAot>
 		<IsAotCompatible>true</IsAotCompatible>
+		<!-- ReadyToRun 与 NativeAOT 互斥：WindowsAppSDK / WinUI 会默认把
+		     PublishReadyToRun 设为 true，导致 AOT 静默退化为自包含 JIT 包。 -->
+		<PublishReadyToRun>false</PublishReadyToRun>
+	</PropertyGroup>
+
+	<!-- ★★ 打开反射式 JSON 序列化（AOT 下 BlazorWebView 的硬需求）
+	     2026-10-02：AOT 包界面"一直 loading"的根因。
+	     Microsoft.AspNetCore.Components.WebView 的 IpcCommon.Serialize 用反射式
+	     JsonSerializer 序列化 IPC 消息（AttachPage / OnRenderCompleted 用的就是这条路径）。
+	     NativeAOT 默认关闭反射序列化 → 该调用抛
+	     "Reflection-based serialization has been disabled for this application."
+	     异常发生在框架内部，被 IpcSender 自己吞掉 → 前端收不到渲染结果 →
+	     DOM 的 #app 永远为空，界面停在 loading，且任何日志里都看不到错误。
+
+	     JsonSerializerIsReflectionEnabledByDefault=true 是 .NET 官方为此场景留的开关，
+	     会在 ILC 编译期保留反射序列化所需的元数据。
+	     代价是包体略增（实测 exe 35MB → 38MB），远小于"打不开"的代价。 -->
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
 		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+	</PropertyGroup>
+
+	<ItemGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
+		<RuntimeHostConfigurationOption Include="System.Text.Json.JsonSerializer.IsReflectionEnabledByDefault"
+		                                Value="true" Trim="false" />
+	</ItemGroup>
+
+	<!-- ★ .NET 11 RC.1 已知缺陷（Android 工作负载版本错位）：
+	     Microsoft.Android.Sdk.Windows/37.0.0-rc.1.2257 的
+	     Microsoft.Android.Sdk.BundledVersions.targets 把
+	     MicrosoftNETCoreAppRefPackageVersion 固定为 11.0.0-rc.1.26428.117，
+	     而本机 SDK 是 11.0.100-rc.1.26425.128（对应 AOT 包 .128）。
+	     .117 在 nuget.org 上不存在 → 恢复 AOT 运行时包时 NU1102，
+	     MSBuild 随后静默回退到 ReadyToRun，产出 323MB 的非原生包。
+	     这里仅在 windows TFM 上把该版本号拉回 SDK 实际版本，规避此缺陷。
+	     GA 后 Android 工作负载与 SDK 版本对齐，可删除本区块。 -->
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+		<MicrosoftNETCoreAppRefPackageVersion>11.0.0-rc.1.26425.128</MicrosoftNETCoreAppRefPackageVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
@@ -70,11 +109,11 @@
 		<AssemblyMetadata Include="ApplicationBuildNumber" Value="$(ApplicationVersion)" />
 	</ItemGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-ios|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net11.0-ios26.5|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-ios|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-ios26.5|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(TargetFramework)'=='net10.0-ios'">
+	<PropertyGroup Condition="'$(TargetFramework)'=='net11.0-ios26.5'">
 	  <ProvisioningType>automatic</ProvisioningType>
 	  <CodesignKey>iPhone Developer</CodesignKey>
 	</PropertyGroup>
@@ -105,6 +144,12 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
+	<!-- ★★ NativeAOT 裁剪保留指令（2026-10-02 曾整组误删，导致 AOT 包"一直 loading"）。
+	     TrimmerRootAssembly=Terraria_Wiki 让 ILC 保留整个应用程序集 —— 缺了它
+	     Razor 组件的渲染树会被裁掉：前端 AttachPage 发出后 OnRenderCompleted 永不返回，
+	     DOM 里 #app 一直为空（Debug 版正常，AOT 版空），非常隐蔽。
+	     SQLite-net 同理由其反射式 ORM 映射需要。
+	     rd.xml 保留 JSInterop 的 TaskGenericsUtil.TcsResultSetter<T>（运行时反射构造泛型）。 -->
 	<ItemGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
 		<RdXmlFile Include="rd.xml" />
 		<TrimmerRootAssembly Include="Terraria_Wiki" />
@@ -122,10 +167,11 @@
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
 
 		<PackageReference Include="LuYao.TlsClient" Version="1.2.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.90" />
+		<!-- .NET 11 / MAUI 11（当前为 RC.1，GA 后需改为正式版本号） -->
+		<PackageReference Include="Microsoft.Maui.Controls" Version="11.0.0-rc.1.26451.6" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="11.0.0-rc.1.26451.6" />
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" Condition="$(TargetFramework.Contains('-windows'))" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.1.26425.128" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
 
 	</ItemGroup>

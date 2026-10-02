@@ -93,9 +93,12 @@ namespace Terraria_Wiki
                 {
                     try
                     {
+                        // 必须完全限定：.NET 11 的 AndroidX.Activity 新增了同名类型
+                        // AndroidX.Activity.ActivityFlags，与本文件的 Android.Content 命名空间
+                        // 产生 CS0104 歧义。此处要的是 Android.Content.ActivityFlags。
                         ContentResolver.TakePersistableUriPermission(
                             data.Data,
-                            ActivityFlags.GrantReadUriPermission);
+                            Android.Content.ActivityFlags.GrantReadUriPermission);
                     }
                     catch
                     {

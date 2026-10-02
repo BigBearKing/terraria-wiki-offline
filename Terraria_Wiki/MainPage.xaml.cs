@@ -1,4 +1,4 @@
-#if ANDROID
+﻿#if ANDROID
 using Android.Views;
 using Android.Window;
 using AndroidX.Core.View;
@@ -659,10 +659,9 @@ namespace Terraria_Wiki
             {
                 webView.CoreWebView2Initialized += (s, e) =>
                 {
-                    if (e.Exception == null && webView.CoreWebView2 != null)
-                    {
+                    if (e.Exception != null) return;
+                    if (webView.CoreWebView2 != null)
                         RegisterDragBridge(webView.CoreWebView2);
-                    }
                 };
             }
 

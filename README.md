@@ -176,7 +176,7 @@ Windows 上默认为 `%LOCALAPPDATA%\BigBearKing\com.bigbearking.terrariawiki`�
 
 ## 从源码构建
 
-需要 .NET 10 SDK，并安装 MAUI 工作负载：
+需要 .NET 11 SDK，并安装 MAUI 工作负载：
 
 ```bash
 dotnet workload install maui
@@ -185,10 +185,13 @@ dotnet workload install maui
 构建指定平台（Windows 示例）：
 
 ```bash
-dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net10.0-windows10.0.19041.0 -c Release
+dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -c Release
 ```
 
-其余目标框架为 `net10.0-android`、`net10.0-ios`、`net10.0-maccatalyst`（Linux 环境下不包含 Apple 平台）。发布 iOS 未签名 IPA 可在 GitHub Actions 中手动触发 `Build Unsigned iOS IPA` 工作流，产物保留 7 天。
+其余目标框架为 `net11.0-android`、`net11.0-ios`、`net11.0-maccatalyst`（Linux 环境下不包含 Apple 平台）。发布 iOS 未签名 IPA 可在 GitHub Actions 中手动触发 `Build Unsigned iOS IPA` 工作流，产物保留 7 天。
+
+> **注意**：当前 .NET 11 尚未 GA，项目使用 RC.1（`SDK 11.0.100-rc.1` / MAUI `11.0.0-rc.1.26451.6`）。
+> 正式版发布后需把依赖版本号改为不带 `rc` 后缀的正式版本。
 
 ## 数据来源与版权
 
@@ -200,7 +203,7 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net10.0-windows10.0.19041.0 -
 ## 开源致谢
 
 - [泰拉瑞亚中文维基](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki) 及各模组 Wiki 社区：本应用的全部内容与数据结构来自社区贡献者的编辑与维护。
-- [.NET MAUI](https://github.com/dotnet/maui) 与 [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)（10.0.90）：跨平台 UI 与前端组件框架。
+- [.NET MAUI](https://github.com/dotnet/maui) 与 [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)（11.0.0-rc.1）：跨平台 UI 与前端组件框架。
 - [Microsoft.Web.WebView2](https://learn.microsoft.com/microsoft-edge/webview2/)（1.0.4191.47）：Windows 端 WebView 内核。
 - [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack)（1.12.4）：页面数据清洗与解析。
 - [sqlite-net-pcl](https://github.com/praeclarum/sqlite-net)（1.11.285）：本地数据库与数据持久化。

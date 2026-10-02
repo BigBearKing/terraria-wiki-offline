@@ -1,9 +1,43 @@
 <Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
   <Application>
+    <!--
+      JSInterop 的 TaskGenericsUtil 内部有两个「靠运行时反射构造泛型实例」的类型：
+        · TcsResultSetter<T>  —— C# 侧把结果写回 TaskCompletionSource（InvokeVoidAsync / C#→JS）
+        · TaskResultGetter<T> —— C# 侧从 JS 回传的 JSON 里读回结果（InvokeAsync<T> / JS→C#）
+
+      两者都不是静态可见的（ILC 只看到 `MakeGenericType(Type)`，看不到具体 T），
+      NativeAOT 必须显式保留，否则在 JS 调用回传结果时抛：
+        System.NotSupportedException:
+        'Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[System.Int32]'
+        is missing native code or metadata.
+      异常发生在 JSInterop 内部的异步管道里，表现为 TaskScheduler.UnobservedTaskException，
+      调用方 await 到的可能是一个永不完成或值错误的 Task → 功能静默失效。
+
+      ★ 2026-10-02 教训一：曾误删本文件，AOT 包启动后 Blazor 的 AttachPage/OnRenderCompleted
+        管道不再返回，DOM 里 #app 永远为空 → 界面「一直 loading」。
+      ★ 2026-10-02 教训二：首次补回时只保了 TcsResultSetter<bool/string/object>，
+        漏了 TaskResultGetter 整条路径，也没覆盖 Int32。实测 AOT 运行日志立刻报
+        `TaskResultGetter`1[System.Int32] is missing native code or metadata`。
+
+      泛型参数清单依据（代码里实际用到的 T）：
+        AppService.cs:453   _js.InvokeAsync<string>("getCurrentIframePosition")   → String
+        ThemeService.cs:63  JS.InvokeAsync<object>("initTheme", ...)             → Object
+        ThemeService.cs:76  JS.InvokeAsync<bool>("toggleTheme", ...)             → Boolean
+        框架/第三方内部还会用到 Int32（如滚动位置、元素数量等），一并保留。
+      新增 InvokeAsync<T> 调用时，若 T 不在下表，必须同步补充（否则 AOT 下静默失败）。
+    -->
     <Assembly Name="Microsoft.JSInterop">
+      <!-- 读结果路径：JS → C#（InvokeAsync<T>） -->
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Int32, System.Private.CoreLib]]" Dynamic="Required All" />
+
+      <!-- 写结果路径：C# → JS -->
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Int32, System.Private.CoreLib]]" Dynamic="Required All" />
     </Assembly>
   </Application>
 </Directives>

@@ -35,3 +35,13 @@ public partial class AppJsonContext : JsonSerializerContext
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     });
 }
+
+// 持久化（SQLite 落库 / 内置种子配置）专用 Context。
+// 刻意使用默认命名（PascalCase）：原先这些地方走的是无 options 的反射式序列化，
+// 保持默认命名才能让已落库的 TaskData 继续正确反序列化，不受 JS 桥的 camelCase 影响。
+[JsonSerializable(typeof(AppTaskData))]
+[JsonSerializable(typeof(List<WikiBook>))]
+public partial class DbJsonContext : JsonSerializerContext
+{
+    public static readonly DbJsonContext Persistence = new DbJsonContext(new JsonSerializerOptions());
+}

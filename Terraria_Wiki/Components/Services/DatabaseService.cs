@@ -148,23 +148,53 @@ public class DatabaseService
             ["DefaultPageTitle"] = "TEXT",
         };
 
+        // ★ 先读取现有列，只对真正缺失的列执行 ALTER。
+        //   旧写法用 try/catch 吞掉 "duplicate column name" 异常，在 NativeAOT 下
+        //   每次异常都会走 FirstChanceException + 污染 BlazorWebView 的 IpcSender
+        //   错误通知路径（一次建表触发 12 次无谓异常），是启动期噪音的主要来源。
+        var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var rows = await _db.QueryAsync<PragmaColumn>("PRAGMA table_info(WikiBook);");
+            foreach (var r in rows)
+            {
+                if (!string.IsNullOrEmpty(r.name)) existingColumns.Add(r.name);
+            }
+        }
+        catch
+        {
+            // PRAGMA 查询失败（极老的库）时退化为逐个尝试，保证兼容。
+        }
+
         foreach (var (colName, colType) in newColumns)
         {
+            if (existingColumns.Contains(colName)) continue;
+
             try
             {
                 await _db.ExecuteAsync($"ALTER TABLE WikiBook ADD COLUMN {colName} {colType};");
             }
             catch
             {
-                // 列已存在则忽略
+                // 列已存在则忽略（并发或探测失败的兜底）
             }
         }
+    }
+
+    /// <summary>PRAGMA table_info 的结果行。</summary>
+    private sealed class PragmaColumn
+    {
+        // ReSharper 命名与 SQLite 列名一致，供 SQLite-net 反射映射。
+#pragma warning disable IDE1006
+        public string name { get; set; } = string.Empty;
+#pragma warning restore IDE1006
     }
 
     private async Task SeedWikiBooksAsync()
     {
         await using var stream = await FileSystem.OpenAppPackageFileAsync("default-wikibooks.json");
-        var defaultWikiBooks = await System.Text.Json.JsonSerializer.DeserializeAsync<List<WikiBook>>(stream)
+        var defaultWikiBooks = await System.Text.Json.JsonSerializer.DeserializeAsync(
+                stream, DbJsonContext.Persistence.ListWikiBook)
             ?? throw new InvalidDataException("默认 WikiBook 配置不能为空。");
 
         if (defaultWikiBooks.Count == 0 || defaultWikiBooks.Any(book => book.Id <= 0)

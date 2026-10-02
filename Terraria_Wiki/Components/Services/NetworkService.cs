@@ -141,7 +141,9 @@ public static class NetworkService
         return request;
     }
 
-    private static void AddTlsBrowserHeaders(dynamic request)
+    // 形参改为静态类型 RequestInput：原来用 dynamic（DLR 运行时代码生成），
+    // 在 NativeAOT 下必然抛异常，是 AOT 编译的硬性阻断项。
+    private static void AddTlsBrowserHeaders(RequestInput request)
     {
         request.Headers["User-Agent"] = BrowserUserAgent;
         request.Headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
@@ -167,13 +169,13 @@ public static class NetworkService
             throw new HttpRequestException($"TLS request failed with status {status} for {url}", null, (HttpStatusCode)status);
     }
 
-    private static string? GetResponseHeader(dynamic headers, string name)
+    // 同上，Headers 的真实类型是 Dictionary<string, List<string>>，无需 dynamic。
+    private static string? GetResponseHeader(Dictionary<string, List<string>>? headers, string name)
     {
         if (headers is null)
             return null;
 
-        dynamic values = null;
-        return headers.TryGetValue(name, out values) && values.Count > 0
+        return headers.TryGetValue(name, out var values) && values.Count > 0
             ? values[0]
             : null;
     }

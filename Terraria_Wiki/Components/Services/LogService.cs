@@ -96,7 +96,9 @@ namespace Terraria_Wiki.Services
         {
             // 如果有异常对象，把异常类型和简短消息也带上
             var errorDetail = ex != null ? $" ({ex.GetType().Name}: {ex.Message})" : "";
-            AppendLog($"[ERROR] {message}{errorDetail}");
+            // ★ AOT 排查：把完整堆栈也落盘，否则 NativeAOT 下的反射/序列化问题无从定位。
+            var stack = ex?.StackTrace;
+            AppendLog($"[ERROR] {message}{errorDetail}{(string.IsNullOrEmpty(stack) ? "" : Environment.NewLine + stack)}");
         }
 
         /// <summary>
