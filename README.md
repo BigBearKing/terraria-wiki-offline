@@ -1,23 +1,7 @@
-<!--
-截图占位：替换为实际截图时请保持文件名一致。
-  Screenshot/main.png          主页 / 词条阅读界面（标题下方主图）
-  Screenshot/search.png        顶栏搜索与结果预览面板
-  Screenshot/tabs.png          多标签页
-  Screenshot/dark.png          深色模式
-  Screenshot/collection.png    收藏与历史
-  Screenshot/data.png          数据管理 - Wiki 列表
-  Screenshot/data-detail.png   数据管理 - 详情与下载进度
-  Screenshot/settings.png      设置页
-  Screenshot/floating.png      Windows 悬浮窗
-
-非占位图片：
-  Screenshot/donate.jpg        微信与支付宝收款码拼接图（赞助区使用）
--->
-
 # Terraria Wiki Offline
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android%20%7C%20iOS%20%7C%20macOS-informational)
-![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
+![.NET](https://img.shields.io/badge/.NET-11.0-512BD4)
 ![Version](https://img.shields.io/badge/version-0.4.0-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
@@ -36,7 +20,7 @@
 - **桌面端右键菜单**：复制选中的文字或图片、在新标签页打开词条、打开当前词条的原文页面。
 - **实时搜索**：顶栏搜索框基于本地 SQLite 做关键字匹配，下拉面板预览词条及重定向目标，输入带防抖。最大结果数可在设置中调整（25 / 50 / 75 / 100）。
 - **所有页面**：列出数据库中的全部词条，支持关键词过滤与虚拟滚动，适合按名称查找。
-- **多标签页**：最多同时打开 5 个标签页，每个标签页独立维护标题、滚动位置与浏览历史。桌面端标签栏位于顶栏，窄屏收进功能栏面板。
+- **多标签页**：最多同时打开 10 个标签页，每个标签页独立维护标题、滚动位置与浏览历史。桌面端标签栏位于顶栏，窄屏收进功能栏面板。
 - **收藏与历史**：顶栏星标即可收藏当前词条；浏览历史按时间轴分组展示，支持一键清空。每个 Wiki 使用独立的数据库文件，收藏与历史互不干扰。
 - **多 Wiki 支持**：在数据管理页按语言筛选后点击卡片即可切换 Wiki，切换过程无需重启应用。
 - **数据管理**：在线下载（全部内容或仅文本）、增量更新页面、下载或删除图片资源、导出与导入 `.pkg` 数据包、删除数据库，并显示数据库大小、页面数、重定向数、资源数和上次更新时间。
@@ -97,7 +81,7 @@
 
 | 深色模式 | 收藏与历史 |
 | --- | --- |
-| ![](Screenshot/dark.png) | ![](Screenshot/collection.png) |
+| ![](Screenshot/light.png) | ![](Screenshot/collection.png) |
 
 | 数据管理 | 数据详情 |
 | --- | --- |
