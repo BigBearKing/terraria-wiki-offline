@@ -23,21 +23,69 @@
         AppService.cs:453   _js.InvokeAsync<string>("getCurrentIframePosition")   → String
         ThemeService.cs:63  JS.InvokeAsync<object>("initTheme", ...)             → Object
         ThemeService.cs:76  JS.InvokeAsync<bool>("toggleTheme", ...)             → Boolean
-        框架/第三方内部还会用到 Int32（如滚动位置、元素数量等），一并保留。
-      新增 InvokeAsync<T> 调用时，若 T 不在下表，必须同步补充（否则 AOT 下静默失败）。
+        + Int32（框架/第三方内部，如滚动位置、元素数量）
+        + VoidTaskResult（InvokeVoidAsync / InvokeAsync() 无返回值时的结果类型）
+
+      ★ 2026-10-02 教训三：InvokeVoidAsync 的结果类型是 System.Threading.Tasks.VoidTaskResult，
+        之前只枚举了 Boolean/String/Object/Int32，导致 VoidTaskResult 路径缺失。
+        症状：`UnobservedTaskException: '...TaskResultGetter`1[VoidTaskResult]' is missing
+        native code or metadata`，fire-and-forget 的 JS 调用（如 startBurnInMonitoring）
+        永不返回，且因为没 await 所以只在 finalizer 线程报，界面上完全看不出来。
+
+      ★★ 2026-10-02 教训四（深层，务必理解）：修好 TaskResultGetter 之后**并没有结束**。
+        JSInterop 的调用结果要走 JSON 反序列化，System.Text.Json 会为结果类型再反射构造
+        一个**内置转换器** `ObjectDefaultConverter<T>`；它同样是运行时 MakeGenericType 出来的，
+        开放泛型 rd.xml 只覆盖了 JSInterop 自己的类型，**覆盖不到 System.Text.Json**。
+        所以修完 TaskResultGetter 后，日志会换一张脸继续报：
+          'System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1
+           [System.Threading.Tasks.VoidTaskResult]' is missing native code or metadata
+        ⇒ 必须**同时**在 <Assembly Name="System.Text.Json"> 下保留转换器的开放泛型。
+        这是「反射式 JS 调用 + AOT」这条链上的第二颗地雷，缺一不可。
+
+      ★★ 最优解：凡是用【开放泛型】保留 JSInterop 的 `TaskResultGetter`1` / `TcsResultSetter`1`，
+        就**必须连带**保留 System.Text.Json 的转换器开放泛型（见文件末尾 Assembly=System.Text.Json）。
+        只保一半 = 错误只是"换了条信息"，问题依旧。
     -->
     <Assembly Name="Microsoft.JSInterop">
-      <!-- 读结果路径：JS → C#（InvokeAsync<T>） -->
+      <!-- ★ 开放泛型：一条覆盖所有 T（Boolean/String/Object/Int32/VoidTaskResult/...） -->
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1" Dynamic="Required All" />
+
+      <!-- 以下为逐个实参枚举版（保留作参考/兜底，与上面开放泛型并存无副作用） -->
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Int32, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TaskResultGetter`1[[System.Threading.Tasks.VoidTaskResult, System.Private.CoreLib]]" Dynamic="Required All" />
 
       <!-- 写结果路径：C# → JS -->
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
       <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Int32, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="Microsoft.JSInterop.Infrastructure.TaskGenericsUtil+TcsResultSetter`1[[System.Threading.Tasks.VoidTaskResult, System.Private.CoreLib]]" Dynamic="Required All" />
+    </Assembly>
+
+    <!--
+      ★★ 第二颗地雷：JSInterop 的结果要经 System.Text.Json 反序列化。
+      STJ 为结果类型**在运行时反射构造**内置转换器 ObjectDefaultConverter<T>（internal 类型），
+      NativeAOT 若不保留其泛型实参，就会在 JS 调用回传结果时抛：
+        'System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1
+         [System.Threading.Tasks.VoidTaskResult]' is missing native code or metadata
+      调用链：TaskGenericsUtil.GetTaskResult -> JsonSerializer.DeserializeAsync/FromJsonStream
+              -> ObjectDefaultConverter<T>.Read。
+
+      下面保留开放泛型 + 已知实参；JSInterop 用到的 T 都应同步列在这里。
+    -->
+    <Assembly Name="System.Text.Json">
+      <!-- 开放泛型：一条覆盖所有 T -->
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1" Dynamic="Required All" />
+      <!-- 逐个实参兜底（与开放泛型并存无副作用） -->
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[System.Threading.Tasks.VoidTaskResult, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[System.Boolean, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[System.String, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[System.Object, System.Private.CoreLib]]" Dynamic="Required All" />
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[System.Int32, System.Private.CoreLib]]" Dynamic="Required All" />
     </Assembly>
   </Application>
 </Directives>

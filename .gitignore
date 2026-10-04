@@ -375,3 +375,5 @@ FodyWeavers.xsd
 
 # WorkBuddy AI 工作区数据（记忆/缓存），不纳入版本管理
 .workbuddy-ai/
+.vscode/
+Release/
