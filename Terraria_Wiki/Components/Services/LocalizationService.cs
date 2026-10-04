@@ -1,11 +1,19 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Terraria_Wiki.Services
 {
     public class LocalizationService
     {
+        /// <summary>「跟随系统」选项的取值。</summary>
+        public const string AutoLanguageCode = "auto";
+        private const string ChineseLanguageCode = "zh-cn";
+        private const string EnglishLanguageCode = "en-us";
+        private const string LanguagePreferenceKey = "AppLanguage";
+
         private Dictionary<string, string> _translations = new();
-        private string _currentLanguage = "zh-cn";
+        private string _currentLanguage = ChineseLanguageCode;
+        private string _languagePreference = AutoLanguageCode;
 
         public event Action? OnChange;
 
@@ -14,13 +22,15 @@ namespace Terraria_Wiki.Services
         }
 
         /// <summary>
-        /// 初始化并加载语言文件（从 Preferences 读取上次语言选择）
+        /// 初始化并加载语言文件（从 Preferences 读取上次语言选择，首次安装默认跟随系统）
         /// </summary>
         public async Task InitializeAsync()
         {
-            var savedLang = Preferences.Default.Get("AppLanguage", "");
-            if (!string.IsNullOrEmpty(savedLang))
-                _currentLanguage = NormalizeCode(savedLang);
+            var savedLang = Preferences.Default.Get(LanguagePreferenceKey, "");
+            _languagePreference = string.IsNullOrEmpty(savedLang)
+                ? AutoLanguageCode
+                : NormalizePreference(savedLang);
+            _currentLanguage = Resolve(_languagePreference);
             await LoadLanguage(_currentLanguage);
             App.AppStateManager!.CurrentLanguage = _currentLanguage;
             NotifyStateChanged();
@@ -31,33 +41,86 @@ namespace Terraria_Wiki.Services
         /// </summary>
         public async Task SetLanguageAsync(string languageCode)
         {
-            var normalized = NormalizeCode(languageCode);
-            if (_currentLanguage == normalized) return;
-            _currentLanguage = normalized;
-            Preferences.Default.Set("AppLanguage", normalized);
-            await LoadLanguage(normalized);
+            var preference = NormalizePreference(languageCode);
+            var resolved = Resolve(preference);
+            if (_languagePreference == preference && _currentLanguage == resolved) return;
+            _languagePreference = preference;
+            _currentLanguage = resolved;
+            Preferences.Default.Set(LanguagePreferenceKey, preference);
+            await LoadLanguage(resolved);
             App.AppStateManager!.CurrentLanguage = _currentLanguage;
             NotifyStateChanged();
         }
 
         /// <summary>
-        /// 获取当前语言代码
+        /// 当前实际生效的语言代码（zh-cn / en-us）
         /// </summary>
         public string CurrentLanguage => _currentLanguage;
 
         /// <summary>
-        /// 获取支持的语言列表
+        /// 用户选择的语言首选项（auto / zh-cn / en-us）
         /// </summary>
-        public static readonly (string Code, string Name)[] SupportedLanguages = new[]
+        public string LanguagePreference => _languagePreference;
+
+        /// <summary>
+        /// 获取支持的语言代码列表
+        /// </summary>
+        public static readonly string[] SupportedLanguageCodes =
         {
-            ("zh-cn", "中文"),
-            ("en-us", "English"),
+            AutoLanguageCode,
+            ChineseLanguageCode,
+            EnglishLanguageCode,
         };
+
+        /// <summary>
+        /// 获取语言在界面上的显示名（「跟随系统」一项要按当前语言本地化）
+        /// </summary>
+        public string GetLanguageName(string code) => code switch
+        {
+            AutoLanguageCode => Get("Settings.FollowSystem"),
+            ChineseLanguageCode => "中文",
+            EnglishLanguageCode => "English",
+            _ => code
+        };
+
+        /// <summary>
+        /// 把语言首选项解析成实际生效的语言代码
+        /// </summary>
+        public static string Resolve(string preference) =>
+            IsAuto(preference) ? DetectSystemLanguage() : NormalizeCode(preference);
+
+        private static bool IsAuto(string? code) =>
+            string.Equals(code, AutoLanguageCode, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 探测系统语言：简体/繁体等任何中文 → 中文；其余一律英文
+        /// </summary>
+        public static string DetectSystemLanguage()
+        {
+            foreach (var culture in new[] { CultureInfo.CurrentUICulture, CultureInfo.CurrentCulture })
+            {
+                var name = culture?.Name;
+                if (string.IsNullOrEmpty(name))
+                    continue; // 固定区域性（invariant）时继续看下一个
+                return name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                    ? ChineseLanguageCode
+                    : EnglishLanguageCode;
+            }
+            return EnglishLanguageCode;
+        }
+
+        private static string NormalizePreference(string? code)
+        {
+            if (IsAuto(code))
+                return AutoLanguageCode;
+            var normalized = NormalizeCode(code);
+            return normalized is "zh-cn" or "en-us" ? normalized : EnglishLanguageCode;
+        }
 
         /// <summary>
         /// 将语言代码规范化为文件名格式（zh-CN → zh-cn, 容错 zh → zh-cn）
         /// </summary>
-        private static string NormalizeCode(string code)
+        private static string NormalizeCode(string? code)
         {
             var lower = (code ?? "en-US").ToLowerInvariant();
             // 如果已经是 zh-cn / en-us 完整格式，直接返回

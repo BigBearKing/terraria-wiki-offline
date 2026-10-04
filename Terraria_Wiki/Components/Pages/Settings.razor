@@ -399,8 +399,8 @@
     }
 
     private IReadOnlyList<SelectOption<string>> LanguageOptions =>
-        LocalizationService.SupportedLanguages
-            .Select(language => new SelectOption<string>(language.Code, language.Name))
+        LocalizationService.SupportedLanguageCodes
+            .Select(code => new SelectOption<string>(code, Loc.GetLanguageName(code)))
             .ToList();
 
     private IReadOnlyList<SelectOption<string>> AppThemeOptions =>
@@ -458,7 +458,7 @@
 
     private string SelectedLanguage
     {
-        get => Loc.CurrentLanguage;
+        get => Loc.LanguagePreference;
         set
         {
             _ = Loc.SetLanguageAsync(value);
