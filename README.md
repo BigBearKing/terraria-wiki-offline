@@ -19,7 +19,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android%20%7C%20iOS%20%7C%20macOS-informational)
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![Version](https://img.shields.io/badge/version-0.4.0-success)
-![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey)
+![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 泰拉瑞亚百科离线阅读器，基于 .NET MAUI Blazor Hybrid 构建。
 
@@ -196,8 +196,8 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 ## 数据来源与版权
 
 - 《泰拉瑞亚》(Terraria) 游戏及相关美术资源版权归 **Re-Logic** 所有。
-- 应用内使用的 Wiki 文本与图片数据来自各 Wiki 社区贡献者的编辑与维护，遵循 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans) 协议分发。
-- 本应用客户端代码开源且免费提供，禁止用于商业牟利。
+- 应用会处理来自各 Wiki 的内容；其原始许可、署名和再分发条件见 [CONTENT_ATTRIBUTION.md](CONTENT_ATTRIBUTION.md)。Wiki 页面、图片、音视频和游戏资产不受本仓库 Apache-2.0 许可证授权。
+- 应用客户端的原创代码采用 Apache-2.0 许可证；第三方组件按各自许可证提供，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 - 本软件与 **wiki.gg**、**Re-Logic** 均无任何关联，为个人爱好者开发。
 
 ## 开源致谢
@@ -212,6 +212,7 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 - [Viewer.js](https://fengyuanchen.github.io/viewerjs/)：图片查看器。
 - [MathJax](https://www.mathjax.org/)：数学公式渲染。
 - [Fluenticons](https://fluenticons.co/)：应用内图标来源。
+- [Nunito](https://fonts.google.com/specimen/Nunito)：界面与页面字体，采用 SIL Open Font License 1.1（许可全文见 [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt)）。
 
 ## 赞助与支持
 
@@ -232,4 +233,4 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 
 ## 许可证
 
-本项目采用 [CC BY-NC-SA 4.0](LICENCE) 协议，详见仓库根目录的 `LICENCE` 文件。
+本项目的原创客户端代码采用 [Apache-2.0](LICENSE) 许可证。Wiki 内容、游戏资产和第三方组件不由该许可证授权；请同时阅读 [CONTENT_ATTRIBUTION.md](CONTENT_ATTRIBUTION.md) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

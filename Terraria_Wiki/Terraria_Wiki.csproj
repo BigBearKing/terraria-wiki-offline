@@ -124,6 +124,24 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Legal notices: package them as MAUI assets on every platform. -->
+		<MauiAsset Include="..\LICENSE" LogicalName="licenses\LICENSE" />
+		<MauiAsset Include="..\NOTICE" LogicalName="licenses\NOTICE" />
+		<MauiAsset Include="..\THIRD_PARTY_NOTICES.md" LogicalName="licenses\THIRD_PARTY_NOTICES.md" />
+		<MauiAsset Include="..\CONTENT_ATTRIBUTION.md" LogicalName="licenses\CONTENT_ATTRIBUTION.md" />
+		<MauiAsset Include="..\licenses\OFL-1.1.txt" LogicalName="licenses\OFL-1.1.txt" />
+		<MauiAsset Include="..\licenses\WebView2-LICENSE.txt" LogicalName="licenses\WebView2-LICENSE.txt" />
+		<MauiAsset Include="..\licenses\WebView2-NOTICE.txt" LogicalName="licenses\WebView2-NOTICE.txt" />
+
+		<!-- Also expose legal notices beside Windows executables and publish output. -->
+		<Content Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\NOTICE" Link="NOTICE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\CONTENT_ATTRIBUTION.md" Link="CONTENT_ATTRIBUTION.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\licenses\OFL-1.1.txt" Link="licenses\OFL-1.1.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\licenses\WebView2-LICENSE.txt" Link="licenses\WebView2-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\licenses\WebView2-NOTICE.txt" Link="licenses\WebView2-NOTICE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+
 		<!-- App Icon -->
 		<MauiIcon Condition="!$(TargetFramework.Contains('-android')) AND !$(TargetFramework.Contains('-ios'))" Include="Resources\AppIcon\appicon.png" Color="#FFFFFF" />
 
