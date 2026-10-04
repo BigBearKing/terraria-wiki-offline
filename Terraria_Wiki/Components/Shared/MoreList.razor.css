@@ -46,23 +46,23 @@
     min-width: 0;
 }
 
-.action-item .action-btn {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-}
+    .action-item .action-btn {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+    }
 
-.action-item .action-btn .btn-title {
-    position: absolute;
-    left: 48px; /* 8px 内边距 + 24px 图标 + 12px 间距 */
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    text-align: left; /* 绝对定位盒子被 left/right 撑满，必须显式左对齐，否则会继承居中 */
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: clip;
-}
+        .action-item .action-btn .btn-title {
+            position: absolute;
+            left: 48px; /* 8px 内边距 + 24px 图标 + 12px 间距 */
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: left; /* 绝对定位盒子被 left/right 撑满，必须显式左对齐，否则会继承居中 */
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+        }
 
 /* 宽屏 ± 按钮只显示图标，按钮内文字隐藏 */
 .zoom-actions .action-btn .btn-title {
@@ -218,6 +218,7 @@
         flex-wrap: wrap;
         gap: 8px;
         padding: 6px 10px 10px;
+        flex-shrink: 0;
     }
 
     /* ===== 窄屏这一套样式：按钮缩小成正方形（只放图标），文字用 .btn-title-narrow 排在方框下方 ===== */
@@ -243,23 +244,23 @@
         flex: 0 0 auto;
     }
 
-    .action-item .action-btn {
-        position: static;
-        display: flex;
-        flex: 0 0 auto;
-        width: var(--action-square, 42px);
-        height: var(--action-square, 42px);
-        min-width: var(--action-square, 42px);
-        min-height: var(--action-square, 42px);
-        padding: 0;
-        gap: 0;
-        justify-content: center;
-        border-radius: 10px;
-    }
+        .action-item .action-btn {
+            position: static;
+            display: flex;
+            flex: 0 0 auto;
+            width: var(--action-square, 42px);
+            height: var(--action-square, 42px);
+            min-width: var(--action-square, 42px);
+            min-height: var(--action-square, 42px);
+            padding: 0;
+            gap: 0;
+            justify-content: center;
+            border-radius: 10px;
+        }
 
-    .action-item .action-btn svg {
-        flex-shrink: 0;
-    }
+            .action-item .action-btn svg {
+                flex-shrink: 0;
+            }
 
     /* 框外文字 */
     .btn-title-narrow {
@@ -272,7 +273,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: clip;
-        color:var(--text-secondary);
+        color: var(--text-secondary);
     }
 
     /* 宽屏那套缩放行整行隐藏，改用两个 .zoom-narrow 项 */
@@ -310,16 +311,19 @@
     }
 
     .more-list-tabs-list {
+        display: flex;
+        flex-direction: column;
         overflow-y: auto;
         padding: 6px;
         flex-shrink: 1;
+        gap: 6px;
     }
 
     .more-list-tabs-item {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 12px;
+        padding: 8px 12px;
         border-radius: 8px;
         cursor: pointer;
         white-space: nowrap;

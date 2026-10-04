@@ -138,7 +138,7 @@ public class AppState : INotifyPropertyChanged
         _activeTabId = defaultTab.Id;
     }
 
-    public const int MaxTabs = 5;
+    public const int MaxTabs = 10;
 
     /// <summary>缩放上下限，与网页端 applyWikiZoom 的钳制范围一致。</summary>
     public const int MinWikiZoom = 50;

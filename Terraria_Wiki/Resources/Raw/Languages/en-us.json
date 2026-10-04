@@ -34,7 +34,7 @@
     "TabBar.NewTab": "New Tab",
     "TabBar.Close": "Close Tab",
     "TabBar.Tabs": "Tabs",
-    "TabBar.MaxReached": "You can open up to 5 tabs",
+    "TabBar.MaxReached": "You can open up to 10 tabs",
     "AllPages.Index": "All Pages Index",
     "AllPages.FoundCount": "Found @totalPageCount pages",
     "DataManagement.Title": "Wiki Data Management",

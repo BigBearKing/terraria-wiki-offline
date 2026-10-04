@@ -34,7 +34,7 @@
     "TabBar.NewTab": "新标签页",
     "TabBar.Close": "关闭标签",
     "TabBar.Tabs": "标签页",
-    "TabBar.MaxReached": "最多可打开 5 个标签页",
+    "TabBar.MaxReached": "最多可打开 10 个标签页",
     "AllPages.Index": "所有页面索引",
     "AllPages.FoundCount": "共找到 @totalPageCount 个页面",
     "DataManagement.Title": "Wiki 数据管理",

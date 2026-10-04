@@ -155,11 +155,13 @@
         AppState.MoreListOpen = false;
         AppState.FindInPageOpen = true;
     }
+    /// <summary>
+    /// 切换标签后保持面板打开，方便连续切换/关闭（关闭只由遮罩点击或切走页面触发）。
+    /// </summary>
     private async Task OnMoreTabClick(string tabId)
     {
         if (tabId != AppState.ActiveTabId)
             await AppService.SwitchToTabAsync(tabId);
-        CloseMoreList();
     }
 
     private async Task OnMoreTabClose(string tabId)
