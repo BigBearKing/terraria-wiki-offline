@@ -5,6 +5,8 @@
 ![Version](https://img.shields.io/badge/version-0.4.0-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
+简体中文 | [English](README_EN.md)
+
 泰拉瑞亚百科离线阅读器，基于 .NET MAUI Blazor Hybrid 构建。
 
 应用会把 Wiki 的页面正文、图片和音视频抓取到本地 SQLite 数据库，再由内置的本地 HTTP 服务在内嵌 WebView 中渲染，因此断网状态下也能获得与原站一致的排版和阅读体验。目前支持泰拉瑞亚原版、灾厄（Calamity）、法狗（Fargo's Mods）和瑟银（Thorium）四个 Wiki 的中英双语站点，共 8 个数据源。
@@ -79,7 +81,7 @@
 | --- | --- |
 | ![](Screenshot/search.png) | ![](Screenshot/tabs.png) |
 
-| 深色模式 | 收藏与历史 |
+| 浅色模式 | 收藏与历史 |
 | --- | --- |
 | ![](Screenshot/light.png) | ![](Screenshot/collection.png) |
 
