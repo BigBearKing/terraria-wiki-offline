@@ -154,6 +154,14 @@ namespace Terraria_Wiki
         ///   right: calc(10px + var(--safe-area-right));
         /// header-height 与网页同式：safe-area-top + 6（topbar-top-padding）+ 42（topbar-content-height）
         /// + tabbar-height（仅 Windows 为 32）。
+        ///
+        /// ★ 强耦合：TopBar 的真实渲染高度**必须**等于 safe-area-top + 6 + 42，
+        ///   否则面板会与之错位。历史上 TopBar 在 CSS 里写死 height:48px（border-box 含 padding），
+        ///   安全区一大，TopBar 实际底边就停在 48px，而这里按 safe-area-top + 48 定位，
+        ///   于是安卓上面板比顶栏低出一整个状态栏高度。
+        ///   修法见 TopBar.razor.css：height 改成 calc(topbar-top-padding + topbar-content-height)。
+        ///   改 TopBar 垂直尺寸时务必同步本方法。
+        ///
         /// 全部走布局（HorizontalOptions=End + Margin），不用 Translation，避免合成层滞后。
         /// </summary>
         private void PositionFindPanel()
@@ -162,7 +170,7 @@ namespace Terraria_Wiki
             if (state is null) return;
 
             var tabBarHeight = state.IsWindows ? 32d : 0d;
-            var headerHeight = state.SafeAreaTop + 6 + 42 + tabBarHeight;
+            var headerHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
             var top = headerHeight + FindPanelDrawable.PanelMarginTop;
             var right = FindPanelDrawable.PanelMarginRight + state.SafeAreaRight;
 

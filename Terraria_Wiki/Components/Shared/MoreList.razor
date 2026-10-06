@@ -1,9 +1,10 @@
 @using System.ComponentModel
 
-@if (AppState.MoreListOpen)
-{
-    <Mask Show="true" Transparent="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMoreList" />
-    <div class="more-list" data-tauri-drag-region>
+@* 面板与遮罩都常驻 DOM，只切 .show / Show 状态 —— 与 NavMenu 的 Mask 同一套做法。
+   若用 @if 包起来，Blazor 会在关闭时直接移除节点，CSS 只有入场 animation 会跑，
+   退场无从播放（这就是"只有打开有动画"的根因）。改成 transition 后开/关对称。 *@
+<Mask Show="AppState.MoreListOpen" Transparent="true" ZIndex="1002" BackPriority="1004" OnClick="CloseMoreList" />
+<div class="more-list @(AppState.MoreListOpen ? "show" : "")" data-tauri-drag-region>
         @* 每个功能项两套文字：.btn-title 给宽屏（在按钮内部），
            .narrow-title 里的 .btn-title-narrow 给窄屏（在按钮外部下方）。由 CSS 按断点各自显隐。 *@
         <div class="more-list-actions">
@@ -109,7 +110,6 @@
             </div>
         }
     </div>
-}
 
 @code {
     protected override void OnInitialized()

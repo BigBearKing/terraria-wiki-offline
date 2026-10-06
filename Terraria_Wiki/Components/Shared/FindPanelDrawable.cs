@@ -53,6 +53,24 @@ public sealed class FindPanelDrawable : IDrawable
     /// <summary>top: calc(var(--header-height) + 4px) → 面板顶距 header 底部 4px</summary>
     public const float PanelMarginTop = 4f;
 
+    // ===== 顶栏高度契约（必须与 variables.css 保持一致） =====
+    /// <summary>
+    /// TopBar 顶部的安全区气隙：variables.css 里 --topbar-top-padding = safe-area-top + 6px。
+    /// </summary>
+    public const float TopbarTopGap = 6f;
+    /// <summary>
+    /// TopBar 的内容高度：variables.css 里 --topbar-content-height = 42px。
+    /// </summary>
+    public const float TopbarContentHeight = 42f;
+
+    /// <summary>
+    /// 顶栏总高（不含 tabbar-height）：safe-area-top + --topbar-top-padding + --topbar-content-height。
+    /// 与 variables.css 的 --header-height 同式（后者再多一个 --tabbar-height）。
+    /// ★ 前提是 TopBar 的真实渲染高度就等于这个值 —— 见 TopBar.razor.css 的 height: calc(...)。
+    /// </summary>
+    public static float HeaderHeight(double safeAreaTop) =>
+        (float)safeAreaTop + TopbarTopGap + TopbarContentHeight;
+
     /// <summary>按钮块占用（三个按钮 + 内部间隔），不含右边距。</summary>
     private const float ButtonsBlock = BtnSize * 3 + BtnGap * 2;
 

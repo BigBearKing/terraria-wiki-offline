@@ -1,13 +1,19 @@
 
 .top-bar {
-    height:48px;
+    /* 高度契约（与 variables.css 的 --header-height 严格一致）：
+         --header-height = safe-area-top + 6 (topbar-top-padding) + 42 (topbar-content-height)
+       即本元素总高 = var(--topbar-top-padding) + var(--topbar-content-height)。
+       border-box 下 height 含 padding，所以直接用上面的 calc 表达总高；
+       若写死 height:48px，则安全区越大，内容区越被顶部 padding 挤掉，且与 --header-height 对不上。
+       ★ 不要再引入独立的 padding-bottom 常量：它必须落在 --topbar-content-height 之内。*/
+    height: calc(var(--topbar-top-padding) + var(--topbar-content-height));
     display: flex;
     align-items: center;
     gap: 16px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
-    padding: var(--topbar-top-padding) 8px 6px 8px;
+    padding: var(--topbar-top-padding) 8px 0 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */

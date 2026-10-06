@@ -35,7 +35,7 @@
     cursor: pointer;
 }
 
-.floating-bar .bar-btn:hover {
+body.has-hover .floating-bar .bar-btn:hover {
     background: var(--hover-bg);
 }
 
@@ -148,7 +148,7 @@
 }
 
 /* 条最右边的"退出悬浮窗模式"：hover 变红（图标用红色、底色用红色低透明） */
-.floating-bar .bar-btn-exit:hover {
+body.has-hover .floating-bar .bar-btn-exit:hover {
     background: var(--red-tertiary);
     color: var(--red-primary);
 }

@@ -166,8 +166,11 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #if ANDROID
         if (_androidWebView is { } androidWebView)
         {
+            // FindNext 同样会异步触发 onFindResultReceived（isDoneCounting=true），
+            // 因此必须等回调，不能用旧的 _result 直接返回 —— 否则计数不跟着走。
+            _androidSearchCompletion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             await MainThread.InvokeOnMainThreadAsync(() => androidWebView.FindNext(true));
-            return _result;
+            return await _androidSearchCompletion.Task.WaitAsync(TimeSpan.FromSeconds(2));
         }
 #endif
 #if WINDOWS
@@ -192,8 +195,10 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #if ANDROID
         if (_androidWebView is { } androidWebView)
         {
+            // 同上：等 onFindResultReceived 再返回，保证索引是最新的。
+            _androidSearchCompletion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             await MainThread.InvokeOnMainThreadAsync(() => androidWebView.FindNext(false));
-            return _result;
+            return await _androidSearchCompletion.Task.WaitAsync(TimeSpan.FromSeconds(2));
         }
 #endif
 #if WINDOWS
@@ -237,8 +242,14 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         if (!isDoneCounting)
             return;
 
-        // Android reports the active match ordinal as 1-based; the shared result contract is 0-based.
-        var result = Publish(new FindInPageResult(numberOfMatches, numberOfMatches == 0 ? -1 : activeMatchOrdinal - 1));
+        // ★ Android 的 activeMatchOrdinal 是 **0-based**（官方文档原文：
+        //   "the zero-based ordinal of the currently selected match"）。
+        //   之前这里写成 -1，把第 1 个匹配算成了 -1，界面就显示成 "0/N"。
+        //   共享契约同样是 0-based，所以直接透传，不做任何加减。
+        var idx = numberOfMatches == 0
+            ? -1
+            : Math.Clamp(activeMatchOrdinal, 0, numberOfMatches - 1);
+        var result = Publish(new FindInPageResult(numberOfMatches, idx));
         _androidSearchCompletion?.TrySetResult(result);
         _androidSearchCompletion = null;
     }

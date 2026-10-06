@@ -11,23 +11,30 @@
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     overflow: hidden;
-    pointer-events: auto;
-    opacity: 1;
-    transform: none;
     transform-origin: top right;
-    animation: more-list-show 0.18s ease;
+    /* 常驻 DOM，只靠 .show 切换状态：开/关都走同一组 transition，动画对称。
+       visibility 参与过渡并在关闭时延迟到动画结束才置 hidden，
+       既能挡住已隐藏面板的点击/焦点，又不会打断退场动画。 */
+    visibility: hidden;
+    opacity: 0;
+    transform: scale(0.94) translateY(-8px);
+    pointer-events: none;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        visibility 0s linear 0.18s;
 }
 
-@keyframes more-list-show {
-    from {
-        opacity: 0;
-        transform: scale(0.94) translateY(-8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: none;
-    }
+.more-list.show {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    /* 打开时立刻可见，不延迟 */
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        visibility 0s linear 0s;
 }
 
 .more-list-actions {
@@ -112,7 +119,7 @@
     min-width: 0;
 }
 
-.action-btn:hover {
+body.has-hover .action-btn:hover {
     background-color: var(--hover-bg);
     color: var(--text-primary);
 }
@@ -339,7 +346,7 @@
             font-weight: 600;
         }
 
-        .more-list-tabs-item:hover {
+        body.has-hover .more-list-tabs-item:hover {
             background: var(--hover-bg);
             color: var(--text-primary);
         }
@@ -374,7 +381,7 @@
         transition: background 0.15s, color 0.15s;
     }
 
-        .more-list-tabs-item-close:hover {
+        body.has-hover .more-list-tabs-item-close:hover {
             background: var(--pressed-bg);
             color: var(--text-primary);
         }
