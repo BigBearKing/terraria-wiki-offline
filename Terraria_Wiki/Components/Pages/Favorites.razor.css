@@ -1,14 +1,10 @@
-.favorite-list {
-    gap: 8px;
-    padding: 0 0 max(12px, var(--safe-area-bottom));
-}
+/* 收藏列表：卡片外形与"取消收藏"按钮都已收进组件
+   （RowButton：内边距 12 / 圆角 12 / 行间距 8px / 悬停 / 键盘可达；ActionButton：PillOutline + Danger），
+   这里只剩卡片内部的星标、标题、时间，以及空态。 */
 
-.wiki-card {
-    display: flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 12px;
-    cursor: pointer;
+.favorite-list {
+    gap: 0;
+    padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
 .card-icon {
@@ -38,18 +34,14 @@
     color: var(--text-secondary);
 }
 
-.remove-btn {
-    background: transparent;
-    border: 1px solid var(--text-secondary);
+/* 空态：以前全仓库没有这个类的样式，靠 <p> 默认的 1em 外边距撑着（≈19px，比别的页多一截），
+   颜色还是正文色。归到统一的 12px 留白 + 次级色。只写在本组件里，别放全局 ——
+   数据管理页的 .wiki-card-list 已经自带 12px 上边距，全局加会变成 24px。 */
+.empty-state {
+    padding: 12px 0;
     color: var(--text-secondary);
-    padding: 4px 12px;
-    border-radius: 99px;
-    font-size: 0.8rem;
-    cursor: pointer;
 }
 
-body.has-hover .remove-btn:hover {
-    border-color: var(--red-primary);
-    color: var(--red-primary);
-    background-color: var(--red-tertiary);
+.empty-state p {
+    margin: 0;
 }

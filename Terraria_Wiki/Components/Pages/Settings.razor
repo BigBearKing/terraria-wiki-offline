@@ -6,9 +6,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Components.Controls
 <div class="page-anim page-content">
-    <header class="page-header">
-        <span class="content-title">@Loc.Get("Settings.Title")</span>
-    </header>
+    <PageHeader Title="@Loc.Get("Settings.Title")" />
 
     <div class="list-container setting-list">
 
@@ -52,11 +50,10 @@
                         <span class="setting-name">@Loc.Get("Settings.NetworkPermission")</span>
                         <span class="setting-desc">@Loc.Get("Settings.NetworkPermissionDesc")</span>
                     </div>
-                    <button class="button setting-btn"
-                            disabled="@IsPermissionGranted(AndroidPermissionType.Network)"
-                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Network)">
+                    <ActionButton Disabled="IsPermissionGranted(AndroidPermissionType.Network)"
+                                  OnClick="() => RequestPermissionAsync(AndroidPermissionType.Network)">
                         @GetPermissionButtonText(AndroidPermissionType.Network)
-                    </button>
+                    </ActionButton>
                 </div>
 
                 <div class="setting-item">
@@ -64,11 +61,10 @@
                         <span class="setting-name">@Loc.Get("Settings.NotificationPermission")</span>
                         <span class="setting-desc">@Loc.Get("Settings.NotificationPermissionDesc")</span>
                     </div>
-                    <button class="button setting-btn"
-                            disabled="@IsPermissionGranted(AndroidPermissionType.Notifications)"
-                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Notifications)">
+                    <ActionButton Disabled="IsPermissionGranted(AndroidPermissionType.Notifications)"
+                                  OnClick="() => RequestPermissionAsync(AndroidPermissionType.Notifications)">
                         @GetPermissionButtonText(AndroidPermissionType.Notifications)
-                    </button>
+                    </ActionButton>
                 </div>
 
                 <div class="setting-item">
@@ -76,11 +72,10 @@
                         <span class="setting-name">@Loc.Get("Settings.BackgroundPermission")</span>
                         <span class="setting-desc">@Loc.Get("Settings.BackgroundPermissionDesc")</span>
                     </div>
-                    <button class="button setting-btn"
-                            disabled="@IsPermissionGranted(AndroidPermissionType.Background)"
-                            @onclick="() => RequestPermissionAsync(AndroidPermissionType.Background)">
+                    <ActionButton Disabled="IsPermissionGranted(AndroidPermissionType.Background)"
+                                  OnClick="() => RequestPermissionAsync(AndroidPermissionType.Background)">
                         @GetPermissionButtonText(AndroidPermissionType.Background)
-                    </button>
+                    </ActionButton>
                 </div>
             </div>
         }
@@ -93,10 +88,7 @@
                         <span class="setting-name">@Loc.Get("Settings.SideButtonBack")</span>
                         <span class="setting-desc">@Loc.Get("Settings.SideButtonBackDesc")</span>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" @bind="IsSideButtonBack">
-                        <span class="slider"></span>
-                    </label>
+                    <SwitchToggle @bind-Checked="IsSideButtonBack" />
                 </div>
             </div>
         }
@@ -145,19 +137,16 @@
                     <span class="setting-name">@Loc.Get("Settings.AutoUpdatePages")</span>
                     <span class="setting-desc">@Loc.Get("Settings.AutoUpdatePagesDesc")</span>
                 </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" @bind="AutoUpdatePages">
-                    <span class="slider"></span>
-                </label>
+                <SwitchToggle @bind-Checked="AutoUpdatePages" />
             </div>
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.ClearFailedList")</span>
                     <span class="setting-desc">@Loc.Get("Settings.ClearFailedListDesc")</span>
                 </div>
-                <button class="button setting-btn" @onclick="ClearFailedList">
+                <ActionButton OnClick="ClearFailedList">
                     @Loc.Get("Settings.ClearFailedList")
-                </button>
+                </ActionButton>
             </div>
 
         </div>
@@ -169,10 +158,9 @@
                     <span class="setting-name">@Loc.Get("Settings.ImportData")</span>
                     <span class="setting-desc">@Loc.Get("Settings.ImportDataDesc")</span>
                 </div>
-                <button class="button setting-btn" @onclick="ImportData">
-                    <Icon Name="open-file" Size="16"></Icon>
+                <ActionButton Icon="open-file" OnClick="ImportData">
                     @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData) ? AppState.Tasks[AppTaskType.ImportData].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
-                </button>
+                </ActionButton>
             </div>
 
             @if (AppState.IsWindows)
@@ -194,9 +182,9 @@
                     </div>
                     @if (PendingStorageMode == StorageLocationMode.Custom)
                     {
-                        <button class="button setting-btn" @onclick="ChooseCustomStoragePath">
+                        <ActionButton OnClick="ChooseCustomStoragePath">
                             @Loc.Get("Settings.SelectFolder")
-                        </button>
+                        </ActionButton>
                     }
                 </div>
 
@@ -207,9 +195,9 @@
                         <div class="setting-info">
                             <span class="setting-desc">@Loc.Get("Settings.DataLocationApplyDesc")</span>
                         </div>
-                        <button class="button setting-btn" @onclick="SaveStorageLocation">
+                        <ActionButton OnClick="SaveStorageLocation">
                             @Loc.Get("Common.Apply")
-                        </button>
+                        </ActionButton>
                     </div>
                 }
             }
@@ -221,18 +209,18 @@
                         <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
                         <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="ExportLog">
+                    <ActionButton OnClick="ExportLog">
                         @Loc.Get("Common.Export")
-                    </button>
+                    </ActionButton>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
                         <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
                     </div>
-                    <button class="button setting-btn" @onclick="DeleteLog">
+                    <ActionButton OnClick="DeleteLog">
                         @Loc.Get("Settings.DeleteLog")
-                    </button>
+                    </ActionButton>
                 </div>
             </div>
             <div class="category-card">
@@ -249,18 +237,25 @@
                             }
                         </span>
                     </div>
-                    <button class="button setting-btn" @onclick="CheckUpdateCommand">
+                    <ActionButton OnClick="CheckUpdateCommand">
                         @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.CheckUpdate) ? AppState.Tasks[AppTaskType.CheckUpdate].GetProcessingText(Loc) : Loc.Get("Settings.CheckUpdate"))
-                    </button>
+                    </ActionButton>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">@Loc.Get("Settings.Author")</span>
                         <span class="setting-desc">@Author</span>
                     </div>
-                    <button class="button setting-btn" @onclick="GotoGithub">
-                        <Icon Name="github" />
-                    </button>
+                    <ActionButton Icon="github" IconSize="22" OnClick="GotoGithub" />
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">@Loc.Get("Settings.OpenSourceLicenses")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.OpenSourceLicensesDesc")</span>
+                    </div>
+                    <ActionButton OnClick="OpenLicenses">
+                        @Loc.Get("Common.View")
+                    </ActionButton>
                 </div>
             </div>
 
@@ -605,6 +600,15 @@
     private async Task GotoGithub()
     {
         await Browser.Default.OpenAsync("https://github.com/BigBearKing/terraria-wiki-offline", BrowserLaunchMode.SystemPreferred);
+    }
+
+    /// <summary>
+    /// 设置 → 关于 → 开源许可：跳到许可见面（Components/Pages/Licenses.razor）。
+    /// 和"数据"详情一样用 <c>settings/…</c> 这种子页面路径，侧边栏仍高亮"设置"。
+    /// </summary>
+    private void OpenLicenses()
+    {
+        AppService.NavigateTo("settings/licenses");
     }
 
     private async Task ClearFailedList()

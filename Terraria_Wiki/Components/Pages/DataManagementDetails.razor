@@ -8,12 +8,9 @@
 @inject AppTaskRunner TaskRunner
 @inject PackageService PackageService
 <div class="page-anim page-content">
-    <div class="header-with-back">
-        <div class="icon-btn button" @onclick="BackToList">
-            <Icon Name="arrow-left" Size="24" />
-        </div>
-        <span class="content-title">@_selectedWiki?.Title</span>
-    </div>
+    @* CurrentPage 是 data/{id}（带 '/'）→ 自动显示返回箭头；这里显式传 OnBack，
+       因为 BackToList 删库成功后也要用（见文件末尾） *@
+    <PageHeader Title="@_selectedWiki?.Title" OnBack="BackToList" />
     <div class="list-container detail-container">
         @if (_selectedWiki != null)
         {
@@ -56,47 +53,44 @@
 
                 @* 2. 操作按钮 *@
                 <div class="action-row">
-                    <div class="primary-btn btn-blue" @onclick="ToggleUpdate">
-                        <Icon Name="sync" Size="16" />
+                    <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Blue" FullWidth="true"
+                                  Icon="sync" OnClick="ToggleUpdate">
                         @(IsUpdateRunning ? Loc.Get("Common.Pause") : GetUpdateButtonText())
-                    </div>
+                    </ActionButton>
 
-                    <div class="primary-btn btn-green" @onclick="ExportData">
-                        <Icon Name="export" Size="16" />
+                    <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Green" FullWidth="true"
+                                  Icon="export" OnClick="ExportData">
                         @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ExportData) ? AppState.Tasks[AppTaskType.ExportData].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.ExportData"))
-                    </div>
+                    </ActionButton>
 
                     @if (_hasFailedItems && !IsUpdateTaskInProgress)
                     {
-                        <div class="primary-btn btn-blue" @onclick="RetryFailedItems">
-                            <Icon Name="sync" Size="16" />
+                        <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Blue" FullWidth="true"
+                                      Icon="sync" OnClick="RetryFailedItems">
                             @Loc.Get("DataManagementDetails.RetryFailedButton")
-                        </div>
+                        </ActionButton>
                     }
 
                     @if (_selectedWiki.IsResourceDownloaded)
                     {
-                        <div class="primary-btn btn-red" @onclick="DeleteRes">
-                            <Icon Name="delete" Size="16" />
-                        @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.DeleteResources) ? AppState.Tasks[AppTaskType.DeleteResources].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteAssets"))
-                            
-                        </div>
+                        <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Red" FullWidth="true"
+                                      Icon="delete" OnClick="DeleteRes">
+                            @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.DeleteResources) ? AppState.Tasks[AppTaskType.DeleteResources].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteAssets"))
+                        </ActionButton>
                     }
                     else
                     {
-                        <div class="primary-btn btn-blue" @onclick="ToggleResourcesDownload">
-                            <Icon Name="download" Size="16" />
+                        <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Blue" FullWidth="true"
+                                      Icon="download" OnClick="ToggleResourcesDownload">
                             @(IsResourceDownloadRunning ? Loc.Get("Common.Pause") : GetResourceDownloadButtonText())
-                            
-                        </div>
+                        </ActionButton>
                     }
 
 
-                    <div class="primary-btn btn-red" @onclick="DeleteDatabase">
-                        <Icon Name="delete" Size="16" />
+                    <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Red" FullWidth="true"
+                                  Icon="delete" OnClick="DeleteDatabase">
                         @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.DeleteData) ? AppState.Tasks[AppTaskType.DeleteData].GetProcessingText(Loc) : Loc.Get("DataManagementDetails.DeleteDatabase"))
-                        
-                    </div>
+                    </ActionButton>
                 </div>
 
             }
@@ -111,9 +105,10 @@
                                 <div class="dl-title">@Loc.Get("DataManagementDetails.AllContent")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.AllContentDesc")</div>
                             </div>
-                            <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(true)">
+                            <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Blue" FullWidth="true"
+                                          OnClick="() => ToggleDownload(true)">
                                 @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(AppTaskType.DownloadAll))
-                            </div>
+                            </ActionButton>
                         </div>
                     }
                     @if (CurrentDownloadTask is null || CurrentDownloadTask.TaskType == AppTaskType.DownloadPages)
@@ -123,9 +118,10 @@
                                 <div class="dl-title">@Loc.Get("DataManagementDetails.BasicData")</div>
                                 <div class="dl-desc">@Loc.Get("DataManagementDetails.BasicDataDesc")</div>
                             </div>
-                            <div class="primary-btn btn-blue" @onclick="() => ToggleDownload(false)">
+                            <ActionButton Size="ButtonSize.Large" Tone="ButtonTone.Blue" FullWidth="true"
+                                          OnClick="() => ToggleDownload(false)">
                                 @(IsDownloadRunning ? Loc.Get("Common.Pause") : GetDownloadButtonText(AppTaskType.DownloadPages))
-                            </div>
+                            </ActionButton>
                         </div>
                     }
                 </div>

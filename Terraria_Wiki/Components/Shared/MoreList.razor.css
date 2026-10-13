@@ -53,13 +53,18 @@
     min-width: 0;
 }
 
-    .action-item .action-btn {
+    /* 功能项按钮：形状与四态都在 Components/Controls/IconButton.razor，
+       尺寸档（宽屏 Wide36 / 窄屏 Square42）由 C# 按 AppState.IsSmallScreen 传。
+       这里只剩"宽屏让按钮撑满整行、框内文字绝对定位在图标右侧"这点版面。
+       ::deep 是必须的：按钮是子组件渲染的元素；.action-btn 这个类由调用处传进去当钩子，
+       它同时还是 index.html:153 的 fit() 白名单。 */
+    .action-item ::deep .action-btn {
         position: relative;
         flex: 1;
         min-width: 0;
     }
 
-        .action-item .action-btn .btn-title {
+        .action-item ::deep .action-btn .ib__text {
             position: absolute;
             left: 48px; /* 8px 内边距 + 24px 图标 + 12px 间距 */
             right: 8px;
@@ -69,31 +74,17 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: clip;
+            font-size: 14px;
         }
-
-/* 宽屏 ± 按钮只显示图标，按钮内文字隐藏 */
-.zoom-actions .action-btn .btn-title {
-    display: none;
-}
 
 /* .narrow-title 只是个包壳；里面的 .btn-title-narrow 在宽屏是 display:none，所以包壳不占位置 */
 .narrow-title {
     display: contents;
 }
 
-.action-btn {
-    width: auto;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    border: 0;
-    padding: 0 8px;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    gap: 12px;
-}
+/* 功能项按钮（.action-btn）的形状、悬停、按下、禁用都在
+   Components/Controls/IconButton.razor（Wide36 / Square36 / Square42 档）+ app.css 的 .btn 一节；
+   本文件里 .action-btn 只剩"类名钩子"这一个身份（::deep 穿透 + fit() 白名单），不再有样式。 */
 
 .btn-title {
     display: inline-block;
@@ -119,28 +110,14 @@
     min-width: 0;
 }
 
-body.has-hover .action-btn:hover {
-    background-color: var(--hover-bg);
-    color: var(--text-primary);
-}
-
-.action-btn:active {
-    background-color: var(--pressed-bg);
-    color: var(--text-primary);
-}
-
 .more-list-tabs {
     display: none;
 }
 
 /* ===== 宽屏缩放控件 =====
    .zoom-wrapper 是列表里的一行，与普通按钮等高（36px）：
-   「缩放」文字占满左侧，.zoom-actions 靠右；两个 ± 是 36×36 方按钮，顺序「− 百分比 +」。 */
-
-/* 加减按钮的边长：宽屏 = 普通按钮高度 36px；窄屏那边会覆盖成 ± 用的方形尺寸 */
-.more-list {
-    --zoom-square: 36px;
-}
+   「缩放」文字占满左侧，.zoom-actions 靠右；两个 ± 是 36×36 方按钮（IconButton Square36），
+   顺序「− 百分比 +」。它们内部的文字早已去掉（靠 title 提示），所以这里不再需要隐藏框内文字的规则。 */
 
 .zoom-wrapper {
     display: flex;
@@ -174,27 +151,7 @@ body.has-hover .action-btn:hover {
     flex-shrink: 0;
 }
 
-    /* ± 方形按钮：边长交给 --zoom-square，宽屏时等于普通按钮高度 36px */
-    .zoom-actions .action-btn {
-        width: var(--zoom-square, 36px);
-        height: var(--zoom-square, 36px);
-        min-width: var(--zoom-square, 36px);
-        padding: 0;
-        gap: 0;
-        font-size: 18px;
-        line-height: 1;
-        justify-content: center;
-    }
-
-        /* + / − 是文字，压成单行才能落在按钮正中 */
-        .zoom-actions .action-btn > * {
-            line-height: 1;
-        }
-
-        /* 宽屏不需要按钮里的「放大 / 缩小」文字，靠 title 提示 */
-        .zoom-actions .action-btn > .btn-title {
-            display: none;
-        }
+    /* ± 方形按钮的边长/圆角/居中都在 IconButton 的 Square36 档里，这里不再覆盖 */
 
 /* 百分比：等宽数字，夹在两个 ± 之间 */
 .zoom-percent {
@@ -206,10 +163,7 @@ body.has-hover .action-btn:hover {
     user-select: none;
 }
 
-.action-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
+/* 禁用态（opacity .35 + not-allowed）已由 app.css 的 .btn:disabled 统一提供，这里不再各写一份 */
 
 /* 宽屏：显示 .zoom-wrapper，隐藏后面两个给窄屏用的 .zoom-btn */
 .more-list-actions > .zoom-btn {
@@ -233,8 +187,13 @@ body.has-hover .action-btn:hover {
         --action-square: 42px;
     }
 
-    /* 宽屏那套文字让位（按钮体内的 .btn-title、以及宽屏缩放行的标题） */
+    /* 宽屏那套文字让位：宽屏缩放行的标题，以及按钮内部的文字（组件的 .ib__text）。
+       窄屏只显示图标，文字改用框外的 .btn-title-narrow。 */
     .btn-title {
+        display: none;
+    }
+
+    .more-list-actions ::deep .ib__text {
         display: none;
     }
 
@@ -251,21 +210,15 @@ body.has-hover .action-btn:hover {
         flex: 0 0 auto;
     }
 
-        .action-item .action-btn {
+        /* 窄屏：按钮由 Wide36 档换成 Square42 档（尺寸在组件里，由 C# 按 IsSmallScreen 传），
+           这里只需把宽屏那条"相对定位 + 撑满整行"取消掉。 */
+        .action-item ::deep .action-btn {
             position: static;
-            display: flex;
             flex: 0 0 auto;
-            width: var(--action-square, 42px);
-            height: var(--action-square, 42px);
-            min-width: var(--action-square, 42px);
-            min-height: var(--action-square, 42px);
-            padding: 0;
-            gap: 0;
             justify-content: center;
-            border-radius: 10px;
         }
 
-            .action-item .action-btn svg {
+            .action-item ::deep .action-btn svg {
                 flex-shrink: 0;
             }
 
@@ -326,29 +279,26 @@ body.has-hover .action-btn:hover {
         gap: 6px;
     }
 
+    /* 形状留在这里，四态（含键盘焦点）来自 app.css 的 .btn；选中态走 is-selected 变量，
+       所以不再需要单独写一条 .active:hover 去压悬停。 */
     .more-list-tabs-item {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
         border-radius: 8px;
-        cursor: pointer;
         white-space: nowrap;
-        background: transparent;
-        color: var(--text-secondary);
         font-size: 14px;
-        transition: background 0.15s, color 0.15s;
+        --btn-bg: transparent;
+        --btn-fg: var(--text-secondary);
+        /* 迁移前它既没有 .button 类也没有 role，从没继承过 .btn 默认的 line-height: 1.2 */
+        line-height: normal;
     }
 
-        .more-list-tabs-item.active {
-            background: var(--blue-tertiary);
-            color: var(--blue-primary);
+        .more-list-tabs-item.is-selected {
+            --btn-bg: var(--blue-tertiary);
+            --btn-fg: var(--blue-primary);
             font-weight: 600;
-        }
-
-        body.has-hover .more-list-tabs-item:hover {
-            background: var(--hover-bg);
-            color: var(--text-primary);
         }
 
     .more-list-tabs-item-title {
@@ -359,30 +309,7 @@ body.has-hover .action-btn:hover {
         min-width: 0;
     }
 
-    .more-list-tabs-add {
-        height: 28px;
-        width: 28px;
-    }
-
-    .more-list-tabs-item-close {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border: none;
-        border-radius: 6px;
-        background: transparent;
-        color: var(--text-secondary);
-        cursor: pointer;
-        flex-shrink: 0;
-        padding: 0;
-        line-height: 1;
-        transition: background 0.15s, color 0.15s;
-    }
-
-        body.has-hover .more-list-tabs-item-close:hover {
-            background: var(--pressed-bg);
-            color: var(--text-primary);
-        }
+    /* "新建标签"（28×28）与"关闭标签"（24×24）都是 IconButton 的标准档位，
+       尺寸/圆角/悬停/按下/焦点由组件 + app.css 的 .btn 提供，这里不再各写一份
+       （关闭键以前拿 --pressed-bg 当悬停色，现在统一成 --hover-bg）。 */
 }

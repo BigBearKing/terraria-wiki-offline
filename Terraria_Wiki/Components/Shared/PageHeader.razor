@@ -1,0 +1,73 @@
+@using Terraria_Wiki.Components.Icons
+@using Terraria_Wiki.Services
+
+@* 所有内部页面共用的标题头（列表页、详情页都走这里，别再各写一份 <header class="page-header">）。
+   返回箭头**自动判断**：ShowBack 不传时看 AppState.CurrentPage 里有没有 '/' ——
+     · 一级页面（home / favorites / history / all-pages / data / settings）→ 不显示
+     · 子页面（data/1、settings/licenses、settings/licenses/LICENSE）→ 显示
+   右侧附加内容（历史页的"清空"、收藏页的数量）用 ChildContent 传进来，仍归调用方的作用域，
+   所以那些页面自己 .razor.css 里的样式照旧生效。 *@
+
+<header class="page-header">
+    <div class="title-group">
+        @if (HasBack)
+        {
+            @* 返回箭头：32×32 圆形图标按钮（尺寸/四态/键盘都在组件里）。
+               标题文字的本地化仍归调用方，但按钮自己需要一个无障碍名字，所以固定用"返回"。 *@
+            <IconButton Size="IconButtonSize.Round32" Icon="arrow-left" IconSize="24"
+                        Tone="IconButtonTone.Primary"
+                        Title="@App.Localization!.Get("TopBar.Back")"
+                        OnClick="HandleBack" />
+        }
+        <span class="content-title">@Title</span>
+    </div>
+    @ChildContent
+</header>
+
+@code {
+    /// <summary>标题文本。本地化由调用方自己做（组件不碰 Loc）。</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// 是否显示返回箭头。null（不传）＝自动判断：<see cref="AppState.CurrentPage"/> 里含 '/'
+    /// 就当成子页面、显示返回。要强行改某个页面的行为时才传。
+    /// </summary>
+    [Parameter]
+    public bool? ShowBack { get; set; }
+
+    /// <summary>
+    /// 点返回箭头时触发。<b>不传就走默认行为</b>：返回当前页面的上一级
+    /// （<c>settings/licenses/LICENSE</c> → <c>settings/licenses</c> → <c>settings</c>；
+    /// 已经是一级页面就回 <c>home</c>）。规则与 Android 硬件返回键一致（见 BackEventsService 的"砍掉最后一段"）。
+    /// </summary>
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    /// <summary>标题右侧的附加内容（可选）。</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool HasBack => ShowBack ?? (AppState.CurrentPage?.Contains('/') ?? false);
+
+    private async Task HandleBack()
+    {
+        if (OnBack.HasDelegate)
+        {
+            await OnBack.InvokeAsync();
+            return;
+        }
+
+        NavigateToParent();
+    }
+
+    /// <summary>默认返回：把 <see cref="AppState.CurrentPage"/> 的最后一段砍掉；本身已是单段就回 home。</summary>
+    private void NavigateToParent()
+    {
+        string currentPage = AppState.CurrentPage ?? string.Empty;
+        int lastSlash = currentPage.LastIndexOf('/');
+        string parent = lastSlash > 0 ? currentPage[..lastSlash] : "home";
+
+        AppService.NavigateTo(parent);
+    }
+}

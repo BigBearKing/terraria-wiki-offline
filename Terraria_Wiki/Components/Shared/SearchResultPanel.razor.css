@@ -1,4 +1,4 @@
-﻿/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
+/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
     top: calc(var(--header-height) + 4px);
@@ -26,15 +26,13 @@
     padding: 0;
 }
 
+/* 结果行的悬停/按下/焦点四态来自 app.css 的 .btn（本文件只留版面）。
+   选中态不适用（结果行没有"选中"概念）。
+   line-height 写回 normal：迁移前它是普通 <li>，从没继承过 .btn 默认的 1.2，
+   不写回结果行会矮 3px 左右。 */
 .result-item {
     padding: 12px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-
-body.has-hover .result-item:hover {
-    background-color: var(--hover-bg);
+    line-height: normal;
 }
 
 .result-title {

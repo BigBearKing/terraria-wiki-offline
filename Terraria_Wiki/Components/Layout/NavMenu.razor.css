@@ -43,23 +43,24 @@
     display: none;
 }
 
+/* 导航项：形状留在这里（48 高、圆角 8），四态与键盘焦点来自 app.css 的 .btn。
+   选中态从 .actived 改成 .is-selected 并改用变量表达 —— 以前那两条
+   `background-color / color: ... !important` 是为了压住悬停规则，
+   现在 .btn 的选中态规则会把悬停/按下都挡掉，!important 可以删了。
+   顺带：悬停现在有底色（原来只变色），与全站其它按钮一致。 */
 .nav-item {
     display: flex;
     align-items: center;
     padding: 0;
     height: 48px;
     border-radius: 8px;
-    background-color: transparent;
-    color: var(--text-secondary);
+    --btn-bg: transparent;
+    --btn-fg: var(--text-secondary);
 }
 
-body.has-hover .nav-item:hover {
-    color: var(--text-primary);
-}
-
-.nav-item.actived {
-    background-color: var(--blue-tertiary) !important;
-    color: var(--blue-primary) !important;
+.nav-item.is-selected {
+    --btn-bg: var(--blue-tertiary);
+    --btn-fg: var(--blue-primary);
 }
 
 .icon-container {

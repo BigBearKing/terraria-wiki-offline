@@ -188,6 +188,8 @@
         AppService.Init(NavManager, JS);
         await ThemeService.InitIframeThemeAsync(JS);
         await JS.InvokeVoidAsync("setPlatform", AppState.IsWindows ? "True" : "False");
+        // 悬停反馈：桌面加上 has-hover（CSS 里的 `body.has-hover .xxx:hover` 才会生效），
+        // 移动端不加 —— 触屏没有悬停，加了会出现"点完还留着悬停态"。
         if (AppState.IsMobile)
         {
             await JS.InvokeVoidAsync("initHover", "False");

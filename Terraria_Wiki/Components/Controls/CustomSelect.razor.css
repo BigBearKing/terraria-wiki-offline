@@ -1,3 +1,7 @@
+/* CustomSelect：触发器与选项都是真 <button>，所以直接挂上全局的 .btn 拿
+   「复位 + 悬停 / 按下 / 禁用 / 键盘焦点」四态（本文件原来把那条复位规则手抄了一遍），
+   这里只剩几何与配色。圆角按收敛后的刻度：触发器 8、浮层 12、选项 8（原来是 10 / 10 / 7）。 */
+
 .custom-select-container {
     position: relative;
     width: 125px;
@@ -16,24 +20,12 @@
     min-width: 0;
     min-height: 38px;
     padding: 8px 32px 8px 16px;
-    border-radius: 10px;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    font: inherit;
+    border-radius: 8px;
     font-size: 0.9rem;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
-    text-align: left;
-    cursor: pointer;
-    border: 0;
-    outline: none;
-    transition: background-color 0.2s;
-}
-
-body.has-hover .custom-select-trigger:hover {
-    background-color: var(--hover-bg);
+    --btn-bg: var(--bg-color);
+    --btn-fg: var(--text-primary);
+    --btn-hover-fg: var(--text-primary);
+    /* 不再写 outline: none —— 焦点环改由 .btn:focus-visible 提供（以前这个触发器完全没有焦点提示） */
 }
 
 .custom-select-value {
@@ -74,7 +66,7 @@ body.has-hover .custom-select-trigger:hover {
     padding: 4px;
     overflow-y: auto;
     border: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     background-color: var(--bg-color);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
     gap: 4px;
@@ -83,26 +75,14 @@ body.has-hover .custom-select-trigger:hover {
 .custom-select-option {
     width: 100%;
     padding: 9px 12px;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: var(--text-primary);
-    font: inherit;
+    border-radius: 8px;
     font-size: 0.9rem;
-    line-height: 1.2;
-    text-align: left;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
+    --btn-fg: var(--text-primary);
 }
 
-body.has-hover .custom-select-option:hover,
-.custom-select-option.selected {
-    background-color: var(--hover-bg);
-}
-
-.custom-select-option.selected {
-    color: var(--blue-primary);
+/* 选中项：底色与字色都走变量 —— .btn 的选中态规则保证悬停/按下不会把它冲掉 */
+.custom-select-option.is-selected {
+    --btn-bg: var(--hover-bg);
+    --btn-fg: var(--blue-primary);
     font-weight: 600;
 }

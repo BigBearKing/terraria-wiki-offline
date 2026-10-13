@@ -12,22 +12,33 @@
                 {
                     var isActive = tab.Id == AppState.ActiveTabId;
                     var tabId = tab.Id;
-                    <div class="tab-item @(isActive ? "active" : "")" @onclick="() => OnTabClick(tabId)" @onclick:preventDefault>
+                    @* 标签项是"带自己形状的可点容器"，所以只共用 .btn 的四态与下面这套键盘约定
+                       （形状仍在 TabBar.razor.css 里）；选中态用 is-selected，
+                       这样悬停/按下都不会把选中底色冲掉，不再需要额外写 .active:hover。 *@
+                    <div class="btn tab-item @(isActive ? "is-selected" : "")"
+                         role="button"
+                         tabindex="0"
+                         aria-current="@(isActive ? "true" : null)"
+                         @onclick="() => OnTabClick(tabId)"
+                         @onclick:preventDefault
+                         @onkeydown="args => OnTabKeyDownAsync(args, tabId)">
                         <span class="tab-title">@GetTabTitle(tab)</span>
                         @if (AppState.Tabs.Count > 1)
                         {
-                            <button class="tab-close" @onclick="() => OnTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
-                                <Icon Name="dismiss"></Icon>
-                            </button>
+                            <IconButton Size="IconButtonSize.Square16" Icon="dismiss" IconSize="22"
+                                        StopPropagation="true"
+                                        Title="@App.Localization!.Get("TabBar.Close")"
+                                        OnClick="() => OnTabClose(tabId)" />
                         }
                     </div>
                 }
             </div>
             @if (AppState.CanAddTab)
             {
-                <button class="tab-add" @onclick="OnAddTab" title="@App.Localization!.Get("TabBar.NewTab")">
-                    <Icon Name="add"></Icon>
-                </button>
+                <IconButton Size="IconButtonSize.Square26" Icon="add" IconSize="22"
+                            Tone="IconButtonTone.Primary" Class="tab-add"
+                            Title="@App.Localization!.Get("TabBar.NewTab")"
+                            OnClick="OnAddTab" />
             }
         }
     </div>
@@ -64,6 +75,10 @@
         if (tabId != AppState.ActiveTabId)
             await AppService.SwitchToTabAsync(tabId);
     }
+
+    /// <summary>键盘激活（Enter / Space）走与点击同一条路；判定规则在 KeyboardActivation 里只有一份。</summary>
+    private Task OnTabKeyDownAsync(KeyboardEventArgs args, string tabId) =>
+        KeyboardActivation.InvokeIfActivateKey(args, () => OnTabClick(tabId));
 
     private async Task OnTabClose(string tabId)
     {

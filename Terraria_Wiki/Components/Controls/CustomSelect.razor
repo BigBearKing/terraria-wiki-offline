@@ -3,7 +3,7 @@
 
 <div class="custom-select-container">
     <button type="button"
-            class="custom-select-trigger"
+            class="btn custom-select-trigger"
             aria-haspopup="listbox"
             aria-expanded="@_isOpen"
             @onclick="ToggleOpen"
@@ -26,7 +26,7 @@
             @foreach (var option in Options)
             {
                 <button type="button"
-                        class="custom-select-option @(IsSelected(option) ? "selected" : "")"
+                        class="btn custom-select-option @(IsSelected(option) ? "is-selected" : "")"
                         role="option"
                         aria-selected="@IsSelected(option)"
                         @onclick="() => SelectAsync(option.Value)">

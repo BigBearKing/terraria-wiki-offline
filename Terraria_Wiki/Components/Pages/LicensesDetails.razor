@@ -1,0 +1,79 @@
+@page "/settings/licenses/{FileName}"
+@implements IDisposable
+@using Terraria_Wiki.Services
+
+@* 开源许可详情页：路由参数就是打包时的文件名（LICENSE / THIRD_PARTY_NOTICES.md / WebView2-LICENSE.txt …），
+   与"数据"详情页 /data/{WikiId:int} 同一个形态：返回头用共享组件，返回时把 CurrentPage 与路由一起退回列表。 *@
+
+<div class="page-anim page-content">
+
+    @* 不传 ShowBack / OnBack：CurrentPage 是 settings/licenses/{文件名}（带 '/'）→ 自动显示返回箭头，
+       默认行为就是退回 /settings/licenses *@
+    <PageHeader Title="@GetTitle()" />
+
+    <div class="list-container detail-container">
+        @if (_loading)
+        {
+            <div class="license-empty">@Loc.Get("Licenses.Loading")</div>
+        }
+        else if (_content is null)
+        {
+            <div class="license-empty">@Loc.Get("Licenses.NotFound")</div>
+        }
+        else
+        {
+            <pre class="license-text">@_content</pre>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>路由参数：文件名（见 <see cref="LicenseCatalog"/>）。</summary>
+    [Parameter]
+    public string? FileName { get; set; }
+
+    private LicenseCatalog.Document? _document;
+    private string? _content;
+    private bool _loading;
+
+    /// <summary>已加载过的文件名：参数重设时避免重复读盘。</summary>
+    private string? _loadedFileName;
+
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += RefreshUI;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= RefreshUI;
+    }
+
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(_loadedFileName, FileName, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _loadedFileName = FileName;
+        _document = LicenseCatalog.Find(FileName);
+        _content = null;
+
+        if (_document is null)
+        {
+            _loading = false;
+            return;                 // 名字不在清单里 → 走"未找到该许可文件"
+        }
+
+        _loading = true;
+        StateHasChanged();          // 先把"正在读取"画出来，再等文件读完
+
+        _content = await LicenseCatalog.ReadAsync(_document.FileName);
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private string GetTitle() => _document is { } doc ? Loc.Get(doc.NameKey) : FileName ?? "";
+}

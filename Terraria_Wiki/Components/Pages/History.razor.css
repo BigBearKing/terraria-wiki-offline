@@ -1,14 +1,18 @@
+/* 历史列表：条目本身的外形已收进 Components/Controls/RowButton.razor（内边距 12 / 圆角 12 /
+   悬停 / 按下 / 键盘可达），头部"清空历史"收进 ActionButton（Text + Link 档）。
+   这里只剩时间线的骨架（分组标题行、左侧缩进、组间与条目间距）与行内文字。 */
+
+/* 行间距用相邻兄弟 margin 表达，容器 gap 归零：Virtualize 会**无条件**在列表最前面插一个
+   0 高度的 spacer div（见 dotnet/aspnetcore 的 Virtualize.BuildRenderTree），容器若用 gap，
+   这 4px 会被它白吃一份，第一个日期分组凭空下沉 4px。
+   （不能用 :first-child —— 占着那个位置的是 spacer）。 */
 .history-list {
-    gap: 4px;
+    gap: 0;
     padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
-.clear-btn {
-    background: transparent;
-    border: none;
-    color: var(--blue-primary);
-    cursor: pointer;
-    font-weight: 500;
+.history-list > .timeline-row + .timeline-row {
+    margin-top: 4px;
 }
 
 .timeline-row {
@@ -34,14 +38,6 @@
 .item-row {
     padding-left: 24px;
     width: 100%;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
 }
 
 .time-stamp {

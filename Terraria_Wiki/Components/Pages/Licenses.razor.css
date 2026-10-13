@@ -1,0 +1,34 @@
+/* 许可列表：卡片外形（--bg-color-secondary 底 / 16px 内边距 / 16 圆角 / 12px 行间距 / 悬停）已收进
+   Components/Controls/RowButton.razor（Variant=Card、ContentGap=12、Spacing=12），
+   这里只剩卡片内部的两行文字与右侧"查看"。 */
+
+.license-list {
+    gap: 0;
+    padding: 12px 0 max(12px, var(--safe-area-bottom));
+}
+
+.license-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.license-card-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.license-card-file {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* 右侧"查看"（用文字，不用跳转图标）；字号/颜色沿用全局 .sub-text */
+.license-card-action {
+    flex-shrink: 0;
+    align-self: center;
+}

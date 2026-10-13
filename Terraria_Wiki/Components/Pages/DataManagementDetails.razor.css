@@ -47,22 +47,6 @@
     margin-top: 6px;
 }
 
-.icon-btn {
-    padding: 4px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.header-with-back {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: large;
-    font-weight: 500;
-}
-
 .detail-container {
     display: flex;
     flex-direction: column;
@@ -102,49 +86,13 @@
     text-align: center;
 }
 
+/* 操作按钮本身（内边距 12 / 圆角 12 / 字号 1rem / 语义色 / 悬停提亮 / 按下缩放）已收进
+   Components/Controls/ActionButton.razor（Large + Blue|Green|Red 档），
+   这里只剩按钮的排布（4 列网格，窄屏降成 2 列 / 1 列，见文件末尾）。 */
 .action-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-}
-
-.primary-btn {
-    padding: 12px;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    gap: 8px;
-    transition: filter 0.2s, transform 0.2s;
-    border: none;
-}
-
-body.has-hover .primary-btn:hover {
-    filter: brightness(1.2);
-}
-
-.primary-btn:active {
-    filter: brightness(1);
-    transform: scale(0.97);
-}
-
-.btn-blue {
-    background-color: var(--blue-tertiary);
-    color: var(--blue-primary);
-}
-
-.btn-green {
-    background-color: var(--green-tertiary);
-    color: var(--green-primary);
-}
-
-.btn-red {
-    background-color: var(--red-tertiary);
-    color: var(--red-primary);
 }
 
 .title-placeholder {
@@ -152,7 +100,11 @@ body.has-hover .primary-btn:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 30px 20px;
+    /* 上 12px：头部留白统一值（同设置 / 数据 / 许可列表 / 许可详情）。这里原来是 30px，
+       因为本页以前用自己的 .header-with-back（上下都没有内边距），30px 里有一部分是在替
+       标题头补 padding-bottom；现在标题头由 PageHeader 统一给了 12px，就等于补了两遍。
+       下 30px：hero 与统计卡之间的呼吸，保留。 */
+    padding: 12px 20px 30px;
     text-align: center;
 }
 

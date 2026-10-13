@@ -18,42 +18,42 @@
 
     <nav class="nav-items">
 
-        <button class="nav-item button @GetActiveClass("home")" @onclick='() => AppService.NavigateTo("home")'>
+        <button class="btn nav-item @GetActiveClass("home")" @onclick='() => AppService.NavigateTo("home")'>
             <div class="icon-container">
                 <Icon Name="main"></Icon>
             </div>
             <span class="text-container">@App.Localization!.Get("Common.Home")</span>
         </button>
 
-        <button class="nav-item button @GetActiveClass("favorites")" @onclick='() => AppService.NavigateTo("favorites")'>
+        <button class="btn nav-item @GetActiveClass("favorites")" @onclick='() => AppService.NavigateTo("favorites")'>
             <div class="icon-container">
                 <Icon Name="favorites"></Icon>
             </div>
             <span class="text-container">@App.Localization!.Get("Common.Favorites")</span>
         </button>
 
-        <button class="nav-item button @GetActiveClass("history")" @onclick='() => AppService.NavigateTo("history")'>
+        <button class="btn nav-item @GetActiveClass("history")" @onclick='() => AppService.NavigateTo("history")'>
             <div class="icon-container">
                 <Icon Name="history"></Icon>
             </div>
             <span class="text-container">@App.Localization!.Get("Common.History")</span>
         </button>
 
-        <button class="nav-item button @GetActiveClass("all-pages")" @onclick='() => AppService.NavigateTo("all-pages")'>
+        <button class="btn nav-item @GetActiveClass("all-pages")" @onclick='() => AppService.NavigateTo("all-pages")'>
             <div class="icon-container">
                 <Icon Name="all-pages"></Icon>
             </div>
             <span class="text-container">@App.Localization!.Get("Common.Pages")</span>
         </button>
 
-        <button class="nav-item button @GetActiveClass("data")" @onclick='() => AppService.NavigateTo("data")'>
+        <button class="btn nav-item @GetActiveClass("data")" @onclick='() => AppService.NavigateTo("data")'>
             <div class="icon-container">
                 <Icon Name="data"></Icon>
             </div>
             <span class="text-container">@App.Localization!.Get("Common.Data")</span>
         </button>
 
-        <button class="nav-item button @GetActiveClass("settings")" @onclick='() => AppService.NavigateTo("settings")'>
+        <button class="btn nav-item @GetActiveClass("settings")" @onclick='() => AppService.NavigateTo("settings")'>
             <div class="icon-container">
                 <Icon Name="settings"></Icon>
             </div>
@@ -63,7 +63,7 @@
     </nav>
 
     <div class="sidebar-footer">
-        <button class="nav-item button" @onclick="ToggleLogPanel">
+        <button class="btn nav-item" @onclick="ToggleLogPanel">
             <div class="icon-container @(AppState.HasActiveTasks ? "rotating" : "")" style=" @(AppState.HasActiveTasks ? "color:var(--blue-primary)" : "")">
                 <Icon Name="sync"> </Icon>
             </div>
@@ -71,7 +71,7 @@
                 @App.Localization!.Get("Common.Log")
             </span>
         </button>
-        <button class="nav-item theme-toggle button" @onclick="ToggleTheme">
+        <button class="btn nav-item" @onclick="ToggleTheme">
             <div class="icon-container">
                 <Icon Name=@(AppState.IsDarkTheme ? "sun" : "moon")> </Icon>
             </div>
@@ -112,10 +112,11 @@
                             or nameof(AppState.IsDarkTheme))
             RefreshUI();
     }
-    // 核心逻辑：判断当前按钮是否应该高亮
+    // 核心逻辑：判断当前按钮是否应该高亮。返回 is-selected —— app.css 的 .btn 选中态规则
+    // 会保证悬停/按下不改写它的底色，所以这里不再需要 !important 去钉。
     private string GetActiveClass(string pageName)
     {
-        return AppState.CurrentPage.Contains(pageName) ? "actived" : "";
+        return AppState.CurrentPage.Contains(pageName) ? "is-selected" : "";
     }
 
     // 新增：点击遮罩层关闭侧边栏

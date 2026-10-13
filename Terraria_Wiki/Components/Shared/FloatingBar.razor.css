@@ -18,31 +18,9 @@
     cursor: default;
 }
 
-/* 条上的后退 / home 按钮：宽比高宽一点（不是正方形），直角、无缝紧排 */
-.floating-bar .bar-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 32px;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 0;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-}
-
-body.has-hover .floating-bar .bar-btn:hover {
-    background: var(--hover-bg);
-}
-
-/* 按下时与全局 .button:active 的 !important 对齐，避免出现"按下没反馈" */
-.floating-bar .bar-btn:active {
-    background: var(--pressed-bg) !important;
-}
+/* 条上的后退 / home / ± / 收起 / 退出：形状与四态都在
+   Components/Controls/IconButton.razor（Bar 档：44×32 直角，唯一保留直角的一档；
+   退出键用 Danger 档，悬停转红）+ app.css 的 .btn 一节，本文件不再有按钮样式。 */
 
 /* 中间那段：当前页面标题。吃掉剩余宽度、过长省略号；
    它本身在拖动区内（没有 data-tauri-drag-region="false"），按住标题也能拖窗口。 */
@@ -147,18 +125,5 @@ body.has-hover .floating-bar .bar-btn:hover {
     font-size: 0.75rem;
 }
 
-/* 条最右边的"退出悬浮窗模式"：hover 变红（图标用红色、底色用红色低透明） */
-body.has-hover .floating-bar .bar-btn-exit:hover {
-    background: var(--red-tertiary);
-    color: var(--red-primary);
-}
-
-.floating-bar .bar-btn-exit:active {
-    background: var(--red-tertiary) !important;
-    color: var(--red-primary);
-}
-
-/* 右侧第一个"收起为圆球"：走全局悬停色即可，与后退/home 一致 */
-.floating-bar .bar-btn-collapse:active {
-    background: var(--pressed-bg) !important;
-}
+/* 条最右边的"退出悬浮窗模式"的红色悬停/按下、以及"收起为圆球"的按下反馈，
+   都已由 IconButton 的 Danger 档与共享的 .btn 表达，这里不再各写一份。 */

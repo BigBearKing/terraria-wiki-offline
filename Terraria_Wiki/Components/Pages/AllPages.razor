@@ -1,4 +1,4 @@
-﻿@page "/all-pages"
+@page "/all-pages"
 @using System.ComponentModel
 @using Terraria_Wiki.Models
 @using Terraria_Wiki.Services
@@ -6,18 +6,17 @@
 
 <div class="page-anim page-content">
 
-    <header class="page-header">
-        <span class="content-title">@Loc.Get("AllPages.Index")</span>
-
+    <PageHeader Title="@Loc.Get("AllPages.Index")">
         <span class="sub-text">@Loc.Get("AllPages.FoundCount", totalPageCount)</span>
-    </header>
+    </PageHeader>
 
     <div class="list-container all-pages-list">
         <Virtualize @ref="_virtualizeComponent" ItemsProvider="@LoadPages" Context="wikipage" OverscanCount="25">
-            <div class="list-item button" @onclick="() => AppService.OpenPageAsync(wikipage.Title)">
+            <RowButton Justify="RowJustify.SpaceBetween" Spacing="2"
+                       OnClick="() => AppService.OpenPageAsync(wikipage.Title)">
                 <span class="page-name">@wikipage.Title</span>
                 <span class="page-time">@wikipage.LastModified.ToString("yy-MM-dd HH:mm")</span>
-            </div>
+            </RowButton>
         </Virtualize>
     </div>
 </div>

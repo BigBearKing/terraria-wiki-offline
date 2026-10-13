@@ -1,0 +1,22 @@
+/* 全部页面共用的标题头。
+   外框沿用 app.css 里的全局 .page-header（display:flex / space-between / padding: 8px 0 12px），
+   这里补两件事：标题与箭头成组靠左（右侧内容由 space-between 推到右边），
+   以及把头部高度钉成常量（见下）。
+   返回箭头本身是 Components/Controls/IconButton.razor（Round32 + Primary 档），
+   所以这里不再有按钮样式。 */
+
+/* 竖直方向一律居中对齐，不再按"有没有返回箭头"分成 baseline / center 两支：
+   .icon-btn 是 24 + 4×2 = 32px，比标题行盒（1.4rem ≈ 31px）高一点点，所以以前"有箭头"的
+   子页面头部比一级页面高 1px，"标题 → 正文"的间距也跟着差 1px。
+   配合 .title-group 的 min-height，所有页面头部内容高度都固定 32px。 */
+.page-header {
+    align-items: center;
+}
+
+.title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 32px;
+}

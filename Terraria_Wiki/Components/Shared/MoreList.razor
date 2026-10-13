@@ -7,12 +7,15 @@
 <div class="more-list @(AppState.MoreListOpen ? "show" : "")" data-tauri-drag-region>
         @* 每个功能项两套文字：.btn-title 给宽屏（在按钮内部），
            .narrow-title 里的 .btn-title-narrow 给窄屏（在按钮外部下方）。由 CSS 按断点各自显隐。 *@
+        @* 功能项的按钮 = IconButton（Wide36 档：高 36、图标 + 文字；窄屏切成 Square42 方块）。
+           尺寸由 C# 的 AppState.IsSmallScreen 决定，不再用媒体查询盖组件尺寸 —— 与本组件
+           "显隐/归属全由 C# 判断"的既有约定一致（见文件末尾的监听）。
+           保留 .action-btn 类：index.html:153 的 fit() 靠它跳过字号自适应；本文件也用它做 ::deep 钩子。
+           .btn-title-narrow（框外文字）仍在本文件自己的 markup 里，样式不动。 *@
         <div class="more-list-actions">
             <div class="action-item">
-                <button class="action-btn button" title="@App.Localization!.Get("Common.FindInPage")" @onclick="FindInPage">
-                    <Icon Name="text-search" Size="24"></Icon>
-                    <div class="btn-title">@App.Localization!.Get("Common.FindInPage")</div>
-                </button>
+                <IconButton Size="@ActionsSize" Icon="text-search" IconSize="24" Text="@App.Localization!.Get("Common.FindInPage")"
+                            Class="action-btn" Title="@App.Localization!.Get("Common.FindInPage")" OnClick="FindInPage" />
                 <div class="narrow-title">
                     <div class="btn-title-narrow">@App.Localization!.Get("Common.FindInPage")</div>
                 </div>
@@ -20,10 +23,9 @@
             @if (AppState.IsWindows || AppState.IsMacCatalyst)
             {
                 <div class="action-item">
-                    <button class="action-btn button" title="@App.Localization!.Get("TopBar.PinToTop")" style="@(AppState.IsPinned ? "color:var(--blue-primary)" : "")" @onclick="TogglePinStateAsync">
-                        <Icon Name="@(AppState.IsPinned ? "pin-filled" : "pin")" Size="24"></Icon>
-                        <div class="btn-title">@App.Localization!.Get("TopBar.PinToTop")</div>
-                    </button>
+                    <IconButton Size="@ActionsSize" Icon="@(AppState.IsPinned ? "pin-filled" : "pin")" IconSize="24"
+                                Text="@App.Localization!.Get("TopBar.PinToTop")" Active="AppState.IsPinned" Toggle="true"
+                                Class="action-btn" Title="@App.Localization!.Get("TopBar.PinToTop")" OnClick="TogglePinStateAsync" />
                     <div class="narrow-title">
                         <div class="btn-title-narrow">@App.Localization!.Get("TopBar.PinToTop")</div>
                     </div>
@@ -33,10 +35,9 @@
             @if (AppState.IsWindows)
             {
                 <div class="action-item">
-                    <button class="action-btn button" title="@App.Localization!.Get("MoreList.FloatingWindow")" style="@(AppState.FloatingSearchOpen ? "color:var(--blue-primary)" : "")" @onclick="ToggleFloatingSearch">
-                        <Icon Name="floating-window" Size="24"></Icon>
-                        <div class="btn-title">@App.Localization!.Get("MoreList.FloatingWindow")</div>
-                    </button>
+                    <IconButton Size="@ActionsSize" Icon="floating-window" IconSize="24"
+                                Text="@App.Localization!.Get("MoreList.FloatingWindow")" Active="AppState.FloatingSearchOpen" Toggle="true"
+                                Class="action-btn" Title="@App.Localization!.Get("MoreList.FloatingWindow")" OnClick="ToggleFloatingSearch" />
                     <div class="narrow-title">
                         <div class="btn-title-narrow">@App.Localization!.Get("MoreList.FloatingWindow")</div>
                     </div>
@@ -48,29 +49,23 @@
                 <Icon Name="zoom-in" Size="24"></Icon>
                 <div class="btn-title">@App.Localization!.Get("Settings.WikiZoom")</div>
                 <div class="zoom-actions">
-                    <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
-                        <Icon Name="subtract" Size="20"></Icon>
-                        <div class="btn-title">@App.Localization!.Get("MoreList.ZoomOut")</div>
-                    </button>
+                    <IconButton Size="IconButtonSize.Square36" Icon="subtract" IconSize="20" Disabled="IsMinZoom"
+                                Class="action-btn zoom-btn" Title="@App.Localization!.Get("MoreList.ZoomOutTitle")" OnClick="ZoomOut" />
                     <span class="zoom-percent">@(AppState.WikiZoom)%</span>
-                    <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
-                        <Icon Name="add" Size="20"></Icon>
-                        <div class="btn-title">@App.Localization!.Get("MoreList.ZoomIn")</div>
-                    </button>
+                    <IconButton Size="IconButtonSize.Square36" Icon="add" IconSize="20" Disabled="IsMaxZoom"
+                                Class="action-btn zoom-btn" Title="@App.Localization!.Get("MoreList.ZoomInTitle")" OnClick="ZoomIn" />
                 </div>
             </div>
             <div class="action-item zoom-narrow">
-                <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomOutTitle")" @onclick="ZoomOut" disabled="@IsMinZoom">
-                    <Icon Name="zoom-out" Size="24"></Icon>
-                </button>
+                <IconButton Size="IconButtonSize.Square42" Icon="zoom-out" IconSize="24" Disabled="IsMinZoom"
+                            Class="action-btn zoom-btn" Title="@App.Localization!.Get("MoreList.ZoomOutTitle")" OnClick="ZoomOut" />
                 <div class="narrow-title">
                     <div class="btn-title-narrow">@App.Localization!.Get("MoreList.ZoomOut")</div>
                 </div>
             </div>
             <div class="action-item zoom-narrow">
-                <button class="action-btn button zoom-btn" title="@App.Localization!.Get("MoreList.ZoomInTitle")" @onclick="ZoomIn" disabled="@IsMaxZoom">
-                    <Icon Name="zoom-in" Size="24"></Icon>
-                </button>
+                <IconButton Size="IconButtonSize.Square42" Icon="zoom-in" IconSize="24" Disabled="IsMaxZoom"
+                            Class="action-btn zoom-btn" Title="@App.Localization!.Get("MoreList.ZoomInTitle")" OnClick="ZoomIn" />
                 <div class="narrow-title">
                     <div class="btn-title-narrow">@App.Localization!.Get("MoreList.ZoomIn")</div>
                 </div>
@@ -85,9 +80,8 @@
                     <span class="more-list-tabs-title">@App.Localization!.Get("TabBar.Tabs")</span>
                     @if (AppState.CanAddTab)
                     {
-                        <button class="more-list-tabs-add action-btn" @onclick="OnAddMoreTab" title="@App.Localization!.Get("TabBar.NewTab")">
-                            <Icon Name="add" Size="16"></Icon>
-                        </button>
+                        <IconButton Size="IconButtonSize.Square28" Icon="add" IconSize="16"
+                                    Title="@App.Localization!.Get("TabBar.NewTab")" OnClick="OnAddMoreTab" />
                     }
                 </div>
                 <div class="more-list-tabs-list">
@@ -95,13 +89,20 @@
                     {
                         var isActive = tab.Id == AppState.ActiveTabId;
                         var tabId = tab.Id;
-                        <div class="more-list-tabs-item @(isActive ? "active" : "")" @onclick="() => OnMoreTabClick(tabId)">
+                        @* 同 TabBar 的标签项：形状留在这里，四态与键盘约定共用 .btn + KeyboardActivation *@
+                        <div class="btn more-list-tabs-item @(isActive ? "is-selected" : "")"
+                             role="button"
+                             tabindex="0"
+                             aria-current="@(isActive ? "true" : null)"
+                             @onclick="() => OnMoreTabClick(tabId)"
+                             @onkeydown="args => OnMoreTabKeyDownAsync(args, tabId)">
                             <span class="more-list-tabs-item-title">@GetMoreTabTitle(tab)</span>
                             @if (AppState.Tabs.Count > 1)
                             {
-                                <button class="more-list-tabs-item-close" @onclick="() => OnMoreTabClose(tabId)" @onclick:stopPropagation="true" title="@App.Localization!.Get("TabBar.Close")">
-                                    <Icon Name="dismiss" Size="14"></Icon>
-                                </button>
+                                <IconButton Size="IconButtonSize.Square24" Icon="dismiss" IconSize="14"
+                                            StopPropagation="true"
+                                            Title="@App.Localization!.Get("TabBar.Close")"
+                                            OnClick="() => OnMoreTabClose(tabId)" />
                             }
                         </div>
                     }
@@ -145,6 +146,18 @@
             ? AppState.ActiveWikiBook?.DefaultPageTitle ?? AppState.ActiveWikiBook?.Title ?? string.Empty
             : tab.Title;
     }
+
+    /// <summary>
+    /// 功能项按钮的尺寸：宽屏 = 高 36 + 图标 + 文字，窄屏 = 42×42 方块。
+    /// 由 C# 判断而不是 CSS 断点，理由与"标签归属"一样：避免 CSS 与组件两套规则打架
+    /// （见 OnAppStatePropertyChanged 里对 IsSmallScreen 的监听）。
+    /// </summary>
+    private IconButtonSize ActionsSize =>
+        AppState.IsSmallScreen ? IconButtonSize.Square42 : IconButtonSize.Wide36;
+
+    /// <summary>键盘激活（Enter / Space）与点击同路；判定规则只在 KeyboardActivation 里一份。</summary>
+    private Task OnMoreTabKeyDownAsync(KeyboardEventArgs args, string tabId) =>
+        KeyboardActivation.InvokeIfActivateKey(args, () => OnMoreTabClick(tabId));
 
     private void CloseMoreList()
     {

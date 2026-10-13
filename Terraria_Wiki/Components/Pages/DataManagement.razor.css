@@ -1,45 +1,20 @@
+/* 数据管理页：语言筛选胶囊与维基卡片都已收进组件 ——
+     · 三颗筛选胶囊 → ActionButton（Pill + Neutral / BlueSolid）
+     · 每张维基卡 → RowButton（Card 档；选中态走 Selected，卡片间 12px 由 Spacing 给）
+   这里只剩筛选行、卡片内部的文字与状态徽标。 */
+
 .lang-filter {
     display: flex;
     gap: 8px;
     padding-bottom: 4px;
 }
 
-.lang-btn {
-    border: none;
-    background: var(--bg-color);
-    color: var(--text-secondary);
-    padding: 6px 16px;
-    border-radius: 99px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-body.has-hover .lang-btn:hover {
-    background: var(--bg-color-secondary);
-}
-
-.lang-active {
-    background: var(--blue-secondary);
-    color: #fff;
-}
-
-body.has-hover .lang-active:hover {
-    background: var(--blue-secondary);
-}
-
+/* 卡片间距仍用容器 gap：这里不是 Virtualize（没有那个 0 高度 spacer 白吃一份 gap 的问题），
+   而且 gap 还要负责"语言筛选行 → 第一张卡"这 12px —— 所以卡片上不再传 Spacing，
+   否则会叠成 24px、且第一张卡会贴到筛选行上。 */
 .wiki-card-list {
     gap: 12px;
     padding: 12px 0 max(12px, var(--safe-area-bottom));
-}
-
-.manage-card {
-    background-color: var(--bg-color-secondary);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
 }
 
 .manage-card-icon {
@@ -97,8 +72,4 @@ body.has-hover .lang-active:hover {
 .status-none {
     background-color: var(--bg-color);
     color: var(--text-secondary);
-}
-
-.active-card {
-    background-color: var(--blue-tertiary);
 }

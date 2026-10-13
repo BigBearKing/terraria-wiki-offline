@@ -1,14 +1,9 @@
-.all-pages-list {
-    gap: 2px;
-    padding: 0 0 max(12px, var(--safe-area-bottom));
-}
+/* 每一行的外形（内边距 12 / 圆角 12 / 悬停 / 按下 / 行间距 2px / 键盘可达）已经收进
+   Components/Controls/RowButton.razor，这里只剩"这一行内部"的文字样式。 */
 
-.list-item {
-    padding: 12px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.all-pages-list {
+    gap: 0;
+    padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
 .page-name {

@@ -1,4 +1,4 @@
-﻿@page "/history"
+@page "/history"
 @using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Models
@@ -6,10 +6,11 @@
 
 <div class="page-anim page-content">
 
-	<header class="page-header">
-		<span class="content-title">@Loc.Get("History.Title")</span>
-		<span class="clear-btn sub-text" @onclick="ClearHistory">@Loc.Get("History.ClearHistory")</span>
-	</header>
+	<PageHeader Title="@Loc.Get("History.Title")">
+		<ActionButton Size="ButtonSize.Text" Tone="ButtonTone.Link" OnClick="ClearHistory">
+			@Loc.Get("History.ClearHistory")
+		</ActionButton>
+	</PageHeader>
 
 	<div class="list-container timeline history-list">
 
@@ -23,12 +24,12 @@
 					</div>
 				}
 				<div class="timeline-row item-row">
-					<div class="history-item button" @onclick="() => AppService.OpenPageAsync(entry.Data.WikiTitle)">
+					<RowButton OnClick="() => AppService.OpenPageAsync(entry.Data.WikiTitle)">
 						<div class="time-stamp">@entry.Data.ReadAt.ToString("HH:mm")</div>
 						<div class="item-info">
 							<span class="item-name">@entry.Data.WikiTitle</span>
 						</div>
-					</div>
+					</RowButton>
 				</div>
 
 			</ItemContent>

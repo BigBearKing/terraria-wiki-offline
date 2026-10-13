@@ -5,7 +5,12 @@
        即本元素总高 = var(--topbar-top-padding) + var(--topbar-content-height)。
        border-box 下 height 含 padding，所以直接用上面的 calc 表达总高；
        若写死 height:48px，则安全区越大，内容区越被顶部 padding 挤掉，且与 --header-height 对不上。
-       ★ 不要再引入独立的 padding-bottom 常量：它必须落在 --topbar-content-height 之内。*/
+       ★ 42px 的"内容带" = 36px 真实内容高 + 6px 底部气隙
+         （.action-btn 和 .search-wrapper 都是 36px）。所以底边距必须写回 padding-bottom，
+         让内容盒正好等于 36px：padding-top = safe + 6，padding-bottom = 6 → 内容盒 = 42 - 6 = 36。
+         若把 padding-bottom 归 0，内容盒就是 42px，align-items:center 会把多出的 6px 平分成 3+3，
+         元素变成距顶 9px、距底 3px —— 视觉上明显偏下，这就是"顶栏元素不居中"的根因。
+         注意它必须落在 --topbar-content-height（42）之内，不能再往外加高度。*/
     height: calc(var(--topbar-top-padding) + var(--topbar-content-height));
     display: flex;
     align-items: center;
@@ -13,7 +18,7 @@
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
-    padding: var(--topbar-top-padding) 8px 0 8px;
+    padding: var(--topbar-top-padding) 8px 6px 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */
@@ -23,30 +28,9 @@
     flex-shrink: 0; /* 防止屏幕变窄时按钮被挤扁 */
 }
 
-.action-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 0px;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-}
-
-
-
-body.has-hover .action-btn:hover {
-    background-color: var(--hover-bg);
-    color: var(--text-primary);
-}
-
-
-.action-btn:active {
-    background-color: var(--pressed-bg);
-    color: var(--text-primary);
-}
+/* 左侧按钮组里的方形图标键（36×36 / 圆角 8 / 悬停与按下）都在
+   Components/Controls/IconButton.razor（Square36 档）+ app.css 的 .btn 一节，
+   本文件不再有按钮样式。 */
 /* --- 2. 中间标题 (核心改动) --- */
 .topbar-title {
     flex: 1;
@@ -103,25 +87,21 @@ body.has-hover .action-btn:hover {
     pointer-events: none; /* 让点击穿透图标直接激活输入框 */
 }
 
-/* 顶部栏两个按钮的显隐各自独立（判断依据不同，所以不共用一条规则）：
+/* 顶栏两个按钮的显隐各自独立（判断依据不同，所以不共用一条规则）：
    .narrow-menu-btn（左上角 wiki logo → 侧边栏）：只认宽度 AppState.IsSmallScreen，矮屏照样显示
-   .compact-more-btn（右上角 → MoreList）：显隐由 C# 决定（只在主页显示，见 TopBar.razor），
-   此处不设规则；面板里是否有标签分组同样由 C# 决定
-   尺寸术语见 AppState 里的说明。 */
-.narrow-menu-btn {
+   "更多"键（右上角 → MoreList）：显隐完全由 C# 决定（只在主页显示，见 TopBar.razor），此处不设规则
+   尺寸术语见 AppState 里的说明。
+
+   ::deep 是必须的：按钮现在由 IconButton 组件渲染，元素带的是**子组件**的作用域属性，
+   本文件的普通 `.narrow-menu-btn` 规则命中不了它，只能从祖先容器往下穿透。
+   它原来那两条 `background-color: transparent !important`（悬停/按下不出底色）已由组件的
+   Feedback="None" 表达，不再需要 !important。 */
+.actions-wrapper ::deep .narrow-menu-btn {
     display: none;
 }
 
-    .narrow-menu-btn:hover {
-        background-color: transparent !important;
-    }
-
-    .narrow-menu-btn:active {
-        background-color: transparent !important;
-    }
-
 @media (max-width: 768px) {
-    .narrow-menu-btn {
+    .actions-wrapper ::deep .narrow-menu-btn {
         display: flex;
     }
 }

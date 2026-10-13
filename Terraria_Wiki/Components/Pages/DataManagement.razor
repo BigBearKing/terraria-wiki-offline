@@ -9,16 +9,14 @@
 
 <div class="page-anim page-content">
 
-    <header class="page-header">
-        <span class="content-title">@Loc.Get("DataManagement.Title")</span>
-    </header>
+    <PageHeader Title="@Loc.Get("DataManagement.Title")" />
 
     <div class="list-container wiki-card-list">
         @* === 语言筛选 === *@
         <div class="lang-filter">
-            <button class='lang-btn @(_langFilter == "all" ? "lang-active" : "")' @onclick='() => SetLangFilter("all")'>@Loc.Get("DataManagement.AllLanguages")</button>
-            <button class='lang-btn @(_langFilter == "zh" ? "lang-active" : "")' @onclick='() => SetLangFilter("zh")'>@Loc.Get("DataManagement.Chinese")</button>
-            <button class='lang-btn @(_langFilter == "en" ? "lang-active" : "")' @onclick='() => SetLangFilter("en")'>@Loc.Get("DataManagement.English")</button>
+            <ActionButton Size="ButtonSize.Pill" Tone='@(_langFilter == "all" ? ButtonTone.BlueSolid : ButtonTone.Neutral)' OnClick='() => SetLangFilter("all")'>@Loc.Get("DataManagement.AllLanguages")</ActionButton>
+            <ActionButton Size="ButtonSize.Pill" Tone='@(_langFilter == "zh" ? ButtonTone.BlueSolid : ButtonTone.Neutral)' OnClick='() => SetLangFilter("zh")'>@Loc.Get("DataManagement.Chinese")</ActionButton>
+            <ActionButton Size="ButtonSize.Pill" Tone='@(_langFilter == "en" ? ButtonTone.BlueSolid : ButtonTone.Neutral)' OnClick='() => SetLangFilter("en")'>@Loc.Get("DataManagement.English")</ActionButton>
         </div>
 
         @* === 视图 1：Wiki 列表选择 === *@
@@ -26,7 +24,9 @@
         {
             @foreach (var wiki in _filteredWikiList)
             {
-                <div class="manage-card button @(wiki.Id == AppState.ActiveWikiBookId ? "active-card" : "")" @onclick="() => OnCardClicked(wiki)">
+                <RowButton Variant="RowVariant.Card"
+                           Selected="wiki.Id == AppState.ActiveWikiBookId"
+                           OnClick="() => OnCardClicked(wiki)">
                     <div class="manage-card-icon">
                         <img src="images/@wiki.DataFolder/logo.png" style="width: 48px;
                         height: 48px;object-fit: contain;" />
@@ -49,7 +49,7 @@
                         }
                     </div>
                     <Icon Name="arrow-left" Size="20" style="transform: rotate(180deg); color: var(--text-secondary);" />
-                </div>
+                </RowButton>
             }
         }
         else

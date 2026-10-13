@@ -1,4 +1,4 @@
-﻿@using System.ComponentModel
+@using System.ComponentModel
 @using System.Text.Encodings.Web
 @using System.Text.RegularExpressions
 @using Terraria_Wiki.Services
@@ -22,7 +22,14 @@
 			<ul class="result-list">
 				@foreach (var item in results)
 				{
-					<li class="result-item" @onclick="() => SelectResult(string.IsNullOrEmpty(item.RedirectTo) ? item.Title : item.RedirectTo)">
+					var target = string.IsNullOrEmpty(item.RedirectTo) ? item.Title : item.RedirectTo;
+					@* 只共用 .btn 的四态与下面这套键盘约定（Enter/Space），版面仍是本文件的 .result-item；
+					   它是 <li>，保持标签不变（外面是 <ul>）。 *@
+					<li class="btn result-item"
+					    role="button"
+					    tabindex="0"
+					    @onclick="() => SelectResult(target)"
+					    @onkeydown="args => OnResultKeyDownAsync(args, target)">
 						<div class="result-title">
 							@HighlightMatches(item.Title)
 							@if (!string.IsNullOrEmpty(item.RedirectTo))
@@ -158,6 +165,10 @@
 
 		return new MarkupString(string.Concat(encodedParts));
 	}
+
+	/// <summary>键盘激活（Enter / Space）与点击同路；判定规则只在 KeyboardActivation 里一份。</summary>
+	private Task OnResultKeyDownAsync(KeyboardEventArgs args, string title) =>
+		KeyboardActivation.InvokeIfActivateKey(args, () => SelectResult(title));
 
 	private async Task SelectResult(string title)
 	{

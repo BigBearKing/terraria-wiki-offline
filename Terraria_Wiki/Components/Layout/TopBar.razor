@@ -6,20 +6,25 @@
 <header class="top-bar @(AppState.IsWindows ? "windows-top-bar" : "")">
 
     <div class="actions-wrapper">
-        <button class="action-btn button narrow-menu-btn" title="@App.Localization!.Get("TopBar.Menu")" @onclick="OpenMobileSidebar">
-            <img src="images/logo.svg" alt="Menu" style="width: 36px; height: 36px;" />
-        </button>
+        @* Logo 菜单键：内容是 <img> 而不是 <Icon>，所以走 IconButton 的 ChildContent。
+           Feedback=None 对应它原来"悬停/按下都不出现底色"的特例（以前靠 !important 硬压）。 *@
+        <IconButton Size="IconButtonSize.Square36" Feedback="ButtonFeedback.None"
+                    Class="action-btn narrow-menu-btn"
+                    Title="@App.Localization!.Get("TopBar.Menu")"
+                    OnClick="OpenMobileSidebar">
+            <img src="images/logo.svg" alt="" style="width: 36px; height: 36px;" />
+        </IconButton>
         @if (ShouldShowActionButtons())
         {
-            <button class="action-btn button" title="@App.Localization!.Get("TopBar.Back")" @onclick="WikiBackAsync">
-                <Icon Name="arrow-left" Size="20"></Icon>
-            </button>
-            <button class="action-btn button" title="@App.Localization!.Get("Common.Home")" @onclick="WikiBackHomeAsync">
-                <Icon Name="home" Size="20"></Icon>
-            </button>
-            <button class="action-btn button" title="@App.Localization!.Get("Common.Favorites")" disabled="@_isProcessing" style="@(_isFavorite ? "color:var(--blue-primary)" : "")" @onclick="ToggleFavoriteAsync">
-                <Icon Name="@(_isFavorite ? "star-filled" : "star")" Size="20"></Icon>
-            </button>
+            <IconButton Size="IconButtonSize.Square36" Icon="arrow-left" IconSize="20" Class="action-btn"
+                        Title="@App.Localization!.Get("TopBar.Back")" OnClick="WikiBackAsync" />
+            <IconButton Size="IconButtonSize.Square36" Icon="home" IconSize="20" Class="action-btn"
+                        Title="@App.Localization!.Get("Common.Home")" OnClick="WikiBackHomeAsync" />
+            @* Busy 而不是 Disabled：_isProcessing 是防连击的 200ms 冷却，
+               不是"不可用"，不该出现变淡 / 禁止手势（见 IconButton.Busy 的说明）。 *@
+            <IconButton Size="IconButtonSize.Square36" Icon="@(_isFavorite ? "star-filled" : "star")" IconSize="20"
+                        Class="action-btn" Active="_isFavorite" Toggle="true" Busy="_isProcessing"
+                        Title="@App.Localization!.Get("Common.Favorites")" OnClick="ToggleFavoriteAsync" />
         }
     </div>
     <div class="topbar-title @(ShouldShowActionButtons() ? "" : "topbar-title-without-actions")" @onclick="WikiToTopAsync">@GetPageTitle()</div>
@@ -41,9 +46,8 @@
     @if (AppState.CurrentPage == "home")
     {
         <div class="actions-wrapper">
-            <button class="action-btn button compact-more-btn" title="@App.Localization!.Get("TabBar.Tabs")" @onclick="ToggleMobileTabPanel">
-                <Icon Name="more" Size="24"></Icon>
-            </button>
+            <IconButton Size="IconButtonSize.Square36" Icon="more" IconSize="24"
+                        Title="@App.Localization!.Get("TabBar.Tabs")" OnClick="ToggleMobileTabPanel" />
         </div>
     }
 
@@ -149,6 +153,9 @@
             "all-pages" => App.Localization!.Get("Common.Pages"),
             var p when p == "data" || p.StartsWith("data/") => App.Localization!.Get("Common.Data"),
             "settings" => App.Localization!.Get("Common.Settings"),
+            // 设置的子页面（settings/licenses，即"开源许可"）：顶栏标题仍归到"设置"，
+            // 具体名字由页面自己的大标题显示——与 data/… 详情页同一套做法。
+            var p when p.StartsWith("settings/") => App.Localization!.Get("Common.Settings"),
             _ => ""
         };
     }

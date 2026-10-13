@@ -1,4 +1,4 @@
-﻿@page "/favorites"
+@page "/favorites"
 @using System.ComponentModel
 @using Terraria_Wiki.Components.Icons
 @using Terraria_Wiki.Services
@@ -6,10 +6,9 @@
 
 <div class="page-anim page-content">
 
-	<header class="page-header">
-		<span class="content-title">@Loc.Get("Favorites.Title")</span>
+	<PageHeader Title="@Loc.Get("Favorites.Title")">
 		<span class="sub-text">@Loc.Get("Favorites.FoundCount", favoriteCount)</span>
-	</header>
+	</PageHeader>
 	<div class="list-container favorite-list">
 		@if (favoriteCount == 0)
 		{
@@ -21,7 +20,7 @@
 		{
 
 			<Virtualize @ref="_virtualizeComponent" ItemsProvider="LoadPages" Context="item" OverscanCount="5">
-				<div class="wiki-card button" @onclick="() => AppService.OpenPageAsync(item.WikiTitle)">
+				<RowButton Spacing="8" OnClick="() => AppService.OpenPageAsync(item.WikiTitle)">
 					<div class="card-icon">
 						<Icon Name="star-filled" Size="24" />
 					</div>
@@ -29,10 +28,12 @@
 						<div class="card-title">@item.WikiTitle</div>
 						<div class="card-meta">@Loc.Get("Favorites.FavoritedAt", item.FavoritedAt.ToString("yyyy/MM/dd"))</div>
 					</div>
-					<button class="remove-btn" @onclick:stopPropagation="true" @onclick="() => RemoveAsync(item.WikiTitle)">
+					@* StopPropagation：卡片本身也是可点区域，点"取消"不能连带打开页面 *@
+					<ActionButton Size="ButtonSize.PillOutline" Tone="ButtonTone.Danger" StopPropagation="true"
+					              OnClick="() => RemoveAsync(item.WikiTitle)">
 						@Loc.Get("Common.Cancel")
-					</button>
-				</div>
+					</ActionButton>
+				</RowButton>
 			</Virtualize>
 
 		}

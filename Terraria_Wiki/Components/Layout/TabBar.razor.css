@@ -1,3 +1,11 @@
+/* TabBar：标签项是"带自己形状的可点容器"，所以形状留在这里，
+   四态（悬停 / 按下 / 禁用 / 焦点）与键盘可达来自 app.css 的 .btn + KeyboardActivation；
+   关闭键与"新建标签"是标准图标按钮，形状已收进 Components/Controls/IconButton.razor，
+   本文件里只剩它们"贴着标签"需要的那点微调（用 ::deep 穿透到子组件）。
+
+   选中态从 .active 改成 .is-selected：.btn 的选中态规则会保证悬停/按下不改写它的底色，
+   所以以前那条 body.has-hover .tab-item.active:hover 的补丁可以删掉了。 */
+
 .tab-bar {
     display: flex;
     align-items: flex-end;
@@ -13,7 +21,7 @@
     overflow-x: auto;
     overflow-y: hidden;
     height: 100%;
-    padding-top:3px;
+    padding-top: 3px;
 }
 
 .tab-item {
@@ -22,7 +30,6 @@
     gap: 6px;
     height: 100%;
     padding: 0 10px;
-    cursor: pointer;
     border-radius: 8px 8px 0 0;
     white-space: nowrap;
     min-width: 0;
@@ -32,21 +39,14 @@
     font-size: 13px;
     user-select: none;
     transition: background 0.15s, color 0.15s;
+    /* 标签项在迁移前既没有 .button 类也没有 role，所以从没继承过 .btn 默认的 line-height: 1.2 */
+    line-height: normal;
 }
 
-body.has-hover .tab-item:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-}
-
-.tab-item.active {
+.tab-item.is-selected {
     background: var(--bg-color);
     color: var(--text-primary);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-body.has-hover .tab-item.active:hover {
-    background: var(--bg-color);
 }
 
 .tab-title {
@@ -55,50 +55,9 @@ body.has-hover .tab-item.active:hover {
     white-space: nowrap;
 }
 
-.tab-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 14px;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 0;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-}
-
-body.has-hover .tab-close:hover {
-    color: var(--text-primary);
-}
-
-.tab-add {
-    display: flex;
-    align-items: center;
+/* "新建标签"键贴着标签排（原来靠 align-self + translateY(1px) 对齐）。
+   它是 .tab-bar 的直接子元素（在 .tab-list 之后），所以穿透的祖先用 .tab-bar。 */
+.tab-bar ::deep .tab-add {
     align-self: center;
     transform: translateY(1px);
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--text-primary);
-    font-size: 16px;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 5px;
-    transition: background 0.15s, color 0.15s;
 }
-
-body.has-hover .tab-add:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-}
-
-/* 横条的显隐、标签的归属全部由 C# 状态决定（AppState.IsWindows / IsLargeScreen / TabsInBar），
-   这里不再用媒体查询重复判断，避免 CSS 与组件两套规则打架。
-   .win-placeholder 仅表示"Windows 上这条横条还要兼作拖动区"，样式上与普通横条无差别。 */

@@ -1,0 +1,48 @@
+@page "/settings/licenses"
+@implements IDisposable
+@using Terraria_Wiki.Services
+
+@* 设置 → 关于 → 开源许可：列出随应用分发的 7 份许可与声明文本。
+   每条点进详情走独立路由 /settings/licenses/{文件名}（LicensesDetails.razor），
+   与"数据"列表 → /data/{id} 详情是同一套做法：CurrentPage 与路由一起推进去，
+   Android 返回键就能按"砍掉最后一段"的规则退回这里。 *@
+
+<div class="page-anim page-content">
+
+    @* 不传 ShowBack：CurrentPage 是 settings/licenses（带 '/'）→ 自动显示返回箭头，默认回 settings *@
+    <PageHeader Title="@Loc.Get("Settings.OpenSourceLicenses")" />
+
+    <div class="list-container license-list">
+        @foreach (var doc in LicenseCatalog.Documents)
+        {
+            <RowButton Variant="RowVariant.Card" ContentGap="12" Spacing="12"
+                       OnClick="() => Open(doc)">
+                <div class="license-card-info">
+                    <div class="license-card-title">@Loc.Get(doc.NameKey)</div>
+                    <div class="license-card-file">@doc.FileName</div>
+                </div>
+                <span class="license-card-action sub-text">@Loc.Get("Common.View")</span>
+            </RowButton>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += RefreshUI;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= RefreshUI;
+    }
+
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    /// <summary>进详情页：/settings/licenses/{文件名}。</summary>
+    private void Open(LicenseCatalog.Document doc)
+    {
+        AppService.NavigateTo($"settings/licenses/{doc.FileName}");
+    }
+}
