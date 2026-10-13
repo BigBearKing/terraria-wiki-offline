@@ -37,6 +37,9 @@
             }
         };
 
+        /* 悬停反馈的开关：桌面加上（有鼠标才该有悬停效果），移动端不加
+           （否则触屏点一下会留着悬停态）。CSS 侧一律写成 `body.has-hover .xxx:hover`，
+           组件自己的 .razor.css 里也是这个写法。 */
         window.initHover = function (hasHover) {
             if (hasHover === "True") {
                 document.body.classList.add('has-hover');
@@ -141,7 +144,11 @@
             // 状态全部放在这个 IIFE 里（而不是每次调用重建），否则 frameId / 观察器
             // 会在下一次调用时被重置，去重和 observer 复用都会失效。
             (() => {
-                const SELECTOR = '.top-bar .topbar-title, .button, button, [role="button"], .custom-select-value';
+                /* 参与"字号自适应"的元素。
+                   原来第一项是 `.button` —— 那个通用类已经删掉：现在所有按钮要么是真 <button>
+                   （IconButton / ActionButton / CustomSelect），要么是带 role="button" 的
+                   RowButton / 标签项，button + [role="button"] 已经全覆盖，不再需要额外类名。 */
+                const SELECTOR = '.top-bar .topbar-title, button, [role="button"], .custom-select-value';
 
                 // MutationObserver 用来判断"这次变动的节点到底要不要重算"
                 const matchesTarget = node => {

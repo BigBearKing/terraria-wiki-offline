@@ -1,0 +1,78 @@
+@* 有文字的按钮（图标可选）。复位与四态来自 app.css 的 .btn，
+   这里按 Size + Tone 组合给 --btn-* 变量。
+
+   .primary-btn 那一族（Large + Blue/Green/Red）刻意保留"按下保持本色 + 缩放"的手感：
+   它自己把 --btn-active-bg 指回本色，于是不会被共享的按下色刷灰。 *@
+
+<button type="button"
+        class="btn ab ab--@(SizeToken) ab--@(ToneToken) @(FullWidth ? "ab--full" : "") @(Busy ? "is-busy" : "") @Class"
+        title="@Title"
+        aria-label="@Title"
+        disabled="@(Disabled || Busy)"
+        @onclick="OnClickAsync"
+        @onclick:stopPropagation="@StopPropagation">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <Icon Name="@Icon" Size="@IconSize" />
+    }
+    @ChildContent
+</button>
+
+@code {
+    [Parameter]
+    public ButtonSize Size { get; set; } = ButtonSize.Small;
+
+    [Parameter]
+    public ButtonTone Tone { get; set; } = ButtonTone.Neutral;
+
+    /// <summary>按钮左侧的图标（可空）。</summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>图标边长；设置页与数据详情页都用 16。</summary>
+    [Parameter]
+    public int IconSize { get; set; } = 16;
+
+    /// <summary>撑满一行 / 一个网格格（数据详情页的 .primary-btn 靠这个）。</summary>
+    [Parameter]
+    public bool FullWidth { get; set; }
+
+    /// <summary>工具提示；给了同时作为无障碍名字。</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// 短暂锁（防连击）——与 <see cref="Disabled"/> 不是一回事：同样渲染 disabled 属性挡住点击，
+    /// 但不做"变淡 + not-allowed"那套不可用外观，否则点一下会闪出"禁止"手势。
+    /// 目前只有图标按钮在用（顶栏收藏键的 200ms 冷却），这里一并提供，免得下次又拿 Disabled 表达短暂锁。
+    /// </summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>
+    /// 点击后阻止冒泡。卡片里嵌的小按钮必须打开它 —— 组件化以后不能再在调用处写
+    /// <c>@onclick:stopPropagation</c>（事件指令只能挂在元素上），所以由组件内部代劳。
+    /// </summary>
+    [Parameter]
+    public bool StopPropagation { get; set; }
+
+    /// <summary>额外 class 钩子（外壳里按断点调尺寸的规则挂在这里，用 ::deep 命中）。</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string SizeToken => Size.ToString().ToLowerInvariant();
+
+    private string ToneToken => Tone.ToString().ToLowerInvariant();
+
+    private Task OnClickAsync() =>
+        Disabled || Busy ? Task.CompletedTask : OnClick.InvokeAsync();
+}

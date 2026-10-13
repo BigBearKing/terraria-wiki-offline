@@ -1,0 +1,26 @@
+@* 自绘开关（设置页的"侧键返回""自动更新页面"）。
+   迁移前是 <label class="toggle-switch"><input type=checkbox>…</label> 直接写在页面里，
+   样式也在页面 css 里；现在收进组件，顺手补上 role="switch" / aria-checked 与禁用态。 *@
+
+<label class="switch @(Disabled ? "is-disabled" : "")">
+    <input type="checkbox"
+           role="switch"
+           checked="@Checked"
+           disabled="@Disabled"
+           aria-checked="@(Checked ? "true" : "false")"
+           @onchange="OnChangeAsync" />
+    <span class="switch__slider"></span>
+</label>
+
+@code {
+    [Parameter]
+    public bool Checked { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> CheckedChanged { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private Task OnChangeAsync(ChangeEventArgs args) => CheckedChanged.InvokeAsync(args.Value is true);
+}

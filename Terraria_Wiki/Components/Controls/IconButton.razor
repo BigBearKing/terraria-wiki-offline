@@ -1,0 +1,116 @@
+@* 纯图标按钮（方形 / 圆形 / 悬浮小条上"无缝紧排"的直角段），也支持"图标 + 文字"或自定义内容。
+   复位与四态（悬停 / 按下 / 禁用 / 键盘焦点）来自 app.css 的 .btn 一节，
+   这里只负责尺寸（--ib-* 变量）与配色（共享的 --btn-* 变量）。
+
+   为什么永远渲染真 <button>：
+     · 键盘可达（原来 div 版只有鼠标能用）；
+     · index.html 的 fit() 选择器认 button / [role=button]，不掉出字号自适应；
+     · 悬浮小条整条是窗口拖动区，JS 的拖动逻辑会主动排除 button/a/input，用真 button 最稳。
+
+   Class 参数有两个已知用途：外壳里按断点调显隐的钩子（配 ::deep 使用），
+   以及 index.html:153 的 fit() 白名单 —— 顶栏/更多面板那几个按钮靠 .action-btn 这个类名跳过字号自适应。 *@
+
+<button type="button"
+        class="btn ib ib--@(SizeToken) @ToneClass @FeedbackClass @(Active ? "ib--active" : "") @(Busy ? "is-busy" : "") @Class"
+        title="@(Title ?? Text)"
+        aria-label="@(Title ?? Text)"
+        aria-pressed="@AriaPressed"
+        disabled="@(Disabled || Busy)"
+        @onclick="OnClickAsync"
+        @onclick:stopPropagation="@StopPropagation">
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        <Icon Name="@Icon" Size="@IconSize" />
+    }
+    @if (!string.IsNullOrEmpty(Text))
+    {
+        <span class="ib__text">@Text</span>
+    }
+</button>
+
+@code {
+    /// <summary>图标名（见 Components/Icons/Icon.razor）。传了 ChildContent 时不用给。</summary>
+    [Parameter]
+    public string Icon { get; set; } = "main";
+
+    /// <summary>图标边长。默认 24，与原来 .icon-btn 一致；其余各处按迁移前的实际值显式传。</summary>
+    [Parameter]
+    public int IconSize { get; set; } = 24;
+
+    /// <summary>
+    /// 自定义内容（可选）。给顶栏那个"wiki logo 菜单键"用 —— 它里面是一张 &lt;img&gt;，
+    /// 不是 &lt;Icon&gt;，但尺寸与四态仍然该由这里统一。
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public IconButtonSize Size { get; set; } = IconButtonSize.Square36;
+
+    [Parameter]
+    public IconButtonTone Tone { get; set; } = IconButtonTone.Default;
+
+    [Parameter]
+    public ButtonFeedback Feedback { get; set; } = ButtonFeedback.Default;
+
+    /// <summary>按钮内文字（可空）。给了就变成"图标 + 文字"，宽屏 MoreList 用 Wide36 档。</summary>
+    [Parameter]
+    public string? Text { get; set; }
+
+    /// <summary>工具提示，同时也是无障碍名字（图标按钮没有可见文字，两者都取自这里）。</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// 点击后阻止冒泡（标签项里的关闭键、卡片里的按钮这类嵌套场景必须打开）。
+    /// 组件化以后调用处不能再写 <c>@onclick:stopPropagation</c>（事件指令只能挂在元素上），由组件内部代劳。
+    /// </summary>
+    [Parameter]
+    public bool StopPropagation { get; set; }
+
+    /// <summary>
+    /// 短暂锁（防连击）——与 <see cref="Disabled"/> 不是一回事。
+    /// 会同样渲染 disabled 属性挡住点击，但**不做**"变淡 + not-allowed"那套不可用外观：
+    /// 例如顶栏收藏键处理中的 200ms 冷却，点一下不该闪出"禁止"手势。
+    /// </summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>是否处于"选中 / 已开启"状态：图标转蓝（--blue-primary）。</summary>
+    [Parameter]
+    public bool Active { get; set; }
+
+    /// <summary>是否为开关型按钮（收藏、置顶）：配合 <see cref="Active"/> 输出 aria-pressed。</summary>
+    [Parameter]
+    public bool Toggle { get; set; }
+
+    /// <summary>额外 class 钩子。外壳里有几处按断点调尺寸/显隐的规则挂在具体按钮上，用 ::deep 命中。</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    private string SizeToken => Size.ToString().ToLowerInvariant();
+
+    private string ToneClass => Tone switch
+    {
+        IconButtonTone.Danger => "ib--danger",
+        IconButtonTone.Primary => "ib--primary",
+        _ => ""
+    };
+
+    private string FeedbackClass => Feedback == ButtonFeedback.None ? "ib--flat" : "";
+
+    private string? AriaPressed => Toggle ? (Active ? "true" : "false") : null;
+
+    private Task OnClickAsync() =>
+        Disabled || Busy ? Task.CompletedTask : OnClick.InvokeAsync();
+}

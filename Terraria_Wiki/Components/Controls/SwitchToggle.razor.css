@@ -1,0 +1,60 @@
+/* 自绘开关：几何与配色与迁移前 Settings.razor.css 里的 .toggle-switch / .slider 完全同值，
+   只多了键盘焦点环与禁用态（原来这两样都没有）。 */
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch__slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: var(--text-secondary);
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.switch__slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch input:checked + .switch__slider {
+    background-color: var(--blue-primary);
+}
+
+.switch input:checked + .switch__slider::before {
+    transform: translateX(22px);
+}
+
+.switch input:focus-visible + .switch__slider {
+    outline: 2px solid var(--blue-primary);
+    outline-offset: 2px;
+}
+
+.switch.is-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.switch.is-disabled .switch__slider {
+    cursor: not-allowed;
+}

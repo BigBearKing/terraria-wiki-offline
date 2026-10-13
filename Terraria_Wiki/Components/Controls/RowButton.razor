@@ -1,0 +1,86 @@
+@using System.Globalization
+
+@* 整行 / 整卡可点的容器（列表行、维基卡、许可卡）。
+   根元素是 div：卡片内部可能嵌着真按钮（收藏卡里的"取消收藏"），button 不能套 button。
+   但补上了 role=button + tabindex + Enter/Space —— 迁移前这些行只有鼠标能用。
+
+   行间距也用组件表达：Spacing 写进 --rb-gap，由 .rb + .rb 那条规则消费。
+   这样列表顶部不会被"第一行之前的间距"污染（Virtualize 会在最前面插一个 0 高度的 spacer，
+   以前容器用 gap 时那一份会被它白吃），页面侧也不用再写相邻兄弟选择器。
+
+   ChildContent 里的元素归调用方作用域，所以各页面卡片内部的样式（标题、副标题、图标）照旧生效。 *@
+
+<div class="btn rb rb--@(VariantToken) rb--justify-@(JustifyToken) @(Selected ? "is-selected" : "") @Class"
+     role="button"
+     tabindex="@(Disabled ? -1 : 0)"
+     aria-disabled="@(Disabled ? "true" : null)"
+     aria-current="@(Selected ? "true" : null)"
+     title="@Title"
+     style="@Style"
+     @onclick="OnClickAsync"
+     @onkeydown="OnKeyDownAsync">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RowVariant Variant { get; set; } = RowVariant.Row;
+
+    [Parameter]
+    public RowJustify Justify { get; set; } = RowJustify.Start;
+
+    /// <summary>选中态（当前 Wiki / 当前标签）：底色 --blue-tertiary，且悬停/按下都不改写它。</summary>
+    [Parameter]
+    public bool Selected { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>与上一行的间距（px）。0 表示紧贴（默认）。</summary>
+    [Parameter]
+    public double Spacing { get; set; }
+
+    /// <summary>行内元素之间的最小间距（px）。0 表示不设，由内容自己的 margin 决定。</summary>
+    [Parameter]
+    public double ContentGap { get; set; }
+
+    /// <summary>工具提示。</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>额外 class 钩子（页面特有状态用，例如 .list-item 的历史样式）。</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string VariantToken => Variant.ToString().ToLowerInvariant();
+
+    private string JustifyToken => Justify == RowJustify.SpaceBetween ? "space-between" : "start";
+
+    private string? Style
+    {
+        get
+        {
+            var parts = new List<string>(2);
+
+            if (Spacing > 0)
+                parts.Add($"--rb-gap: {Spacing.ToString(CultureInfo.InvariantCulture)}px");
+
+            if (ContentGap > 0)
+                parts.Add($"--rb-content-gap: {ContentGap.ToString(CultureInfo.InvariantCulture)}px");
+
+            return parts.Count > 0 ? string.Join("; ", parts) : null;
+        }
+    }
+
+    private Task OnClickAsync() => Disabled ? Task.CompletedTask : OnClick.InvokeAsync();
+
+    /// <summary>div 不会因为 Enter/Space 自动触发 click（原生 button 才自带），这里补上。</summary>
+    private Task OnKeyDownAsync(KeyboardEventArgs args) =>
+        KeyboardActivation.InvokeIfActivateKey(args, OnClickAsync);
+}

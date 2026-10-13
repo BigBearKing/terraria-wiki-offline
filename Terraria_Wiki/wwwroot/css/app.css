@@ -94,44 +94,108 @@
     scrollbar-gutter: stable;
 }
 
-.button,
-button,
-[role="button"] {
-    min-width: 0;
+/* ===== 旧的通用 .button 组已删除 =====
+   原来这里有 `.button, button, [role="button"]` 的复位 + 悬停/按下 + `.button > *` + 字号自适应配套。
+   现在这些职责都归上面那一节（.btn 与四个 Razor 组件），因为：
+     · 悬停/按下只认 `.button` 类，导致真 <button>（语言筛选、取消收藏…）和自写按钮各写一套，
+       全站出现三套按下反馈、三套选中态；
+     · 组件化后每处按钮都挂 .btn，再留一份"通用 button"就是两套规则打架。
+   `.button` 这个类名在 markup 里也已全部消失，index.html 的 fit() 选择器同步收敛成
+   `button, [role="button"]`（RowButton 渲染的就是 role="button"）。 */
+
+/* ===== 按钮：共享基座与四态（全站唯一一处） =====
+   所有按钮都由组件渲染（Components/Controls 下的 IconButton / ActionButton / RowButton / SwitchToggle），
+   它们统一挂 .btn 拿到「复位 + 悬停 / 按下 / 禁用 / 键盘焦点」四态；几何与配色由各自组件用变量给：
+     --btn-bg / --btn-fg              常态底色与前景（组件按 size+tone 组合赋值）
+     --btn-hover-bg / --btn-hover-fg  悬停；默认 --hover-bg / --text-primary
+     --btn-active-bg                  按下；默认 --pressed-bg（语义色按钮通常设成自己的底色，即"按下不闪灰"）
+   为什么放全局：Blazor 的 scoped CSS 不能跨组件复用，而这四态必须全站一套
+   —— 以前散成三套按下反馈（全局 --pressed-bg / 自写 scale / 完全没有）和 5 种写法，就是从这里开始的。
+
+   与旧的通用 .button 的区别：
+     · 悬停/按下不再"只认 .button 类"，而是跟着组件走，裸 <button> 与 role=button 也一视同仁；
+     · 选中态（.is-active / .is-selected）用 :not() 排除，不再需要 !important 去压悬停
+       （TabBar / NavMenu / 数据卡以前各写一套，后者漏了就被悬停冲掉）。 */
+.btn {
     border: none;
-    display: block;
-    font-size: inherit;
+    background-color: transparent;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    background-color: var(--btn-bg, transparent);
+    color: var(--btn-fg, inherit);
+    transition: background-color 0.2s, color 0.2s;
+    /* 下面这几条是**继承性**约定，不是装饰：旧的 `.button, button, [role="button"]` 组里就带着它们，
+       每个按钮都在靠继承拿。搬进 .btn 才不会因为删掉那组而让文字行盒变高、按钮跟着变高。
+       从来没享受过它们的五个地方（.ab--large / .ab--text / .tab-item / .more-list-tabs-item /
+       .result-item）在各处显式写回 normal，见各自的注释。 */
     line-height: 1.2;
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
-    transition: color 0.2s, background-color 0.2s;
-    user-select: none;
+}
+
+/* 悬停反馈的门由 JS 控制：body.has-hover（MainLayout 按平台调 initHover ——
+   桌面加上、移动端不加，避免触屏点完还留着悬停态）。
+   组件里的 hover 也照这个写法：条件用同一个 body.has-hover，规则归组件自己所有。 */
+body.has-hover .btn:not(:disabled):not(.is-disabled):not(.is-active):not(.is-selected):hover {
+    background-color: var(--btn-hover-bg, var(--hover-bg));
+    color: var(--btn-hover-fg, var(--text-primary));
+}
+
+/* 选中态在悬停时保持自己的底色/前景，不被上面那条改写 */
+body.has-hover .btn.is-active:hover,
+body.has-hover .btn.is-selected:hover {
+    background-color: var(--btn-bg, transparent);
+    color: var(--btn-fg, inherit);
+}
+
+/* 按下反馈只此一处：!important 是为了压过历史遗留的 `.button:active`（迁移期两者并存），
+   迁移完成后保留它也无害 —— 组件要改按下色只应该改 --btn-active-bg 变量，而不是再写一条规则。 */
+.btn:not(:disabled):not(.is-disabled):active {
+    background-color: var(--btn-active-bg, var(--pressed-bg)) !important;
+}
+
+/* 选中态被按下时也保持自己的底色（与悬停同理） */
+.btn.is-active:active,
+.btn.is-selected:active {
+    background-color: var(--btn-bg, transparent);
+    color: var(--btn-fg, inherit);
+}
+
+/* 真的不可用（缩放到底、权限已授予、没选中内容…）：变淡 + not-allowed */
+.btn:disabled,
+.btn.is-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* 短暂锁（Busy）与"真的不可用"必须分开：
+   像顶栏收藏键那种"防连击的 200ms 冷却"也会挂 disabled，但它不是不可用状态 ——
+   若跟着变淡 + not-allowed，点一下就会闪一下"禁止"手势并暗一下，这是迁移前没有的副作用。
+   所以 Busy 的外观与光标保持原样（cursor 仍是 pointer：迁移前那条按钮就是 pointer，
+   因为 UA 并不给 :disabled 设光标，只有作者样式才设）。 */
+.btn.is-busy:disabled {
+    opacity: 1;
     cursor: pointer;
 }
 
-body.has-hover .button:hover {
-    background-color: var(--hover-bg);
+.btn:focus-visible {
+    outline: 2px solid var(--blue-primary);
+    outline-offset: 2px;
 }
 
-.button:active {
-    background-color: var(--pressed-bg) !important;
-    transition: none;
-}
-
-.button > *,
-button > *,
-[role="button"] > * {
+/* JS 字号自适应（index.html 的 fit()）的配套：被缩过字号的元素，子元素跟着缩
+   —— .btn-title / .custom-select-value 这类自己写了 font-size 的子元素靠这条才不会"缩不动"。 */
+.is-responsive-text-fitted > * {
+    font-size: inherit;
     line-height: inherit;
     white-space: inherit;
-    text-overflow: clip;
-    transition: inherit;
-}
-
-.button.is-responsive-text-fitted > *,
-button.is-responsive-text-fitted > *,
-[role="button"].is-responsive-text-fitted > * {
-    font-size: inherit;
 }
 
 /* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机布局。尺寸术语见 AppState 里的说明。 */

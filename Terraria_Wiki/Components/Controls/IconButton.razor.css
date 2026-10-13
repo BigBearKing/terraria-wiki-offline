@@ -1,0 +1,70 @@
+/* IconButton：几何写在 --ib-*，配色写在共享的 --btn-*（见 app.css 的 .btn 一节）。
+   圆角按收敛后的刻度：方块一律 8px、圆形 50%；悬浮小条上"无缝紧排"的那一段保留直角 0
+   —— 它是拖动条上连成一条的一段，不是独立卡片按钮，改了会明显破坏小条观感。 */
+
+.ib {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ib-gap, 12px);
+    flex-shrink: 0;
+    width: var(--ib-w, auto);
+    height: var(--ib-h, 36px);
+    padding: var(--ib-pad, 0);
+    border-radius: var(--ib-radius, 8px);
+    --btn-bg: transparent;
+    --btn-fg: var(--text-secondary);
+    --btn-hover-fg: var(--text-primary);
+}
+
+/* --- 尺寸档位（取值与迁移前各处一致） --- */
+.ib--square16 { --ib-w: 16px; --ib-h: 16px; --ib-gap: 6px; }
+.ib--square24 { --ib-w: 24px; --ib-h: 24px; --ib-gap: 6px; }
+.ib--square26 { --ib-w: 26px; --ib-h: 26px; --ib-gap: 6px; }
+.ib--square28 { --ib-w: 28px; --ib-h: 28px; }
+.ib--square32 { --ib-w: 32px; --ib-h: 32px; }
+.ib--square36 { --ib-w: 36px; --ib-h: 36px; }
+.ib--square42 { --ib-w: 42px; --ib-h: 42px; }
+.ib--round32  { --ib-w: 32px; --ib-h: 32px; --ib-radius: 50%; }
+.ib--bar      { --ib-w: 44px; --ib-h: 32px; --ib-radius: 0; --btn-fg: var(--text-primary); }
+/* 高 36、左右各 8px 内边距、图标 + 文字 —— MoreList 宽屏那一排。
+   必须 flex-start：这一档的文字被 MoreList 绝对定位到 left: 48px，按钮里只剩图标一个
+   在流内元素；若沿用基座的 justify-content: center，图标会被推到右边
+   （旧 .action-btn 是 display:flex，justify-content 默认就是 flex-start）。 */
+.ib--wide36   { --ib-h: 36px; --ib-pad: 0 8px; justify-content: flex-start; }
+
+/* 图标 + 文字那一档的文字（MoreList 宽屏） */
+.ib__text {
+    font-size: 14px;
+}
+
+/* --- 状态 --- */
+/* 激活（收藏已点亮 / 已置顶 / 悬浮窗开着）：图标转蓝，悬停也保持蓝色。
+   这里刻意用组件自己的 .ib--active，而不是共享的 .is-active —— 后者在 .btn 里的语义是
+   "选中态要顶住悬停"（行卡、标签、下拉选中项需要），会让悬停底色消失；
+   图标按钮的"激活"只是换个颜色，悬停该有的底色反馈要保留（与迁移前一致）。 */
+.ib--active {
+    --btn-fg: var(--blue-primary);
+    --btn-hover-fg: var(--blue-primary);
+}
+
+/* 正文色图标（标题头返回箭头、标签栏"新建标签"）：悬停只出底色，图标色不变 */
+.ib--primary {
+    --btn-fg: var(--text-primary);
+    --btn-hover-fg: var(--text-primary);
+}
+
+/* 危险色（悬浮条的"退出悬浮窗"）：悬停转红，按下保持红色底 */
+.ib--danger {
+    --btn-hover-bg: var(--red-tertiary);
+    --btn-hover-fg: var(--red-primary);
+    --btn-active-bg: var(--red-tertiary);
+}
+
+/* 无悬停/按下底色（顶栏 logo 菜单键：它是一张图片，出现底色反而脏）。
+   以前这条得靠 !important 硬压全局悬停规则，现在只要把变量指回透明。 */
+.ib--flat {
+    --btn-hover-bg: transparent;
+    --btn-hover-fg: var(--btn-fg);
+    --btn-active-bg: transparent;
+}

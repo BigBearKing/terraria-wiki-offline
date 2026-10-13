@@ -1,0 +1,118 @@
+/* ActionButton：几何（--ab-*）与配色（共享的 --btn-*）分开写。
+   几何 5 档与迁移前一一对应；配色只写实际用到的 (Size, Tone) 组合，避免组合爆炸。
+   「悬停 / 按下 / 禁用 / 焦点」四态不在这里，全部来自 app.css 的 .btn。 */
+
+.ab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ab-gap, 8px);
+    padding: var(--ab-pad, 6px 12px);
+    border-radius: var(--ab-radius, 8px);
+    font-size: var(--ab-fs, 0.9rem);
+    font-weight: var(--ab-fw, 400);
+    white-space: nowrap;
+    --btn-bg: transparent;
+    --btn-fg: var(--text-primary);
+}
+
+/* --- 几何 --- */
+.ab--small       { --ab-pad: 6px 12px; --ab-radius: 8px;  --ab-fs: 0.9rem; }
+.ab--pill        { --ab-pad: 6px 16px; --ab-radius: 99px; --ab-fs: 0.85rem; --ab-fw: 500; }
+.ab--pilloutline { --ab-pad: 4px 12px; --ab-radius: 99px; --ab-fs: 0.8rem;
+                   border: 1px solid var(--text-secondary); }
+.ab--large       { --ab-pad: 12px;     --ab-radius: 12px; --ab-fs: 1rem;    --ab-fw: 500;
+                   transition: filter 0.2s, transform 0.2s; }
+.ab--text        { --ab-pad: 0;        --ab-radius: 0;    --ab-fs: 0.8rem;  --ab-fw: 500; }
+.ab--full        { width: 100%; }
+
+/* Large / Text 这两档在迁移前**没有** line-height: 1.2 与 nowrap
+   （.primary-btn 是个纯 div，既没挂 .button 也没 role；.clear-btn 是个 span），
+   而 .btn 默认带着这两条（那是 button/.button 组的既有约定），所以这里显式写回。 */
+.ab--large,
+.ab--text {
+    line-height: normal;
+    white-space: normal;
+}
+
+/* --- 配色 --- */
+
+/* 设置页的小按钮：常态就是 --hover-bg 底，所以悬停不变色，只有按下变深 */
+.ab--small.ab--neutral {
+    --btn-bg: var(--hover-bg);
+    --btn-hover-bg: var(--hover-bg);
+}
+
+/* 语言筛选胶囊：未选中 = 页面底色，悬停 --bg-color-secondary */
+.ab--pill.ab--neutral {
+    --btn-bg: var(--bg-color);
+    --btn-fg: var(--text-secondary);
+    --btn-hover-bg: var(--bg-color-secondary);
+    --btn-hover-fg: var(--text-secondary);
+}
+
+/* 选中的那颗：蓝实底白字，悬停与按下都保持蓝色（迁移前它按下是完全没有反馈的） */
+.ab--pill.ab--bluesolid {
+    --btn-bg: var(--blue-secondary);
+    --btn-fg: #fff;
+    --btn-hover-bg: var(--blue-secondary);
+    --btn-hover-fg: #fff;
+    --btn-active-bg: var(--blue-secondary);
+}
+
+/* 描边胶囊（取消收藏）：悬停转红，描边跟着变 */
+.ab--pilloutline.ab--danger {
+    --btn-fg: var(--text-secondary);
+    --btn-hover-bg: var(--red-tertiary);
+    --btn-hover-fg: var(--red-primary);
+    --btn-active-bg: var(--red-tertiary);
+}
+
+/* 悬停条件直接写在组件自己的文件里：body.has-hover 是 JS（initHover）按平台加在 body 上的类，
+   移动端不加。规则跟着组件走，页面侧不必再写一遍 —— 这就是"把 has-hover 收进组件"的做法。
+   Blazor 的 scoped CSS 会把这个后缀属性挂在最后一个复合选择器上，
+   编译产物是 `body.has-hover .ab--pilloutline.ab--danger:hover[b-xxxx]`，命中没问题。 */
+body.has-hover .ab--pilloutline.ab--danger:hover {
+    border-color: var(--red-primary);
+}
+
+/* 数据详情的大按钮：浅底深字，悬停提亮、按下缩放且保持本色（不闪灰） */
+.ab--large.ab--blue {
+    --btn-bg: var(--blue-tertiary);
+    --btn-fg: var(--blue-primary);
+    --btn-hover-bg: var(--blue-tertiary);
+    --btn-hover-fg: var(--blue-primary);
+    --btn-active-bg: var(--blue-tertiary);
+}
+
+.ab--large.ab--green {
+    --btn-bg: var(--green-tertiary);
+    --btn-fg: var(--green-primary);
+    --btn-hover-bg: var(--green-tertiary);
+    --btn-hover-fg: var(--green-primary);
+    --btn-active-bg: var(--green-tertiary);
+}
+
+.ab--large.ab--red {
+    --btn-bg: var(--red-tertiary);
+    --btn-fg: var(--red-primary);
+    --btn-hover-bg: var(--red-tertiary);
+    --btn-hover-fg: var(--red-primary);
+    --btn-active-bg: var(--red-tertiary);
+}
+
+body.has-hover .ab--large:hover {
+    filter: brightness(1.2);
+}
+
+.ab--large:active {
+    transform: scale(0.97);
+}
+
+/* 纯文字链接（"清空历史"）：只有文字色，没有底色反馈 —— 与迁移前一致 */
+.ab--text.ab--link {
+    --btn-fg: var(--blue-primary);
+    --btn-hover-bg: transparent;
+    --btn-hover-fg: var(--blue-primary);
+    --btn-active-bg: transparent;
+}

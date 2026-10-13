@@ -1,0 +1,48 @@
+/* RowButton：迁移前 5 种行卡各写一份 CSS（.manage-card / .license-card / .wiki-card /
+   .list-item / .history-item），内边距 4/10/12/16、圆角 8/12/16 全靠手抄；
+   现在收敛成两档：卡片 16×16、行 12×12。
+   悬停 / 按下 / 选中 / 禁用 / 焦点全部来自 app.css 的 .btn，这里只管几何。 */
+
+.rb {
+    display: flex;
+    align-items: center;
+    gap: var(--rb-content-gap, 0px);
+    width: 100%;
+    min-width: 0;
+    padding: var(--rb-pad, 12px);
+    border-radius: var(--rb-radius, 12px);
+    --btn-bg: transparent;
+    --btn-fg: var(--text-primary);
+}
+
+/* 行间距：由 Spacing 参数写在行内 style 的 --rb-gap 上。
+   只作用于"有上一行"的行，所以列表第一行紧贴容器顶部（Virtualize 的 spacer 也吃不到它）。 */
+.rb + .rb {
+    margin-top: var(--rb-gap, 0px);
+}
+
+/* --- 形态 --- */
+/* 卡片：带底色，悬停由共享规则刷成 --hover-bg（与迁移前一致） */
+.rb--card {
+    --rb-pad: 16px;
+    --rb-radius: 16px;
+    --btn-bg: var(--bg-color-secondary);
+}
+
+/* 行：无底色，悬停才出现底色 */
+.rb--row {
+    --rb-pad: 12px;
+    --rb-radius: 12px;
+}
+
+.rb--justify-space-between {
+    justify-content: space-between;
+}
+
+/* --- 状态 --- */
+/* 选中（当前 Wiki / 当前标签）：浅蓝底。
+   悬停与按下不改写它 —— 由 app.css 里 .btn.is-selected 那两条规则保证，
+   不再需要像 NavMenu 那样用 !important 把底色钉死。 */
+.rb.is-selected {
+    --btn-bg: var(--blue-tertiary);
+}
