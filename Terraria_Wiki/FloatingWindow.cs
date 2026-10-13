@@ -191,6 +191,11 @@ public static class FloatingWindow
                 return WindowHelper.IsMainWindowVisible();
 
             _active = false;
+
+            // ★ 必须在 _barActive 置 false 之前记小条几何：WindowHelper 靠这个标志判断
+            //   "现在确实是 420x560 的小条"，先清标志的话这一步会被整段跳过
+            //   （WindowHelper.ExitFloatingBar 里那次调用已经太晚），小条的位置/大小就白丢了。
+            WindowHelper.RememberFloatingBarGeometry();
             _barActive = false;
 
             var icon = FloatingIconWindow.Current;

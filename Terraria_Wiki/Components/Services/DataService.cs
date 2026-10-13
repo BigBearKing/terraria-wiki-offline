@@ -1222,14 +1222,29 @@ namespace Terraria_Wiki.Services
                 }
             }
 
-            var pageUrl = _baseApiUrl + $"?action=parse&page={pageInfo.Title}&prop=text&format=xml";
+            // ★ 标题必须转义：Wiki 标题里带 & 的（例如 Thorium 的 "Song of Ice & Fire"）不转义会把查询串切断——
+            //   服务端只收到 page=Song of Ice，返回 missingtitle、响应里没有 <text> 节点，这页就永远下不下来。
+            var pageUrl = _baseApiUrl + $"?action=parse&page={Uri.EscapeDataString(pageInfo.Title)}&prop=text&format=xml";
 
             string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
 
             var xmldoc = XDocument.Parse(xml);
 
             // 直接取 <text> 节点内容
-            string html = xmldoc.Descendants("text").FirstOrDefault()?.Value;
+            string? html = xmldoc.Descendants("text").FirstOrDefault()?.Value;
+
+            if (string.IsNullOrEmpty(html))
+            {
+                // API 没给 <text>：这个词条在 wiki 上不存在（旧标题 / 已删除 / 已改名），或者 API 本身报错。
+                // 以前这里把 null 直接丢给 LoadHtml → ArgumentNullException：重试 5 次全白跑，还会永久留在失败列表里。
+                // 现在借用调度器已有的"404 = 不存在"通道（见 BatchTaskScheduler 的 onNotFound）：只记一条日志、不再重试。
+                string? errorCode = xmldoc.Descendants("error").FirstOrDefault()?.Attribute("code")?.Value;
+                throw new HttpRequestException(
+                    $"页面不存在或 API 报错：{pageInfo.Title}（{errorCode ?? "missing <text>"}）",
+                    null,
+                    HttpStatusCode.NotFound);
+            }
+
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
             var contentNode = doc.DocumentNode;

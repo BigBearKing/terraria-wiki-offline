@@ -1,5 +1,6 @@
-﻿@using System.ComponentModel
+@using System.ComponentModel
 @using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.Maui.ApplicationModel.DataTransfer
 @using Terraria_Wiki.Services
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -13,30 +14,51 @@
 
         <div class="left-group">
             <span class="log-title">@Loc.Get("Common.Log")</span>
-            <span class="log-info">@(AppState.HasActiveTasks ? Loc.Get("LogPanel.CurrentTask") + string.Join(", ", AppState.ActiveTasks.Select(x => AppState.Tasks[x.Task.TaskType].GetName(Loc))) : "")</span>
+            <span class="log-info" title="@GetCurrentTaskText()">@GetCurrentTaskText()</span>
         </div>
 
-        <div class="close-btn button" @onclick="CloseLogPanel">
-            <Icon Name="dismiss" />
-        </div>
+        <IconButton Size="IconButtonSize.Square32" Icon="dismiss" IconSize="22"
+                    Class="close-btn" Title="@Loc.Get("Common.Close")"
+                    OnClick="CloseLogPanel" />
     </div>
     <div id="log-container" class="log-container no-swipe">
         <Virtualize @ref="_virtualize"
                     ItemsProvider="LoadLogs"
-                    Context="log"
+                    Context="item"
                     OverscanCount="20">
             @{
-                var parsedLog = ParseLogLine(log);
+                var parsedLog = ParseLogLine(item.Raw);
             }
-            <div class="log-line @parsedLog.CssClass">@parsedLog.Text</div>
+            @* 一行一条（nowrap + 省略号），看全长有三种办法：
+                 · 桌面：鼠标悬停 → 原生 title 提示（原始整行，含时间戳与级别标签）
+                 · 点一下 → 这一行展开折行显示，再点收起
+                 · 长按 0.5 秒 → 复制整行到剪贴板（手机、桌面都行） *@
+            <div class="log-line @parsedLog.CssClass @(_expanded.Contains(item.Index) ? "expanded" : "")"
+                 title="@item.Raw"
+                 @onpointerdown="() => OnLinePointerDown(item)"
+                 @onpointerup="CancelLongPress"
+                 @onpointerleave="CancelLongPress"
+                 @onpointercancel="CancelLongPress"
+                 @oncontextmenu="() => { }"
+                 @oncontextmenu:preventDefault="true"
+                 @onclick="() => ToggleExpand(item.Index)">@parsedLog.Text</div>
         </Virtualize>
     </div>
+
+    @* 复制成功的小提示（1.5 秒后自动消失） *@
+    <div class="copy-toast @(_showCopied ? "show" : "")">@Loc.Get("LogPanel.Copied")</div>
 </div>
 
 @code {
 
-    private Virtualize<string> _virtualize;
+    private Virtualize<LogItem> _virtualize;
     private readonly Guid _backLayerId = Guid.NewGuid();
+
+    /// <summary>已展开折行的日志行（按它在整个日志里的序号记；Virtualize 回收项也不受影响）。</summary>
+    private readonly HashSet<int> _expanded = new();
+
+    /// <summary>日志行 + 它在整个日志里的序号。</summary>
+    private sealed record LogItem(int Index, string Raw);
 
     private bool _isAutoScrolling = false; // 防止重入
 
@@ -78,12 +100,117 @@
         }
     }
 
-    private async ValueTask<ItemsProviderResult<string>> LoadLogs(ItemsProviderRequest req)
+    private async ValueTask<ItemsProviderResult<LogItem>> LoadLogs(ItemsProviderRequest req)
     {
         var total = App.LogManager.GetTotalCount();
         // 这里读取的永远是当前 _activeLogPath 的内容
-        var items = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
-        return new ItemsProviderResult<string>(items, total);
+        var lines = await App.LogManager.GetLogsAsync(req.StartIndex, req.Count);
+
+        var items = new List<LogItem>(req.Count);
+        int index = req.StartIndex;
+        foreach (var line in lines)
+            items.Add(new LogItem(index++, line));
+
+        return new ItemsProviderResult<LogItem>(items, total);
+    }
+
+    /// <summary>点一下展开/收起这一行：手机端没有 hover，靠它看全长内容。</summary>
+    private void ToggleExpand(int index)
+    {
+        // 长按刚复制过：这一次抬手不再当点击（否则复制完还会顺手展开）
+        if (_longPressHandled)
+        {
+            _longPressHandled = false;
+            return;
+        }
+
+        if (!_expanded.Add(index))
+            _expanded.Remove(index);
+
+        StateHasChanged();
+    }
+
+    private const int LongPressMs = 500;
+
+    private CancellationTokenSource? _longPressCts;
+    private CancellationTokenSource? _copiedHintCts;
+    private bool _longPressHandled;
+    private bool _showCopied;
+
+    /// <summary>手指/鼠标按下：起一个 0.5 秒计时；到点还没松开就算长按 → 复制整行。</summary>
+    private void OnLinePointerDown(LogItem item)
+    {
+        _longPressHandled = false;      // 每次按下先清掉上一次的抑制标记
+
+        _longPressCts?.Cancel();
+        _longPressCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _longPressCts = cts;
+
+        _ = LongPressAsync(item, cts.Token);
+    }
+
+    private async Task LongPressAsync(LogItem item, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(LongPressMs, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;                     // 提前松手/移开 → 当普通点击处理
+        }
+
+        if (token.IsCancellationRequested)
+            return;
+
+        _longPressHandled = true;
+        await CopyLineAsync(item.Raw);
+    }
+
+    /// <summary>松开/移开/取消：撤销还没到点的长按计时。</summary>
+    private void CancelLongPress()
+    {
+        _longPressCts?.Cancel();
+        _longPressCts?.Dispose();
+        _longPressCts = null;
+    }
+
+    /// <summary>复制整行到剪贴板，并浮一个"已复制"的提示（1.5 秒后自动消失）。</summary>
+    private async Task CopyLineAsync(string text)
+    {
+        try
+        {
+            await Clipboard.Default.SetTextAsync(text);
+            await ShowCopiedHintAsync();
+        }
+        catch (Exception ex)
+        {
+            App.LogManager?.Error($"Copy log line failed: {ex}");
+        }
+    }
+
+    private async Task ShowCopiedHintAsync()
+    {
+        _copiedHintCts?.Cancel();
+        _copiedHintCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _copiedHintCts = cts;
+
+        _showCopied = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(1500, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;                     // 又复制了一条，交给新的那次去收尾
+        }
+
+        _showCopied = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void RefreshLog()
@@ -105,6 +232,12 @@
         });
         _isAutoScrolling = false;
     }
+
+    /// <summary>标题右侧"当前任务"的文本（没有任务时为空串）；标题栏也会截断，所以顺带给它做 tooltip。</summary>
+    private string GetCurrentTaskText()
+        => AppState.HasActiveTasks
+            ? Loc.Get("LogPanel.CurrentTask") + string.Join(", ", AppState.ActiveTasks.Select(x => AppState.Tasks[x.Task.TaskType].GetName(Loc)))
+            : "";
 
     // 新增：解析日志类型，去掉标签并分配对应的 CSS 类名
     private (string Text, string CssClass) ParseLogLine(string log)
@@ -146,5 +279,10 @@
         _ = JSRuntime.InvokeVoidAsync("swipeManagers.log-panel.dispose");
         App.LogManager.OnLogAdded -= RefreshLog;
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
+
+        _longPressCts?.Cancel();
+        _longPressCts?.Dispose();
+        _copiedHintCts?.Cancel();
+        _copiedHintCts?.Dispose();
     }
 }

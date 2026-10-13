@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using Terraria_Wiki.Models;
@@ -582,10 +582,11 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.ActiveWikiBookId = book.Id;
                 App.AppStateManager.ActiveWikiBook = book;
                 await RestoreDownloadTaskStateAsync(book.Id);
-                App.AppStateManager.ResetWikiNavigation();
+                // ★ 不拉回 home：用户是在数据页点的切换，切完应该留在原地（该页自己会刷新新书的状态）。
+                //   以前这里既把 CurrentPage 设成 home，又 NavigateTo("/home")，所以切完就被弹回主界面。
+                App.AppStateManager.ResetWikiNavigation(goHome: false);
                 await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
                 App.AppStateManager.NotifyWikiBookSwitched();
-                _navManager.NavigateTo("/home", false, true);
                 return true;
             }
             catch (Exception ex)

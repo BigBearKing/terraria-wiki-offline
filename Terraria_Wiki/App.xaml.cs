@@ -1,4 +1,4 @@
-﻿using Terraria_Wiki.Models;
+using Terraria_Wiki.Models;
 using Terraria_Wiki.Services;
 
 namespace Terraria_Wiki
@@ -31,6 +31,9 @@ namespace Terraria_Wiki
             Localization = localizationService;
             StoragePath = storagePath;
             services.GetRequiredService<GlobalExceptionHandler>().Register();
+
+            // 有任务在跑时按住系统，别让电脑睡过去/进新型待机把下载掐断（详见 SleepPreventionService）
+            SleepPreventionService.Attach(appState);
 
             InitializeComponent();
 

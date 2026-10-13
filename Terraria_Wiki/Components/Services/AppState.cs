@@ -197,13 +197,20 @@ public class AppState : INotifyPropertyChanged
         return _tabs.FirstOrDefault(t => t.Id == _activeTabId);
     }
 
-    public void ResetWikiNavigation()
+    /// <summary>
+    /// 重置"wiki 导航"相关状态：标签页 / 当前 wiki 页面 / 搜索词 / 各种浮层。
+    /// <paramref name="goHome"/> 决定是否顺带把 <see cref="CurrentPage"/> 拉回 home：
+    ///   · 默认 true —— 数据迁移、首次下载完成、删除数据库这类"整库换掉"的场景适合回主页；
+    ///   · 切换 Wiki 时传 false —— 用户是在数据页点的切换，不该被弹回主界面（页面自己会刷新）。
+    /// </summary>
+    public void ResetWikiNavigation(bool goHome = true)
     {
         var defaultTab = new TabModel();
         _tabs = new List<TabModel> { defaultTab };
         _activeTabId = defaultTab.Id;
         _currentWikiPage = string.Empty;
-        _currentPage = "home";
+        if (goHome)
+            _currentPage = "home";
         _searchQuery = string.Empty;
         _moreListOpen = false;
         _findInPageOpen = false;
@@ -215,7 +222,8 @@ public class AppState : INotifyPropertyChanged
         OnPropertyChanged(nameof(ActiveTabId));
         OnPropertyChanged(nameof(ActiveTab));
         OnPropertyChanged(nameof(CurrentWikiPage));
-        OnPropertyChanged(nameof(CurrentPage));
+        if (goHome)
+            OnPropertyChanged(nameof(CurrentPage));
         OnPropertyChanged(nameof(SearchQuery));
         OnPropertyChanged(nameof(MoreListOpen));
         OnPropertyChanged(nameof(FloatingSearchOpen));
