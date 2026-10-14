@@ -9,6 +9,13 @@ namespace Terraria_Wiki.Services
 
         public static async Task BackEvents()
         {
+            // 原生遮罩加载框（启动加载层 / 导入·迁移进度框）显示期间：返回键彻底吞掉，
+            // 既不关浮层，也不导航或退出——加载中退回主页既没意义，还可能打断数据迁移。
+            if (BackLayerCoordinator.IsBackBlocked)
+            {
+                return;
+            }
+
             if (BackLayerCoordinator.TryCloseTop())
             {
                 return;

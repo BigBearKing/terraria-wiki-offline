@@ -249,6 +249,11 @@ public sealed class PackageService
             {
                 await App.ContentDb!.ReconnectAsync();
                 await AppService.RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
+                // ★ 导入换掉的是整份数据：内存里的词条缓存仍是旧库的对象，
+                //   不清掉的话接下来的刷新渲染出来的还是导入前的内容
+                //   （刷新动作照常执行，页面看起来却没变）。
+                //   与"删除数据库/数据迁移"同属整库替换，都要先作废缓存。
+                AppService.InvalidatePageCache();
                 await AppService.WikiRefreshAsync();
                 if (needMigration)
                     await new LegacyUpgradeHandler(_storagePath).MigrateAnchorDataWikiAsync(App.AppStateManager.ActiveWikiBook);

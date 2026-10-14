@@ -25,6 +25,11 @@ namespace Terraria_Wiki
 #endif
         private readonly INativeFindInPageService _findInPageService;
 
+        // 原生遮罩加载框的"返回键拦截"登记 Id：显示期间吞掉安卓返回键。
+        // 两个加载框各用一个 Id，互不覆盖（见 BackLayerCoordinator / BackEventsService）。
+        private readonly Guid _loadingOverlayBackBlocker = Guid.NewGuid();
+        private readonly Guid _loadingPopupBackBlocker = Guid.NewGuid();
+
         // ===== 页内搜索：原生自绘弹窗 =====
         private readonly FindPanelDrawable _findDrawable = new();
         private IDispatcherTimer? _findCaretTimer;
@@ -41,6 +46,9 @@ namespace Terraria_Wiki
 #endif
         {
             InitializeComponent();
+            // LoadingOverlay 在 XAML 里默认就是可见的（启动加载层），
+            // 所以从构造起就拦住返回键，直到 HideLoadingScreen 才解除。
+            BackLayerCoordinator.SetBackBlocked(_loadingOverlayBackBlocker, true);
             _findInPageService = findInPageService;
             bool isDark = App.AppStateManager.IsDarkTheme;
             //根据判断，瞬间给原生加载层上色
@@ -570,6 +578,8 @@ namespace Terraria_Wiki
         {
 
             LoadingOverlay.IsVisible = false;
+            // 启动加载层收起：解除返回键拦截
+            BackLayerCoordinator.SetBackBlocked(_loadingOverlayBackBlocker, false);
 
         }
         public async Task<bool> WaitForWebViewAsync(TimeSpan timeout)
@@ -612,12 +622,28 @@ namespace Terraria_Wiki
             AlertTitle.Text = title;
             AlertMessage.Text = message;
             CustomAlertMask.IsVisible = true;
+            // 遮罩进度框显示中：吞掉返回键，避免加载途中被返回打断（会重复调用，登记是幂等的）
+            BackLayerCoordinator.SetBackBlocked(_loadingPopupBackBlocker, true);
         }
 
         // 关闭弹窗
         public void HideLoadingPopup()
         {
             CustomAlertMask.IsVisible = false;
+            BackLayerCoordinator.SetBackBlocked(_loadingPopupBackBlocker, false);
+        }
+
+        protected override void OnHandlerChanging(HandlerChangingEventArgs args)
+        {
+            // 本页被换掉时（如 WebView 不可用页顶替、窗口关闭）解除返回键拦截，
+            // 否则登记会跟着页面一起"留"在 BackLayerCoordinator 里，返回键再也回不来。
+            if (args.NewHandler is null)
+            {
+                BackLayerCoordinator.SetBackBlocked(_loadingOverlayBackBlocker, false);
+                BackLayerCoordinator.SetBackBlocked(_loadingPopupBackBlocker, false);
+            }
+
+            base.OnHandlerChanging(args);
         }
 
         protected override void OnHandlerChanged()

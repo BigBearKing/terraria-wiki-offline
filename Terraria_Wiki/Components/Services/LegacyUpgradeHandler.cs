@@ -144,6 +144,8 @@ public class LegacyUpgradeHandler
 
             mainPage?.ShowLoadingPopup("更新旧版数据库", $"更新完成，共处理 {processed} 个页面");
             await Task.Delay(1500);
+            // 迁移改写了页面正文：先作废词条缓存，否则下面的刷新渲染出来的还是迁移前的旧内容
+            AppService.InvalidatePageCache();
             await AppService.WikiRefreshAsync();
         }
         finally
