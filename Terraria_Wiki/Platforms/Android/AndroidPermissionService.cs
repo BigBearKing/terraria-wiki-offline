@@ -29,6 +29,16 @@ public static class AndroidPermissionService
             case AndroidPermissionType.Background:
                 RequestBackgroundPermission();
                 break;
+            case AndroidPermissionType.Network:
+                // INTERNET 是 normal 权限：正常情况下安装即授予，系统里既没有运行时弹窗也没有开关，
+                // 因此这里无法"申请"。只有被 adb revoke / 厂商联网管家 / MDM 策略剥夺后才会不授予，
+                // 此时唯一的解除方式是应用详情页里的系统开关 —— 所以直接跳过去。
+                if (IsNetworkGranted())
+                    break;
+                System.Diagnostics.Debug.WriteLine(
+                    "[Permission] INTERNET 未授予（normal 权限被 revoke / 被厂商联网管家或 MDM 策略剥夺），跳转应用详情页由用户手动开启。");
+                OpenAppSettings();
+                break;
         }
 
         PermissionStateChanged?.Invoke();
