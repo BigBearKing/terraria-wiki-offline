@@ -26,9 +26,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         # .NET 11 GA 前，11.0.x 通道取不到包，需改用 RC 精确版本：
-        # dotnet-version: '11.0.100-rc.1.26425.128'
+        # dotnet-version: '11.0.100-rc.2.26504.105'
         # GA 发布后改回 '11.0.x' 即可。
-        dotnet-version: '11.0.100-rc.1.26425.128'
+        dotnet-version: '11.0.100-rc.2.26504.105'
 
     - name: Install MAUI Workloads
       run: dotnet workload install maui --ignore-failed-sources

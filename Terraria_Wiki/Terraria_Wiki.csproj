@@ -3,9 +3,13 @@
 	<PropertyGroup>
 		<!-- .NET 11 起 MAUI 包按带平台版本的 TFM 打包（如 net11.0-android37.0），
 		     因此这里必须显式写出平台版本，否则 NuGet 会报 NU1012。
-		     版本号需与已安装工作负载一致：Android Ref 37 / iOS 26.5 / MacCatalyst 26.5。 -->
+		     版本号需与**已安装工作负载**一致。RC.2 的工作负载版本：
+		       android      37.2.0-rc.2.84  → 包名仍是 Microsoft.Android.Ref.37，TFM 用 android37.0
+		       ios          27.0.12212-net11-rc.2 → 只有 27.0 的包，TFM 必须写 ios27.0
+		       maccatalyst  27.0.12212-net11-rc.2 → 同上，TFM 必须写 maccatalyst27.0
+		     ★ 换工作负载版本时必须回到这里核对：TFM 的版本号对不上会直接构建失败。 -->
 		<TargetFrameworks>net11.0-android37.0</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios26.5;net11.0-maccatalyst26.5</TargetFrameworks>
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios27.0;net11.0-maccatalyst27.0</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
 		<SupportedCultures>zh-CN;en-US</SupportedCultures>
 		<NeutralLanguage>en-US</NeutralLanguage>
@@ -55,8 +59,14 @@
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">12.2</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+		<!-- ★ 最低部署版本必须 ≥ SDK 声明的下限，否则构建直接报错。RC.2 的下限来自：
+		       Microsoft.iOS.Sdk.SupportedTargetPlatforms.props     → iOSMinSupportedOSPlatformVersion = 15.0
+		       Microsoft.MacCatalyst.Sdk.SupportedTargetPlatforms.props → MacCatalystMinSupportedOSPlatformVersion = 17.0
+		     ★ 这两个值同时是"支持的设备/系统下限"这个产品口径，不是纯技术参数：
+		       iOS 12.2 → 15.0、macCatalyst 15.0（macOS 12）→ 17.0（macOS 14）会**缩小可安装范围**。
+		       若哪天要重新支持更低的系统，只能退回到旧工作负载（SDK/TFM 一起退），不能只改这里。 -->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">17.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -92,18 +102,12 @@
 		                                Value="true" Trim="false" />
 	</ItemGroup>
 
-	<!-- ★ .NET 11 RC.1 已知缺陷（Android 工作负载版本错位）：
-	     Microsoft.Android.Sdk.Windows/37.0.0-rc.1.2257 的
-	     Microsoft.Android.Sdk.BundledVersions.targets 把
-	     MicrosoftNETCoreAppRefPackageVersion 固定为 11.0.0-rc.1.26428.117，
-	     而本机 SDK 是 11.0.100-rc.1.26425.128（对应 AOT 包 .128）。
-	     .117 在 nuget.org 上不存在 → 恢复 AOT 运行时包时 NU1102，
-	     MSBuild 随后静默回退到 ReadyToRun，产出 323MB 的非原生包。
-	     这里仅在 windows TFM 上把该版本号拉回 SDK 实际版本，规避此缺陷。
-	     GA 后 Android 工作负载与 SDK 版本对齐，可删除本区块。 -->
-	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
-		<MicrosoftNETCoreAppRefPackageVersion>11.0.0-rc.1.26425.128</MicrosoftNETCoreAppRefPackageVersion>
-	</PropertyGroup>
+	<!-- 已移除：RC.1 时代为绕开"Android 工作负载把 MicrosoftNETCoreAppRefPackageVersion
+	     钉成 nuget 上不存在的版本 → NU1102 → MSBuild 静默回退 R2R → publish 仍 EXIT=0
+	     但产出非原生包"而加的覆盖。
+	     2026-10 实测：RC.2 的 Microsoft.Android.Sdk.Windows/37.2.0-rc.2.84 的
+	     BundledVersions.targets 里已不再钉这个属性，缺陷已修，故删除该覆盖。
+	     ★ 若将来又在 publish 见到"无 ILC 日志 / 产出 300MB 级非原生包"，先查这个属性。 -->
 
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
 		<ApplicationIcon>Resources\AppIcon\appicon.ico</ApplicationIcon>
@@ -113,11 +117,13 @@
 		<AssemblyMetadata Include="ApplicationBuildNumber" Value="$(ApplicationVersion)" />
 	</ItemGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net11.0-ios26.5|AnyCPU'" />
+	<!-- 下面三段的条件原本写的是 net11.0-ios26.5；RC.2 起 iOS TFM 是 ios27.0，
+	     条件对不上就等于失效（ProvisioningType / CodesignKey 不会生效）。 -->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net11.0-ios27.0|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-ios26.5|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-ios27.0|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(TargetFramework)'=='net11.0-ios26.5'">
+	<PropertyGroup Condition="'$(TargetFramework)'=='net11.0-ios27.0'">
 	  <ProvisioningType>automatic</ProvisioningType>
 	  <CodesignKey>iPhone Developer</CodesignKey>
 	</PropertyGroup>
@@ -192,11 +198,11 @@
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
 
 		<PackageReference Include="LuYao.TlsClient" Version="1.2.0" />
-		<!-- .NET 11 / MAUI 11（当前为 RC.1，GA 后需改为正式版本号） -->
-		<PackageReference Include="Microsoft.Maui.Controls" Version="11.0.0-rc.1.26451.6" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="11.0.0-rc.1.26451.6" />
+		<!-- .NET 11 / MAUI 11（当前为 RC.2，GA 后需改为正式版本号） -->
+		<PackageReference Include="Microsoft.Maui.Controls" Version="11.0.0-rc.2.26505.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="11.0.0-rc.2.26505.5" />
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" Condition="$(TargetFramework.Contains('-windows'))" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.1.26425.128" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.2.26504.105" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
 
 	</ItemGroup>

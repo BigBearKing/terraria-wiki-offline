@@ -121,9 +121,9 @@ distributed binary. Ship this list with any build.
 | HtmlAgilityPack | 1.12.4 | MIT | Copyright (c) ZZZ Projects Inc. |
 | LuYao.TlsClient | 1.2.0 | MIT | The upstream nuspec declares MIT and states no copyright holder. |
 | sqlite-net-pcl | 1.11.285 | MIT | Copyright (c) Krueger Systems, Inc. |
-| Microsoft.Maui.Controls | 11.0.0-rc.1.26451.6 | MIT | (c) Microsoft Corporation. All rights reserved. |
-| Microsoft.AspNetCore.Components.WebView.Maui | 11.0.0-rc.1.26451.6 | MIT | (c) Microsoft Corporation. All rights reserved. |
-| Microsoft.Extensions.Logging.Debug | 11.0.0-rc.1.26425.128 | MIT | (c) Microsoft Corporation. All rights reserved. |
+| Microsoft.Maui.Controls | 11.0.0-rc.2.26505.5 | MIT | (c) Microsoft Corporation. All rights reserved. |
+| Microsoft.AspNetCore.Components.WebView.Maui | 11.0.0-rc.2.26505.5 | MIT | (c) Microsoft Corporation. All rights reserved. |
+| Microsoft.Extensions.Logging.Debug | 11.0.0-rc.2.26504.105 | MIT | (c) Microsoft Corporation. All rights reserved. |
 | Microsoft.Web.WebView2 | 1.0.4191.47 | BSD-3-Clause | (C) Microsoft Corporation. All rights reserved. See `licenses/WebView2-LICENSE.txt` and `licenses/WebView2-NOTICE.txt`. |
 
 Transitive packages pulled in by `sqlite-net-pcl`:

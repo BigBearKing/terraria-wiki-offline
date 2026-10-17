@@ -176,7 +176,7 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 
 The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-maccatalyst` (Apple platforms are unavailable on Linux). To publish an unsigned iOS IPA you can trigger the `Build Unsigned iOS IPA` workflow manually in GitHub Actions; artifacts are kept for 7 days.
 
-> **Note**: .NET 11 has not reached GA yet. This project uses RC.1 (`SDK 11.0.100-rc.1` / MAUI `11.0.0-rc.1.26451.6`). Once the stable release is out, change the dependency versions to the non-`rc` releases.
+> **Note**: .NET 11 has not reached GA yet. This project uses RC.2 (`SDK 11.0.100-rc.2` / MAUI `11.0.0-rc.2.26505.5`). Once the stable release is out, change the dependency versions to the non-`rc` releases.
 
 ## Data Sources and Copyright
 
@@ -188,7 +188,7 @@ The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-ma
 ## Credits
 
 - [Terraria Chinese Wiki](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki) and the mod wiki communities: all content and data structures in this app come from community contributors' editing and maintenance.
-- [.NET MAUI](https://github.com/dotnet/maui) and [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor) (11.0.0-rc.1): cross-platform UI and frontend component frameworks.
+- [.NET MAUI](https://github.com/dotnet/maui) and [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor) (11.0.0-rc.2): cross-platform UI and frontend component frameworks.
 - [Microsoft.Web.WebView2](https://learn.microsoft.com/microsoft-edge/webview2/) (1.0.4191.47): WebView engine on Windows.
 - [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack) (1.12.4): page data cleaning and parsing.
 - [sqlite-net-pcl](https://github.com/praeclarum/sqlite-net) (1.11.285): local database and persistence.
