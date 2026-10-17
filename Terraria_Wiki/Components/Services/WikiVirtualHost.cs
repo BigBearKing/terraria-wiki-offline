@@ -166,7 +166,8 @@ namespace Terraria_Wiki.Services
                     CoreWebView2WebResourceRequestSourceKinds.All);
                 core.WebResourceRequested += OnWebResourceRequested;
 
-                _log.Info($"[VHost] 已挂上虚拟主机 {Host}");
+                // 挂载成功不写日志：这是每次启动都会发生的正常路径，写进用户可见的日志没有信息量。
+                // 只有失败才值得记录（见 catch 分支）。
                 ContentBaseChanged?.Invoke();
                 return true;
             }
@@ -391,7 +392,7 @@ namespace Terraria_Wiki.Services
                 webView.SetWebViewClient(new WikiWebViewClient(inner, _content, _log));
 
                 _androidReady = true;
-                _log.Info($"[VHost] 已挂上虚拟主机 {Host}（包装 WebViewClient，原 client 已转发）");
+                // 同 Windows：成功挂载是正常路径，不写用户可见日志；失败才记（见 catch）。
                 ContentBaseChanged?.Invoke();
                 return true;
             }

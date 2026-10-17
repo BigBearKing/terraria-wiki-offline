@@ -1453,12 +1453,21 @@ namespace Terraria_Wiki.Services
         }
 
         //清理临时文件
+        //★ 先查有没有残留再写日志：正常启动时这里什么都不会删，
+        //  无条件输出"正在清理临时文件"只会让用户以为每次都在做无用功。
         private void CleanupTemporaryFiles()
         {
+            if (!Directory.Exists(_currentDataDir))
+                return;
+
+            var leftovers = Directory.EnumerateFiles(
+                _currentDataDir, "*.merge.tmp", SearchOption.TopDirectoryOnly).ToList();
+
+            if (leftovers.Count == 0)
+                return;
+
             _log.Info(_loc.Get("DataService.Log.CleaningTempFiles"));
-            foreach (var mergeFile in Directory.Exists(_currentDataDir)
-                ? Directory.EnumerateFiles(_currentDataDir, "*.merge.tmp", SearchOption.TopDirectoryOnly)
-                : [])
+            foreach (var mergeFile in leftovers)
             {
                 try { File.Delete(mergeFile); } catch { }
             }

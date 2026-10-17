@@ -18,9 +18,16 @@ public class LegacyUpgradeHandler
 
     /// <summary>
     /// 执行所有需要的升级步骤。
+    ///
+    /// ★ 只有**确实需要迁移**时才写日志：这两步都以"旧版痕迹存在"为前提
+    ///   （旧目录 Terraria_Wiki 或迁移前的失败列表文件），正常启动时什么都没做，
+    ///   却每次都输出"开始/完成"，对用户只是噪音。
     /// </summary>
     public async Task RunAsync(WikiBook activeBook)
     {
+        if (!HasLegacyDataToMigrate(activeBook))
+            return;
+
         App.LogManager?.Info(App.Localization?.Get("LegacyUpgrade.Started") ?? "开始执行旧版数据迁移。");
         try
         {
@@ -34,6 +41,27 @@ public class LegacyUpgradeHandler
             throw;
         }
     }
+
+    /// <summary>
+    /// 迁移是否真的有事可做。判断条件必须与两个迁移步骤的前提严格一致，
+    /// 否则会出现"日志说迁移了但什么都没做"或"做了却没日志"。
+    /// </summary>
+    private bool HasLegacyDataToMigrate(WikiBook activeBook)
+    {
+        // 步骤 1（RenameDataFolderAsync）的前提：旧目录还在
+        var legacyDir = Path.Combine(_appDataDir, "Terraria_Wiki");
+        if (Directory.Exists(legacyDir))
+            return true;
+
+        // 步骤 2（MigrateFailedListsOnce）的前提：源文件存在且目标不存在
+        var taskDir = Path.Combine(_appDataDir, "Tasks", activeBook.Id.ToString());
+        return NeedsMove(legacyDir, taskDir, "failed_pages.txt", "failed_pages.txt")
+            || NeedsMove(legacyDir, taskDir, "failed_res.txt", "failed_resources.txt");
+    }
+
+    private static bool NeedsMove(string fromDir, string toDir, string fromName, string toName)
+        => File.Exists(Path.Combine(fromDir, fromName))
+        && !File.Exists(Path.Combine(toDir, toName));
 
     /// <summary>
     /// 如果存在旧的硬编码文件夹 "Terraria_Wiki"，将其重命名为 WikiBook.DataFolder，
