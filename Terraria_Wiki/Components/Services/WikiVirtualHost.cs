@@ -9,8 +9,10 @@ namespace Terraria_Wiki.Services
 {
     /// <summary>
     /// iframe 内容源的**虚拟主机承载**：把 <see cref="WikiContentProvider"/> 提供的内容
-    /// 直接交给 WebView，不经过任何端口。三个平台各用一种机制，但共用同一个内容提供者，
-    /// 所以"换承载"任何时候都能回退到本地 HTTP 端口而不改变页面内容。
+    /// 直接交给 WebView，不经过任何端口。三个平台各用一种机制，但共用同一个内容提供者。
+    ///
+    /// R4 之前还并存一个本地 HTTP 服务器（LocalWebServer + HttpListener），可作回退；
+    /// 现在已删除 —— 虚拟主机是三平台唯一的内容承载（不占端口、无防火墙提示、无白屏）。
     ///
     /// | 平台 | 机制 | URL 形态 |
     /// |---|---|---|
@@ -44,9 +46,6 @@ namespace Terraria_Wiki.Services
 
         /// <summary>私有 scheme 里的固定 host 段。父目录必须带斜杠，否则上级相对路径会被截断。</summary>
         private const string AppleHostSegment = "wiki";
-
-        /// <summary>HTTP 回退基址。</summary>
-        private const string HttpFallbackBase = "http://127.0.0.1:55000";
 #endif
 
 #if WINDOWS
@@ -70,21 +69,39 @@ namespace Terraria_Wiki.Services
             _log = log;
         }
 
-        /// <summary>iframe 的内容基址；承载没挂上时回退到本地 HTTP 端口。</summary>
+        /// <summary>
+        /// iframe 的内容基址。R4 之后本地 HTTP 服务器已删除，这里不再有回退分支 ——
+        /// 三个平台一律返回各自的虚拟主机基址。
+        ///
+        /// 承载没挂上时的行为：iframe 的请求会失败（页面空白/报错），而不是悄悄退到另一条路。
+        /// 这是有意的 —— 之前"静默回退"会把真正的失败藏起来（表现为"某些图片就是不出来"）。
+        /// 挂载失败时 <see cref="TryAttach"/> / TryRegister* 会写日志，排查有据。
+        /// </summary>
         public static string ContentBase
         {
             get
             {
-#if WINDOWS
-                return IsAttached ? $"https://{Host}" : "http://127.0.0.1:55000";
-#elif IOS || MACCATALYST
-                return _appleSchemeReady
-                    ? $"{AppleScheme}://{AppleHostSegment}"
-                    : HttpFallbackBase;
-#elif ANDROID
-                return _androidReady ? $"https://{Host}" : "http://127.0.0.1:55000";
+#if IOS || MACCATALYST
+                return $"{AppleScheme}://{AppleHostSegment}";
 #else
-                return "http://127.0.0.1:55000";
+                return $"https://{Host}";
+#endif
+            }
+        }
+
+        /// <summary>当前平台的虚拟主机承载是否已生效（仅用于日志/诊断）。</summary>
+        public static bool IsAvailable
+        {
+            get
+            {
+#if WINDOWS
+                return IsAttached;
+#elif IOS || MACCATALYST
+                return _appleSchemeReady;
+#elif ANDROID
+                return _androidReady;
+#else
+                return false;
 #endif
             }
         }
@@ -117,23 +134,6 @@ namespace Terraria_Wiki.Services
 #endif
 
             return WikiContentProvider.StripBookSegment(path);
-        }
-
-        /// <summary>当前平台的虚拟主机承载是否已生效（决定 iframe 用虚拟主机还是回退端口）。</summary>
-        public static bool IsAvailable
-        {
-            get
-            {
-#if WINDOWS
-                return IsAttached;
-#elif IOS || MACCATALYST
-                return _appleSchemeReady;
-#elif ANDROID
-                return _androidReady;
-#else
-                return false;
-#endif
-            }
         }
 
 #if WINDOWS
@@ -173,7 +173,7 @@ namespace Terraria_Wiki.Services
             catch (Exception ex)
             {
                 lock (AttachedLock) { Attached.Remove(core); }
-                _log.Error($"[VHost] 挂载虚拟主机 {Host} 失败，iframe 将回退到本地 HTTP 端口", ex);
+                _log.Error($"[VHost] 挂载虚拟主机 {Host} 失败 —— R4 之后没有 HTTP 回退路径，iframe 内容将无法加载", ex);
                 ContentBaseChanged?.Invoke();
                 return false;
             }
@@ -254,7 +254,7 @@ namespace Terraria_Wiki.Services
             catch (Exception ex)
             {
                 _appleSchemeReady = false;
-                _log.Error($"[VHost] 注册私有协议 {AppleScheme}:// 失败，iframe 将回退到本地 HTTP 端口", ex);
+                _log.Error($"[VHost] 注册私有协议 {AppleScheme}:// 失败 —— R4 之后没有 HTTP 回退路径，iframe 内容将无法加载", ex);
                 ContentBaseChanged?.Invoke();
                 return false;
             }
@@ -398,7 +398,7 @@ namespace Terraria_Wiki.Services
             catch (Exception ex)
             {
                 _androidReady = false;
-                _log.Error($"[VHost] 挂载虚拟主机 {Host} 失败，iframe 将回退到本地 HTTP 端口", ex);
+                _log.Error($"[VHost] 挂载虚拟主机 {Host} 失败 —— R4 之后没有 HTTP 回退路径，iframe 内容将无法加载", ex);
                 ContentBaseChanged?.Invoke();
                 return false;
             }

@@ -9,13 +9,13 @@
 
 An offline Terraria wiki reader built with .NET MAUI Blazor Hybrid.
 
-The app crawls wiki page content, images, audio and video into a local SQLite database, then renders them inside an embedded WebView through a built-in local HTTP server — so you get the same layout and reading experience as the original site even with no network connection. It currently supports four wikis — vanilla Terraria, Calamity, Fargo's Mods and Thorium — in both Chinese and English, for a total of 8 data sources.
+The app crawls wiki page content, images, audio and video into a local SQLite database, then serves them to an embedded WebView through a WebView virtual host (`https://wiki.local` / `terrariawiki://`) — no port is opened and no local server runs — so you get the same layout and reading experience as the original site even with no network connection. It currently supports four wikis — vanilla Terraria, Calamity, Fargo's Mods and Thorium — in both Chinese and English, for a total of 8 data sources.
 
 ![App screenshot](Screenshot/main.png)
 
 ## Features
 
-- **Offline reading**: Articles, images, audio and video are all stored locally, no network required. A built-in local server renders content in an iframe, preserving the original site's styles, infoboxes, navboxes, collapsible tables and math formulas (MathJax).
+- **Offline reading**: Articles, images, audio and video are all stored locally, no network required. Content is injected into the iframe through a WebView virtual host, preserving the original site's styles, infoboxes, navboxes, collapsible tables and math formulas (MathJax).
 - **In-wiki navigation**: Click links to navigate without reloading. Redirects and `#anchors` are resolved automatically; content collapsed behind an anchor is expanded and scrolled into view.
 - **Image viewer**: Click an image in an article to open it with Viewer.js — zoom and drag to inspect the original.
 - **In-page search**: "Find in page" in the function bar is implemented as a native panel and shows the current match index and total count in real time.

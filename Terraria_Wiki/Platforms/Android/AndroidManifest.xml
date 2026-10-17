@@ -1,5 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+	<!-- usesCleartextTraffic：R4 删掉本地 HTTP 服务器（127.0.0.1:55000）后，
+	     它已经与 iframe 内容源无关了。之所以暂时保留：抓取/更新走 https，
+	     但若某个 wiki 的资源发生 https -> http 重定向，关掉它会直接失败。
+	     等确认没有明文跳转后再收掉（收紧前先用真机跑一遍整库下载）。 -->
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:usesCleartextTraffic="true"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />

@@ -7,11 +7,11 @@ namespace Terraria_Wiki.Services
 {
     /// <summary>
     /// iframe 内容源的「路由 + 取内容」部分。与承载方式无关：
-    /// 现在由 <see cref="LocalWebServer"/> 的 HTTP 监听器调用，
-    /// 将来的 WebView 虚拟主机（https://wiki.local）处理器调用同一份实现。
+    /// 三个平台的虚拟主机处理器（Windows 的 WebView2 事件、Apple 的 WKURLSchemeHandler、
+    /// Android 的 ShouldInterceptRequest）都调用同一份实现，所以各平台行为必然一致。
     ///
-    /// 本类**不含任何 HTTP 细节**（表头、状态码、CORS、If-None-Match、连接关闭），
-    /// 这些留在调用方。这样同一份路由能在三种承载方式下行为一致。
+    /// 本类**不含任何承载细节**（表头、状态码、CORS、If-None-Match、连接关闭），
+    /// 这些留在各界面的拦截层。
     /// </summary>
     public class WikiContentProvider
     {

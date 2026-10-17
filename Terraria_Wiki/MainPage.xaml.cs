@@ -865,11 +865,10 @@ namespace Terraria_Wiki
 
         private void BlazorWebView_UrlLoading(object sender, UrlLoadingEventArgs e)
         {
-            // 本机内容一律留在应用内打开：
-            //   127.0.0.1 —— 本地 HTTP 承载（回退路径）
-            //   wiki.local —— 虚拟主机承载（Windows 上的默认路径）
-            if (string.Equals(e.Url.Host, "127.0.0.1", StringComparison.Ordinal) ||
-                string.Equals(e.Url.Host, WikiVirtualHost.Host, StringComparison.OrdinalIgnoreCase))
+            // 本机内容一律留在应用内打开。
+            // R4 之后唯一的内容基址就是虚拟主机（wiki.local / terrariawiki），
+            // 原先给本地 HTTP 端口（127.0.0.1）开的那个分支已随服务器一起删除。
+            if (string.Equals(e.Url.Host, WikiVirtualHost.Host, StringComparison.OrdinalIgnoreCase))
             {
                 e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
             }

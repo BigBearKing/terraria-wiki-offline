@@ -71,7 +71,9 @@ namespace Terraria_Wiki.Services
                         App.Localization.Get("Settings.DataLocationMigrationMessage"));
                 }
 
-                App.WebServer?.Stop();
+                // 注意：R4 之后没有本地 HTTP 服务器需要停。迁移期间会关闭并重开数据库连接，
+                // 若此时 iframe 正好在取内容，WikiContentProvider 会抛异常并由虚拟主机层
+                // 返回 500（已在 logger 里留痕），不会静默失败。
                 await App.ContentDb!.CloseConnection();
                 InvalidatePageCache();
                 await App.ManagerDb!.CloseConnection();
@@ -94,7 +96,6 @@ namespace Terraria_Wiki.Services
                 if (activeBook != null)
                     await RefreshWikiBookAsync(App.ManagerDb, App.ContentDb);
 
-                await App.WebServer!.Start();
                 App.AppStateManager.ResetWikiNavigation();
                 App.AppStateManager.NotifyWikiBookSwitched();
                 App.LogManager.Info(App.Localization.Get("AppService.DataMigrationCompleted"));
@@ -139,7 +140,6 @@ namespace Terraria_Wiki.Services
                         await App.ContentDb.Init(true, activeBook);
                     }
                     App.DataManager!.InitializeSettings();
-                    await App.WebServer!.Start();
                 }
                 catch
                 {

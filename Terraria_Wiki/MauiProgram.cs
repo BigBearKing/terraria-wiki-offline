@@ -39,16 +39,13 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton(managerDbService);
             builder.Services.AddSingleton(contentDbService);
             // 内容提供者与承载方式无关（路由 + 取内容）。
-            // HTTP 承载（LocalWebServer）与虚拟主机承载（WikiVirtualHost）共用同一个实例，
-            // 所以两条路返回的内容必然一致 —— 这是"换承载"能安全回退的前提。
+            // 三平台虚拟主机承载共用同一个实例，所以各平台返回的内容必然一致。
             builder.Services.AddSingleton(sp => new WikiContentProvider(contentDbService));
-            builder.Services.AddSingleton(sp => new LocalWebServer(
-                sp.GetRequiredService<WikiContentProvider>(),
-                sp.GetRequiredService<LogService>()));
             // 虚拟主机承载（三平台各一种机制，共用同一个 WikiContentProvider）：
             //   Windows = https://wiki.local（WebView2 过滤器 + 事件）
             //   Apple   = terrariawiki://（WKURLSchemeHandler）
             //   Android = https://wiki.local（WebViewClient.ShouldInterceptRequest 包装）
+            // R4 起本地 HTTP 服务器（LocalWebServer）已删除，这里是唯一的内容承载。
             builder.Services.AddSingleton(sp => new WikiVirtualHost(
                 sp.GetRequiredService<WikiContentProvider>(),
                 sp.GetRequiredService<LogService>()));
@@ -149,7 +146,7 @@ namespace Terraria_Wiki
         ///   反而牺牲了渲染性能。只加 `--no-sandbox` 即最优。
         ///
         ///   ★ 注意：`--no-sandbox` 降低了浏览器进程的隔离级别。对一个纯离线
-        ///   Wiki 阅读器（只加载本机 LocalWebServer 的 https://0.0.0.1 内容）风险可接受；
+        ///   Wiki 阅读器（只加载虚拟主机 https://wiki.local 的本机内容）风险可接受；
         ///   若将来要加载任意外部网页，应重新评估。
         /// </summary>
         private static void ConfigureWebView2Stability()

@@ -119,14 +119,13 @@
     {
         var wikiFolder = Uri.EscapeDataString(AppState.ActiveWikiBook?.DataFolder ?? "default");
         var wikiZoom = Preferences.Default.Get("WikiZoom", 100);
-        // 内容基址由承载决定：Windows 上是虚拟主机 https://wiki.local；
-        // 其它平台（或虚拟主机没挂上时）回退到本地 HTTP 端口 —— 两种承载共用同一个内容提供者，
-        // 所以除了 URL 前缀不同，页面拿到的内容完全一致。
+        // 内容基址由平台承载决定（Windows/Android = https://wiki.local，Apple = terrariawiki://wiki），
+        // 详见 WikiVirtualHost.ContentBase。R4 之后没有本地 HTTP 端口可回退。
         return $"{WikiVirtualHost.ContentBase}/{wikiFolder}/?theme={iframeTheme}&isMobile={isMobile}&zoom={wikiZoom}&v={wikiFrameVersion}";
     }
 
     /// <summary>
-    /// 虚拟主机的挂载结果会改变 iframe 的内容基址（https://wiki.local ↔ 回退端口）。
+    /// 虚拟主机的挂载结果会改变 iframe 的内容基址（例如 Apple 上注册 scheme 的时机）。
     /// 这里立刻重建 URL，避免首次渲染赶在挂载完成之前、把 iframe 指向了错误的前缀。
     /// </summary>
     private void OnContentBaseChanged()

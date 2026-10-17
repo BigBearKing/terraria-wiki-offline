@@ -7,7 +7,6 @@ namespace Terraria_Wiki
     {
         public static ManagerDbService? ManagerDb { get; private set; }
         public static ContentDbService? ContentDb { get; private set; }
-        public static LocalWebServer? WebServer { get; private set; }
         public static DataService? DataManager { get; private set; }
         public static LogService? LogManager { get; private set; }
         public static AppState? AppStateManager { get; private set; }
@@ -21,14 +20,13 @@ namespace Terraria_Wiki
 
         public Task InitializationTask { get; }
 
-        public App(LocalWebServer webServer, ManagerDbService managerDb,
+        public App(ManagerDbService managerDb,
                 ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
                 LocalizationService localizationService,
                 StoragePathService storagePath,
                 WikiVirtualHost virtualHost,
                 IServiceProvider services)
         {
-            WebServer = webServer;
             ManagerDb = managerDb;
             ContentDb = contentDb;
             DataManager = dataService;
@@ -113,7 +111,6 @@ namespace Terraria_Wiki
                 var contentDbPath = Path.Combine(StoragePath.RootPath, activeBook.DataFolder, "data.db");
                 await ContentDb.SwitchDatabaseAsync(contentDbPath);
             }
-            await WebServer.Start();
             await ContentDb.Init(false, activeBook);
             await AppService.RefreshWikiBookAsync(ManagerDb, ContentDb);
             await RestoreDownloadTaskStateAsync();
@@ -165,24 +162,13 @@ namespace Terraria_Wiki
         {
             Window window = base.CreateWindow(activationState);
 
-            // 应用即将进入后台 (失去焦点)
-            window.Deactivated += (s, e) =>
-            {
-                WebServer.Stop();
-            };
-
-            // 应用回到前台 (恢复焦点)
+            // R4 之后 iframe 的内容源是 WebView 虚拟主机（不占端口、不监听 socket），
+            // 所以前后台切换不需要再停/启任何服务器。这里只保留与安全区相关的工作 ——
+            // 手机旋转/从后台回来时安全区会变，必须重算，否则内容会被刘海或手势条压住。
             window.Resumed += async (s, e) =>
             {
-                await WebServer.Start();
                 if (MainPage is MainPage mainPage)
                     await mainPage.RefreshSafeAreaAsync();
-            };
-
-            // 应用刚启动时也可以确保开启
-            window.Created += async (s, e) =>
-            {
-                await WebServer.Start();
             };
 
             return window;
