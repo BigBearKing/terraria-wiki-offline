@@ -1,4 +1,4 @@
-﻿#if ANDROID
+#if ANDROID
 using Android.Views;
 using Android.Window;
 using AndroidX.Core.View;
@@ -67,7 +67,22 @@ namespace Terraria_Wiki
 #endif
             this.Loaded += MainPage_Loaded;
             DeviceDisplay.Current.MainDisplayInfoChanged += Current_MainDisplayInfoChanged;
+#if IOS || MACCATALYST
+            // 私有协议必须在 WKWebView 创建之前注册进配置，而 BlazorWebViewInitializing
+            // 是唯一能拿到 WKWebViewConfiguration 的时机（创建之后再注册无效）。
+            blazorWebView.BlazorWebViewInitializing += OnBlazorWebViewInitializing;
+#endif
         }
+
+#if IOS || MACCATALYST
+        /// <summary>注册 iframe 内容源的私有协议（terrariawiki://）。</summary>
+        private void OnBlazorWebViewInitializing(
+            object? sender,
+            Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewInitializingEventArgs e)
+        {
+            App.VirtualHost?.TryRegisterAppleScheme(e.Configuration);
+        }
+#endif
 
 
 
@@ -661,6 +676,10 @@ namespace Terraria_Wiki
                 // 传入当前页面的 Dispatcher
                 androidWebView.SetOnKeyListener(new WebViewBackInterceptor(this.Dispatcher));
                 _findInPageService.Attach(androidWebView);
+
+                // iframe 内容源的虚拟主机承载：给宿主 WebView 套一层 WebViewClient
+                // （只拦 wiki.local，其余回调转交 MAUI 原来的 client，不会破坏 Blazor）。
+                App.VirtualHost?.TryRegisterAndroid(androidWebView);
             }
 #endif
 #if IOS || MACCATALYST
@@ -688,6 +707,7 @@ namespace Terraria_Wiki
             if (webView.CoreWebView2 != null)
             {
                 RegisterDragBridge(webView.CoreWebView2);
+                AttachWikiVirtualHost(webView.CoreWebView2);
             }
             else
             {
@@ -695,12 +715,33 @@ namespace Terraria_Wiki
                 {
                     if (e.Exception != null) return;
                     if (webView.CoreWebView2 != null)
+                    {
                         RegisterDragBridge(webView.CoreWebView2);
+                        AttachWikiVirtualHost(webView.CoreWebView2);
+                    }
                 };
             }
 
             ConfigureTabBarTitleBar();
         }
+
+        /// <summary>
+        /// 把 https://wiki.local/**（iframe 的内容源）挂到 WebView2 上。
+        /// 只在 CoreWebView2 已经（或刚刚）就绪时挂；重复调用是安全的（服务内部按实例去重）。
+        /// 挂载成功/失败都会触发 WikiVirtualHost.ContentBaseChanged，MainLayout 据此重建 iframe 的 URL。
+        /// </summary>
+        private void AttachWikiVirtualHost(Microsoft.Web.WebView2.Core.CoreWebView2 core)
+        {
+            if (App.VirtualHost is null)
+            {
+                // 理论上不会发生（DI 里已注册）；留着是为了不让它变成 NullReferenceException
+                System.Diagnostics.Debug.WriteLine("[VHost] App.VirtualHost 为 null，跳过挂载");
+                return;
+            }
+
+            App.VirtualHost.TryAttach(core);
+        }
+
 
         private void ConfigureTabBarTitleBar()
         {
@@ -821,8 +862,11 @@ namespace Terraria_Wiki
 
         private void BlazorWebView_UrlLoading(object sender, UrlLoadingEventArgs e)
         {
-            // 如果主机名是 127.0.0.1 ，强制在应用内打开
-            if (e.Url.Host == "127.0.0.1")
+            // 本机内容一律留在应用内打开：
+            //   127.0.0.1 —— 本地 HTTP 承载（回退路径）
+            //   wiki.local —— 虚拟主机承载（Windows 上的默认路径）
+            if (string.Equals(e.Url.Host, "127.0.0.1", StringComparison.Ordinal) ||
+                string.Equals(e.Url.Host, WikiVirtualHost.Host, StringComparison.OrdinalIgnoreCase))
             {
                 e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
             }

@@ -70,6 +70,7 @@
         AppState.OnShowAlert += HandleShowAlert;
         App.Localization!.OnChange += OnLocalizationChanged;
         IframeBridge.OnIframePageReady += OnIframePageReady;
+        WikiVirtualHost.ContentBaseChanged += OnContentBaseChanged;
         iframeTheme = ThemeService.GetIframeThemeState();
         isMobile = AppState.IsMobile;
         src = BuildWikiFrameUrl();
@@ -83,6 +84,7 @@
         AppState.OnShowAlert -= HandleShowAlert;
         App.Localization!.OnChange -= OnLocalizationChanged;
         IframeBridge.OnIframePageReady -= OnIframePageReady;
+        WikiVirtualHost.ContentBaseChanged -= OnContentBaseChanged;
     }
 
     private void RefreshUI()
@@ -117,7 +119,24 @@
     {
         var wikiFolder = Uri.EscapeDataString(AppState.ActiveWikiBook?.DataFolder ?? "default");
         var wikiZoom = Preferences.Default.Get("WikiZoom", 100);
-        return $"http://127.0.0.1:55000/?theme={iframeTheme}&isMobile={isMobile}&book={wikiFolder}&zoom={wikiZoom}&v={wikiFrameVersion}";
+        // 内容基址由承载决定：Windows 上是虚拟主机 https://wiki.local；
+        // 其它平台（或虚拟主机没挂上时）回退到本地 HTTP 端口 —— 两种承载共用同一个内容提供者，
+        // 所以除了 URL 前缀不同，页面拿到的内容完全一致。
+        return $"{WikiVirtualHost.ContentBase}/{wikiFolder}/?theme={iframeTheme}&isMobile={isMobile}&zoom={wikiZoom}&v={wikiFrameVersion}";
+    }
+
+    /// <summary>
+    /// 虚拟主机的挂载结果会改变 iframe 的内容基址（https://wiki.local ↔ 回退端口）。
+    /// 这里立刻重建 URL，避免首次渲染赶在挂载完成之前、把 iframe 指向了错误的前缀。
+    /// </summary>
+    private void OnContentBaseChanged()
+    {
+        if (!isAppReady)
+            return; // 还没渲染 iframe，等 InitializeAfterBlazor 里统一重建
+
+        wikiFrameVersion = Guid.NewGuid().ToString("N");
+        src = BuildWikiFrameUrl();
+        RefreshUI();
     }
 
     private void OnWikiBookSwitched()

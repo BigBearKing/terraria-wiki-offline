@@ -1,35 +1,38 @@
 using System.Diagnostics;
 using System.Net;
-using System.Text;
-using System.Collections.Concurrent;
-using Terraria_Wiki.Models;
 
 namespace Terraria_Wiki.Services
 {
+    /// <summary>
+    /// iframe å†…å®¹æºçš„ **HTTP æ‰¿è½½**ï¼šåªè´Ÿè´£ç›‘å¬ 127.0.0.1ã€è§£æè·¯å¾„ã€å†™å“åº”å¤´ä¸å…³é—­è¿æ¥ã€‚
+    /// ã€Œè·¯ç”± + å–å†…å®¹ã€åœ¨ <see cref="WikiContentProvider"/>ï¼Œä¸¤è€…åˆ†å¼€æ˜¯ä¸ºäº†è®©åŒä¸€ä»½è·¯ç”±
+    /// å°†æ¥èƒ½åŒæ—¶æœåŠ¡äºæœ¬ç›‘å¬å™¨å’Œ WebView è™šæ‹Ÿä¸»æœºï¼ˆhttps://wiki.localï¼‰çš„æ‹¦æˆªå¤„ç†å™¨ã€‚
+    /// </summary>
     public class LocalWebServer
     {
         private HttpListener _listener;
-        private readonly ContentDbService _dbService;
+        private readonly WikiContentProvider _content;
+        private readonly LogService _log;
         private readonly string _prefix;
-        private readonly ConcurrentDictionary<string, (byte[] Data, string ContentType)> _staticFileCache = new();
 
-        // ¹¹Ôìº¯Êı×¢ÈëÊı¾İ¿â·şÎñ
-        // port ¿ÉÖ¸¶¨¼àÌı¶Ë¿Ú£¬Ä¬ÈÏ 55000£¨Óë MainLayout Àï iframe µÄµØÖ·Ò»ÖÂ£¬ĞĞÎª²»±ä£©¡£
-        // Ö®ËùÒÔÔÊĞí¸Ä£ºWindows ÉÏ HTTP.SYS ¶Ô¶Ë¿ÚÊÇ¶ÀÕ¼µÄ£¬App ÔËĞĞÊ± 55000 ±»Õ¼£¬
-        // ¿ª·¢ÓÃµÄä¯ÀÀÆ÷Ô¤ÀÀ·şÎñÆ÷ĞèÒªÄÜÔÚ App Í¬Ê±¿ª×ÅµÄÇé¿öÏÂ»»¸ö¶Ë¿ÚÆğ·şÎñ¡£
-        public LocalWebServer(ContentDbService dbService, int port = 55000)
+        // æ„é€ å‡½æ•°æ³¨å…¥å†…å®¹æä¾›è€…ä¸æ—¥å¿—æœåŠ¡
+        // port å¯æŒ‡å®šç›‘å¬ç«¯å£ï¼Œé»˜è®¤ 55000ï¼ˆä¸ MainLayout é‡Œ iframe çš„åœ°å€ä¸€è‡´ï¼Œè¡Œä¸ºä¸å˜ï¼‰ã€‚
+        // ä¹‹æ‰€ä»¥å…è®¸æ”¹ï¼šWindows ä¸Š HTTP.SYS å¯¹ç«¯å£æ˜¯ç‹¬å çš„ï¼ŒApp è¿è¡Œæ—¶ 55000 è¢«å ï¼Œ
+        // å¼€å‘ç”¨çš„æµè§ˆå™¨é¢„è§ˆæœåŠ¡å™¨éœ€è¦èƒ½åœ¨ App åŒæ—¶å¼€ç€çš„æƒ…å†µä¸‹æ¢ä¸ªç«¯å£èµ·æœåŠ¡ã€‚
+        public LocalWebServer(WikiContentProvider content, LogService logService, int port = 55000)
         {
-            _dbService = dbService;
+            _content = content;
+            _log = logService;
             _listener = new HttpListener();
 
-            // ¼àÌı±¾µØ¶Ë¿Ú
+            // ç›‘å¬æœ¬åœ°ç«¯å£
             _prefix = $"http://127.0.0.1:{port}/";
             _listener.Prefixes.Add(_prefix);
         }
 
         public async Task Start()
         {
-            // Èç¹û¼àÌıÆ÷Îª¿Õ»òÎ´ÔÚÔËĞĞ£¬ÔòÖØĞÂ´´½¨²¢Æô¶¯
+            // å¦‚æœç›‘å¬å™¨ä¸ºç©ºæˆ–æœªåœ¨è¿è¡Œï¼Œåˆ™é‡æ–°åˆ›å»ºå¹¶å¯åŠ¨
             if (_listener == null || !_listener.IsListening)
             {
                 _listener = new HttpListener();
@@ -43,14 +46,17 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
+                    // ä»¥å‰è¿™é‡Œåªå†™ Debug.WriteLineï¼ŒRelease åŒ…é‡Œç­‰äºé™é»˜å¤±è´¥ï¼š
+                    // æœåŠ¡å™¨æ²¡èµ·æ¥ï¼Œiframe ç…§æ ·è¢«æ¸²æŸ“å‡ºæ¥ï¼Œç”¨æˆ·çœ‹åˆ°çš„æ˜¯ä¸€å¥
+                    // "æ— æ³•è®¿é—®æ­¤é¡µé¢ / ERR_CONNECTION_REFUSED"ï¼Œå´æ²¡æœ‰ä»»ä½•å¯æŸ¥çš„ç—•è¿¹ã€‚
                     Debug.WriteLine($"[Web Server Start Error] {ex.Message}");
-                    // ¶Ë¿Ú¿ÉÄÜ»¹Ã»ÍêÈ«ÊÍ·Å (TIME_WAIT)£¬ÕâÀï¿ÉÒÔ×ö¸öÖØÊÔ»úÖÆ
+                    _log.Error($"[Web Server Start Error] {_prefix}", ex);
+                    // ç«¯å£å¯èƒ½è¿˜æ²¡å®Œå…¨é‡Šæ”¾ (TIME_WAIT)ï¼Œè¿™é‡Œå¯ä»¥åšä¸ªé‡è¯•æœºåˆ¶
                 }
             }
+        }
 
-            }
-
-            public void Stop()
+        public void Stop()
         {
             if (_listener != null && _listener.IsListening)
             {
@@ -59,15 +65,14 @@ namespace Terraria_Wiki.Services
                     _listener.Stop();
                     _listener.Close();
                 }
-                catch { /* ºöÂÔ¹Ø±ÕÊ±µÄÒì³£ */ }
+                catch { /* å¿½ç•¥å…³é—­æ—¶çš„å¼‚å¸¸ */ }
                 finally
                 {
-                    _listener = null; // ÉèÎª¿Õ£¬±£Ö¤ÏÂ´Î Resume Ê±ÄÜÖØĞÂ´´½¨
+                    _listener = null; // è®¾ä¸ºç©ºï¼Œä¿è¯ä¸‹æ¬¡ Resume æ—¶èƒ½é‡æ–°åˆ›å»º
                     Debug.WriteLine("[Web Server] Stopped.");
                 }
             }
         }
-
 
         private async Task ListenLoop()
         {
@@ -76,12 +81,12 @@ namespace Terraria_Wiki.Services
                 try
                 {
                     var context = await _listener.GetContextAsync();
-                    // ²»µÈ´ı´¦Àí£¬Ö±½Ó¿ªÆôĞÂÈÎÎñ´¦ÀíÇëÇó£¬Ö§³Ö²¢·¢
+                    // ä¸ç­‰å¾…å¤„ç†ï¼Œç›´æ¥å¼€å¯æ–°ä»»åŠ¡å¤„ç†è¯·æ±‚ï¼Œæ”¯æŒå¹¶å‘
                     _ = ProcessRequestAsync(context);
                 }
                 catch (HttpListenerException)
                 {
-                    // ·şÎñÆ÷¹Ø±ÕÊ±»áÅ×³öÒì³££¬ºöÂÔ¼´¿É
+                    // æœåŠ¡å™¨å…³é—­æ—¶ä¼šæŠ›å‡ºå¼‚å¸¸ï¼Œå¿½ç•¥å³å¯
                     break;
                 }
                 catch (Exception ex)
@@ -96,233 +101,81 @@ namespace Terraria_Wiki.Services
             var request = context.Request;
             var response = context.Response;
 
-            byte[]? buffer = null;
+            WikiContentResponse? content = null;
             string contentType = "text/plain";
             int statusCode = 200;
             string path = "/";
 
             try
             {
-                // »ñÈ¡Â·¾¶£¬ÀıÈç "/index.html" »ò "/src/sword.png"¡£
-                // UrlDecode ºÜÖØÒª£¬·ÀÖ¹ÎÄ¼şÃûÖĞÓĞ¿Õ¸ñ±»×ªÒå³É %20¡£
-                // ×¢Òâ£º½âÎö±ØĞëÔÚ try ÄÚ£¬·ñÔòÒì³£»áÌÓÒİ³É"Î´¹Û²ìµ½µÄÈÎÎñÒì³£"£¬
-                // µ¼ÖÂ¸ÃÇëÇóÄÃµ½ÁãÏìÓ¦£¨ä¯ÀÀÆ÷²à±íÏÖÎª ERR_EMPTY_RESPONSE£©¡£
+                // è·å–è·¯å¾„ï¼Œä¾‹å¦‚ "/index.html" æˆ– "/src/sword.png"ã€‚
+                // UrlDecode å¾ˆé‡è¦ï¼Œé˜²æ­¢æ–‡ä»¶åä¸­æœ‰ç©ºæ ¼è¢«è½¬ä¹‰æˆ %20ã€‚
+                // æ³¨æ„ï¼šè§£æå¿…é¡»åœ¨ try å†…ï¼Œå¦åˆ™å¼‚å¸¸ä¼šé€ƒé€¸æˆ"æœªè§‚å¯Ÿåˆ°çš„ä»»åŠ¡å¼‚å¸¸"ï¼Œ
+                // å¯¼è‡´è¯¥è¯·æ±‚æ‹¿åˆ°é›¶å“åº”ï¼ˆæµè§ˆå™¨ä¾§è¡¨ç°ä¸º ERR_EMPTY_RESPONSEï¼‰ã€‚
                 path = WebUtility.UrlDecode(request.Url?.AbsolutePath ?? "/");
-                // ==========================================
-                // Â·ÓÉ²ßÂÔ 1: Êı¾İ¿â×ÊÔ´ (/db/...)
-                // ==========================================
-                if (path.StartsWith("/src/", StringComparison.OrdinalIgnoreCase))
+
+                // iframe çš„åœ°å€é‡Œå¸¦ wiki æ®µï¼ˆâ€¦/<book>/â€¦ï¼‰ï¼Œå®ƒä¸æ˜¯å†…å®¹è·¯å¾„çš„ä¸€éƒ¨åˆ†ï¼›
+                // ä¸è™šæ‹Ÿä¸»æœºæ‰¿è½½å…±ç”¨åŒä¸€ä¸ªå‰¥æ®µè§„åˆ™ï¼Œæ‰€ä»¥ä¸¤ç§æ‰¿è½½å¯ä»¥äº’ç›¸å›é€€ã€‚
+                content = await _content.GetAsync(WikiContentProvider.StripBookSegment(path));
+                if (content is null)
                 {
-
-
-                    // ÌáÈ¡ÎÄ¼şÃû: "/src/sword.png" -> "sword.png"
-                    string fileName = path.Substring(5);
-                    var asset = await _dbService.GetItemAsync<WikiAsset>(fileName);
-
-                    if (asset != null)
-                    {
-                        buffer = asset.Data;
-                        contentType = asset.MimeType;
-                    }
-                    else
-                    {
-                        // Êı¾İ¿âÀïÃ»ÓĞÕâÌõ×ÊÔ´£º·µ»Ø 1¡Á1 Í¸Ã÷Õ¼Î»Í¼£¬±ÜÃâÒ³Ãæ²¼¾ÖËúÏİ¡£
-                        // ContentType ±ØĞëÓëÕ¼Î»Í¼×Ö½ÚÒ»ÖÂ£¬·ñÔòä¯ÀÀÆ÷°´Í¼Æ¬½âÂë»áÊ§°Ü¡£
-                        Debug.WriteLine($"[Asset Miss] {fileName}");
-
-                        bool wantSvg = GetMimeType(fileName) == "image/svg+xml";
-                        contentType = wantSvg ? "image/svg+xml" : "image/png";
-                        buffer = wantSvg
-                            ? Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/>")
-                            : Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
-                    }
+                    statusCode = 404; // å†…å®¹å±‚æ²¡æ‰¾åˆ°
                 }
-                // ==========================================
-                // Â·ÓÉ²ßÂÔ 2: ±¾µØ¾²Ì¬ÎÄ¼ş (Resources/Raw/Web/...)
-                // ==========================================
                 else
                 {
-                    // Èç¹ûÇëÇó¸ùÄ¿Â¼£¬Ä¬ÈÏ·µ»Ø index.html
-                    if (path == "/") path = "/index.html";
-                    // ¹²Ïí bridge Î»ÓÚ Blazor ËŞÖ÷µÄ wwwroot£¬ĞèÒªÈÃ iframe Ò²ÄÜ·ÃÎÊËü¡£
-                    string assetPath;
-                    if (path.Equals("/_common/iframe-bridge.js", StringComparison.OrdinalIgnoreCase))
-                    {
-                        assetPath = "wwwroot/js/iframe-bridge.js";
-                    }
-                    else if (path.Equals("/_common/wiki-app-common.js", StringComparison.OrdinalIgnoreCase))
-                    {
-                        assetPath = "Web/_common/wiki-app-common.js";
-                    }
-                    else if (path.Equals("/_common/handy-scroll.js", StringComparison.OrdinalIgnoreCase))
-                    {
-                        assetPath = "Web/_common/handy-scroll.js";
-                    }
-                    else if (path.Equals("/_common/wiki-math.js", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // ÀëÏß¹«Ê½äÖÈ¾½Å±¾£¨MathJax ÅäÖÃÓëäÖÈ¾µ÷¶È£©
-                        assetPath = "Web/_common/wiki-math.js";
-                    }
-                    else if (path.StartsWith("/_common/mathjax/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // ¹²ÏíµÄ MathJax ÀëÏß×ÊÔ´£¨tex-chtml-full.js + ×ÖÌå£©
-                        assetPath = "Web/_common/" + path.Substring("/_common/".Length);
-                    }
-                    else if (path.StartsWith("/_common/viewer/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // ¹²ÏíµÄ Viewer.js ×ÊÔ´£¨¸÷ wiki ¹²ÓÃÒ»·İ£©
-                        assetPath = "Web/_common/" + path.Substring("/_common/".Length);
-                    }
-                    else
-                    {
-                        // Æ´½Ó Resources/Raw ÏÂµÄÂ·¾¶
-                        // ¼ÙÉèÄãµÄ HTML ÎÄ¼ş·ÅÔÚ Resources/Raw/Web ÎÄ¼ş¼ĞÏÂ
-                        assetPath = "Web/" + App.AppStateManager.ActiveWikiBook.DataFolder + path;
-                    }
-
-                    if (await FileSystem.AppPackageFileExistsAsync(assetPath))
-                    {
-                        using var stream = await FileSystem.OpenAppPackageFileAsync(assetPath);
-                        using var ms = new MemoryStream();
-                        await stream.CopyToAsync(ms);
-                        buffer = ms.ToArray();
-
-                        contentType = GetMimeType(path);
-
-                        if (path.Equals("/index.html", StringComparison.OrdinalIgnoreCase))
-                            buffer = AddWikiResourceVersion(buffer);
-
-                        if (IsCacheableStaticFile(path))
-                            _staticFileCache.TryAdd(assetPath, (buffer, contentType));
-                    }
-                    else
-                    {
-                        statusCode = 404; // Raw ×ÊÔ´ÀïÃ»ÕÒµ½
-                        Debug.WriteLine($"[File 404] {assetPath}");
-                    }
-
+                    contentType = content.ContentType;
                 }
             }
             catch (Exception ex)
             {
                 statusCode = 500;
                 Debug.WriteLine($"[Server Error] {path} : {ex.Message}");
+                _log.Error($"[Server Error] {path}", ex);
             }
 
             // ==========================================
-            // ·¢ËÍÏìÓ¦
+            // å‘é€å“åº”
             // ==========================================
             try
             {
                 response.StatusCode = statusCode;
                 response.ContentType = contentType;
 
-                // ½â¾ö¿çÓòÎÊÌâ (CORS)£¬·ÀÖ¹ WebView ±¨´í
+                // è§£å†³è·¨åŸŸé—®é¢˜ (CORS)ï¼Œé˜²æ­¢ WebView æŠ¥é”™
                 response.Headers.Add("Access-Control-Allow-Origin", "*");
 
-                if (buffer != null && statusCode == 200)
+                if (content != null && statusCode == 200)
                 {
-                    // ETag ±ØĞëÊÇ´¿ ASCII£ºÖĞÎÄ¡¢È«½Ç±êµãµÈ×Ö·ûÔÚĞ´Èë±íÍ·Ê±»á±»°´ Latin-1
-                    // ½Ø¶Ï³ÉµÍ×Ö½Ú£¬ÀıÈçÈ«½ÇÀ¨ºÅ "£¨"(U+FF08) »á±ä³É¿ØÖÆ×Ö·û 0x08£¬
-                    // Ê¹ WebHeaderCollection Å× ArgumentException ²¢ÖĞ¶ÏÕû¸öÏìÓ¦¡£
-                    // ÔÖ¶òÖĞÎÄ wiki ´óÁ¿Ê¹ÓÃÖĞÎÄÎÄ¼şÃû + È«½ÇÀ¨ºÅÏûÆçÒåºó×º£¬ÕıÊÇ²ÈÖĞÕâÒ»µã¡£
-                    var wikiKey = Uri.EscapeDataString(App.AppStateManager.ActiveWikiBook?.DataFolder ?? "default");
-                    var etag = $"\"{wikiKey}:{Uri.EscapeDataString(path)}:{buffer.Length:x}\"";
-                    response.Headers["ETag"] = etag;
+                    response.Headers["ETag"] = content.ETag;
 
-                    if (string.Equals(request.Headers["If-None-Match"], etag, StringComparison.Ordinal))
+                    if (string.Equals(request.Headers["If-None-Match"], content.ETag, StringComparison.Ordinal))
                     {
                         response.StatusCode = 304;
                         response.ContentLength64 = 0;
                         return;
                     }
 
-                    response.Headers["Cache-Control"] = IsLongLivedStaticFile(path)
-                        ? "public, max-age=31536000, immutable"
-                        : "no-cache";
+                    response.Headers["Cache-Control"] = content.CacheControl;
                 }
 
-                if (buffer != null)
+                if (content != null)
                 {
-                    response.ContentLength64 = buffer.Length;
-                    await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    response.ContentLength64 = content.Body.Length;
+                    await response.OutputStream.WriteAsync(content.Body, 0, content.Body.Length);
                 }
             }
             catch (Exception ex)
             {
-                // ²»Òª¾²Ä¬ÍÌµô£º¿Í»§¶Ë¶Ï¿ªÊÇ³£¼ûÇé¿ö£¬µ«Ğ´±íÍ·Ê§°ÜµÈ´íÎó±ØĞëÁôÏÂÏßË÷¡£
+                // ä¸è¦é™é»˜åæ‰ï¼šå®¢æˆ·ç«¯æ–­å¼€æ˜¯å¸¸è§æƒ…å†µï¼Œä½†å†™è¡¨å¤´å¤±è´¥ç­‰é”™è¯¯å¿…é¡»ç•™ä¸‹çº¿ç´¢ã€‚
                 Debug.WriteLine($"[Response Error] {path} : {ex.Message}");
             }
             finally
             {
-                // ÎŞÂÛ³É¹¦¡¢Òì³£»¹ÊÇÌáÇ° return£¬¶¼±ØĞë¹Ø±ÕÏìÓ¦¡£
-                // ·ñÔòÁ¬½Ó»á±»Ò»Ö±Õ¼ÓÃ£¬Í¬ÓòÁ¬½Ó£¨Chromium Îª 6 Ìõ£©ºÄ¾¡ºó£¬
-                // ºóĞøÍ¼Æ¬ÇëÇóÖ»»áÅÅ¶Ó¶ø²»»á·¢³ö¡£
+                // æ— è®ºæˆåŠŸã€å¼‚å¸¸è¿˜æ˜¯æå‰ returnï¼Œéƒ½å¿…é¡»å…³é—­å“åº”ã€‚
+                // å¦åˆ™è¿æ¥ä¼šè¢«ä¸€ç›´å ç”¨ï¼ŒåŒåŸŸè¿æ¥ï¼ˆChromium ä¸º 6 æ¡ï¼‰è€—å°½åï¼Œ
+                // åç»­å›¾ç‰‡è¯·æ±‚åªä¼šæ’é˜Ÿè€Œä¸ä¼šå‘å‡ºã€‚
                 try { response.Close(); } catch { }
             }
-        }
-
-        // ¼òµ¥µÄ MIME ÀàĞÍÓ³Éä¸¨Öú·½·¨
-        private string GetMimeType(string path)
-        {
-            string ext = Path.GetExtension(path).ToLower();
-            return ext switch
-            {
-                ".html" => "text/html",
-                ".css" => "text/css",
-                ".js" => "application/javascript",
-                ".png" => "image/png",
-                ".jpg" => "image/jpeg",
-                ".jpeg" => "image/jpeg",
-                ".gif" => "image/gif",
-                ".svg" => "image/svg+xml",
-                ".woff" => "font/woff",
-                ".woff2" => "font/woff2",
-                ".json" => "application/json",
-                _ => "application/octet-stream"
-            };
-        }
-
-        private static bool IsCacheableStaticFile(string path)
-        {
-            var extension = Path.GetExtension(path);
-            return extension.Equals(".css", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".js", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".woff", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".woff2", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".svg", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".gif", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsLongLivedStaticFile(string path)
-        {
-            return path.StartsWith("/_common/", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static byte[] AddWikiResourceVersion(byte[] html)
-        {
-            var bookKey = App.AppStateManager.ActiveWikiBook?.DataFolder ?? "default";
-            var version = Uri.EscapeDataString(bookKey);
-            var content = Encoding.UTF8.GetString(html);
-
-            content = content.Replace("src=\"/_common/iframe-bridge.js\"", $"src=\"/_common/iframe-bridge.js?book={version}\"")
-                .Replace("src=\"/_common/wiki-app-common.js\"", $"src=\"/_common/wiki-app-common.js?book={version}\"")
-                .Replace("src=\"/_common/wiki-math.js\"", $"src=\"/_common/wiki-math.js?book={version}\"")
-                .Replace("src=\"/_common/handy-scroll.js\"", $"src=\"/_common/handy-scroll.js?book={version}\"")
-                .Replace("src=\"/_common/viewer/viewer.min.js\"", $"src=\"/_common/viewer/viewer.min.js?book={version}\"")
-                .Replace("href=\"/_common/viewer/viewer.min.css\"", $"href=\"/_common/viewer/viewer.min.css?book={version}\"")
-                .Replace("src=\"app.js\"", $"src=\"app.js?book={version}\"")
-                .Replace("href=\"vector.css\"", $"href=\"vector.css?book={version}\"")
-                .Replace("href=\"common.css\"", $"href=\"common.css?book={version}\"")
-                .Replace("href=\"Nunito.css\"", $"href=\"Nunito.css?book={version}\"")
-                .Replace("href=\"layout.css\"", $"href=\"layout.css?book={version}\"")
-                .Replace("href=\"theme/dark.css\"", $"href=\"theme/dark.css?book={version}\"")
-                .Replace("href=\"theme/light.css\"", $"href=\"theme/light.css?book={version}\"");
-
-            return Encoding.UTF8.GetBytes(content);
         }
     }
 }

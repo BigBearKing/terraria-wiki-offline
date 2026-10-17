@@ -28,9 +28,16 @@
     </array>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
-	<key>NSAllowsLocalNetworking</key>
-	<true/>
-	<key>NSAllowsArbitraryLoads</key>
-	<true/>
+    <!-- ★ 这两项原本直接写在根字典里，iOS 只认 NSAppTransportSecurity 内的同名键，
+         所以等于没配。现在挪到正确位置，并保持与"之前实际生效状态"一致的宽松度：
+         内容源的正常路径是私有协议 terrariawiki://（不走 ATS），
+         这里保留例外是为了"私有协议没挂上时"能回退到 http://127.0.0.1:55000。 -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

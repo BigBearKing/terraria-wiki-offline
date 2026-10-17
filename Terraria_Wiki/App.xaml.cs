@@ -13,6 +13,11 @@ namespace Terraria_Wiki
         public static AppState? AppStateManager { get; private set; }
         public static LocalizationService? Localization { get; private set; }
         public static StoragePathService? StoragePath { get; private set; }
+        /// <summary>
+        /// iframe 内容源的虚拟主机承载。三平台机制不同但共用一份内容提供者：
+        /// Windows = WebView2 过滤器，iOS/MacCatalyst = WKURLSchemeHandler，Android = WebViewClient 包装。
+        /// </summary>
+        public static WikiVirtualHost? VirtualHost { get; private set; }
 
         public Task InitializationTask { get; }
 
@@ -20,6 +25,7 @@ namespace Terraria_Wiki
                 ContentDbService contentDb, DataService dataService, LogService logService, AppState appState, AppService appService,
                 LocalizationService localizationService,
                 StoragePathService storagePath,
+                WikiVirtualHost virtualHost,
                 IServiceProvider services)
         {
             WebServer = webServer;
@@ -30,6 +36,7 @@ namespace Terraria_Wiki
             AppStateManager = appState;
             Localization = localizationService;
             StoragePath = storagePath;
+            VirtualHost = virtualHost;
             services.GetRequiredService<GlobalExceptionHandler>().Register();
 
             // 有任务在跑时按住系统，别让电脑睡过去/进新型待机把下载掐断（详见 SleepPreventionService）

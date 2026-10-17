@@ -248,16 +248,56 @@ namespace Terraria_Wiki.Services
             }
         }
 
+        private static readonly System.Text.RegularExpressions.Regex LazyImgRegex =
+            new(@"<img(?![^>]*\bloading\s*=)", System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                                               | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>
+        /// 给页面里的 &lt;img&gt; 补上 <c>loading="lazy"</c>。
+        ///
+        /// ★ 为什么需要：爬虫在 <c>DataService.ProcessImages</c> 里把 loading 属性一并删掉了
+        ///   （与 data-file-width / srcset 一起清），所以库里存的 HTML **一张懒加载图都没有**。
+        ///   泰拉中文"盔甲"页有 1134 个 &lt;img&gt;、灾厄 "2.1.0" 页有 3790 个，全部一次性解码 ——
+        ///   安卓上渲染进程会因内存不足被系统回收，而 Chromium 在"没人接管 onRenderProcessGone"
+        ///   时会**连带杀掉整个应用**，表现就是"切到某页卡一下然后闪退"。
+        ///   加 lazy 之后只有进入视口附近的图片才解码，重页面的渲染内存大幅下降。
+        ///
+        /// 放在这里（页面交给 iframe 之前）而不是只改爬虫，因为：
+        ///   ① 对**已经下载好的旧数据**立即生效，用户不用重新下几百 MB；
+        ///   ② 只在一页第一次加载时做一次（结果留在 _pageCache 里），不是每次渲染都算。
+        /// 已经有 loading 的标签不会重复添加。
+        /// </summary>
+        private static string AddLazyLoading(string? html)
+        {
+            if (string.IsNullOrEmpty(html))
+                return html ?? string.Empty;
+
+            // 绝大多数页面一个 loading 都没有 —— 走 Replace 快路径，避免整页跑正则。
+            if (html.IndexOf("loading=", StringComparison.OrdinalIgnoreCase) < 0)
+                return html.Replace("<img ", "<img loading=\"lazy\" ", StringComparison.OrdinalIgnoreCase);
+
+            return LazyImgRegex.Replace(html, "<img loading=\"lazy\"");
+        }
+
         private static async Task<WikiPage?> LoadPageAsync(string title)
         {
             var page = await App.ContentDb.GetItemAsync<WikiPage>(title);
             if (page != null)
+            {
+                // 只处理一次；结果随 WikiPage 一起留在 _pageCache 里。
+                page.Content = AddLazyLoading(page.Content);
                 return page;
+            }
 
             var redirect = await App.ContentDb.GetItemAsync<WikiRedirect>(title);
-            return redirect == null
-                ? null
-                : await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
+            if (redirect == null)
+                return null;
+
+            var target = await App.ContentDb.GetItemAsync<WikiPage>(redirect.ToTarget);
+            if (target != null)
+                target.Content = AddLazyLoading(target.Content);
+
+            return target;
         }
 
         public static void InvalidatePageCache(string? title = null)
@@ -265,6 +305,8 @@ namespace Terraria_Wiki.Services
             if (title == null)
             {
                 _pageCache.Clear();
+                // 整库替换/页面更新时，资源缓存也必须一起失效，否则会继续返回旧图片。
+                WikiContentProvider.InvalidateCache();
                 return;
             }
 

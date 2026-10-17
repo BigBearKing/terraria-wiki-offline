@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using Terraria_Wiki.Models;
 using Terraria_Wiki.Services;
@@ -38,7 +38,20 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton(storagePathService);
             builder.Services.AddSingleton(managerDbService);
             builder.Services.AddSingleton(contentDbService);
-            builder.Services.AddSingleton(sp => new LocalWebServer(contentDbService));
+            // 内容提供者与承载方式无关（路由 + 取内容）。
+            // HTTP 承载（LocalWebServer）与虚拟主机承载（WikiVirtualHost）共用同一个实例，
+            // 所以两条路返回的内容必然一致 —— 这是"换承载"能安全回退的前提。
+            builder.Services.AddSingleton(sp => new WikiContentProvider(contentDbService));
+            builder.Services.AddSingleton(sp => new LocalWebServer(
+                sp.GetRequiredService<WikiContentProvider>(),
+                sp.GetRequiredService<LogService>()));
+            // 虚拟主机承载（三平台各一种机制，共用同一个 WikiContentProvider）：
+            //   Windows = https://wiki.local（WebView2 过滤器 + 事件）
+            //   Apple   = terrariawiki://（WKURLSchemeHandler）
+            //   Android = https://wiki.local（WebViewClient.ShouldInterceptRequest 包装）
+            builder.Services.AddSingleton(sp => new WikiVirtualHost(
+                sp.GetRequiredService<WikiContentProvider>(),
+                sp.GetRequiredService<LogService>()));
             builder.Services.AddSingleton<AppState>();
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<AppTaskRunner>();
