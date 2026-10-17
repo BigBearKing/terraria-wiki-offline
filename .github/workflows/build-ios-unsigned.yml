@@ -5,22 +5,49 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-26        # 推荐使用 macos-26，更匹配 .NET 11 + Xcode 26
+    runs-on: macos-26        # ⚠️ 当前最高 Xcode 26.6（iOS 26.5 SDK）。Xcode 27 出现前本工作流会被前置检查拦下。
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Xcode 26.4
+    - name: Setup Xcode (latest available)
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.4'   # 如果报错，可改为 '26.2' 或 'latest-stable'
+        # 用镜像里最新的稳定版：这样一旦 runner 提供 Xcode 27，这里自动拿到，无需改脚本。
+        # 是否需要 27 由下一步的前置检查判定（并给出明确原因）。
+        xcode-version: 'latest-stable'
 
     - name: Verify Xcode Version
       run: |
         xcode-select -p
         xcodebuild -version
+        sw_vers
         echo "✅ Xcode version confirmed"
+
+    - name: Require Xcode 27 (iOS 27 SDK)
+      run: |
+        # ★ 这是本工作流当前唯一的硬阻塞，用前置检查把原因讲清楚，避免又花时间去查 MT4162。
+        #
+        # 事实（2026-10-17 实测）：
+        #   · 项目 TFM 是 net11.0-ios27.0，对应 .NET 11 RC.2 的 iOS workload（27.0.12212-net11-rc.2），
+        #     其托管绑定引用了 iOS 27.0 才有的类型（UISceneAccessory / INSTextViewportRenderingSurface 等）。
+        #   · runner 上最高只有 Xcode 26.6，自带 iOS 26.5 SDK。
+        #   · 结果：C# 能编过（托管层），但到 _ExecutePrepareAssemblies 的原生 registrar 阶段报
+        #       error MT4162: ... is not available in iOS 26.5 (it was introduced in iOS 27.0).
+        #               Please build with a newer iOS SDK (usually done by using the most recent version of Xcode).
+        #
+        # ValidateXcodeVersion=false 只能跳过 E0191 版本校验，绕不过"SDK 里真的没有这些类型"。
+        # 所以：镜像提供 Xcode 27 之前，本工作流无法产出 IPA；届时本步骤自动通过，无需改脚本。
+        VER=$(xcodebuild -version | head -1)
+        echo "Runner Xcode: $VER"
+        if ! echo "$VER" | grep -qE 'Xcode 27'; then
+          echo "::error::本项目构建 ios27.0（iOS 27 SDK），需要 Xcode 27；当前 runner 只有 $VER。"
+          echo "::error::继续构建会在原生 registrar 阶段报 MT4162（UISceneAccessory 等类型在 iOS 26.5 SDK 中不存在）。"
+          echo "::error::解决：等 GitHub 托管镜像提供 Xcode 27（可能需要更新的 runs-on，如 macos-27），或改用自带 Xcode 27 的 self-hosted macOS runner。"
+          exit 1
+        fi
+        echo "✅ Xcode 27 present, iOS 27 SDK available"
 
     - name: Setup .NET 11.0
       uses: actions/setup-dotnet@v4
@@ -35,23 +62,45 @@ jobs:
 
     - name: Publish iOS App (Unsigned)
       run: |
+        # TFM 必须带平台版本（net11.0-ios27.0），与 csproj 的 TargetFrameworks 一致；
+        # 写成 net11.0-ios 会 NETSDK1005。换 iOS workload 版本时这里与 csproj 要一起改。
+        # ValidateXcodeVersion=false：ios27.0 workload 要求 RecommendedXcodeVersion=27.0，
+        # 而 _ValidateXcodeVersion 是按 major.minor **完全相等**判定的硬校验（E0191）。
+        # 保留它是为了将来 runner 给 27.1 而 workload 写 27.0 时也不被卡住。
+        # ★ 它只跳过校验 —— 真正的 SDK 能力由前面 Require Xcode 27 那步把关。
+        # ★ EnableCodeSigning=false ：无签名构建必须关掉它。
+        #   只传 CodesignKey="-" / CodesignProvision="-" 是不够的 ——
+        #   _CompileEntitlements 的条件是
+        #       Condition="'$(EnableCodeSigning)' == 'true' Or '$(CodesignEntitlements)' != ''"
+        #   签名默认仍为 true，于是它照样去编 entitlements；而没有描述文件时
+        #   默认 entitlements（application-identifier / keychain-access-groups）无法展开，
+        #   报 error MT7139。关掉签名后该 target 直接跳过，产出未签名的 .app（正是本工作流要的）。
+        # ★ OptimizePNGs=false ：PNG 优化步骤对部分调色板 PNG（bitdepth=4，如
+        #   Calamity_Wiki_en/images/main/Grass-top-overworld.png，仅 326B）没有产出优化结果，
+        #   而 _CopyResourcesToBundle 在 OptimizePNGs=true 时会去 optimized/ 目录取文件，
+        #   于是报 FileNotFoundException（构建失败）。
+        #   关掉后 ComputeBundleResourceOutputPaths 直接指向原始资源，不再经过 optimized/。
+        #   代价：包里的 PNG 不再被 crush（体积略大、设备解码略慢）—— 对未签名测试包可接受。
         dotnet publish Terraria_Wiki/Terraria_Wiki.csproj \
-          -f net11.0-ios \
+          -f net11.0-ios27.0 \
           -c Release \
           -p:RuntimeIdentifier=ios-arm64 \
+          -p:EnableCodeSigning=false \
+          -p:OptimizePNGs=false \
           -p:CodesignKey="-" \
           -p:CodesignProvision="-" \
           -p:RequireProvisioningProfile=false \
+          -p:ValidateXcodeVersion=false \
           -p:BuildIpa=true \
           --verbosity:normal
 
     - name: Package .app to .ipa
       run: |
         # 自动查找生成的 .app（兼容不同输出路径）
-        APP_PATH=$(find Terraria_Wiki/bin/Release/net11.0-ios/ios-arm64 -type d -name "*.app" | head -n 1)
+        APP_PATH=$(find Terraria_Wiki/bin/Release -type d -name "*.app" | head -n 1)
         if [ -z "$APP_PATH" ]; then
           echo "❌ 未找到 .app 文件！"
-          ls -R Terraria_Wiki/bin/Release/net11.0-ios/
+          ls -R Terraria_Wiki/bin/Release/
           exit 1
         fi
         
