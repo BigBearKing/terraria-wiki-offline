@@ -76,9 +76,12 @@ namespace Terraria_Wiki
 
 #if IOS || MACCATALYST
         /// <summary>注册 iframe 内容源的私有协议（terrariawiki://）。</summary>
-        private void OnBlazorWebViewInitializing(
-            object? sender,
-            Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewInitializingEventArgs e)
+        /// <remarks>
+        /// ★ 事件参数类型在 <c>Microsoft.AspNetCore.Components.WebView</c>（**不带** .Maui），
+        ///   不是 Maui 子命名空间。写错成 .Maui 时 Windows 构建不会报错（这段在 #if 里），
+        ///   只有真正构建 iOS 目标时才会暴露为 CS0234。
+        /// </remarks>
+        private void OnBlazorWebViewInitializing(object? sender, BlazorWebViewInitializingEventArgs e)
         {
             App.VirtualHost?.TryRegisterAppleScheme(e.Configuration);
         }
