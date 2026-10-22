@@ -872,6 +872,14 @@ namespace Terraria_Wiki
             {
                 e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
             }
+#if IOS || MACCATALYST
+            // Apple 侧内容走私有 scheme（terrariawiki://wiki/...），host 是 "wiki" 而不是 wiki.local。
+            // 不放行的话会落到默认策略，iframe 里的内容请求会被直接取消。
+            if (string.Equals(e.Url.Scheme, WikiVirtualHost.AppleScheme, StringComparison.OrdinalIgnoreCase))
+            {
+                e.UrlLoadingStrategy = UrlLoadingStrategy.OpenInWebView;
+            }
+#endif
         }
 #if IOS
         private void EnableProtectionUI()

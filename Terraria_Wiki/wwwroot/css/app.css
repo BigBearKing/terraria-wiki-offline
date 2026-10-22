@@ -204,9 +204,13 @@ body.has-hover .btn.is-selected:hover {
         padding: 0 12px 0 24px;
     }
 
+    /* ★ WebKit（iOS / Mac Catalyst）在手机上原本把左内边距加到 40px，本意是给纵向滚动条
+       留位置，但滚动条在右侧 —— 结果是内容整体向右偏 28px（左 40 / 右 12）。
+       这里直接沿用文件上方 @supports 块的 24px 对称内边距，
+       左右一致；真要防遮挡也是加右边，不能再加左边。 */
     @supports (-webkit-touch-callout: none) {
         .page-content {
-            padding: 0 12px 0 40px !important;
+            padding: 0 24px !important;
         }
     }
 

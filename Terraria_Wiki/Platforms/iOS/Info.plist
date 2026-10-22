@@ -26,6 +26,28 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <!-- ★ MAUI 11（net11.0-ios27.0）要求采用 Scene 生命周期：缺这一整段时，真机点图标
+         会在 scene 创建阶段抛异常，20 秒后被系统 watchdog 杀掉（0x8BADF00D scene-create），
+         日志里表现为 "UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption"。
+         UISceneDelegateClassName 必须与 Platforms/iOS/SceneDelegate.cs 的 [Register] 名称一致；
+         __MAUI_DEFAULT_SCENE_CONFIGURATION__ 是 MAUI 约定值，不要改。 -->
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key>
+                    <string>__MAUI_DEFAULT_SCENE_CONFIGURATION__</string>
+                    <key>UISceneDelegateClassName</key>
+                    <string>SceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
     <!-- ★ 这两项原本直接写在根字典里，iOS 只认 NSAppTransportSecurity 内的同名键，

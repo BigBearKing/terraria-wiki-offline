@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
+	<!-- 本机可选的 TFM 覆盖（不进版本库）：存在 Local.props 时只构建它指定的 TFM。
+	     这台机器只做 iOS / Mac Catalyst，避免 Rider 同时分析 Android 时因缺少
+	     Android SDK 产生大量假错误。CI / 其他机器没有这个文件，仍按完整 TFM 构建。 -->
+	<Import Project="Local.props" Condition="Exists('Local.props')" />
+
 	<PropertyGroup>
 		<!-- .NET 11 起 MAUI 包按带平台版本的 TFM 打包（如 net11.0-android37.0），
 		     因此这里必须显式写出平台版本，否则 NuGet 会报 NU1012。
@@ -8,9 +13,10 @@
 		       ios          27.0.12212-net11-rc.2 → 只有 27.0 的包，TFM 必须写 ios27.0
 		       maccatalyst  27.0.12212-net11-rc.2 → 同上，TFM 必须写 maccatalyst27.0
 		     ★ 换工作负载版本时必须回到这里核对：TFM 的版本号对不上会直接构建失败。 -->
-		<TargetFrameworks>net11.0-android37.0</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios27.0;net11.0-maccatalyst27.0</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == ''">net11.0-android37.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == '' and !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios27.0;net11.0-maccatalyst27.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' != ''">$(TerrariaLocalFramework)</TargetFrameworks>
+		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == '' and $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
 		<SupportedCultures>zh-CN;en-US</SupportedCultures>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<!-- Note for MacCatalyst:
@@ -71,6 +77,29 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<DefaultLanguage>zh-cn</DefaultLanguage>
+	</PropertyGroup>
+
+	<!-- ★★ 只在「还原」时声明 iOS 的 RID 列表，避免 NETSDK1112。
+	     背景：.NET 11 起 iOS 默认跑 CoreCLR，运行时包是
+	       Microsoft.NETCore.App.Runtime.ios-arm64 / .iossimulator-arm64
+	     （不是工作负载 packs 里自带的 Mono 包），必须由 NuGet 还原下载。而还原**只为当前 RID
+	     下载运行时包**：不带 -r 时 iOS 的默认 RID 是 iossimulator-arm64，只拿到模拟器包；
+	     Rider 的还原正是这种（资产文件里已经有了 ios-arm64 目标，但没有对应运行时包），
+	     随后用 -p:RuntimeIdentifier=ios-arm64 构建（Rider 的真机运行配置、CI 都是这样）→ NETSDK1112「未下载 Microsoft.NETCore.App.Runtime.ios-arm64 的运行时包」。
+	     所以还原时把两个 RID 都报上去，让两份包一起进全局缓存。
+
+	     ★ 为什么必须限定在还原阶段（ExcludeRestorePackageImports=true 是 NuGet 还原图形
+	       求值时的全局属性）：iOS SDK 在 Xamarin.Shared.Sdk.props 里这样判定模拟器：
+	           _SdkIsSimulator = RuntimeIdentifier.Contains('simulator')
+	                          Or RuntimeIdentifiers.Contains('simulator')
+	       因此只要项目里**常驻** RuntimeIdentifiers=ios-arm64;iossimulator-arm64，
+	       真机构建（-p:RuntimeIdentifier=ios-arm64）也会被判成模拟器，随后
+	       _ValidateRuntimeIdentifier 报 "RuntimeIdentifier was changed too late"。
+	       只在还原时声明，构建阶段仍保持"单 RID"语义，真机/模拟器构建都不受影响。
+	     ★ 还原时附带 RuntimeIdentifier 的命令（CI 的 -p:RuntimeIdentifier=ios-arm64）不受影响：
+	       那种情况下 SDK 自己就会下载设备包，这里再加会重复。 -->
+	<PropertyGroup Condition="'$(ExcludeRestorePackageImports)' == 'true' And '$(RuntimeIdentifier)' == '' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<RuntimeIdentifiers>ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">

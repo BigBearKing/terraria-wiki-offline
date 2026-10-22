@@ -377,3 +377,5 @@ FodyWeavers.xsd
 .workbuddy-ai/
 .vscode/
 Release/
+# 本机 TFM 覆盖（只保留 macOS 目标）
+Terraria_Wiki/Local.props
