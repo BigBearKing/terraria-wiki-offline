@@ -66,7 +66,6 @@ namespace Terraria_Wiki
             };
 #endif
             this.Loaded += MainPage_Loaded;
-            DeviceDisplay.Current.MainDisplayInfoChanged += Current_MainDisplayInfoChanged;
 #if IOS || MACCATALYST
             // 私有协议必须在 WKWebView 创建之前注册进配置，而 BlazorWebViewInitializing
             // 是唯一能拿到 WKWebViewConfiguration 的时机（创建之后再注册无效）。
@@ -100,15 +99,18 @@ namespace Terraria_Wiki
             // 窗口尺寸变化时当帧重算布局：面板宽度随之收缩，而不是从左边溢出
             blazorWebView.SizeChanged += (_, _) =>
             {
+#if ANDROID || IOS
+                // 安全区只跟随布局尺寸重算：旋转、分屏/自由窗口、Stage Manager 改尺寸都会
+                // 走到这里，且此刻新的 Insets 已经生效（Insets 更新早于布局）。
+                // 不用 DeviceDisplay.MainDisplayInfoChanged：iOS 27 起它不再随旋转触发
+                // （MAUI 仍在监听已废弃的 DidChangeStatusBarOrientation，dotnet/maui#39182）；
+                // Android 侧它的底层是方向传感器，分屏只改窗口尺寸时同样不发。
+                _ = RefreshSafeAreaAsync();
+#endif
                 if (App.AppStateManager?.FindInPageOpen == true)
                     ApplyFindPanelLayout();
             };
             SetupFindPanel();
-        }
-
-        private void Current_MainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
-        {
-            _ = RefreshSafeAreaAsync();
         }
 
         // =====================================================================

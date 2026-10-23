@@ -164,7 +164,8 @@ namespace Terraria_Wiki
 
             // R4 之后 iframe 的内容源是 WebView 虚拟主机（不占端口、不监听 socket），
             // 所以前后台切换不需要再停/启任何服务器。这里只保留与安全区相关的工作 ——
-            // 手机旋转/从后台回来时安全区会变，必须重算，否则内容会被刘海或手势条压住。
+            // 旋转由 MainPage 的 SizeChanged 负责；这里管的是回前台时"尺寸没变但 Insets 变了"
+            // 的情况（例如在设置里切了导航模式），不重算内容会被刘海或手势条压住。
             window.Resumed += async (s, e) =>
             {
                 if (MainPage is MainPage mainPage)
