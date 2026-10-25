@@ -110,9 +110,75 @@
     min-width: 0;
 }
 
+/* 标签列表：显隐完全由 Blazor 决定（AppState.ShowTabBar 为 false 才渲染），
+   不再用媒体查询按宽度隐藏 —— 否则 Mac 窗口态（宽屏）会出现"已经有 DOM 但 CSS 藏起来"。
+   这里只负责它显示时的排版。 */
 .more-list-tabs {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
+
+.more-list-tabs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px 8px 18px;
+    border-top: 1px solid var(--hover-bg);
+    border-bottom: 1px solid var(--hover-bg);
+    flex-shrink: 0;
+}
+
+.more-list-tabs-title {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.more-list-tabs-list {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 6px;
+    flex-shrink: 1;
+    gap: 6px;
+}
+
+/* 形状留在这里，四态（含键盘焦点）来自 app.css 的 .btn；选中态走 is-selected 变量，
+   所以不再需要单独写一条 .active:hover 去压悬停。 */
+.more-list-tabs-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    font-size: 14px;
+    --btn-bg: transparent;
+    --btn-fg: var(--text-secondary);
+    /* 迁移前它既没有 .button 类也没有 role，从没继承过 .btn 默认的 line-height: 1.2 */
+    line-height: normal;
+}
+
+    .more-list-tabs-item.is-selected {
+        --btn-bg: var(--blue-tertiary);
+        --btn-fg: var(--blue-primary);
+        font-weight: 600;
+    }
+
+.more-list-tabs-item-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* "新建标签"（28×28）与"关闭标签"（24×24）都是 IconButton 的标准档位，
+   尺寸/圆角/悬停/按下/焦点由组件 + app.css 的 .btn 提供，这里不再各写一份
+   （关闭键以前拿 --pressed-bg 当悬停色，现在统一成 --hover-bg）。 */
 
 /* ===== 宽屏缩放控件 =====
    .zoom-wrapper 是列表里的一行，与普通按钮等高（36px）：
@@ -245,71 +311,4 @@
     .zoom-narrow {
         display: flex !important; /* 覆盖基础规则里的 !important 隐藏 */
     }
-
-    .more-list-tabs {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    .more-list-tabs-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 16px 8px 18px;
-        border-top: 1px solid var(--hover-bg);
-        border-bottom: 1px solid var(--hover-bg);
-        flex-shrink: 0;
-    }
-
-    .more-list-tabs-title {
-        flex: 1;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .more-list-tabs-list {
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-        padding: 6px;
-        flex-shrink: 1;
-        gap: 6px;
-    }
-
-    /* 形状留在这里，四态（含键盘焦点）来自 app.css 的 .btn；选中态走 is-selected 变量，
-       所以不再需要单独写一条 .active:hover 去压悬停。 */
-    .more-list-tabs-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 8px;
-        white-space: nowrap;
-        font-size: 14px;
-        --btn-bg: transparent;
-        --btn-fg: var(--text-secondary);
-        /* 迁移前它既没有 .button 类也没有 role，从没继承过 .btn 默认的 line-height: 1.2 */
-        line-height: normal;
-    }
-
-        .more-list-tabs-item.is-selected {
-            --btn-bg: var(--blue-tertiary);
-            --btn-fg: var(--blue-primary);
-            font-weight: 600;
-        }
-
-    .more-list-tabs-item-title {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-    }
-
-    /* "新建标签"（28×28）与"关闭标签"（24×24）都是 IconButton 的标准档位，
-       尺寸/圆角/悬停/按下/焦点由组件 + app.css 的 .btn 提供，这里不再各写一份
-       （关闭键以前拿 --pressed-bg 当悬停色，现在统一成 --hover-bg）。 */
 }

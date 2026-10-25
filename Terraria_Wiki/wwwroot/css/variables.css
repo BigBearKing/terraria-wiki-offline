@@ -31,7 +31,9 @@
     --search-wrapper-bottom: max(16px, var(--safe-area-bottom) + 4px, calc(var(--global-keyboard-offset) + 4px));
 }
 
-html.windows {
+/* 顶部有标签横条时（AppState.ShowTabBar == true），这 32px 计入 --header-height。
+   Windows 窄窗口 / Mac 窗口态横条隐藏，改为由 --safe-area-top 保留顶部拖动条高度。 */
+html.has-tabbar {
     --tabbar-height: 32px;
 }
 

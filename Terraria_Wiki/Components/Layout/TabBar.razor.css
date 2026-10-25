@@ -11,8 +11,14 @@
     align-items: flex-end;
     height: 32px;
     flex-shrink: 0;
-    padding: 0 150px 0 8px;
+    padding: 0 8px;
     background: var(--bg-color-secondary);
+}
+
+/* Windows 无边框窗口：最小化/最大化/关闭三个系统按钮压在这条横条右上角，
+   只有 Windows 才需要右侧那 150px 让位（Mac 全屏 / iPad 上没有系统按钮）。 */
+.tab-bar.win-placeholder {
+    padding-right: 150px;
 }
 
 .tab-list {

@@ -3,7 +3,7 @@
 @using Terraria_Wiki.Services
 @using Terraria_Wiki.Models
 @inject IJSRuntime JS
-<header class="top-bar @(AppState.IsWindows ? "windows-top-bar" : "")">
+<header class="top-bar">
 
     <div class="actions-wrapper">
         @* Logo 菜单键：内容是 <img> 而不是 <Icon>，所以走 IconButton 的 ChildContent。
@@ -42,7 +42,7 @@
         </div>
     }
 
-    @* 更多按钮：只在主页显示（任何尺寸都显示，窄屏时它里面才有标签分组，见 AppState.TabsInMoreList） *@
+    @* 更多按钮：只在主页显示（ShowTabBar 为 false 时它里面才有标签列表，见 AppState.ShowTabBar） *@
     @if (AppState.CurrentPage == "home")
     {
         <div class="actions-wrapper">

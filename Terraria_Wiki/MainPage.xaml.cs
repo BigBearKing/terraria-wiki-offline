@@ -91,11 +91,20 @@ namespace Terraria_Wiki
         private void MainPage_Loaded(object sender, EventArgs e)
         {
             UpdateSafeAreaToWeb();
+#if MACCATALYST
+            // 启动时 Insets 往往还是 0（窗口尚未完全挂好），等窗口稳定后再取一次标题栏高度。
+            _ = RefreshSafeAreaAfterWindowAnimationAsync();
+#endif
 #if WINDOWS
             InitializeWindowsIntegration();
 #endif
             _findInPageService.ResultChanged += OnFindResultChanged;
             App.AppStateManager!.PropertyChanged += OnFindAppStateChanged;
+#if WINDOWS
+            // 窄/宽切换会改变 ShowTabBar：顶部 32px 要么由横条承担，要么由 safe-area-top 承担，
+            // 所以 IsSmallScreen 一变就重算一次（JS 的 matchMedia 回调是唯一来源）。
+            App.AppStateManager.PropertyChanged += OnWindowsLayoutChanged;
+#endif
             // 窗口尺寸变化时当帧重算布局：面板宽度随之收缩，而不是从左边溢出
             blazorWebView.SizeChanged += (_, _) =>
             {
@@ -106,6 +115,12 @@ namespace Terraria_Wiki
                 // （MAUI 仍在监听已废弃的 DidChangeStatusBarOrientation，dotnet/maui#39182）；
                 // Android 侧它的底层是方向传感器，分屏只改窗口尺寸时同样不发。
                 _ = RefreshSafeAreaAsync();
+#endif
+#if MACCATALYST
+                // 进出系统全屏也是窗口尺寸变化。标题栏消失 / 重新出现时 Insets 会晚一拍，
+                // 这里先按当前值算一次，再在系统动画结束后补算一次，避免把全屏停在窗口态。
+                _ = RefreshSafeAreaAsync();
+                _ = RefreshSafeAreaAfterWindowAnimationAsync();
 #endif
                 if (App.AppStateManager?.FindInPageOpen == true)
                     ApplyFindPanelLayout();
@@ -181,7 +196,7 @@ namespace Terraria_Wiki
         ///   top:   calc(var(--header-height) + 4px);
         ///   right: calc(10px + var(--safe-area-right));
         /// header-height 与网页同式：safe-area-top + 6（topbar-top-padding）+ 42（topbar-content-height）
-        /// + tabbar-height（仅 Windows 为 32）。
+        /// + tabbar-height（由 AppState.ShowTabBar 决定，横条显示时 32；横条隐藏时那 32px 已计入 safe-area-top）。
         ///
         /// ★ 强耦合：TopBar 的真实渲染高度**必须**等于 safe-area-top + 6 + 42，
         ///   否则面板会与之错位。历史上 TopBar 在 CSS 里写死 height:48px（border-box 含 padding），
@@ -197,7 +212,9 @@ namespace Terraria_Wiki
             var state = App.AppStateManager;
             if (state is null) return;
 
-            var tabBarHeight = state.IsWindows ? 32d : 0d;
+            // 横条高度只看 ShowTabBar（与网页 --tabbar-height 同源）：
+            // 显示横条时顶部多出 32px，页内搜索面板必须跟着下移。
+            var tabBarHeight = state.ShowTabBar ? 32d : 0d;
             var headerHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
             var top = headerHeight + FindPanelDrawable.PanelMarginTop;
             var right = FindPanelDrawable.PanelMarginRight + state.SafeAreaRight;
@@ -240,6 +257,18 @@ namespace Terraria_Wiki
                     break;
             }
         }
+
+#if WINDOWS
+        /// <summary>
+        /// 窄/宽切换会改变 ShowTabBar，顶部 32px 的承担者随之在横条与 safe-area-top 之间切换。
+        /// 只在 IsSmallScreen 变化时重算，其余属性与本逻辑无关。
+        /// </summary>
+        private void OnWindowsLayoutChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AppState.IsSmallScreen))
+                UpdateSafeAreaToWeb();
+        }
+#endif
 
         private void SyncFindPanel()
         {
@@ -593,6 +622,18 @@ namespace Terraria_Wiki
             await Task.Delay(50);
             await MainThread.InvokeOnMainThreadAsync(UpdateSafeAreaToWeb);
         }
+
+#if MACCATALYST
+        /// <summary>
+        /// 全屏进出时系统窗口有动画，标题栏消失 / 重新出现的 Insets 变化晚于尺寸回调。
+        /// 动画结束后再算一次，确保 IsMacFullScreen 不会停在过渡态。
+        /// </summary>
+        private async Task RefreshSafeAreaAfterWindowAnimationAsync()
+        {
+            await Task.Delay(450);
+            await MainThread.InvokeOnMainThreadAsync(UpdateSafeAreaToWeb);
+        }
+#endif
 
         public void HideLoadingScreen()
         {
@@ -977,8 +1018,62 @@ namespace Terraria_Wiki
                 App.AppStateManager.SafeAreaLeft = leftDp;
                 App.AppStateManager.SafeAreaRight = rightDp;
             }
+#elif WINDOWS
+            // Windows 窄窗口：标签横条不显示（ShowTabBar == false，标签归 MoreList），
+            // 但顶部 32px 仍是无边框窗口的拖动/系统按钮区，用 safe-area-top 原样保留；
+            // 宽窗口时横条本身就是那 32px，安全区为 0。两者都保证内容从 32px 之下开始。
+            App.AppStateManager.SafeAreaTop = App.AppStateManager.ShowTabBar ? 0d : 32d;
+#elif MACCATALYST
+            // Mac Catalyst：内容默认延伸到标题栏下面，窗口态的红绿灯会压在内容上。
+            // UIKit 给的 SafeAreaInsets.Top 正好是标题栏（红绿灯）那条的高度，直接当 safe-area-top。
+            // 系统全屏时红绿灯消失，safe-area-top 归 0（同时标签栏才出现，见 AppState.ShowTabBar）。
+            var viewController = Platform.GetCurrentUIViewController();
+            var view = viewController?.View;
+
+            if (view != null)
+            {
+                var insets = view.SafeAreaInsets;
+                bool isMacFullScreen = IsWindowFullScreen(view);
+
+                App.AppStateManager.IsMacFullScreen = isMacFullScreen;
+                App.AppStateManager.SafeAreaTop = isMacFullScreen ? 0d : (double)insets.Top;
+                App.AppStateManager.SafeAreaBottom = (double)insets.Bottom;
+                App.AppStateManager.SafeAreaLeft = (double)insets.Left;
+                App.AppStateManager.SafeAreaRight = (double)insets.Right;
+            }
 #endif
         }
+
+#if MACCATALYST
+        /// <summary>
+        /// Mac Catalyst 窗口是否处于系统全屏（绿灯全屏，不是放大）。
+        /// 判定不依赖 AppKit，用两件事交叉确认：
+        ///   1. 有标题栏（红绿灯）时 SafeAreaInsets.Top &gt; 0 → 一定不是全屏；
+        ///   2. 全屏时窗口铺满整块屏幕，宽高比与屏幕一致。
+        /// 宽高比是尺度无关的：Catalyst 的 UIKit 点与 macOS 屏幕点不是同一尺度
+        /// （实测窗口 1910×1082、屏幕 1470×956），直接比宽高会误判，所以只比比例。
+        /// </summary>
+        private static bool IsWindowFullScreen(UIKit.UIView view)
+        {
+            var window = view.Window;
+            var screen = window?.WindowScene?.Screen;
+            if (window == null || screen == null) return false;
+
+            double screenWidth = screen.Bounds.Width;
+            double screenHeight = screen.Bounds.Height;
+            double windowWidth = window.Bounds.Width;
+            double windowHeight = window.Bounds.Height;
+            if (screenWidth <= 0 || screenHeight <= 0 || windowWidth <= 0 || windowHeight <= 0)
+                return false;
+
+            // 标题栏还在 → 窗口态（全屏时这条会归 0）
+            if ((double)view.SafeAreaInsets.Top > 0.5) return false;
+
+            double screenAspect = screenWidth / screenHeight;
+            double windowAspect = windowWidth / windowHeight;
+            return Math.Abs(windowAspect - screenAspect) <= screenAspect * 0.03;
+        }
+#endif
 
         protected override void OnAppearing()
         {

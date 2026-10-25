@@ -205,7 +205,7 @@
         IframeBridge.Init(JS);
         AppService.Init(NavManager, JS);
         await ThemeService.InitIframeThemeAsync(JS);
-        await JS.InvokeVoidAsync("setPlatform", AppState.IsWindows ? "True" : "False");
+        await JS.InvokeVoidAsync("setTabBarVisible", AppState.ShowTabBar);
         // 悬停反馈：桌面加上 has-hover（CSS 里的 `body.has-hover .xxx:hover` 才会生效），
         // 移动端不加 —— 触屏没有悬停，加了会出现"点完还留着悬停态"。
         if (AppState.IsMobile)
@@ -219,8 +219,17 @@
         else
         {
             await JS.InvokeVoidAsync("initHover", "True");
+            // Mac Catalyst 的 safe-area-top 是红绿灯/标题栏高度（由 MainPage 读原生 Insets 写入），
+            // 初始化时也要推一次，否则窗口态会一直用 CSS 里的 0，内容压在红绿灯下面。
+            if (AppState.IsMacCatalyst)
+            {
+                await JS.InvokeVoidAsync("setSafeAreaTop", AppState.SafeAreaTop);
+                await JS.InvokeVoidAsync("setSafeAreaBottom", AppState.SafeAreaBottom);
+                await JS.InvokeVoidAsync("setSafeAreaLeft", AppState.SafeAreaLeft);
+                await JS.InvokeVoidAsync("setSafeAreaRight", AppState.SafeAreaRight);
+            }
         }
-        // 视口宽高监听（含 <html>.short-height 类），C# 侧据此决定标签放在横条还是 MoreList
+        // 视口宽高监听：C# 侧据此决定 ShowTabBar（标签放横条还是 MoreList）
         _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
         App.DataManager.InitializeSettings();

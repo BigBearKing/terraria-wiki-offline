@@ -55,10 +55,12 @@ public class AppState : INotifyPropertyChanged
     //   IsLargeScreen   又宽又高
     // 谁用哪一档看"该界面在哪一档才改变形态"：
     //   侧边栏抽屉 —— 只在窄（IsSmallScreen）浮层化，所以它的遮罩用 .narrow-only，不看高度
-    //   标签归属   —— 见下面 TabsInBar / TabsInMoreList
-    // 标签放哪由 TabsInBar / TabsInMoreList 两个属性表达（不是简单的取反，见各自注释）：
-    //   Windows：宽度决定——≥769 在横条，≤768 在 MoreList；高度不影响
-    //   其他平台：又宽又高才在横条，否则在 MoreList
+    //   标签归属   —— 只由 ShowTabBar 一个属性决定，见下面注释
+    // 标签放哪只看 ShowTabBar：
+    //   ShowTabBar == true  → 标签在顶部横条里
+    //   ShowTabBar == false → 标签列表在 MoreList 里
+    //   Windows 按宽度（窄窗口隐藏，顶部 32px 交给 safe-area-top）；Mac Catalyst 只有系统全屏才出现；
+    //   其他平台又宽又高才出现。
     // 标记/CSS 层：Mask 的 NarrowOnly 参数 / .narrow-only 遮罩，
     // 顶部栏 .narrow-menu-btn（只认宽度）与 .compact-more-btn（只在主页显示，见 TopBar.razor）。
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
@@ -98,6 +100,7 @@ public class AppState : INotifyPropertyChanged
     private bool _isPinned = false;
     private bool _isSmallScreen = false;
     private bool _isShortScreen = false;
+    private bool _isMacFullScreen = false;
     private int _wikiZoom = Preferences.Default.Get("WikiZoom", 100);
 
     /// <summary>
@@ -548,32 +551,58 @@ public class AppState : INotifyPropertyChanged
     public bool IsSmallScreen
     {
         get => _isSmallScreen;
-        set => SetProperty(ref _isSmallScreen, value);
+        set
+        {
+            if (SetProperty(ref _isSmallScreen, value))
+                SyncTabBarCss();
+        }
     }
 
     /// <summary>视口高度 ≤768px（矮屏）。</summary>
     public bool IsShortScreen
     {
         get => _isShortScreen;
-        set => SetProperty(ref _isShortScreen, value);
+        set
+        {
+            if (SetProperty(ref _isShortScreen, value))
+                SyncTabBarCss();
+        }
     }
+
+    /// <summary>
+    /// Mac Catalyst 是否处于系统全屏（绿灯进入的全屏，不是放大/最大化）。
+    /// 只由 MainPage 读窗口尺寸与标题栏安全区后写入，其他平台恒为 false。
+    /// 它只参与 <see cref="ShowTabBar"/> 的计算，不直接决定标签归属。
+    /// </summary>
+    public bool IsMacFullScreen
+    {
+        get => _isMacFullScreen;
+        set
+        {
+            if (SetProperty(ref _isMacFullScreen, value))
+                SyncTabBarCss();
+        }
+    }
+
+    /// <summary>
+    /// 把 ShowTabBar 同步到网页侧（html.has-tabbar → --tabbar-height）。
+    /// 所有会影响 ShowTabBar 的属性变化都必须走这里，保证 CSS 与组件看到同一个真值。
+    /// </summary>
+    private void SyncTabBarCss() => JS?.InvokeVoidAsync("setTabBarVisible", ShowTabBar);
 
     /// <summary>窄或矮：面板/遮罩一类"手机上才需要"的界面在这一档启用。</summary>
     public bool IsCompactScreen => IsSmallScreen || IsShortScreen;
 
     /// <summary>
-    /// 标签是否占用上方横条。Windows 只看宽度（横条本就是无边框窗口的拖动/系统按钮区，
-    /// 窗口再矮也始终在，矮屏照旧显示标签）；其他平台要又宽又高才显示。
+    /// 顶部标签横条是否显示。全平台只有这一个判定：
+    ///   Windows      —— 宽度决定：宽窗口显示（横条兼作无边框窗口的拖动/系统按钮区）；
+    ///                   窄窗口隐藏、标签归 MoreList，顶部那 32px 改由 safe-area-top 保留；
+    ///   Mac Catalyst —— 只有系统全屏才显示（窗口态让位给 MoreList）；
+    ///   其他平台      —— 又宽又高才显示。
+    /// 显示时标签在横条里；不显示时标签列表归 MoreList（见 MoreList.razor）。
     /// </summary>
-    public bool TabsInBar =>
-        IsWindows ? !IsSmallScreen : IsLargeScreen;
-
-    /// <summary>
-    /// 标签是否放 MoreList。与 TabsInBar 分开写而不是取反：Windows 矮屏时标签在横条上，
-    /// MoreList 里就不该再出现一份（所以这里只认宽度）；其他平台除了"又宽又高"以外都归 MoreList。
-    /// </summary>
-    public bool TabsInMoreList =>
-        IsWindows ? IsSmallScreen : !IsLargeScreen;
+    public bool ShowTabBar =>
+        IsWindows ? !IsSmallScreen : IsMacCatalyst ? IsMacFullScreen : IsLargeScreen;
 
     /// <summary>又宽又高（宽 &gt;768 且 高 &gt;768）：其他平台只有这一种情况显示上方横条。</summary>
     public bool IsLargeScreen => !IsCompactScreen;

@@ -49,19 +49,15 @@
 
         };
 
-        // 平台类：Windows 上用于把 TabBar 高度计入 --tabbar-height / --header-height
-        window.setPlatform = function (isWindows) {
-            if (isWindows === "True") {
-                document.documentElement.classList.add('windows');
-            } else {
-                document.documentElement.classList.remove('windows');
-            }
+        // 标签横条显隐类（与 AppState.ShowTabBar 同源）：显示时 32px 要计入 --header-height，
+        // 否则 MoreList / 搜索结果面板 / 遮罩会整体压在标签栏上；隐藏时不能计。
+        window.setTabBarVisible = function (visible) {
+            document.documentElement.classList.toggle('has-tabbar', visible === true);
         };
 
 
         // 视口尺寸监听：宽度与高度共用 768 阈值，两者都传给 C#。
         // 宽度变化交给 matchMedia；高度没有对应的媒体查询事件，用 resize 兜住。
-        // 另外在 <html> 上维护 .short-height，供 CSS 侧（--tabbar-height 等）单独使用。
         window.initGlobalScreenListener = () => {
             const WIDTH_QUERY = '(max-width: 768px)';
             const HEIGHT_QUERY = '(max-height: 768px)';
@@ -71,10 +67,6 @@
             let lastSmall = mqWidth.matches;
             let lastShort = mqHeight.matches;
 
-            const applyShortHeightClass = (isShort) => {
-                document.documentElement.classList.toggle('short-height', isShort);
-            };
-
             const sendUpdate = () => {
                 const isSmall = mqWidth.matches;
                 const isShort = mqHeight.matches;
@@ -82,7 +74,6 @@
                 if (isSmall === lastSmall && isShort === lastShort) return;
                 lastSmall = isSmall;
                 lastShort = isShort;
-                applyShortHeightClass(isShort);
                 DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', isSmall, isShort);
             };
 
@@ -91,7 +82,6 @@
             window.addEventListener('resize', sendUpdate);
 
             // 初始化时立刻执行一次，确保 C# 在启动瞬间就能拿到完整状态
-            applyShortHeightClass(lastShort);
             DotNet.invokeMethodAsync('Terraria_Wiki', 'OnScreenChanged', lastSmall, lastShort);
         };
 

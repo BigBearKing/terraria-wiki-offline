@@ -846,22 +846,6 @@ public static partial class WindowHelper
         }
     }
 
-#elif MACCATALYST
-    /// <summary>
-    /// 设置窗口置顶
-    /// </summary>
-    public static void SetAlwaysOnTop(bool isAlwaysOnTop)
-    {
-        var mauiWindow = Application.Current?.Windows[0];
-        var nativeWindow = mauiWindow?.Handler?.PlatformView as UIKit.UIWindow;
-        if (nativeWindow != null)
-        {
-            nativeWindow.WindowLevel = isAlwaysOnTop
-                ? UIKit.UIWindowLevel.Alert + 1
-                : UIKit.UIWindowLevel.Normal;
-        }
-    }
-
     #else
     public static void SetAlwaysOnTop(bool _) { }
 

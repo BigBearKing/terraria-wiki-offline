@@ -79,6 +79,19 @@
 		<DefaultLanguage>zh-cn</DefaultLanguage>
 	</PropertyGroup>
 
+	<!-- ★★ Mac Catalyst 的 .app 包名必须钉回程序集名，否则 Rider 点"运行"会报文件不存在。
+	     背景：.NET 10 起，桌面 SDK（SdkIsDesktop=true，即 macOS / Mac Catalyst）在
+	     Xamarin.Shared.props 里把 _AppBundleName 默认成 $(ApplicationTitle)：
+	         <_AppBundleName Condition="... VersionGreaterThanOrEquals(TargetFrameworkVersion, 10.0) And SdkIsDesktop">$(ApplicationTitle)</_AppBundleName>
+	     于是产物是 "Terraria Wiki.app"，而 Rider 的 Mac Catalyst 运行配置按
+	     $(AssemblyName).app 拼路径（bin/.../maccatalyst-arm64/Terraria_Wiki.app/Contents/MacOS/Terraria_Wiki），
+	     点运行就直接报"文件不存在"——构建本身是成功的。
+	     iOS 不走这条桌面 SDK 分支（SdkIsDesktop=false），包名本来就是程序集名，所以 iOS 没这问题。
+	     这里只覆盖包目录名；显示名仍来自 ApplicationTitle → CFBundleDisplayName（"Terraria Wiki"）。 -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<_AppBundleName>$(AssemblyName)</_AppBundleName>
+	</PropertyGroup>
+
 	<!-- ★★ 只在「还原」时声明 iOS 的 RID 列表，避免 NETSDK1112。
 	     背景：.NET 11 起 iOS 默认跑 CoreCLR，运行时包是
 	       Microsoft.NETCore.App.Runtime.ios-arm64 / .iossimulator-arm64
