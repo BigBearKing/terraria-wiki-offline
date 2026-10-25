@@ -6,9 +6,6 @@ using Android.Webkit;
 #if WINDOWS
 using Microsoft.Web.WebView2.Core;
 #endif
-#if IOS || MACCATALYST
-using WebKit;
-#endif
 
 namespace Terraria_Wiki.Services;
 
@@ -89,9 +86,6 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         return CreateWindowsResult(find);
     }
 #endif
-#if IOS || MACCATALYST
-    private WKWebView? _appleWebView;
-#endif
 
     public event Action<FindInPageResult>? ResultChanged;
 
@@ -110,10 +104,6 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #if WINDOWS
             if (platformWebView is Microsoft.UI.Xaml.Controls.WebView2 windowsWebView)
                 _windowsWebView = windowsWebView;
-#endif
-#if IOS || MACCATALYST
-            if (platformWebView is WKWebView appleWebView)
-                _appleWebView = appleWebView;
 #endif
         }
     }
@@ -150,13 +140,12 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         }
 #endif
 #if IOS || MACCATALYST
-        if (_appleWebView is { } appleWebView)
-        {
-            var result = await FindAppleAsync(appleWebView, query, backwards: false);
-            return Publish(result);
-        }
-#endif
+        // Apple 的 WKWebView.Find 只回 MatchFound（没有计数），也不保证把命中画出来；
+        // 页内搜索的正文在 iframe 里，改由 iframe 内的脚本查找 + 自己高亮，返回 count|index。
+        return Publish(await CallIframeFindAsync("FindInPage", query));
+#else
         return Publish(FindInPageResult.Empty);
+#endif
     }
 
     public async Task<FindInPageResult> NextAsync()
@@ -182,10 +171,10 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         }
 #endif
 #if IOS || MACCATALYST
-        if (_appleWebView is { } appleWebView)
-            return Publish(await FindAppleAsync(appleWebView, _query, backwards: false));
-#endif
+        return Publish(await CallIframeFindAsync("FindInPageNext", string.Empty));
+#else
         return FindInPageResult.Empty;
+#endif
     }
 
     public async Task<FindInPageResult> PreviousAsync()
@@ -210,10 +199,10 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         }
 #endif
 #if IOS || MACCATALYST
-        if (_appleWebView is { } appleWebView)
-            return Publish(await FindAppleAsync(appleWebView, _query, backwards: true));
-#endif
+        return Publish(await CallIframeFindAsync("FindInPagePrevious", string.Empty));
+#else
         return FindInPageResult.Empty;
+#endif
     }
 
     public async Task ClearAsync()
@@ -225,6 +214,10 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #endif
 #if WINDOWS
         _windowsWebView?.CoreWebView2?.Find?.Stop();
+#endif
+#if IOS || MACCATALYST
+        // 清高亮是"关闭面板"的收尾动作，不等 iframe 回复，避免拖慢关闭动画。
+        _ = CallIframeFindAsync("FindInPageClear", string.Empty);
 #endif
         Publish(FindInPageResult.Empty);
     }
@@ -266,20 +259,40 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #endif
 
 #if IOS || MACCATALYST
-    private static Task<FindInPageResult> FindAppleAsync(WKWebView webView, string query, bool backwards)
+    /// <summary>
+    /// 调用 iframe 内的查找脚本（<c>iframe-bridge.js</c> 的 <c>FindInPage*</c> 处理器）。
+    /// WKWebView 自带的 Find 只回 MatchFound、也没有计数，命中高亮也不可靠，所以 Apple 平台
+    /// 改为在 wiki 正文所在的 iframe 里自己查找 + 高亮，返回 "count|index"。
+    /// iframe 未就绪 / 超时 → 空结果。
+    /// </summary>
+    private static async Task<FindInPageResult> CallIframeFindAsync(string method, string payload)
     {
-        var completion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var configuration = new WKFindConfiguration
+        try
         {
-            Backwards = backwards,
-            CaseSensitive = false,
-            Wraps = true
-        };
-        webView.Find(query, configuration, result =>
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var raw = await IframeBridge.CallJsAsync(method, payload, timeout.Token);
+            return ParseIframeFindReply(raw);
+        }
+        catch
         {
-            completion.TrySetResult(new FindInPageResult(result.MatchFound ? 1 : 0, result.MatchFound ? 0 : -1));
-        });
-        return completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            return FindInPageResult.Empty;
+        }
+    }
+
+    /// <summary>解析 iframe 返回的 "count|index"；任何不合法形态都按无结果处理。</summary>
+    private static FindInPageResult ParseIframeFindReply(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return FindInPageResult.Empty;
+
+        var parts = raw.Split('|');
+        if (parts.Length != 2 ||
+            !int.TryParse(parts[0], out var count) ||
+            !int.TryParse(parts[1], out var index) ||
+            count <= 0 || index < 0 || index >= count)
+            return FindInPageResult.Empty;
+
+        return new FindInPageResult(count, index);
     }
 #endif
 }

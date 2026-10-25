@@ -1,4 +1,4 @@
-#if ANDROID
+﻿#if ANDROID
 using Android.Views;
 using Android.Window;
 using AndroidX.Core.View;
@@ -9,6 +9,7 @@ using Terraria_Wiki.Services;
 using Terraria_Wiki.Components.Shared;
 using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.JSInterop;
+using System.Globalization;
 
 namespace Terraria_Wiki
 {
@@ -38,6 +39,15 @@ namespace Terraria_Wiki
         private int _findCaretPhaseMs;
         private bool _syncingFindEntryText;
         private bool _findPanelReady;
+
+        /// <summary>
+        /// 从网页实测的 TopBar 底边（= 面板锚点，页面坐标）。NaN 表示还没测到，退回按安全区估算。
+        /// 之所以实测：原生按 safe-area-top 推算 header 高度时，各平台页面原点与 WebView 原点的
+        /// 关系不一致（其他平台会比 Windows 多算/少算 safe-area），实测能直接对齐真实渲染位置。
+        /// </summary>
+        private double _findPanelAnchor = double.NaN;
+        /// <summary>连续触发的实测请求只保留最后一次，避免窗口拖动时排队。</summary>
+        private int _findPanelAnchorSerial;
 
 #if IOS
         public MainPage(BurnInProtectionService burnInService, INativeFindInPageService findInPageService)
@@ -137,6 +147,13 @@ namespace Terraria_Wiki
         {
             if (_findPanelReady) return;
 
+#if IOS || MACCATALYST
+            // ★ 不能保持 XAML 里的 Opacity=0：UIKit 的 hitTest 会跳过 alpha ≤ 0.01 的视图，
+            // 输入框就永远收不到点击/拖动 —— 既点不回来聚焦，也没法用鼠标或手指拖选文字。
+            // 0.02 肉眼不可见（文字、光标、选区都由画布绘制），但能正常参与命中测试。
+            FindEntry.Opacity = 0.02;
+#endif
+
             FindPanelView.Drawable = _findDrawable;
             FindPanelView.HeightRequest = FindPanelDrawable.PanelHeight;
             FindPanelHost.HeightRequest = FindPanelDrawable.PanelHeight;
@@ -188,6 +205,9 @@ namespace Terraria_Wiki
 
             PositionFindPanel();
             FindPanelView.Invalidate();
+
+            // 再用网页实测的 TopBar 底边校正一次：不再依赖"原生 header 高度 == 网页渲染高度"。
+            _ = MeasureFindPanelAnchorAsync();
         }
 
         /// <summary>
@@ -195,15 +215,11 @@ namespace Terraria_Wiki
         ///   position: fixed;
         ///   top:   calc(var(--header-height) + 4px);
         ///   right: calc(10px + var(--safe-area-right));
-        /// header-height 与网页同式：safe-area-top + 6（topbar-top-padding）+ 42（topbar-content-height）
-        /// + tabbar-height（由 AppState.ShowTabBar 决定，横条显示时 32；横条隐藏时那 32px 已计入 safe-area-top）。
         ///
-        /// ★ 强耦合：TopBar 的真实渲染高度**必须**等于 safe-area-top + 6 + 42，
-        ///   否则面板会与之错位。历史上 TopBar 在 CSS 里写死 height:48px（border-box 含 padding），
-        ///   安全区一大，TopBar 实际底边就停在 48px，而这里按 safe-area-top + 48 定位，
-        ///   于是安卓上面板比顶栏低出一整个状态栏高度。
-        ///   修法见 TopBar.razor.css：height 改成 calc(topbar-top-padding + topbar-content-height)。
-        ///   改 TopBar 垂直尺寸时务必同步本方法。
+        /// 垂直位置**以网页实测的 TopBar 底边为准**（见 <see cref="MeasureFindPanelAnchorAsync"/>）：
+        /// 原生按 safe-area-top + 6 + 42 + 横条 32 估算，只在 Windows 上与网页渲染一致；
+        /// 其他平台的页面原点 / 安全区关系不同，估算会让面板偏低（搜索框明显偏下）。
+        /// 实测值不可用时才退回估算式。
         ///
         /// 全部走布局（HorizontalOptions=End + Margin），不用 Translation，避免合成层滞后。
         /// </summary>
@@ -212,14 +228,79 @@ namespace Terraria_Wiki
             var state = App.AppStateManager;
             if (state is null) return;
 
-            // 横条高度只看 ShowTabBar（与网页 --tabbar-height 同源）：
-            // 显示横条时顶部多出 32px，页内搜索面板必须跟着下移。
-            var tabBarHeight = state.ShowTabBar ? 32d : 0d;
-            var headerHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
-            var top = headerHeight + FindPanelDrawable.PanelMarginTop;
+            // 优先用网页实测的 TopBar 底边；还没测到时才按安全区估算。
+            // 估算式：safe-area-top + 6 + 42 + 横条 32。Windows 上两者一致；
+            // 其他平台的实际页面原点/安全区关系与公式不同，会让面板偏低，所以以实测为准。
+            double top;
+            if (!double.IsNaN(_findPanelAnchor))
+            {
+                top = _findPanelAnchor + FindPanelDrawable.PanelMarginTop;
+            }
+            else
+            {
+                var tabBarHeight = state.ShowTabBar ? 32d : 0d;
+                var estimatedHeaderHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
+                top = estimatedHeaderHeight + FindPanelDrawable.PanelMarginTop;
+            }
+
             var right = FindPanelDrawable.PanelMarginRight + state.SafeAreaRight;
 
             FindPanelHost.Margin = new Thickness(0, top, right, 0);
+        }
+
+        /// <summary>
+        /// 向网页要 TopBar 的真实底边（页面坐标），作为面板的垂直锚点。
+        /// 连续调用只保留最后一次；WebView 自身在页面里有偏移时一并加上。
+        /// </summary>
+        /// <summary>
+        /// 向网页要 TopBar 的真实底边（页面坐标），作为面板的垂直锚点。
+        /// ★ JS 调用必须在 UI 线程发起：之前这里先 await Task.Delay(16) 再去调 JS，
+        /// 没有同步上下文时延续会跑到线程池，InvokeAsync 直接失败并被 catch 吞掉，
+        /// 于是永远退回估算式 —— 表现就是"改了半天位置一点没变"。
+        /// 现在整段都显式 dispatch 到 UI 线程，失败也不再静默（写到日志）。
+        /// </summary>
+        private async Task MeasureFindPanelAnchorAsync()
+        {
+            var js = AppState.JS;
+            if (js is null) return;
+
+            var serial = ++_findPanelAnchorSerial;
+            try
+            {
+                var raw = await MainThread.InvokeOnMainThreadAsync(
+                    () => js.InvokeAsync<string>("getFindPanelAnchor").AsTask());
+                if (serial != _findPanelAnchorSerial || string.IsNullOrWhiteSpace(raw)) return;
+
+                var parts = raw.Split('|');
+                if (parts.Length != 2 ||
+                    !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var bottom) ||
+                    !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var viewportWidth))
+                    return;
+                if (bottom <= 0) return;
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (serial != _findPanelAnchorSerial) return;
+
+                    // 面板是 WebView 的兄弟节点，两者同处页面内容区：
+                    // DOM 的 y=0 与面板容器的 y=0 是同一个原点，不能再加 blazorWebView.Y。
+                    // 但 CSS px 与 DIP 不一定是 1:1（Mac 缩放模式），用视口宽换算。
+                    var viewWidth = blazorWebView.Width;
+                    var scale = viewWidth > 0 && viewportWidth > 0 ? viewWidth / viewportWidth : 1d;
+                    var anchor = bottom * scale;
+
+                    if (double.IsNaN(_findPanelAnchor) || Math.Abs(anchor - _findPanelAnchor) > 0.5)
+                    {
+                        _findPanelAnchor = anchor;
+                        PositionFindPanel();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                // 页面尚未就绪 / JS 未注册时忽略；下一次布局事件会再测
+                App.LogManager?.Error($"MeasureFindPanelAnchor failed: {ex}");
+            }
         }
 
         /// <summary>
@@ -270,7 +351,7 @@ namespace Terraria_Wiki
         }
 #endif
 
-        private void SyncFindPanel()
+        private async void SyncFindPanel()
         {
             var state = App.AppStateManager;
             if (state is null) return;
@@ -292,6 +373,10 @@ namespace Terraria_Wiki
             _findDrawable.IsDarkTheme = state.IsDarkTheme;
             _findDrawable.CountText = string.Empty;
             ApplyFindEntryThemeColors();
+
+            // 先向网页要一次 TopBar 底边再显示，避免"先按估算出现、下一帧再跳"。
+            await MeasureFindPanelAnchorAsync();
+            if (!App.AppStateManager.FindInPageOpen) return;
 
             FindPanelContainer.IsVisible = true;
             FindEntry.IsVisible = true;
@@ -335,6 +420,14 @@ namespace Terraria_Wiki
             {
                 tf.LeftView = null;
                 tf.LeftViewMode = UIKit.UITextFieldViewMode.Never;
+
+                // Entry 只作为输入接收器，任何系统外观都不能露出来：
+                // 默认的圆角边框 / 聚焦光圈 / 背景会在 Opacity=0.02 时变成一圈淡蓝色描边。
+                tf.BorderStyle = UIKit.UITextBorderStyle.None;
+                tf.BackgroundColor = UIKit.UIColor.Clear;
+                tf.Layer.BorderWidth = 0;
+                tf.Layer.CornerRadius = 0;
+                tf.Layer.ShadowOpacity = 0;
             }
 #endif
         }
@@ -523,12 +616,29 @@ namespace Terraria_Wiki
         {
             if (e.Touches is not { Length: > 0 }) return;
 
-            _findPressCandidate = _findDrawable.HitTestButton(e.Touches[0]);
+            var point = e.Touches[0];
+            _findPressCandidate = _findDrawable.HitTestButton(point);
             if (_findPressCandidate >= 0)
             {
                 _findDrawable.PressedButton = _findPressCandidate;
                 FindPanelView.Invalidate();
+                return;
             }
+
+            // 画布接住搜索胶囊上的点击：透明 Entry 在 iOS/Mac 上不可被命中（Opacity=0 会被
+            // UIKit 的 hitTest 直接跳过），失焦后点它不会重新聚焦，表现就是"只能打一次字"。
+            if (_findDrawable.HitTestSearch(point, (float)FindPanelHost.WidthRequest))
+                FocusFindEntry();
+        }
+
+        /// <summary>把输入焦点交还给透明 Entry（文字/光标仍由画布绘制）。</summary>
+        private void FocusFindEntry()
+        {
+            if (FindEntry.IsFocused) return;
+            FindEntry.Focus();
+            _findDrawable.IsFocused = true;
+            StartFindCaretBlink();
+            FindPanelView.Invalidate();
         }
 
         private void OnFindPanelDragInteraction(object? sender, TouchEventArgs e)

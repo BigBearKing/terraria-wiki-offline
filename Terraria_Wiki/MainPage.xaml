@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Terraria_Wiki"
@@ -26,7 +26,8 @@
               InputTransparent="True"
               CascadeInputTransparent="False"
               HorizontalOptions="Fill"
-              VerticalOptions="Fill">
+              VerticalOptions="Fill"
+              SafeAreaEdges="None">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -34,7 +35,8 @@
             <Grid x:Name="FindPanelHost"
                   Grid.Column="1"
                   HorizontalOptions="End"
-                  VerticalOptions="Start">
+                  VerticalOptions="Start"
+                  SafeAreaEdges="None">
                 <GraphicsView x:Name="FindPanelView"
                               StartInteraction="OnFindPanelStartInteraction"
                               DragInteraction="OnFindPanelDragInteraction"

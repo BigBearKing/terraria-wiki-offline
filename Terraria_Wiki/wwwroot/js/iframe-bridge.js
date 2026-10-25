@@ -185,6 +185,150 @@ if (window.parent !== window) {
             window.parent.postMessage({ type: 'res', id: msg.id, data: result }, '*');
         }
     });
+
+    // ===== 页内搜索：自己查找 + 高亮 + 计数 =====
+    // WKWebView 自带的 Find 只回 MatchFound，拿不到匹配数量，也不保证把命中高亮出来；
+    // 正文在 iframe 里，所以由这里接管：按可见文本节点建立字符映射，跨节点匹配，
+    // 用 <mark> 包裹命中（跨节点时拆成相邻的多个 mark），返回 "count|index"。
+    const findState = { query: '', matches: [], index: -1 };
+
+    function ensureFindStyle() {
+        if (document.getElementById('wiki-find-style')) return;
+        const style = document.createElement('style');
+        style.id = 'wiki-find-style';
+        style.textContent =
+            'mark.wiki-find-hit{background-color:#ffe58a;color:inherit;padding:0;border-radius:2px;}' +
+            'mark.wiki-find-hit.wiki-find-current{background-color:#ffb300;box-shadow:0 0 0 2px rgba(255,179,0,.45);}';
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    function clearFindMarks() {
+        document.querySelectorAll('mark.wiki-find-hit').forEach(mark => {
+            const parent = mark.parentNode;
+            if (!parent) return;
+            parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+            parent.normalize();
+        });
+        findState.matches = [];
+        findState.index = -1;
+    }
+
+    function collectFindText() {
+        let text = '';
+        const map = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                // 空白节点也要保留：跨 <b>/<i> 边界的短语要靠它们在拼接文本里留住空格
+                if (!node.nodeValue) return NodeFilter.FILTER_REJECT;
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                if (parent.closest('script, style, noscript, textarea, select, option, svg, mark.wiki-find-hit')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                // 跳过 display:none / visibility:hidden 等不可见文本。
+                // 用文本节点自己的 Range 量：父元素是 display:contents 时 parent 本身没有盒子，
+                // 直接量 parent 会误杀，量 Range 则只看这段文字有没有渲染出来。
+                const probe = document.createRange();
+                probe.selectNodeContents(node);
+                if (probe.getClientRects().length === 0) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        let node;
+        while ((node = walker.nextNode())) {
+            map.push({ node, start: text.length, end: text.length + node.nodeValue.length });
+            text += node.nodeValue;
+        }
+        return { text, map };
+    }
+
+    function wrapFindSegment(node, start, end) {
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, end);
+        const mark = document.createElement('mark');
+        mark.className = 'wiki-find-hit';
+        range.surroundContents(mark);
+        return mark;
+    }
+
+    function highlightFindMatches(text, map, query) {
+        const haystack = text.toLocaleLowerCase();
+        const needle = query.toLocaleLowerCase();
+        const matches = [];
+        let from = 0;
+        while (needle.length > 0 && from <= haystack.length - needle.length) {
+            const at = haystack.indexOf(needle, from);
+            if (at < 0) break;
+            matches.push({ start: at, end: at + needle.length, marks: [] });
+            from = at + needle.length;
+        }
+
+        // 反向包裹：同一文本节点里从后往前切分，前面命中的字符偏移不会被破坏
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const match = matches[i];
+            const segments = [];
+            for (const entry of map) {
+                if (entry.end <= match.start) continue;
+                if (entry.start >= match.end) break;
+                segments.push({
+                    node: entry.node,
+                    start: Math.max(match.start, entry.start) - entry.start,
+                    end: Math.min(match.end, entry.end) - entry.start
+                });
+            }
+            for (let j = segments.length - 1; j >= 0; j--) {
+                match.marks.unshift(wrapFindSegment(segments[j].node, segments[j].start, segments[j].end));
+            }
+        }
+        return matches;
+    }
+
+    function selectFindMatch(index) {
+        document.querySelectorAll('mark.wiki-find-hit.wiki-find-current')
+            .forEach(mark => mark.classList.remove('wiki-find-current'));
+        const match = findState.matches[index];
+        if (!match || !match.marks.length) return;
+        match.marks.forEach(mark => mark.classList.add('wiki-find-current'));
+        const rect = match.marks[0].getBoundingClientRect();
+        if (rect.top < 0 || rect.bottom > window.innerHeight) {
+            match.marks[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
+    }
+
+    function findReply(count, index) {
+        return `${count}|${index}`;
+    }
+
+    function startFind(query) {
+        ensureFindStyle();
+        clearFindMarks();
+        findState.query = query;
+        if (!query) return findReply(0, -1);
+
+        const { text, map } = collectFindText();
+        findState.matches = highlightFindMatches(text, map, query);
+        findState.index = findState.matches.length ? 0 : -1;
+        if (findState.index >= 0) selectFindMatch(0);
+        return findReply(findState.matches.length, findState.index);
+    }
+
+    function stepFind(delta) {
+        const count = findState.matches.length;
+        if (!count) return findReply(0, -1);
+        findState.index = (findState.index + delta + count) % count;
+        selectFindMatch(findState.index);
+        return findReply(count, findState.index);
+    }
+
+    window.iframeBridge.registerHandler('FindInPage', data => startFind(String(data ?? '')));
+    window.iframeBridge.registerHandler('FindInPageNext', () => stepFind(1));
+    window.iframeBridge.registerHandler('FindInPagePrevious', () => stepFind(-1));
+    window.iframeBridge.registerHandler('FindInPageClear', () => {
+        clearFindMarks();
+        findState.query = '';
+        return findReply(0, -1);
+    });
 }
 
 // 导出给模块使用

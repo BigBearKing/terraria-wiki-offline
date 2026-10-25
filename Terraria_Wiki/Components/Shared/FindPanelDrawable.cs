@@ -510,6 +510,18 @@ public sealed class FindPanelDrawable : IDrawable
         return -1;
     }
 
+    /// <summary>
+    /// 是否点在搜索胶囊上（含文字区域）。
+    /// 透明输入框在 iOS/Mac 上 Opacity=0 时 UIKit 不参与命中测试，失焦后就再也点不回来，
+    /// 只能由画布接住这次点击、再主动调用 Focus()。
+    /// </summary>
+    public bool HitTestSearch(PointF point, float panelWidth)
+    {
+        var g = LayoutFor(panelWidth);
+        return point.X >= g.SearchX && point.X <= g.SearchX + g.SearchWidth
+            && point.Y >= g.SearchY && point.Y <= g.SearchY + g.SearchHeight;
+    }
+
     /// <summary>命中区域比视觉尺寸略大，方便点击（网页按钮也是 36px 的可点区域）。</summary>
     private static bool Hit(RectF r, PointF p)
     {

@@ -216,7 +216,10 @@ namespace Terraria_Wiki.Services
 
             var mime = GetMimeType(path);
 
-            if (path.Equals("/index.html", StringComparison.OrdinalIgnoreCase))
+            // 所有 wiki 页面都要改写脚本/样式 URL（不只是 index.html）：
+            // iframe-bridge.js 等 /_common/ 资源以前按 immutable 缓存，不换 URL 的话
+            // 页面内的旧脚本永远不会更新（页内搜索等新逻辑就失效）。
+            if (path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
                 fileBytes = AddWikiResourceVersion(fileBytes);
 
             return new WikiContentResponse(fileBytes, mime, ComputeETag(path, fileBytes), CacheControlFor(path));
@@ -262,6 +265,12 @@ namespace Terraria_Wiki.Services
 
         private static bool IsLongLivedStaticFile(string path)
         {
+            // iframe-bridge.js 随 app 版本更新（页内搜索等逻辑在里面）。
+            // 若也按 immutable 缓存一年，旧脚本会一直生效，新加的方法在 iframe 里根本不存在；
+            // 这里让它走 no-cache + ETag 校验，内容变了就重新下载。
+            if (path.Equals("/_common/iframe-bridge.js", StringComparison.OrdinalIgnoreCase))
+                return false;
+
             return path.StartsWith("/_common/", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -271,7 +280,12 @@ namespace Terraria_Wiki.Services
             var version = Uri.EscapeDataString(bookKey);
             var content = Encoding.UTF8.GetString(html);
 
-            content = content.Replace("src=\"/_common/iframe-bridge.js\"", $"src=\"/_common/iframe-bridge.js?book={version}\"")
+            // ★ 改动 iframe-bridge.js（页内搜索等逻辑在里面）时把这里 +1。
+            // 该脚本以前按 immutable 缓存一年，URL 不变的话旧脚本会一直生效，
+            // 新方法在 iframe 里根本不存在；加上 v= 让新版本强制换 URL。
+            const string bridgeVersion = "2";
+
+            content = content.Replace("src=\"/_common/iframe-bridge.js\"", $"src=\"/_common/iframe-bridge.js?book={version}&v={bridgeVersion}\"")
                 .Replace("src=\"/_common/wiki-app-common.js\"", $"src=\"/_common/wiki-app-common.js?book={version}\"")
                 .Replace("src=\"/_common/wiki-math.js\"", $"src=\"/_common/wiki-math.js?book={version}\"")
                 .Replace("src=\"/_common/handy-scroll.js\"", $"src=\"/_common/handy-scroll.js?book={version}\"")
