@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -87,16 +87,6 @@
 
         window.setSafeAreaTop = (top) => {
             document.documentElement.style.setProperty('--safe-area-top', top + 'px');
-        };
-
-        // 页内搜索面板的垂直锚点：以实际渲染出来的 TopBar 底边为准（含 tabbar / 安全区），
-        // 原生侧再加 4px 间距。这样不再依赖"原生算出的 header-height 一定等于网页渲染高度"。
-        window.getFindPanelAnchor = () => {
-            const bar = document.querySelector('.top-bar');
-            if (!bar) return '0|0';
-            // 返回 "底边|视口宽"：原生 DIP 与 CSS px 不一定是 1:1（Mac 缩放模式），
-            // 由 C# 用 blazorWebView.Width / 视口宽 换算成 DIP，否则会差一个缩放系数。
-            return `${bar.getBoundingClientRect().bottom}|${window.innerWidth || 0}`;
         };
         window.setSafeAreaBottom = (bottom) => {
             document.documentElement.style.setProperty('--safe-area-bottom', bottom + 'px');

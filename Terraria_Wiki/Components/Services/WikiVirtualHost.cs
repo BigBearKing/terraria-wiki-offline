@@ -1,4 +1,4 @@
-#if WINDOWS
+﻿#if WINDOWS
 using Microsoft.Web.WebView2.Core;
 #elif IOS || MACCATALYST
 using Foundation;
@@ -248,7 +248,6 @@ namespace Terraria_Wiki.Services
                 configuration.SetUrlSchemeHandler(new WikiSchemeHandler(_content, _log), AppleScheme);
 
                 _appleSchemeReady = true;
-                _log.Info($"[VHost] 已挂上私有协议 {AppleScheme}://（iframe 内容不再走端口）");
                 ContentBaseChanged?.Invoke();
                 return true;
             }
@@ -412,12 +411,6 @@ namespace Terraria_Wiki.Services
             private readonly WikiContentProvider _content;
             private readonly LogService _log;
 
-            // 统计（用于判断缓存/304 是否生效、有没有取内容失败）
-            private int _served;
-            private int _notModified;
-            private int _miss;
-            private int _failed;
-
             public WikiWebViewClient(
                 Android.Webkit.WebViewClient? inner, WikiContentProvider content, LogService log)
             {
@@ -456,7 +449,6 @@ namespace Terraria_Wiki.Services
                 }
                 catch (Exception ex)
                 {
-                    _failed++;
                     // ★ 不静默回落到 _inner：原 client 对 wiki.local 只能走网络，必然失败，
                     //   而且会把错误藏起来（表现为"有的图片就是不出来"）。这里明确回 500 并记日志。
                     _log.Error($"[VHost] 处理请求异常：{contentPath}（{uri}）", ex);
@@ -465,7 +457,6 @@ namespace Terraria_Wiki.Services
 
                 if (content is null)
                 {
-                    _miss++;
                     System.Diagnostics.Debug.WriteLine($"[VHost] 404 {contentPath}（原始 URL 路径 {parsed.AbsolutePath}）");
                     return new Android.Webkit.WebResourceResponse(
                         "text/plain", null, 404, "Not Found",
@@ -491,30 +482,17 @@ namespace Terraria_Wiki.Services
                 if (!string.IsNullOrEmpty(ifNoneMatch) &&
                     string.Equals(ifNoneMatch, content.ETag, StringComparison.Ordinal))
                 {
-                    _notModified++;
                     headers["Content-Length"] = "0";
                     return new Android.Webkit.WebResourceResponse(
                         content.ContentType, null, 304, "Not Modified", headers,
                         new MemoryStream(Array.Empty<byte>(), writable: false));
                 }
 
-                _served++;
-                LogStatsIfNeeded();
                 // 末尾参数是 System.IO.Stream —— .NET for Android 的绑定会自己转成 Java 流，
                 // 不要手动构造 Java.IO.ByteArrayInputStream（编译器会报 CS1503）。
                 return new Android.Webkit.WebResourceResponse(
                     content.ContentType, null, 200, "OK", headers,
                     new MemoryStream(content.Body, writable: false));
-            }
-
-            // 统计不能挂在 OnPageFinished 上：那个回调只对**主文档**（Blazor 宿主页）触发，
-            // iframe 里的 wiki 页面不会触发它 —— 之前那行"页面完成 200=0"就是这么来的，白记。
-            // 改成按请求数周期性输出。
-            private void LogStatsIfNeeded()
-            {
-                var total = _served + _notModified;
-                if (total > 0 && total % 500 == 0)
-                    _log.Info($"[VHost] 统计：200={_served} / 304={_notModified} / 404={_miss} / 失败={_failed}");
             }
 
             public override void OnPageFinished(Android.Webkit.WebView? view, string? url)

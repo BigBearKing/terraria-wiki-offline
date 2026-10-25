@@ -1,4 +1,4 @@
-@using System.ComponentModel
+﻿@using System.ComponentModel
 @using System.Text.Encodings.Web
 @using System.Text.RegularExpressions
 @using Terraria_Wiki.Services
@@ -31,10 +31,10 @@
 					    @onclick="() => SelectResult(target)"
 					    @onkeydown="args => OnResultKeyDownAsync(args, target)">
 						<div class="result-title">
-							@HighlightMatches(item.Title)
+							<span class="result-title-text">@HighlightMatches(item.Title)</span>
 							@if (!string.IsNullOrEmpty(item.RedirectTo))
 							{
-								<span style="color: var(--text-secondary); font-size: 0.8em; margin-left: 12px;">
+								<span class="result-redirect">
 									➔ @Loc.Get("SearchResultPanel.RedirectTo"): @HighlightMatches(item.RedirectTo)
 								</span>
 							}

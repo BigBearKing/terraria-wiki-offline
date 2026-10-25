@@ -9,7 +9,6 @@ using Terraria_Wiki.Services;
 using Terraria_Wiki.Components.Shared;
 using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.JSInterop;
-using System.Globalization;
 
 namespace Terraria_Wiki
 {
@@ -39,15 +38,6 @@ namespace Terraria_Wiki
         private int _findCaretPhaseMs;
         private bool _syncingFindEntryText;
         private bool _findPanelReady;
-
-        /// <summary>
-        /// 从网页实测的 TopBar 底边（= 面板锚点，页面坐标）。NaN 表示还没测到，退回按安全区估算。
-        /// 之所以实测：原生按 safe-area-top 推算 header 高度时，各平台页面原点与 WebView 原点的
-        /// 关系不一致（其他平台会比 Windows 多算/少算 safe-area），实测能直接对齐真实渲染位置。
-        /// </summary>
-        private double _findPanelAnchor = double.NaN;
-        /// <summary>连续触发的实测请求只保留最后一次，避免窗口拖动时排队。</summary>
-        private int _findPanelAnchorSerial;
 
 #if IOS
         public MainPage(BurnInProtectionService burnInService, INativeFindInPageService findInPageService)
@@ -205,9 +195,6 @@ namespace Terraria_Wiki
 
             PositionFindPanel();
             FindPanelView.Invalidate();
-
-            // 再用网页实测的 TopBar 底边校正一次：不再依赖"原生 header 高度 == 网页渲染高度"。
-            _ = MeasureFindPanelAnchorAsync();
         }
 
         /// <summary>
@@ -216,10 +203,12 @@ namespace Terraria_Wiki
         ///   top:   calc(var(--header-height) + 4px);
         ///   right: calc(10px + var(--safe-area-right));
         ///
-        /// 垂直位置**以网页实测的 TopBar 底边为准**（见 <see cref="MeasureFindPanelAnchorAsync"/>）：
-        /// 原生按 safe-area-top + 6 + 42 + 横条 32 估算，只在 Windows 上与网页渲染一致；
-        /// 其他平台的页面原点 / 安全区关系不同，估算会让面板偏低（搜索框明显偏下）。
-        /// 实测值不可用时才退回估算式。
+        /// 垂直位置：safe-area-top + 6（topbar-top-padding）+ 42（topbar-content-height）
+        /// + tabbar-height（ShowTabBar 时 32），再 +4。
+        /// ★ 前提：面板容器必须是 SafeAreaEdges="None"（见 MainPage.xaml）——否则容器会再内缩
+        ///   一次安全区，面板会比这里算出来的位置低一整段。
+        /// 这里刻意不再走 JS 实测：getBoundingClientRect() 会强制 wiki 页面同步布局，
+        /// 在 iOS 上正好卡住打开动画。
         ///
         /// 全部走布局（HorizontalOptions=End + Margin），不用 Translation，避免合成层滞后。
         /// </summary>
@@ -228,79 +217,13 @@ namespace Terraria_Wiki
             var state = App.AppStateManager;
             if (state is null) return;
 
-            // 优先用网页实测的 TopBar 底边；还没测到时才按安全区估算。
-            // 估算式：safe-area-top + 6 + 42 + 横条 32。Windows 上两者一致；
-            // 其他平台的实际页面原点/安全区关系与公式不同，会让面板偏低，所以以实测为准。
-            double top;
-            if (!double.IsNaN(_findPanelAnchor))
-            {
-                top = _findPanelAnchor + FindPanelDrawable.PanelMarginTop;
-            }
-            else
-            {
-                var tabBarHeight = state.ShowTabBar ? 32d : 0d;
-                var estimatedHeaderHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
-                top = estimatedHeaderHeight + FindPanelDrawable.PanelMarginTop;
-            }
+            var tabBarHeight = state.ShowTabBar ? 32d : 0d;
+            var headerHeight = FindPanelDrawable.HeaderHeight(state.SafeAreaTop) + tabBarHeight;
+            var top = headerHeight + FindPanelDrawable.PanelMarginTop;
 
             var right = FindPanelDrawable.PanelMarginRight + state.SafeAreaRight;
 
             FindPanelHost.Margin = new Thickness(0, top, right, 0);
-        }
-
-        /// <summary>
-        /// 向网页要 TopBar 的真实底边（页面坐标），作为面板的垂直锚点。
-        /// 连续调用只保留最后一次；WebView 自身在页面里有偏移时一并加上。
-        /// </summary>
-        /// <summary>
-        /// 向网页要 TopBar 的真实底边（页面坐标），作为面板的垂直锚点。
-        /// ★ JS 调用必须在 UI 线程发起：之前这里先 await Task.Delay(16) 再去调 JS，
-        /// 没有同步上下文时延续会跑到线程池，InvokeAsync 直接失败并被 catch 吞掉，
-        /// 于是永远退回估算式 —— 表现就是"改了半天位置一点没变"。
-        /// 现在整段都显式 dispatch 到 UI 线程，失败也不再静默（写到日志）。
-        /// </summary>
-        private async Task MeasureFindPanelAnchorAsync()
-        {
-            var js = AppState.JS;
-            if (js is null) return;
-
-            var serial = ++_findPanelAnchorSerial;
-            try
-            {
-                var raw = await MainThread.InvokeOnMainThreadAsync(
-                    () => js.InvokeAsync<string>("getFindPanelAnchor").AsTask());
-                if (serial != _findPanelAnchorSerial || string.IsNullOrWhiteSpace(raw)) return;
-
-                var parts = raw.Split('|');
-                if (parts.Length != 2 ||
-                    !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var bottom) ||
-                    !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var viewportWidth))
-                    return;
-                if (bottom <= 0) return;
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    if (serial != _findPanelAnchorSerial) return;
-
-                    // 面板是 WebView 的兄弟节点，两者同处页面内容区：
-                    // DOM 的 y=0 与面板容器的 y=0 是同一个原点，不能再加 blazorWebView.Y。
-                    // 但 CSS px 与 DIP 不一定是 1:1（Mac 缩放模式），用视口宽换算。
-                    var viewWidth = blazorWebView.Width;
-                    var scale = viewWidth > 0 && viewportWidth > 0 ? viewWidth / viewportWidth : 1d;
-                    var anchor = bottom * scale;
-
-                    if (double.IsNaN(_findPanelAnchor) || Math.Abs(anchor - _findPanelAnchor) > 0.5)
-                    {
-                        _findPanelAnchor = anchor;
-                        PositionFindPanel();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                // 页面尚未就绪 / JS 未注册时忽略；下一次布局事件会再测
-                App.LogManager?.Error($"MeasureFindPanelAnchor failed: {ex}");
-            }
         }
 
         /// <summary>
@@ -351,7 +274,7 @@ namespace Terraria_Wiki
         }
 #endif
 
-        private async void SyncFindPanel()
+        private void SyncFindPanel()
         {
             var state = App.AppStateManager;
             if (state is null) return;
@@ -373,10 +296,6 @@ namespace Terraria_Wiki
             _findDrawable.IsDarkTheme = state.IsDarkTheme;
             _findDrawable.CountText = string.Empty;
             ApplyFindEntryThemeColors();
-
-            // 先向网页要一次 TopBar 底边再显示，避免"先按估算出现、下一帧再跳"。
-            await MeasureFindPanelAnchorAsync();
-            if (!App.AppStateManager.FindInPageOpen) return;
 
             FindPanelContainer.IsVisible = true;
             FindEntry.IsVisible = true;

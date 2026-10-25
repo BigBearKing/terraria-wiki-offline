@@ -1,11 +1,14 @@
-/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
+﻿/* 结果面板：绝对定位在 Topbar 输入框的正下方 */
 .search-popup-panel {
     position: fixed;
     top: calc(var(--header-height) + 4px);
     right: 10px;
     width: 500px;
+    max-width: calc(100vw - 20px);
     max-height: 50vh;
     overflow-y: auto;
+    /* 长标题/长“跳转至”目标不允许把面板撑出横向滚动条 */
+    overflow-x: hidden;
     background: var(--bg-color);
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     border-radius: 8px;
@@ -33,12 +36,45 @@
 .result-item {
     padding: 12px 16px;
     line-height: normal;
+    min-width: 0;
+    /* .btn 默认 white-space: nowrap（按钮文字不换行），结果行必须恢复换行，
+       否则标题/“跳转至”多长都不会断，只会横向溢出或被面板裁掉。 */
+    white-space: normal;
 }
 
+/* 标题 + “➔ 跳转至”用 flex-wrap 排布：
+   放得下时并排；放不下时“跳转至”整体换到下一行；
+   单独一行仍超宽时才在自身内部断行。 */
 .result-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 12px;
+    row-gap: 2px;
     font-weight: 600;
     margin-bottom: 4px;
     font-size: 1rem;
+    min-width: 0;
+}
+
+/* 中文标题里有很长的无空格串（消歧义后缀、英文长词）时也要能断行 */
+.result-title-text {
+    flex: 0 1 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 不参与收缩：与标题并排放不下时整块换行；
+   单独一行仍超过面板宽度时再在内部断行。 */
+.result-redirect {
+    flex: 0 0 auto;
+    max-width: 100%;
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .result-snippet {
@@ -62,12 +98,15 @@
 @media (max-width: 768px) {
     /* 搜索面板必须向上弹出 */
     .search-popup-panel {
-        bottom: max(56px, calc(var(--search-wrapper-bottom) + 40px)) !important;
+        /* 底边固定在搜索框上方；高度上限再扣掉顶部安全区，避免长列表顶到状态栏/刘海下面 */
+        --search-panel-bottom: max(56px, calc(var(--search-wrapper-bottom) + 40px));
+        bottom: var(--search-panel-bottom) !important;
         top: auto !important;
         left: 12px;
         right: calc(12px + var(--safe-area-right));
         width: calc(100% - 24px - var(--safe-area-right));
-        max-height: 48vh;
+        max-width: none;
+        max-height: min(48vh, calc(100vh - var(--safe-area-top) - var(--search-panel-bottom) - 8px));
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 }
