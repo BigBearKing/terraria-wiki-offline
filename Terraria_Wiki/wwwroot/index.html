@@ -429,6 +429,67 @@
             }
         }
 
+        // ===== 列表页标题头：跟着手指 1:1 收起 / 展开 =====
+        // 不做"判方向 + 整块收起"，而是让标题头直接跟着滚动位移走：
+        // 往上滚 1px 它往上 1px，往下滚 1px 它往下 1px，位移夹在 [0, 标题头高度] 之间。
+        //   位移 = clamp(上次位移 + ΔscrollTop, 0, min(标题头高度, scrollTop))
+        // 最后那个 min(scrollTop) 是关键：它保证「回到顶部一定完整显示」是算出来的，不用额外判断
+        // （scrollTop 归零时位移必然也被夹成 0）。
+        // 顺带一个天然结果：位移 ≤ scrollTop 恒成立 → 标题头底边永远不低于列表内容的上沿，
+        // 各页页首那段留白（padding-top）永远不会被露出来。
+        //
+        // CSS 那一半（覆盖层、-52px 上外边距、内容 52px 起手留白）在 app.css 的
+        // 「列表页标题头：随滚动方向自动收起」。
+        //
+        // 两个刻意的选择：
+        //   · 在 scroll 回调里同步写 transform，不用 rAF 合并 —— 合并反而会让标题头比列表内容慢半拍；
+        //   · 用 document 上的捕获监听（scroll 不冒泡，但捕获阶段收得到元素自己的滚动事件），
+        //     这样不用给每个列表各挂一份，Blazor 换页也不用重新绑定。
+        (() => {
+            const SCROLLER_CLASS = 'list-container';
+            const HEADER_CLASS = 'page-header';
+
+            const states = new WeakMap();   // 滚动容器 → { last, offset, height }
+
+            const render = (header, state) => {
+                const next = state.offset > 0.01 ? `translateY(${-state.offset}px)` : '';
+                if (header.style.transform === next) return;   // 没变就别写，省掉无谓的样式失效
+                header.style.transform = next;
+            };
+
+            const process = (scroller) => {
+                // 标题头是列表在 DOM 上的前一个兄弟元素（各页都是 <PageHeader/> 紧跟 .list-container）
+                const header = scroller.previousElementSibling;
+                if (!header || !header.classList.contains(HEADER_CLASS)) return;
+
+                const top = Math.max(0, scroller.scrollTop);   // iOS 回弹时是负数
+                let state = states.get(scroller);
+
+                if (!state) {
+                    // 第一次见到这个列表：按当前滚动位置对齐（正常打开页面就是 0）
+                    state = { last: top, offset: 0, height: header.offsetHeight || 0 };
+                    states.set(scroller, state);
+                    state.offset = Math.min(top, state.height);
+                    render(header, state);
+                    return;
+                }
+
+                state.offset = Math.min(
+                    Math.max(state.offset + (top - state.last), 0),
+                    Math.min(state.height, top));
+                state.last = top;
+                render(header, state);
+            };
+
+            document.addEventListener('scroll', (event) => {
+                const scroller = event.target;
+                if (!scroller || scroller.nodeType !== 1) return;
+                if (!scroller.classList.contains(SCROLLER_CLASS)) return;
+                if (!scroller.isConnected) return;
+                process(scroller);
+            }, { capture: true, passive: true });
+        })();
+
         // 全局状态管理，防止同一个面板被多次挂载管理器
         window.swipeManagers = window.swipeManagers || {};
 

@@ -59,6 +59,9 @@
     padding: 0 12px 0 40px;
     max-width: 800px;
     margin: 0 auto;
+    /* 标题头上滑收起时的裁剪框（见下方「列表页标题头：随滚动方向自动收起」）。
+       列表正好铺满这块区域，所以对列表内容本身没有任何影响，只是别让标题头滑到 TopBar 上去。 */
+    overflow: hidden;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -67,11 +70,25 @@
     }
 }
 
+/* 标题头是浮在列表上方的覆盖层：列表被 -52px 上外边距提到它底下（见下方「列表页标题头」一节），
+   所以底色必须不透明、并压在列表之上 —— 以前列表是贴着标题头底边被裁掉的，
+   现在是从它底下穿过去，透明底会让内容透出来。
+   位移由 index.html 按滚动位移 1:1 写 inline transform，这里不能加 transition：
+   有过渡就会比手指慢，标题头与列表内容就会错位。 */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     padding: 8px 0 12px;
+    position: relative;
+    /* ★ 必须压过页面里所有带 z-index 的浮层，否则列表往回滚、标题头重新盖到内容上时，
+       落在标题头区域里的东西会画在它上面（典型的就是设置页的下拉选择框：
+       CustomSelect.razor.css 里触发器 995 / 菜单 998 / 遮罩 994，以前看着像"浮在标题头上面"）。
+       999 就是压这一组；再往上的 MoreList(1003) / LogPanel(1001) / FloatingBar(999) 都在
+       .page-content 之外的层叠上下文里，不受这里影响。改那几个值时记得回来核对。 */
+    z-index: 999;
+    background-color: var(--bg-color);
+    will-change: transform;
 }
 
 .content-title {
@@ -92,6 +109,30 @@
     display: flex;
     flex-direction: column;
     scrollbar-gutter: stable;
+}
+
+/* ===== 列表页标题头：随滚动方向自动收起 =====
+   行为：往上滚 1px 它就往上 1px，往下滚 1px 它就往下 1px（跟手，无过渡），
+   位移夹在 [0, 标题头高度] 之间。位移量由 wwwroot/index.html 的
+   「列表页标题头：跟着手指 1:1 收起 / 展开」算好写成 inline transform，这里只管几何。
+
+   三件事缺一不可：
+     1) .page-header 变成覆盖层（上面那条规则里的 position / z-index / 不透明底色）；
+     2) .list-container 用 -52px 上外边距整体提到页面顶部：flex: 1 的可用空间因此从
+        「页面高 - 52」变成「页高」（页面高 - 52 - (-52)），列表铺满整页 —— 标题头滑走后
+        底下不会空出一块。再给「第一个子元素」补回 52px 上外边距，内容就回到原来的位置，
+        于是各页自己的 padding-top（0 / 12px）和容器 gap 一处都不用改，间距和以前逐像素一致。
+        （Virtualize 会在列表最前面插一个 0 高度的 spacer，它是 :first-child，
+          上外边距落在它身上照样把内容顶下去，所以虚拟列表页也成立。）
+     3) .page-content 的 overflow: hidden 负责把滑出去的标题头裁掉。
+   全程只动 transform，宽度高度一概不碰，滚动期间零重排。 */
+
+.page-header + .list-container {
+    margin-top: calc(-1 * var(--page-header-height));
+}
+
+.page-header + .list-container > :first-child {
+    margin-top: var(--page-header-height);
 }
 
 /* ===== 旧的通用 .button 组已删除 =====

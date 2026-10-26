@@ -5,6 +5,10 @@
     --topbar-top-padding: calc(var(--safe-area-top) + 6px);
     --topbar-content-height: 42px;
     --header-height: calc(var(--tabbar-height) + var(--topbar-top-padding) + var(--topbar-content-height));
+    /* 页面标题头（.page-header）的固定高度 = 下内边距 12 + 上内边距 8 + 标题行 32
+       （PageHeader.razor.css 里 .title-group 的 min-height）。列表要靠着它做重叠，
+       所以必须是变量；改了那两处就得同步改这里（见 app.css「列表页标题头：随滚动方向自动收起」）。 */
+    --page-header-height: 52px;
     --bg-color: #ffffff;
     --bg-color-secondary: #f6f6f6;
     --text-primary: #111827;
