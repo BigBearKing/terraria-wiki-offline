@@ -1,7 +1,7 @@
 /* Components/Shared/FloatingBar.razor.css */
 
 /* 悬浮小条形态里 iframe 上方的那条 32px 拖动条。
-   高度与 Windows 的 --tabbar-height 对齐（同一视觉语言），可整条按住拖动窗口。
+   高度与 Windows 的 --strip-base-height（32px）对齐（同一视觉语言），可整条按住拖动窗口。
    不加左右内边距：条上的按钮要从最左边紧贴排列。
    注意这里<b>故意不设 position</b>：条内搜索框要浮在 iframe 视图的底部（窗口底部），
    一旦给条加上 relative，它就会改为贴在这 32px 横条的下沿 —— 那就跑到 iframe 上面去了。 */

@@ -110,7 +110,7 @@
     min-width: 0;
 }
 
-/* 标签列表：显隐完全由 Blazor 决定（AppState.ShowTabBar 为 false 才渲染），
+/* 标签列表：显隐完全由 Blazor 决定（AppState.TopStripVisible 为 false 才渲染），
    不再用媒体查询按宽度隐藏 —— 否则 Mac 窗口态（宽屏）会出现"已经有 DOM 但 CSS 藏起来"。
    这里只负责它显示时的排版。 */
 .more-list-tabs {

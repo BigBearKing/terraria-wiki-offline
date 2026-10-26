@@ -55,12 +55,11 @@ public class AppState : INotifyPropertyChanged
     //   IsLargeScreen   又宽又高
     // 谁用哪一档看"该界面在哪一档才改变形态"：
     //   侧边栏抽屉 —— 只在窄（IsSmallScreen）浮层化，所以它的遮罩用 .narrow-only，不看高度
-    //   标签归属   —— 只由 ShowTabBar 一个属性决定，见下面注释
-    // 标签放哪只看 ShowTabBar：
-    //   ShowTabBar == true  → 标签在顶部横条里
-    //   ShowTabBar == false → 标签列表在 MoreList 里
-    //   Windows 按宽度（窄窗口隐藏，顶部 32px 交给 safe-area-top）；Mac Catalyst 只有系统全屏才出现；
-    //   其他平台又宽又高才出现。
+    //   顶部条     —— 分两层：TopStripAllowed（这个平台/尺寸允不允许）与
+    //                 TopStripVisible（这一页到底在不在），见下面注释
+    // 顶部条与标签归属只看 TopStripVisible：
+    //   TopStripVisible == true  → 顶部条渲染，标签在它里面（主页时）
+    //   TopStripVisible == false → 整条不渲染，标签列表在 MoreList 里
     // 标记/CSS 层：Mask 的 NarrowOnly 参数 / .narrow-only 遮罩，
     // 顶部栏 .narrow-menu-btn（只认宽度）与 .compact-more-btn（只在主页显示，见 TopBar.razor）。
     public bool IsMobile => Platform == DevicePlatform.Android || Platform == DevicePlatform.iOS;
@@ -547,64 +546,66 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _isPinned, value);
     }
 
-    /// <summary>视口宽度 ≤768px（窄屏）。标签栏在此时让位给 MoreList。</summary>
+    /// <summary>视口宽度 ≤768px（窄屏）。顶部条在此时让位给 MoreList。</summary>
     public bool IsSmallScreen
     {
         get => _isSmallScreen;
-        set
-        {
-            if (SetProperty(ref _isSmallScreen, value))
-                SyncTabBarCss();
-        }
+        set => SetProperty(ref _isSmallScreen, value);
     }
 
     /// <summary>视口高度 ≤768px（矮屏）。</summary>
     public bool IsShortScreen
     {
         get => _isShortScreen;
-        set
-        {
-            if (SetProperty(ref _isShortScreen, value))
-                SyncTabBarCss();
-        }
+        set => SetProperty(ref _isShortScreen, value);
     }
 
     /// <summary>
+    /// 顶部条的基础高度（不含顶部安全区）。与 CSS 的 --strip-base-height 同源，
+    /// 两边改的时候必须一起改（CSS 侧负责渲染高度，这里供原生页内搜索面板算位置）。
+    /// </summary>
+    public const double TopStripHeight = 32;
+
+    /// <summary>
     /// Mac Catalyst 是否处于系统全屏（绿灯进入的全屏，不是放大/最大化）。
-    /// 只由 MainPage 读窗口尺寸与标题栏安全区后写入，其他平台恒为 false。
-    /// 它只参与 <see cref="ShowTabBar"/> 的计算，不直接决定标签归属。
+    /// 只由 MainPage 写入，其他平台恒为 false。
+    /// 判定方式见 MainPage：有标题栏（红绿灯）时 SafeAreaInsets.Top ≈ 41，系统全屏时归 0，
+    /// 直接拿这个值比（实测可靠）。早期那套"宽高比与屏幕一致"的推断是错的 ——
+    /// Catalyst 里窗口用 UIKit 点、屏幕用 macOS 点，两者比例对不齐，判定永远不成立。
     /// </summary>
     public bool IsMacFullScreen
     {
         get => _isMacFullScreen;
-        set
-        {
-            if (SetProperty(ref _isMacFullScreen, value))
-                SyncTabBarCss();
-        }
+        set => SetProperty(ref _isMacFullScreen, value);
     }
-
-    /// <summary>
-    /// 把 ShowTabBar 同步到网页侧（html.has-tabbar → --tabbar-height）。
-    /// 所有会影响 ShowTabBar 的属性变化都必须走这里，保证 CSS 与组件看到同一个真值。
-    /// </summary>
-    private void SyncTabBarCss() => JS?.InvokeVoidAsync("setTabBarVisible", ShowTabBar);
 
     /// <summary>窄或矮：面板/遮罩一类"手机上才需要"的界面在这一档启用。</summary>
     public bool IsCompactScreen => IsSmallScreen || IsShortScreen;
 
     /// <summary>
-    /// 顶部标签横条是否显示。全平台只有这一个判定：
-    ///   Windows      —— 宽度决定：宽窗口显示（横条兼作无边框窗口的拖动/系统按钮区）；
-    ///                   窄窗口隐藏、标签归 MoreList，顶部那 32px 改由 safe-area-top 保留；
-    ///   Mac Catalyst —— 只有系统全屏才显示（窗口态让位给 MoreList）；
-    ///   其他平台      —— 又宽又高才显示。
-    /// 显示时标签在横条里；不显示时标签列表归 MoreList（见 MoreList.razor）。
+    /// 平台与尺寸层面：顶部条这个形态允不允许存在（与"当前是哪一页"无关）。
+    ///   Windows      —— 宽度决定：宽窗口允许（横条兼作无边框窗口的拖动/系统按钮区）；
+    ///                   窄窗口不允许，顶部那 32px 改由 safe-area-top 保留；
+    ///   Mac Catalyst —— 只有系统全屏允许（窗口态顶部要留给红绿灯，标签归 MoreList）；
+    ///   其他平台      —— 又宽又高才允许（手机横竖屏都不允许，标签归 MoreList）。
+    /// 这里只回答"能不能"，"这一页要不要"由 <see cref="TopStripVisible"/> 回答。
     /// </summary>
-    public bool ShowTabBar =>
+    private bool TopStripAllowed =>
         IsWindows ? !IsSmallScreen : IsMacCatalyst ? IsMacFullScreen : IsLargeScreen;
 
-    /// <summary>又宽又高（宽 &gt;768 且 高 &gt;768）：其他平台只有这一种情况显示上方横条。</summary>
+    /// <summary>
+    /// 这一页上顶部条到底在不在 —— 渲染、顶部安全区归属、标签归属全都只认它：
+    ///   Windows      —— 任何页面都在。它同时是无边框窗口的拖动条/系统按钮区，
+    ///                   没有标签（非主页）也必须占着那 32px；
+    ///   其他平台     —— 只有主页需要它（放标签）。其它页面整条不渲染，
+    ///                   顶部安全区交回顶栏 —— 否则会留一条什么都不写的空白带
+    ///                   （iPad 上就是这个问题：标签不渲染、横条还在）。
+    /// ★ 它是 Blazor 直接渲染的类名（.main-area.has-top-strip），不再走 JS 同步，
+    ///   所以换页 / 转屏 / 进出全屏和渲染在同一帧，不存在"两份真值晚一拍"。
+    /// </summary>
+    public bool TopStripVisible => TopStripAllowed && (CurrentPage == "home" || IsWindows);
+
+    /// <summary>又宽又高（宽 &gt;768 且 高 &gt;768）：其他平台只有这一种情况才可能有上方横条。</summary>
     public bool IsLargeScreen => !IsCompactScreen;
 
     [JSInvokable]

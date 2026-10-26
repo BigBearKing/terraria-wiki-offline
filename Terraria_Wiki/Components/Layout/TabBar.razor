@@ -1,11 +1,12 @@
 @using System.ComponentModel
 
-@* 是否显示只看 AppState.ShowTabBar（全平台同一入口）；
-   显示时标签就在这条横条里，不显示时标签列表归 MoreList，两处互斥。 *@
-@if (AppState.ShowTabBar)
+@* 是否显示只看 AppState.TopStripVisible（全平台同一入口）：
+     Windows 任何页面都在（它兼作无边框窗口的拖动/系统按钮区）；
+     其它平台只有主页在（放标签）。不显示时整条不渲染，标签列表归 MoreList，两处互斥。 *@
+@if (AppState.TopStripVisible)
 {
     <div class="tab-bar @(AppState.IsWindows ? "win-placeholder" : "")" data-tauri-drag-region>
-        @* 标签只在主页渲染 *@
+        @* 标签只在主页渲染：Windows 非主页时横条还在（拖动区），但里面没有标签 *@
         @if (AppState.CurrentPage == "home")
         {
             <div class="tab-list">
@@ -65,7 +66,7 @@
 
     private void OnAppStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // 横条显隐与标签归属都取决于屏幕尺寸/全屏状态，这里必须一并监听
+        // 横条显隐与标签归属取决于屏幕尺寸（Windows 还看宽度），这里必须一并监听
         if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.CurrentWikiPage)
             or nameof(AppState.IsSmallScreen) or nameof(AppState.IsShortScreen) or nameof(AppState.IsWindows)
             or nameof(AppState.IsMacFullScreen))

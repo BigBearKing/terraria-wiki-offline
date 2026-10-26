@@ -49,11 +49,9 @@
 
         };
 
-        // 标签横条显隐类（与 AppState.ShowTabBar 同源）：显示时 32px 要计入 --header-height，
-        // 否则 MoreList / 搜索结果面板 / 遮罩会整体压在标签栏上；隐藏时不能计。
-        window.setTabBarVisible = function (visible) {
-            document.documentElement.classList.toggle('has-tabbar', visible === true);
-        };
+        // 顶部条显隐不再需要 JS 开关：它是 .main-area 上的 has-top-strip 类，
+        // 由 MainLayout 按 AppState.TopStripVisible 直接渲染（同一份真值、同一帧），
+        // 见 variables.css「顶部栈：谁吃顶部安全区」。
 
 
         // 视口尺寸监听：宽度与高度共用 768 阈值，两者都传给 C#。

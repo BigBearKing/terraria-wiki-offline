@@ -9,14 +9,21 @@
 .tab-bar {
     display: flex;
     align-items: flex-end;
-    height: 32px;
+    /* ★ 顶部安全区由横条自己吃：它是顶部栈的栈顶元素（在 TopBar 之上）。
+       "谁吃安全区"由 variables.css 的 --strip-inset 表达：本组件只消费它，不直接读
+       --safe-area-top —— 将来栈顶换人时这里不用改。
+       有状态栏的平台（iPad / Android 平板）如果不让出这段 padding-top，
+       状态栏会压在标签上；同时 --topbar-inset 会归零，避免安全区被算两遍。
+       安全区为 0 的平台（Windows 宽窗口）就等于单纯的 32px 高。
+       border-box 下 height 含 padding，所以高度也要把安全区加回来，内容盒才等于基础高度。 */
+    height: calc(var(--strip-base-height) + var(--strip-inset));
     flex-shrink: 0;
-    padding: 0 8px;
+    padding: var(--strip-inset) 8px 0 8px;
     background: var(--bg-color-secondary);
 }
 
 /* Windows 无边框窗口：最小化/最大化/关闭三个系统按钮压在这条横条右上角，
-   只有 Windows 才需要右侧那 150px 让位（Mac 全屏 / iPad 上没有系统按钮）。 */
+   只有 Windows 才需要右侧那 150px 让位（其它平台没有系统按钮）。 */
 .tab-bar.win-placeholder {
     padding-right: 150px;
 }

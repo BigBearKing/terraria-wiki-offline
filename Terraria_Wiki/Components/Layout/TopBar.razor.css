@@ -1,13 +1,17 @@
 
 .top-bar {
     /* 高度契约（与 variables.css 的 --header-height 严格一致）：
-         --header-height = safe-area-top + 6 (topbar-top-padding) + 42 (topbar-content-height)
+         --header-height = strip-height + topbar-top-padding + topbar-content-height
        即本元素总高 = var(--topbar-top-padding) + var(--topbar-content-height)。
        border-box 下 height 含 padding，所以直接用上面的 calc 表达总高；
        若写死 height:48px，则安全区越大，内容区越被顶部 padding 挤掉，且与 --header-height 对不上。
+       ★ topbar-top-padding 由 variables.css 派生，本元素永远不该自己去加安全区：
+           顶部栈顶是横条时 = 6（安全区已被横条吃掉，本元素总高 = 48）；
+           顶栏就是栈顶时   = safe-area-top + 6（本元素总高 = safe + 48）。
+         这两种情况由 --topbar-inset 表达，本文件只消费 --topbar-top-padding。
        ★ 42px 的"内容带" = 36px 真实内容高 + 6px 底部气隙
          （.action-btn 和 .search-wrapper 都是 36px）。所以底边距必须写回 padding-bottom，
-         让内容盒正好等于 36px：padding-top = safe + 6，padding-bottom = 6 → 内容盒 = 42 - 6 = 36。
+         让内容盒正好等于 36px：padding-top = inset + 6，padding-bottom = 6 → 内容盒 = 42 - 6 = 36。
          若把 padding-bottom 归 0，内容盒就是 42px，align-items:center 会把多出的 6px 平分成 3+3，
          元素变成距顶 9px、距底 3px —— 视觉上明显偏下，这就是"顶栏元素不居中"的根因。
          注意它必须落在 --topbar-content-height（42）之内，不能再往外加高度。*/
@@ -18,7 +22,7 @@
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
-    padding: var(--topbar-top-padding) 8px 6px 8px;
+    padding: var(--topbar-top-padding) 8px var(--topbar-gap) 8px;
 }
 
 /* --- 1. 左侧按钮组 --- */

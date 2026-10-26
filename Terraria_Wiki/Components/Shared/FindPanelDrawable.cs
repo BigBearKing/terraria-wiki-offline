@@ -64,8 +64,10 @@ public sealed class FindPanelDrawable : IDrawable
     public const float TopbarContentHeight = 42f;
 
     /// <summary>
-    /// 顶栏总高（不含 tabbar-height）：safe-area-top + --topbar-top-padding + --topbar-content-height。
-    /// 与 variables.css 的 --header-height 同式（后者再多一个 --tabbar-height）。
+    /// 顶栏总高（不含顶部条）：safe-area-top + 6 + --topbar-content-height。
+    /// 与 variables.css 的 --header-height 同式（后者再多一个顶部条高度 --strip-height）。
+    /// ★ 注意：CSS 侧的安全区随平台在顶部条/顶栏之间转移，但"安全区 + 6 + 42"的和总等于顶栏总高；
+    ///   所以调用方再补一个顶部条高度（AppState.TopStripHeight）就是完整的 --header-height。
     /// ★ 前提是 TopBar 的真实渲染高度就等于这个值 —— 见 TopBar.razor.css 的 height: calc(...)。
     /// </summary>
     public static float HeaderHeight(double safeAreaTop) =>

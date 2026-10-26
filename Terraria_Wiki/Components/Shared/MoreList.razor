@@ -73,8 +73,8 @@
             </div>
         </div>
 
-        @* 标签归属只看 ShowTabBar：横条不显示时，标签列表就在 MoreList 里 *@
-        @if (AppState.CurrentPage == "home" && !AppState.ShowTabBar)
+        @* 标签归属只看 TopStripVisible：顶部条不显示时，标签列表就在 MoreList 里 *@
+        @if (AppState.CurrentPage == "home" && !AppState.TopStripVisible)
         {
             <div class="more-list-tabs">
                 <div class="more-list-tabs-header">
@@ -133,10 +133,10 @@
         if (e.PropertyName is nameof(AppState.Tabs) or nameof(AppState.ActiveTabId) or nameof(AppState.CurrentPage) or nameof(AppState.MoreListOpen) or nameof(AppState.IsPinned) or nameof(AppState.WikiZoom) or nameof(AppState.FloatingSearchOpen) or nameof(AppState.FloatingBarActive))
             _ = InvokeAsync(StateHasChanged);
 
-        // 标签交还上方横条（ShowTabBar 变 true）时主动收起面板，避免两处同时可见
+        // 标签交还上方横条（TopStripVisible 变 true）时主动收起面板，避免两处同时可见
         if (e.PropertyName is nameof(AppState.IsSmallScreen) or nameof(AppState.IsShortScreen) or nameof(AppState.IsWindows) or nameof(AppState.IsMacFullScreen))
         {
-            if (AppState.ShowTabBar)
+            if (AppState.TopStripVisible)
                 AppState.MoreListOpen = false;
             _ = InvokeAsync(StateHasChanged);
         }

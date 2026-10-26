@@ -1,10 +1,11 @@
 :root {
     --sidebar-width-collapsed: 72px;
     --sidebar-width-expanded: 200px;
-    --tabbar-height: 0px;
-    --topbar-top-padding: calc(var(--safe-area-top) + 6px);
+    /* 顶部条的基础高度（与 AppState.TopStripHeight 同源）与顶栏的两个气隙。
+       顶部栈的所有高度都由这三个常量派生，不要再在别处写 32 / 6 / 42。 */
+    --strip-base-height: 32px;
+    --topbar-gap: 6px;
     --topbar-content-height: 42px;
-    --header-height: calc(var(--tabbar-height) + var(--topbar-top-padding) + var(--topbar-content-height));
     /* 页面标题头（.page-header）的固定高度 = 下内边距 12 + 上内边距 8 + 标题行 32
        （PageHeader.razor.css 里 .title-group 的 min-height）。列表要靠着它做重叠，
        所以必须是变量；改了那两处就得同步改这里（见 app.css「列表页标题头：随滚动方向自动收起」）。 */
@@ -35,10 +36,42 @@
     --search-wrapper-bottom: max(16px, var(--safe-area-bottom) + 4px, calc(var(--global-keyboard-offset) + 4px));
 }
 
-/* 顶部有标签横条时（AppState.ShowTabBar == true），这 32px 计入 --header-height。
-   Windows 窄窗口 / Mac 窗口态横条隐藏，改为由 --safe-area-top 保留顶部拖动条高度。 */
-html.has-tabbar {
-    --tabbar-height: 32px;
+/* ===== 顶部栈：谁吃顶部安全区 =====
+   顶层只有两种形态：有顶部条（标签横条）或没有（直接是顶栏）。安全区只能由栈顶那一个吃，
+   而且必须只吃一次。这里用三个开关变量表达，其余高度全部派生 —— 不再有"两个变量必须成对改"
+   的约定（之前 --tabbar-height 与 --topbar-top-padding 各改一半，就是 iPad 上标签被状态栏压住的原因）。
+
+     --strip-present  顶部条在不在（0/1）。由 Blazor 直接渲染的 .has-top-strip 类翻转，
+                      与"渲不渲染 <TabBar/>"是同一份真值、同一帧，不走 JS。
+                       见 AppState.TopStripVisible。
+     --strip-inset    顶部条吃掉的顶部安全区（有横条时 = safe-area-top，否则 0）
+     --topbar-inset   顶栏吃掉的顶部安全区（与 --strip-inset 恰好互斥）
+
+   派生：
+     --strip-height          顶部条实际高度 = 32 * present + 它吃掉的 inset
+     --topbar-top-padding    顶栏上内边距   = 它吃掉的 inset + 6
+     --header-height         整条顶部栈高   = 三者相加（MoreList / 搜索结果面板 / 遮罩 /
+                             原生页内搜索面板都靠它定位）
+
+   定义在 .main-area 上而不是 :root：所有消费这些变量的元素（TabBar / TopBar / MoreList /
+   搜索结果面板 / .app-mask.from-header）都在它里面，作用域刚好，也不影响侧栏与日志面板。 */
+.main-area {
+    --strip-present: 0;
+    --strip-inset: 0px;
+    --topbar-inset: var(--safe-area-top);
+
+    --strip-height: calc(var(--strip-base-height) * var(--strip-present) + var(--strip-inset));
+    --topbar-top-padding: calc(var(--topbar-inset) + var(--topbar-gap));
+    --header-height: calc(var(--strip-height) + var(--topbar-top-padding) + var(--topbar-content-height));
+}
+
+/* 顶部条存在：安全区归它，顶栏只留 6px 气隙。
+   AppState.TopStripVisible = Windows（任何页面，它是拖动条）/ 其它平台的**主页**。
+   非主页时这条类不出现 → 顶部条整条不渲染，安全区回到顶栏，不会留空带子。 */
+.main-area.has-top-strip {
+    --strip-present: 1;
+    --strip-inset: var(--safe-area-top);
+    --topbar-inset: 0px;
 }
 
 html.dark-theme {
