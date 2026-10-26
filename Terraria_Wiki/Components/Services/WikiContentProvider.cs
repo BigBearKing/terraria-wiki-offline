@@ -285,8 +285,13 @@ namespace Terraria_Wiki.Services
             // 新方法在 iframe 里根本不存在；加上 v= 让新版本强制换 URL。
             const string bridgeVersion = "2";
 
+            // ★ 同上，改动 wiki-app-common.js（公共注入样式、右键菜单、缩放等）时把这里 +1。
+            // 它同样在 /_common/ 下、按 immutable 缓存一年，不加 v= 的话真机上跑的还是旧脚本
+            // （比如"关掉 iOS 文本自动放大"那段注入样式根本不会生效）。
+            const string commonVersion = "2";
+
             content = content.Replace("src=\"/_common/iframe-bridge.js\"", $"src=\"/_common/iframe-bridge.js?book={version}&v={bridgeVersion}\"")
-                .Replace("src=\"/_common/wiki-app-common.js\"", $"src=\"/_common/wiki-app-common.js?book={version}\"")
+                .Replace("src=\"/_common/wiki-app-common.js\"", $"src=\"/_common/wiki-app-common.js?book={version}&v={commonVersion}\"")
                 .Replace("src=\"/_common/wiki-math.js\"", $"src=\"/_common/wiki-math.js?book={version}\"")
                 .Replace("src=\"/_common/handy-scroll.js\"", $"src=\"/_common/handy-scroll.js?book={version}\"")
                 .Replace("src=\"/_common/viewer/viewer.min.js\"", $"src=\"/_common/viewer/viewer.min.js?book={version}\"")

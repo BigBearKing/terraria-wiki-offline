@@ -424,6 +424,18 @@
             const style = document.createElement("style");
             style.id = "wiki-common-style";
             style.textContent = `
+            /* 关掉 iOS 的"文本自动放大"（text autosizing）：它是按文本块逐个做启发式判断的，
+               横竖屏切换时会重新判定一遍 —— 表现就是转屏后同样字号的文字有的被放大、有的不动，
+               而且之后用 html 的 zoom 缩放也追不平（两边已经被放到了不同的基准上）。
+               宿主 index.html 那边 base.css 早就给主文档写了 100%，但 iframe 里这套样式
+               （vendor 的 vector.css / common.css）只有 Calamity 那个 wiki 写了，其余几个
+               都会中招，所以在公共样式里统一补上。text-size-adjust 是继承属性，写在 html 上
+               就够，body 再写一遍是兜底。 */
+            html, body {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
+
             body {
                 padding-right: 0 !important;
             }
