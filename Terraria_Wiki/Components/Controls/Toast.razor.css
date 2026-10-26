@@ -1,0 +1,33 @@
+/* 轻提示：小胶囊，默认贴在宿主的底部居中处，淡入 + 轻微上浮。
+   颜色刻意用反色（浅色模式黑底白字 / 深色模式白底黑字），跟面板底色拉开对比，
+   所以这里不走 --bg-color 那套变量，只按 html.dark-theme 切换。
+   定位靠宿主的定位祖先，底部距离可用 --toast-bottom 覆盖。 */
+
+.toast {
+    position: absolute;
+    left: 50%;
+    bottom: var(--toast-bottom, 20px);
+    transform: translateX(-50%) translateY(6px);
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.78);
+    color: #ffffff;
+    font-size: 0.8rem;
+    /* 数字用等宽，百分比连点时宽度不跳 */
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 2;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+html.dark-theme .toast {
+    background: rgba(255, 255, 255, 0.92);
+    color: #111827;
+}

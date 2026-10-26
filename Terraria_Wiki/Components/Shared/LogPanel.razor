@@ -45,8 +45,9 @@
         </Virtualize>
     </div>
 
-    @* 复制成功的小提示（1.5 秒后自动消失） *@
-    <div class="copy-toast @(_showCopied ? "show" : "")">@Loc.Get("LogPanel.Copied")</div>
+    @* 复制成功的小提示（1.5 秒后自动消失）：组件见 Components/Controls/Toast.razor，
+       窄屏缩放按钮也用它，所以定位由本面板当定位祖先（.log-panel 是 fixed）。 *@
+    <Toast @ref="_toast" />
 </div>
 
 @code {
@@ -133,9 +134,10 @@
     private const int LongPressMs = 500;
 
     private CancellationTokenSource? _longPressCts;
-    private CancellationTokenSource? _copiedHintCts;
     private bool _longPressHandled;
-    private bool _showCopied;
+
+    /// <summary>"已复制"轻提示（Components/Controls/Toast.razor）。</summary>
+    private Toast? _toast;
 
     /// <summary>手指/鼠标按下：起一个 0.5 秒计时；到点还没松开就算长按 → 复制整行。</summary>
     private void OnLinePointerDown(LogItem item)
@@ -182,35 +184,14 @@
         try
         {
             await Clipboard.Default.SetTextAsync(text);
-            await ShowCopiedHintAsync();
+
+            if (_toast is not null)
+                await _toast.ShowAsync(Loc.Get("LogPanel.Copied"));
         }
         catch (Exception ex)
         {
             App.LogManager?.Error($"Copy log line failed: {ex}");
         }
-    }
-
-    private async Task ShowCopiedHintAsync()
-    {
-        _copiedHintCts?.Cancel();
-        _copiedHintCts?.Dispose();
-        var cts = new CancellationTokenSource();
-        _copiedHintCts = cts;
-
-        _showCopied = true;
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            await Task.Delay(1500, cts.Token);
-        }
-        catch (TaskCanceledException)
-        {
-            return;                     // 又复制了一条，交给新的那次去收尾
-        }
-
-        _showCopied = false;
-        await InvokeAsync(StateHasChanged);
     }
 
     private async void RefreshLog()
@@ -282,7 +263,5 @@
 
         _longPressCts?.Cancel();
         _longPressCts?.Dispose();
-        _copiedHintCts?.Cancel();
-        _copiedHintCts?.Dispose();
     }
 }

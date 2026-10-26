@@ -1,0 +1,55 @@
+@* 轻提示（toast）：屏幕/面板底部居中的小胶囊，显示一小会儿后自动淡出。
+   原来是 LogPanel 里"已复制"那条一次性提示（.copy-toast + _showCopied + _copiedHintCts），
+   窄屏缩放按钮也要同样的反馈，就抽成了组件。
+
+   用法：宿主里放一个常驻实例，需要时调它的方法 ——
+       <Toast @ref="_toast" />
+       await _toast.ShowAsync("110%");
+   显示时长默认 1.5 秒；期间再调一次会顶掉上一条、文案换成新的并重新计时（连续点 ± 不会闪）。
+
+   定位交给宿主：本组件是 position: absolute，宿主自己负责当"定位祖先"
+   （LogPanel 用 position: fixed 的面板、MoreList 用 position: fixed 的菜单），
+   所以底部距离留了 --toast-bottom 变量，宿主想微调就覆盖它。 *@
+@implements IDisposable
+
+<div class="toast @(_visible ? "show" : "")" role="status">@_text</div>
+
+@code {
+    private bool _visible;
+    private string? _text;
+    private CancellationTokenSource? _cts;
+
+    /// <summary>
+    /// 显示一条提示。<paramref name="durationMs"/> 毫秒后自动淡出；
+    /// 期间又被调用则取消上一次的计时，以最后一次为准。
+    /// </summary>
+    public async Task ShowAsync(string? text, int durationMs = 1500)
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _cts = cts;
+
+        _text = text;
+        _visible = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(durationMs, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;                     // 又弹了一条，交给新的那次去收尾
+        }
+
+        _visible = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

@@ -85,32 +85,8 @@
     overflow-anchor: none;
 }
 
-/* 复制成功的悬浮提示：面板底部居中的小胶囊，1.5 秒后淡出 */
-.copy-toast {
-    position: absolute;
-    left: 50%;
-    bottom: 20px;
-    transform: translateX(-50%) translateY(6px);
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.78);
-    color: #ffffff;
-    font-size: 0.8rem;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    z-index: 2;
-}
-
-.copy-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-html.dark-theme .copy-toast {
-    background: rgba(255, 255, 255, 0.92);
-    color: #111827;
-}
+/* 复制成功的悬浮提示已抽成公共组件 Components/Controls/Toast.razor（窄屏缩放按钮也用同一个），
+   样式跟到那边去了；这里只需要保证本面板是它的定位祖先 —— .log-panel 本来就是 position: fixed。 */
 
 .log-line {
     color: var(--text-secondary);

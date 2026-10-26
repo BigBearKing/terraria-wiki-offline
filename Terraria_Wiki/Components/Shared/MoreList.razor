@@ -111,6 +111,10 @@
 
             </div>
         }
+
+        @* 轻提示（Components/Controls/Toast.razor）：窄屏点 ± 时把新百分比浮出来。
+           定位跟着本面板（.more-list 是 position: fixed），不必再找别的地方挂。 *@
+        <Toast @ref="_toast" />
     </div>
 
 @code {
@@ -237,9 +241,26 @@
 
     private bool IsMinZoom => AppState.WikiZoom <= AppState.MinWikiZoom;
 
-    private void ZoomIn() => AppState.WikiZoom += AppState.WikiZoomStep;
+    /// <summary>窄屏点 ± 后用来浮百分比的那条轻提示（见 markup 末尾）。</summary>
+    private Toast? _toast;
 
-    private void ZoomOut() => AppState.WikiZoom -= AppState.WikiZoomStep;
+    private void ZoomIn() => SetZoom(AppState.WikiZoom + AppState.WikiZoomStep);
 
-    private void ResetZoom() => AppState.WikiZoom = 100;
+    private void ZoomOut() => SetZoom(AppState.WikiZoom - AppState.WikiZoomStep);
+
+    private void ResetZoom() => SetZoom(100);
+
+    /// <summary>
+    /// 改缩放，并在窄屏把新比例浮出来。
+    /// 只有窄屏需要：那一档把宽屏那行的百分比文字整行隐藏了，只剩两个方形图标按钮，
+    /// 不提示的话用户根本看不到自己现在是 110% 还是 120%；宽屏那行本来就一直写着百分比。
+    /// 百分比取 <see cref="AppState.WikiZoom"/> 的 getter（已经过 50-200 的钳制），不是传进来的原值。
+    /// </summary>
+    private void SetZoom(int value)
+    {
+        AppState.WikiZoom = value;
+
+        if (AppState.IsSmallScreen && _toast is not null)
+            _ = _toast.ShowAsync($"{AppState.WikiZoom}%");
+    }
 }
