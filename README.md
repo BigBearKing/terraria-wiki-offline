@@ -175,8 +175,8 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 
 其余目标框架为 `net11.0-android`、`net11.0-ios`、`net11.0-maccatalyst`。
 
-> **注意**：当前 .NET 11 尚未 GA，项目使用 RC.2（`SDK 11.0.100-rc.2` / MAUI `11.0.0-rc.2.26505.5`）。
-> 正式版发布后需把依赖版本号改为不带 `rc` 后缀的正式版本。
+> **注意**：当前 .NET 11 尚未 GA，项目使用 RC.3（`SDK 11.0.100-rc.3` / MAUI `11.0.0-rc.2.26505.5`）。
+> MAUI 还没有 rc.3 的包，工作负载仍是 rc.2 那一版；正式版发布后需把依赖版本号改为不带 `rc` 后缀的正式版本。
 
 ## 数据来源与版权
 

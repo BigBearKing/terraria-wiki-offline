@@ -175,7 +175,7 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 
 The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-maccatalyst`.
 
-> **Note**: .NET 11 has not reached GA yet. This project uses RC.2 (`SDK 11.0.100-rc.2` / MAUI `11.0.0-rc.2.26505.5`). Once the stable release is out, change the dependency versions to the non-`rc` releases.
+> **Note**: .NET 11 has not reached GA yet. This project uses RC.3 (`SDK 11.0.100-rc.3` / MAUI `11.0.0-rc.2.26505.5`). MAUI has no rc.3 packages yet, so the workload is still the rc.2 one. Once the stable release is out, change the dependency versions to the non-`rc` releases.
 
 ## Data Sources and Copyright
 
