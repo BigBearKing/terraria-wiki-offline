@@ -54,18 +54,15 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 12px 0 40px;
+    /* 左右内边距不再是字面量：40 是给左侧滚动条留的（而滚动条在右边），
+       WebKit 下改成 24 对称 —— 这些差异都在 variables.css 的 --page-gutter /
+       --page-gutter-right 里，顶栏标题的左对齐也从那儿派生，别再写死数字。 */
+    padding: 0 var(--page-gutter-right) 0 var(--page-gutter);
     max-width: 800px;
     margin: 0 auto;
     /* 标题头上滑收起时的裁剪框（见下方「列表页标题头：随滚动方向自动收起」）。
        列表正好铺满这块区域，所以对列表内容本身没有任何影响，只是别让标题头滑到 TopBar 上去。 */
     overflow: hidden;
-}
-
-@supports (-webkit-touch-callout: none) {
-    .page-content {
-        padding: 0 24px !important;
-    }
 }
 
 /* 标题头是浮在列表上方的覆盖层：列表被 -52px 上外边距提到它底下（见下方「列表页标题头」一节），
@@ -237,21 +234,10 @@ body.has-hover .btn.is-selected:hover {
     white-space: inherit;
 }
 
-/* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机布局。尺寸术语见 AppState 里的说明。 */
+/* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机布局。尺寸术语见 AppState 里的说明。
+   注意 .page-content 的左右内边距不在这里改：窄屏只是把 variables.css 里的
+   --page-gutter 降到 24，规则本身一条通吃。 */
 @media (max-width: 768px) {
-    .page-content {
-        padding: 0 12px 0 24px;
-    }
-
-    /* ★ WebKit（iOS / Mac Catalyst）在手机上原本把左内边距加到 40px，本意是给纵向滚动条
-       留位置，但滚动条在右侧 —— 结果是内容整体向右偏 28px（左 40 / 右 12）。
-       这里直接沿用文件上方 @supports 块的 24px 对称内边距，
-       左右一致；真要防遮挡也是加右边，不能再加左边。 */
-    @supports (-webkit-touch-callout: none) {
-        .page-content {
-            padding: 0 24px !important;
-        }
-    }
 
     /* 窄屏下补足 logo 菜单键的布局；显隐见 TopBar.razor.css 的 .narrow-menu-btn */
     .narrow-menu-btn {
