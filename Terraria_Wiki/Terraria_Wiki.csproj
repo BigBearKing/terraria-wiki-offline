@@ -69,10 +69,12 @@
 		       Microsoft.iOS.Sdk.SupportedTargetPlatforms.props     → iOSMinSupportedOSPlatformVersion = 15.0
 		       Microsoft.MacCatalyst.Sdk.SupportedTargetPlatforms.props → MacCatalystMinSupportedOSPlatformVersion = 17.0
 		     ★ 这两个值同时是"支持的设备/系统下限"这个产品口径，不是纯技术参数：
-		       iOS 12.2 → 15.0、macCatalyst 15.0（macOS 12）→ 17.0（macOS 14）会**缩小可安装范围**。
-		       若哪天要重新支持更低的系统，只能退回到旧工作负载（SDK/TFM 一起退），不能只改这里。 -->
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">17.0</SupportedOSPlatformVersion>
+		       iOS 15.0 → 16.4、macCatalyst 17.0（macOS 14）→ 18.0（macOS 15）会**缩小可安装范围**。
+		       若哪天要重新支持更低的系统，只能退回到旧工作负载（SDK/TFM 一起退），不能只改这里。
+		     ★ 现在取 iOS 16.4 / macOS 15（Catalyst 18.0）：Catalyst 的窗口、全屏、安全区行为
+		       在 macOS 15 及以上才与当前 SDK 对齐，更低系统上表现不可控。 -->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">16.4</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">18.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
