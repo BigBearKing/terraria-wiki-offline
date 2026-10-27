@@ -9,7 +9,7 @@
 
 An offline Terraria wiki reader built with .NET MAUI Blazor Hybrid.
 
-The app crawls wiki page content, images, audio and video into a local SQLite database, then serves them to an embedded WebView through a WebView virtual host (`https://wiki.local` / `terrariawiki://`) — no port is opened and no local server runs — so you get the same layout and reading experience as the original site even with no network connection. It currently supports four wikis — vanilla Terraria, Calamity, Fargo's Mods and Thorium — in both Chinese and English, for a total of 8 data sources.
+The app stores the full contents of four wikis — vanilla Terraria, Calamity, Fargo's Mods and Thorium — in both Chinese and English on your device, covering articles, images, audio and video, so pages keep the original site's layout and reading experience even with no network. It offers in-wiki navigation, instant local search, favorites, browsing history and multiple tabs; each wiki's data is kept separate, and downloaded content can be updated incrementally or exported and moved as a whole. It currently runs on Windows, Android, iOS / iPadOS and macOS, with a bilingual interface and light and dark themes.
 
 ![App screenshot](Screenshot/main.png)
 
@@ -22,8 +22,8 @@ The app crawls wiki page content, images, audio and video into a local SQLite da
 - **Desktop context menu**: Copy selected text or images, open an article in a new tab, or open the current article's original page.
 - **Live search**: The top bar search box matches keywords against the local SQLite database, with a dropdown preview of articles and redirect targets, debounced input. The maximum result count is configurable (25 / 50 / 75 / 100).
 - **All pages**: Lists every article in the database with keyword filtering and virtual scrolling — handy for lookup by name.
-- **Multiple tabs**: Up to 10 tabs open at once, each maintaining its own title, scroll position and browsing history. On desktop the tab strip sits in the top bar; on narrow screens it collapses into the function bar panel.
-- **Favorites and history**: Star the current article from the top bar. Browsing history is grouped by time and can be cleared in one tap. Each wiki uses its own database file, so favorites and history never mix.
+- **Multiple tabs**: Up to 10 tabs open at once, each keeping its own title, scroll position and back history. How tabs are presented depends on the platform.
+- **Favorites and history**: Star the current article from the top bar. Browsing history is grouped by time. Each wiki uses its own database file, so favorites and history never mix.
 - **Multi-wiki support**: Filter by language on the Data Management page and click a card to switch wikis — no app restart needed.
 - **Data management**: Download online (all content or text only), incrementally update pages, download or delete image assets, export and import `.pkg` data packages, delete a database — plus database size, page count, redirect count, asset count and last update time.
 - **Task management**: Download tasks support pause, resume, interruption recovery and retry of failed items. They pause automatically when offline and can continue once you're back online. The failure list can be cleared separately.
@@ -39,11 +39,9 @@ The app crawls wiki page content, images, audio and video into a local SQLite da
 | Home | Read articles; the top bar offers back, home, favorite and search |
 | Favorites | View favorited articles and remove individual entries |
 | History | Browsing history grouped by time, clearable in one tap |
-| All pages | Full article index with keyword filtering |
-| Data Management | Choose a wiki, download and update data, export data packages |
-| Settings | Language, theme, search, downloads, permissions, data location, logs and about |
-| Function bar | The "More" button at the right of the top bar: find in page, always on top, floating window, zoom, tab management |
-| Logs | Bottom of the sidebar, shows the current task and runtime logs |
+| Pages | Full article index with keyword filtering |
+| Data | Choose a wiki, download and update data, export data packages |
+| Settings | Language, theme, search, downloads, data import, data location and about |
 
 ## Supported Wikis
 
@@ -65,15 +63,16 @@ The app crawls wiki page content, images, audio and video into a local SQLite da
 | Windows | Windows 10 1809 (10.0.17763) |
 | Android | Android 7.0 (API 24) |
 | iOS / iPadOS | iOS 16.4 |
+| macOS | macOS 15 Sequoia |
 
 ## Installation
 
 Get the installers from the [Releases](https://github.com/BigBearKing/terraria-wiki-offline/releases) page. Current version is v0.4.0.
 
-- **Windows**: No installation needed — extract and run. Requires the Microsoft Edge WebView2 runtime (usually built into Windows 11; on Windows 10 you may need to install it manually).
-- **Android**: Install the APK directly. On first use it is recommended to grant network, notification and background execution permissions under "Settings - Permissions", otherwise downloads may be interrupted by the system.
-- **iOS / iPadOS**: Not on the App Store yet — you need to sign and sideload it yourself. Not fully tested; runtime issues may occur.
-- **macOS**: Untested and requires building from source. Not supported for now; expect problems.
+- **Windows**: `.zip` archive — no installation needed, extract and run. Requires the Microsoft Edge WebView2 runtime (usually built into Windows 11; on Windows 10 you may need to install it manually).
+- **Android**: `.apk` package. On first use it is recommended to grant network, notification and background execution permissions under "Settings - Permissions", otherwise downloads may be interrupted by the system.
+- **iOS / iPadOS**: `.ipa` package. Not on the App Store yet — you need to sign and sideload it yourself.
+- **macOS**: `.dmg` package. Not fully tested; runtime issues may occur.
 
 ## Screenshots
 
@@ -174,7 +173,7 @@ Build for a specific platform (Windows example):
 dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -c Release
 ```
 
-The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-maccatalyst` (Apple platforms are unavailable on Linux). To publish an unsigned iOS IPA you can trigger the `Build Unsigned iOS IPA` workflow manually in GitHub Actions; artifacts are kept for 7 days.
+The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-maccatalyst`.
 
 > **Note**: .NET 11 has not reached GA yet. This project uses RC.2 (`SDK 11.0.100-rc.2` / MAUI `11.0.0-rc.2.26505.5`). Once the stable release is out, change the dependency versions to the non-`rc` releases.
 
