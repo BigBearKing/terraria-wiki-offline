@@ -54,9 +54,10 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    /* 左右内边距不再是字面量：40 是给左侧滚动条留的（而滚动条在右边），
-       WebKit 下改成 24 对称 —— 这些差异都在 variables.css 的 --page-gutter /
-       --page-gutter-right 里，顶栏标题的左对齐也从那儿派生，别再写死数字。 */
+    /* 左右内边距不再是字面量：左侧 24 是纯留白，右侧 12 是给 12px 宽的滚动条留的位置
+       （滚动条常驻，见 .list-container 的 scrollbar-gutter: stable），
+       WebKit 的浮层滚动条不占宽，右侧直接取 24 —— 差异都在 variables.css 的
+       --page-gutter / --page-gutter-right 里，顶栏标题的左对齐也从那儿派生。 */
     padding: 0 var(--page-gutter-right) 0 var(--page-gutter);
     max-width: 800px;
     margin: 0 auto;
@@ -235,8 +236,8 @@ body.has-hover .btn.is-selected:hover {
 }
 
 /* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机布局。尺寸术语见 AppState 里的说明。
-   注意 .page-content 的左右内边距不在这里改：窄屏只是把 variables.css 里的
-   --page-gutter 降到 24，规则本身一条通吃。 */
+   注意 .page-content 的左右内边距不在这里改：--page-gutter 已经各平台都取 24
+   （宽屏窄屏一样），规则本身一条通吃。 */
 @media (max-width: 768px) {
 
     /* 窄屏下补足 logo 菜单键的布局；显隐见 TopBar.razor.css 的 .narrow-menu-btn */

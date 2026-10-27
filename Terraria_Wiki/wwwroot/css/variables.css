@@ -10,13 +10,17 @@
        （PageHeader.razor.css 里 .title-group 的 min-height）。列表要靠着它做重叠，
        所以必须是变量；改了那两处就得同步改这里（见 app.css「列表页标题头：随滚动方向自动收起」）。 */
     --page-header-height: 52px;
-    /* 页面内容的左右内边距（.page-content）。左 40 原本是给左侧纵向滚动条留位置，
-       但滚动条其实在右边（WebKit / Chromium 都是），所以右侧那 12 才是真正留给它的。
-       WebKit（iOS / Mac Catalyst）下改成左右对称 24：滚动条浮在内容上方，
-       40px 的左侧留白纯属把内容整体往右推（见文件末尾的 @supports 块）。
+    /* 页面内容的左右内边距（.page-content）。两侧的"视觉留白"要一样宽，但占位方式不同：
+         · 左边没有任何东西，24px 就是纯留白；
+         · 右边要留纵向滚动条。Chromium/WebView2 是经典滚动条（base.css 的
+           ::-webkit-scrollbar 宽 12），它压在 .page-content 的 padding 内侧、且
+           .list-container 有 scrollbar-gutter: stable 常驻，所以这里只留 12 —— 12 + 12 = 24，
+           和左边正好齐平（以前左边写 40 是按"左侧滚动条"算的，那个前提不成立，
+           结果内容整体右偏 16px）；
+         · WebKit（iOS / Mac Catalyst）滚动条是浮层、不占宽，所以右边也要 24。
        ★ 顶栏标题要跟页面大标题左对齐，它的内边距也是从这里派生的
          （TopBar.razor.css 的 .topbar-title-without-actions），两处别再各写各的数字。 */
-    --page-gutter: 40px;
+    --page-gutter: 24px;
     --page-gutter-right: 12px;
     --bg-color: #ffffff;
     --bg-color-secondary: #f6f6f6;
@@ -103,20 +107,10 @@ html.dark-theme {
     --blue-tertiary: rgba(0, 145, 255, 0.16);
 }
 
-/* 窄屏（等价 AppState.IsSmallScreen，宽 ≤768）：手机上 40px 的左侧留白太奢侈，
-   左侧降到 24；右侧仍走 --page-gutter-right（留给滚动条的那 12），与原来一致。 */
-@media (max-width: 768px) {
-    :root {
-        --page-gutter: 24px;
-    }
-}
-
-/* WebKit（iOS / Mac Catalyst）：滚动条浮在内容上方、不再占宽，40px 的左侧留白
-   只会把整块内容往右推，所以改成左右对称 24px。
-   这一条必须排在上面那条 @media 之后：窄屏 + WebKit 时也取 24。 */
+/* WebKit（iOS / Mac Catalyst）：滚动条浮在内容上方、不占宽度，右边不用再留那 12px，
+   左右都按 --page-gutter 的 24 来。 */
 @supports (-webkit-touch-callout: none) {
     :root {
-        --page-gutter: 24px;
         --page-gutter-right: 24px;
     }
 }

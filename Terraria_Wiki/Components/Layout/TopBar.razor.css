@@ -53,9 +53,8 @@
 /* 没有操作按钮的页面（数据/收藏/历史/所有页面/设置）：让顶栏标题和页面里的大标题左对齐。
    标题左边缘 = 8（.top-bar 左内边距）+ 16（与 .actions-wrapper 的 flex gap；
    logo 键在宽屏是 display:none，容器宽度为 0，但这个间隙照样算）+ 本条。
-   前面那 24 是固定的，剩下的差额由 --page-gutter 补齐：
-     Windows 40 → 16（与原值一致）    WebKit 24 → 0（页面左内边距在那边是 24）
-   这样就不必再为 WebKit 单独写一条覆盖。 */
+   前两项之和刚好是 24，而 --page-gutter 现在各平台都是 24，所以本条算出来是 0 ——
+   写成 calc 是为了以后调 .page-content 的留白时标题能自动跟过去。 */
 .topbar-title-without-actions {
     padding-left: calc(var(--page-gutter) - 24px);
 }
