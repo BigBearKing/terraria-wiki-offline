@@ -53,6 +53,8 @@ namespace Terraria_Wiki
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<AppTaskRunner>();
             builder.Services.AddSingleton<GlobalExceptionHandler>();
+            // 提示框的唯一出口（单例：界面重建多少次都只有一份事件处理器，见该类注释）
+            builder.Services.AddSingleton<AlertPresenter>();
             builder.Services.AddSingleton<INativeFindInPageService, NativeFindInPageService>();
             builder.Services.AddSingleton<DataService>();
             builder.Services.AddSingleton<PackageService>();

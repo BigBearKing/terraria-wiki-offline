@@ -60,6 +60,13 @@
     bool isAppReady;
 
     /// <summary>
+    /// 进程级的数据初始化（读偏好、迁移旧库）是否做过了。
+    /// ★ 必须是 <c>static</c>：界面重建后是新的 MainLayout 实例，实例字段会被重置成 false，
+    ///   而这两件事每进程只该做一次（详见 InitializeAfterBlazorBeforePageDisplayAsync）。
+    /// </summary>
+    private static bool _dataSideEffectsInitialized;
+
+    /// <summary>
     /// 是否处于悬浮"小条"形态（仅 Windows）：主窗口缩小置顶，标题栏式的 32px 条 + wiki 视图。
     /// 悬浮窗折叠成图标球时该值为 false —— 此时主窗口整个被隐藏，渲染什么都无所谓。
     /// </summary>
@@ -71,7 +78,6 @@
 
         AppState.PropertyChanged += OnAppStatePropertyChanged;
         AppState.OnWikiBookSwitched += OnWikiBookSwitched;
-        AppState.OnShowAlert += HandleShowAlert;
         App.Localization!.OnChange += OnLocalizationChanged;
         IframeBridge.OnIframePageReady += OnIframePageReady;
         WikiVirtualHost.ContentBaseChanged += OnContentBaseChanged;
@@ -85,7 +91,6 @@
     {
         AppState.PropertyChanged -= OnAppStatePropertyChanged;
         AppState.OnWikiBookSwitched -= OnWikiBookSwitched;
-        AppState.OnShowAlert -= HandleShowAlert;
         App.Localization!.OnChange -= OnLocalizationChanged;
         IframeBridge.OnIframePageReady -= OnIframePageReady;
         WikiVirtualHost.ContentBaseChanged -= OnContentBaseChanged;
@@ -239,11 +244,22 @@
         // 视口宽高监听：C# 侧据此算出 TopStripAllowed / TopStripVisible（顶部条在不在、标签放哪）
         _ = JS.InvokeVoidAsync("initGlobalScreenListener");
 
-        App.DataManager.InitializeSettings();
+        // ★ 下面两步是"进程级一次性副作用"，每个进程只做一遍。
+        //   iOS 从后台恢复时 WKWebView 有时会重载页面，Blazor 会再挂载一次 MainLayout；
+        //   这两步若跟着重做，用户看到的就是数据迁移那个"正在更新…"加载框弹两次、
+        //   以及初始化/迁移里触发的系统提示框弹两次。
+        //   上面那批 AppState.Init / IframeBridge.Init / AppService.Init 必须每次都做
+        //   （页面重载后旧的 JS 运行时已经没了），所以只把数据侧的两个放进这个判断。
+        if (!_dataSideEffectsInitialized)
+        {
+            _dataSideEffectsInitialized = true;
 
-        // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
-        var upgradeHandler = new LegacyUpgradeHandler(App.StoragePath!);
-        await upgradeHandler.MigrateAnchorDataWikiAsync(AppState.ActiveWikiBook);
+            App.DataManager.InitializeSettings();
+
+            // 旧版数据迁移：为 <a> 标签添加 data-wiki 属性
+            var upgradeHandler = new LegacyUpgradeHandler(App.StoragePath!);
+            await upgradeHandler.MigrateAnchorDataWikiAsync(AppState.ActiveWikiBook);
+        }
 
         if (Application.Current?.Windows[0].Page is MainPage mainPage)
         {
@@ -262,19 +278,6 @@
             isAppReady = true;
             StateHasChanged();
         }
-    }
-
-    private void HandleShowAlert(string title, string message)
-    {
-
-        MainThread.BeginInvokeOnMainThread(async () =>
-        {
-            var mainPage = Application.Current?.Windows[0].Page;
-            if (mainPage != null)
-            {
-                await mainPage.DisplayAlertAsync(title, message, App.Localization.Get("Common.OK"));
-            }
-        });
     }
 
 }

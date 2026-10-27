@@ -37,6 +37,9 @@ namespace Terraria_Wiki
             VirtualHost = virtualHost;
             services.GetRequiredService<GlobalExceptionHandler>().Register();
 
+            // 提示框出口：构造即订阅 AppState.OnShowAlert（单例，界面重建不会重复订阅）
+            _ = services.GetRequiredService<AlertPresenter>();
+
             // 有任务在跑时按住系统，别让电脑睡过去/进新型待机把下载掐断（详见 SleepPreventionService）
             SleepPreventionService.Attach(appState);
 
