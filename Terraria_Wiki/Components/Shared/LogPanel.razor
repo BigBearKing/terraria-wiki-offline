@@ -22,10 +22,18 @@
                     OnClick="CloseLogPanel" />
     </div>
     <div id="log-container" class="log-container no-swipe">
+        @* AnchorMode.End（.NET 11 新增）：把视口钉在列表末尾。
+           不设它的时候，Virtualize 只在"用户自己滚动"把占位块滚进视口时才继续取下一段；
+           而我们是用 scrollTop 以程序方式贴底的，占位块一直可见、可见比例也不变，
+           交叉观察不会报变化 —— 于是新日志只把占位块（空行）撑高、滚动跟着下去，
+           一行文字都不会取。手指一滑触发了真正的滚动，它才把那段数据取上来。
+           设成 End 之后，框架每次渲染后自己判断"是不是在底部"，在底部就置为
+           从底部填充视口（convergence）并主动取数；用户往上翻则自动解除，不再拽回来。 *@
         <Virtualize @ref="_virtualize"
                     ItemsProvider="LoadLogs"
                     Context="item"
-                    OverscanCount="20">
+                    OverscanCount="20"
+                    AnchorMode="VirtualizeAnchorMode.End">
             @{
                 var parsedLog = ParseLogLine(item.Raw);
             }
