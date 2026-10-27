@@ -637,6 +637,15 @@
                 }
             };
 
+            /* 外层滚动也要算"用户在看"（列表页、设置页这些内容在外层），
+               但要排除日志面板的自滚动：下载时每来一条日志就 scrollToBottom 一次，
+               那会持续触发 scroll。不过滤的话防烧屏计时永远被重置，屏幕一直不会变暗。 */
+            const handleScroll = (e) => {
+                const target = e.target;
+                if (target instanceof Element && target.closest('.log-panel')) return;
+                notifyInteraction();
+            };
+
             window.startBurnInMonitoring = () => {
                 if (!checkIsIOS()) return;
 
@@ -644,7 +653,7 @@
                 window.addEventListener('pointerdown', notifyInteraction);
                 window.addEventListener('pointermove', notifyInteraction);
                 window.addEventListener('keydown', notifyInteraction);
-                window.addEventListener('scroll', notifyInteraction, true);
+                window.addEventListener('scroll', handleScroll, true);
 
                 // 2. 监听来自 iframe 的汇报
                 window.addEventListener('message', handleIframeMessage);
@@ -663,7 +672,7 @@
                 window.removeEventListener('pointerdown', notifyInteraction);
                 window.removeEventListener('pointermove', notifyInteraction);
                 window.removeEventListener('keydown', notifyInteraction);
-                window.removeEventListener('scroll', notifyInteraction, true);
+                window.removeEventListener('scroll', handleScroll, true);
 
                 // 2. 卸载 iframe 消息的监听
                 window.removeEventListener('message', handleIframeMessage);
