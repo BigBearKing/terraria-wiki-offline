@@ -1003,9 +1003,9 @@ namespace Terraria_Wiki
 
         private void DisableProtectionUI()
         {
+            StopFloatingAnimation();
             UIKit.UIScreen.MainScreen.Brightness = _originalBrightness;
             BurnInProtectionOverlay.IsVisible = false;
-            // 恢复亮度逻辑...
         }
 
         private void OnProtectionMaskTapped(object sender, TappedEventArgs e)
@@ -1013,14 +1013,75 @@ namespace Terraria_Wiki
             _burnInService.Deactivate();
             _burnInService.ResetTimer();
         }
-        private async void StartFloatingAnimation()
+
+        /// <summary>覆盖层上那行文字的位移计时器：每 <see cref="FloatStepSeconds"/> 秒挪 1px。</summary>
+        private IDispatcherTimer? _floatTimer;
+
+        /// <summary>当前位移（px，负数向上）。</summary>
+        private double _floatOffset;
+
+        /// <summary>当前方向：-1 向上、+1 向下。</summary>
+        private int _floatDirection = -1;
+
+        private const double FloatStepPx = 1;        // 每次挪 1px
+        private const double FloatRangePx = 60;      // 位移范围（上下各 60px）
+        private const int FloatStepSeconds = 3;      // 每 3 秒挪一次
+
+        /// <summary>
+        /// 防烧屏：让覆盖层上这行字极慢地爬行 —— 每 3 秒 1px。
+        /// 以前是「上移 60px / 4 秒 → 下移 60px / 4 秒」来回跑，位移太明显，反而更抢眼；
+        /// 这里改成每 3 秒挪 1px（肉眼几乎看不出在动），到 ±60px 时静默反向 ——
+        /// 1px/3s 的掉头看不出来，也不需要整段跳回原位。
+        /// </summary>
+        private void StartFloatingAnimation()
         {
-            while (_burnInService.IsActive)
-            {
-                await FloatingText.TranslateTo(0, -60, 4000, Easing.SinInOut);
-                await FloatingText.TranslateTo(0, 60, 4000, Easing.SinInOut);
-            }
+            StopFloatingAnimation();
+
+            _floatOffset = 0;
+            _floatDirection = -1;                   // 从向上开始
             FloatingText.TranslationY = 0;
+
+            var timer = Dispatcher.CreateTimer();
+            timer.Interval = TimeSpan.FromSeconds(FloatStepSeconds);
+            timer.Tick += (_, _) => StepFloatingText();
+            _floatTimer = timer;
+            timer.Start();
+        }
+
+        private void StopFloatingAnimation()
+        {
+            if (_floatTimer is { } timer)
+            {
+                timer.Stop();
+                _floatTimer = null;
+            }
+
+            FloatingText.TranslationY = 0;
+        }
+
+        private void StepFloatingText()
+        {
+            // 保护已经退出（比如点了覆盖层）：停掉计时器，别让它空转
+            if (!_burnInService.IsActive)
+            {
+                StopFloatingAnimation();
+                return;
+            }
+
+            _floatOffset += _floatDirection * FloatStepPx;
+
+            if (_floatOffset <= -FloatRangePx)
+            {
+                _floatOffset = -FloatRangePx;
+                _floatDirection = 1;
+            }
+            else if (_floatOffset >= FloatRangePx)
+            {
+                _floatOffset = FloatRangePx;
+                _floatDirection = -1;
+            }
+
+            FloatingText.TranslationY = _floatOffset;
         }
 #else
         private void OnProtectionMaskTapped(object sender, TappedEventArgs e)
