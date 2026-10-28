@@ -578,9 +578,11 @@
             if (result != null && result.IsUpdateAvailable)
             {
                 // 发现新版本，弹出提示框
+                // 更新日志是整段 Markdown，可能有几千字：按提示框统一的 300 字上限截断，
+                // 完整内容让用户点"前往下载"去 Release 页面看。
                 bool wantsToUpdate = await Application.Current.Windows[0].Page.DisplayAlertAsync(
                     Loc.Get("Settings.NewVersionFound", result.LatestVersion),
-                    Loc.Get("Settings.ReleaseNotes", result.ReleaseNotes),
+                    Loc.Get("Settings.ReleaseNotes", Terraria_Wiki.Services.AppState.ClipAlertMessage(result.ReleaseNotes)),
                     Loc.Get("Settings.GoToDownload"),
                     Loc.Get("Settings.Later"));
 

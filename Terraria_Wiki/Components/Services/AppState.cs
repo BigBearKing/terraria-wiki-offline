@@ -535,9 +535,35 @@ public class AppState : INotifyPropertyChanged
         set => SetProperty(ref _currentLanguage, value);
     }
 
+    /// <summary>
+    /// 提示框正文的最大显示长度（字）。超过就截断并补省略号。
+    /// 有些消息天然很长 —— 异常堆栈、dlopen 那一长串搜索路径、Release 的完整更新日志 ——
+    /// 塞进原生弹窗会撑爆版面（iOS 的 UIAlertController 还不能滚），
+    /// 而用户真正需要看的通常只有开头一句。
+    /// </summary>
+    public const int MaxAlertMessageLength = 300;
+
+    /// <summary>把提示框正文压到 <see cref="MaxAlertMessageLength"/> 字以内，尾部加省略号。</summary>
+    public static string ClipAlertMessage(string? message)
+    {
+        if (string.IsNullOrEmpty(message))
+            return string.Empty;
+
+        var text = message!;
+        if (text.Length <= MaxAlertMessageLength)
+            return text;
+
+        // 别把 emoji 这类代理对从中间切开
+        var cut = MaxAlertMessageLength;
+        if (char.IsHighSurrogate(text[cut - 1]))
+            cut--;
+
+        return string.Concat(text.AsSpan(0, cut), "…");
+    }
+
     public void TriggerAlert(string title, string message)
     {
-        OnShowAlert?.Invoke(title, message);
+        OnShowAlert?.Invoke(title, ClipAlertMessage(message));
     }
 
     public bool IsPinned
