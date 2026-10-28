@@ -1,0 +1,31 @@
+/* 纯文本面板（Components/Shared/TextPanel.razor）：许可详情页与网盘资源页共用。
+   容器结构沿用详情页那套：与标题头留 12px（= 设置 / 数据 / 许可列表三个列表页的统一留白），
+   底部额外让开安全区。 */
+.text-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px 0 max(12px, var(--safe-area-bottom));
+}
+
+.text-panel-empty {
+    padding: 24px 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 正文：等宽、可折行、允许选中复制（全局样式是 user-select: none） */
+.text-panel-body {
+    margin: 0;
+    padding: 16px;
+    background-color: var(--bg-color-secondary);
+    border-radius: 12px;
+    font-family: Consolas, "Cascadia Mono", ui-monospace, monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    -webkit-user-select: text;
+    user-select: text;
+}

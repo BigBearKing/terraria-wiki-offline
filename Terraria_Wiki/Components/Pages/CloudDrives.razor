@@ -1,0 +1,75 @@
+@page "/settings/drives"
+@implements IDisposable
+@using Terraria_Wiki.Services
+
+@* 设置 → 数据 → 查看第三方网盘资源。
+   正文的排版与"加载中 / 获取失败"占位都交给共享的 TextPanel（与许可详情页同一个组件）。
+   正文来自 GitHub 上的 docs/cloud-drives.txt（CloudDriveCatalog 负责取数与缓存），
+   所以内容变了不用发版。 *@
+
+<div class="page-anim page-content">
+
+    @* 不传 ShowBack：CurrentPage 是 settings/drives（带 '/'）→ 自动显示返回箭头，退回设置 *@
+    <PageHeader Title="@Loc.Get("Settings.CloudDriveResources")">
+        <ActionButton Size="ButtonSize.Text" Tone="ButtonTone.Link" OnClick="ReloadAsync">
+            @Loc.Get("CloudDrive.Refresh")
+        </ActionButton>
+    </PageHeader>
+
+    <TextPanel Content="_content"
+               Loading="_loading"
+               LoadingText="@Loc.Get("CloudDrive.Loading")"
+               EmptyText="@Loc.Get("CloudDrive.LoadFailed")" />
+</div>
+
+@code {
+    private string? _content;
+    private bool _loading;
+    private bool _busy;
+
+    protected override void OnInitialized() => Loc.OnChange += RefreshUI;
+
+    public void Dispose() => Loc.OnChange -= RefreshUI;
+
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 只在首次进入时取内容；本地化切换等参数重设不重复请求
+        if (_content is not null)
+            return;
+
+        // 先拿缓存立刻画出来（离线也有内容），再去拉最新的一份
+        _content = await CloudDriveCatalog.ReadCacheAsync();
+        _loading = _content is null;
+        StateHasChanged();
+
+        await ReloadAsync();
+    }
+
+    /// <summary>右上角「刷新」：强制重新拉取；已有缓存时不显示加载态，静默替换。</summary>
+    private async Task ReloadAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+
+        try
+        {
+            if (_content is null)
+            {
+                _loading = true;
+                StateHasChanged();
+            }
+
+            var text = await CloudDriveCatalog.FetchAsync();
+            if (text is not null)
+                _content = text;
+        }
+        finally
+        {
+            _busy = false;
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

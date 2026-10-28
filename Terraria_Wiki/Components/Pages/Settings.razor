@@ -163,6 +163,18 @@
                 </ActionButton>
             </div>
 
+            @* 第三方网盘资源：跳 settings/drives 子页面（版式与许可详情页相同），
+               正文从仓库的 docs/cloud-drives.txt 拉，改链接不用发版。 *@
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">@Loc.Get("Settings.CloudDriveResources")</span>
+                    <span class="setting-desc">@Loc.Get("Settings.CloudDriveResourcesDesc")</span>
+                </div>
+                <ActionButton OnClick="OpenCloudDriveResources">
+                    @Loc.Get("Common.View")
+                </ActionButton>
+            </div>
+
             @if (AppState.IsWindows)
             {
                 <div class="setting-item">
@@ -611,6 +623,12 @@
     private void OpenLicenses()
     {
         AppService.NavigateTo("settings/licenses");
+    }
+
+    /// <summary>设置 → 数据 → 查看第三方网盘资源：进 CloudDrives 子页面。</summary>
+    private void OpenCloudDriveResources()
+    {
+        AppService.NavigateTo("settings/drives");
     }
 
     private async Task ClearFailedList()
