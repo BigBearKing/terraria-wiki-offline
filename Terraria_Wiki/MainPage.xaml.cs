@@ -748,6 +748,13 @@ namespace Terraria_Wiki
 
         public void ShowLoadingPopup(string title, string message)
         {
+            // 任务体现在跑在线程池上（见 AppTaskRunner），而这里动的是原生控件 —— 必须回主线程。
+            if (!MainThread.IsMainThread)
+            {
+                MainThread.BeginInvokeOnMainThread(() => ShowLoadingPopup(title, message));
+                return;
+            }
+
             AlertTitle.Text = title;
             AlertMessage.Text = message;
             CustomAlertMask.IsVisible = true;
@@ -758,6 +765,12 @@ namespace Terraria_Wiki
         // 关闭弹窗
         public void HideLoadingPopup()
         {
+            if (!MainThread.IsMainThread)
+            {
+                MainThread.BeginInvokeOnMainThread(HideLoadingPopup);
+                return;
+            }
+
             CustomAlertMask.IsVisible = false;
             BackLayerCoordinator.SetBackBlocked(_loadingPopupBackBlocker, false);
         }

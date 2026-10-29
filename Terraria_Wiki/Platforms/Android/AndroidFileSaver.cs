@@ -11,22 +11,28 @@ public static class AndroidFileSaver
     /// <summary>
     /// 唤起 SAF 界面让用户选择保存位置
     /// </summary>
-    public static Task<Android.Net.Uri> PickSaveLocationAsync(string fileName, string mimeType = "text/plain")
+    public static async Task<Android.Net.Uri> PickSaveLocationAsync(string fileName, string mimeType = "text/plain")
     {
-        tcs = new TaskCompletionSource<Android.Net.Uri>();
+        var completion = new TaskCompletionSource<Android.Net.Uri>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        tcs = completion;
 
-        // 构造创建文件的 Intent (SAF 的核心)
-        var intent = new Intent(Intent.ActionCreateDocument);
-        intent.AddCategory(Intent.CategoryOpenable);
-        intent.SetType(mimeType); // 设置文件类型
-        intent.PutExtra(Intent.ExtraTitle, fileName); // 设置默认文件名
+        // 任务体跑在线程池上（见 AppTaskRunner），而 StartActivityForResult 必须在主线程调用。
+        await Microsoft.Maui.ApplicationModel.MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            // 构造创建文件的 Intent (SAF 的核心)
+            var intent = new Intent(Intent.ActionCreateDocument);
+            intent.AddCategory(Intent.CategoryOpenable);
+            intent.SetType(mimeType); // 设置文件类型
+            intent.PutExtra(Intent.ExtraTitle, fileName); // 设置默认文件名
 
-        // 获取当前活动的 Activity 并启动 Intent
-        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-        // 这里的 4321 是自定义的请求码，用于在回调中识别这次请求
-        activity.StartActivityForResult(intent, 4321);
+            // 获取当前活动的 Activity 并启动 Intent
+            var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+            // 这里的 4321 是自定义的请求码，用于在回调中识别这次请求
+            activity.StartActivityForResult(intent, 4321);
+        });
 
-        return tcs.Task;
+        return await completion.Task;
     }
 
     /// <summary>

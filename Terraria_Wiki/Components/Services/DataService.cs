@@ -1228,45 +1228,57 @@ namespace Terraria_Wiki.Services
 
             string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
 
-            var xmldoc = XDocument.Parse(xml);
-
-            // 直接取 <text> 节点内容
-            string? html = xmldoc.Descendants("text").FirstOrDefault()?.Value;
-
-            if (string.IsNullOrEmpty(html))
+            // ★ 解析与清洗全是同步的 CPU 活：XDocument.Parse 要把整页 XML 读成树，
+            //   HtmlAgilityPack 的 LoadHtml + 四条 XPath + OuterHtml 又是几遍全树遍历。
+            //   这些代码跑在调用方所在的线程上 —— 下载是从 UI 线程发起的，于是每处理一页
+            //   就卡一次界面。整段丢进线程池，只把结果（清洗后的 HTML、搜索索引文本）拿回来。
+            //   writer（BatchLineWriter）的 Add 内部有锁，跨线程写没问题。
+            var parsed = await Task.Run<(string? Error, string? CleanHtml, string? PlainText)>(() =>
             {
-                // API 没给 <text>：这个词条在 wiki 上不存在（旧标题 / 已删除 / 已改名），或者 API 本身报错。
-                // 以前这里把 null 直接丢给 LoadHtml → ArgumentNullException：重试 5 次全白跑，还会永久留在失败列表里。
-                // 现在借用调度器已有的"404 = 不存在"通道（见 BatchTaskScheduler 的 onNotFound）：只记一条日志、不再重试。
-                string? errorCode = xmldoc.Descendants("error").FirstOrDefault()?.Attribute("code")?.Value;
+                var xmldoc = XDocument.Parse(xml);
+
+                // 直接取 <text> 节点内容
+                var html = xmldoc.Descendants("text").FirstOrDefault()?.Value;
+
+                if (string.IsNullOrEmpty(html))
+                {
+                    // API 没给 <text>：这个词条在 wiki 上不存在（旧标题 / 已删除 / 已改名），或者 API 本身报错。
+                    // 以前这里把 null 直接丢给 LoadHtml → ArgumentNullException：重试 5 次全白跑，还会永久留在失败列表里。
+                    // 现在借用调度器已有的"404 = 不存在"通道（见 BatchTaskScheduler 的 onNotFound）：只记一条日志、不再重试。
+                    var errorCode = xmldoc.Descendants("error").FirstOrDefault()?.Attribute("code")?.Value;
+                    return (errorCode ?? "missing <text>", null, null);
+                }
+
+                var doc = new HtmlDocument();
+                doc.LoadHtml(html);
+                var contentNode = doc.DocumentNode;
+
+                // 拆分为小函数，逻辑更清晰
+                CleanJunkElements(contentNode);
+                ProcessAnchorLinks(contentNode);
+                ProcessAudioTags(contentNode);
+                ProcessImages(contentNode, writer);
+
+                return (null, contentNode.OuterHtml, ExtractSearchableText(contentNode));
+            }, cancellationToken);
+
+            if (parsed.CleanHtml is null)
+            {
                 throw new HttpRequestException(
-                    $"页面不存在或 API 报错：{pageInfo.Title}（{errorCode ?? "missing <text>"}）",
+                    $"页面不存在或 API 报错：{pageInfo.Title}（{parsed.Error}）",
                     null,
                     HttpStatusCode.NotFound);
             }
 
-            var doc = new HtmlDocument();
-            doc.LoadHtml(html);
-            var contentNode = doc.DocumentNode;
-
-            if (contentNode == null) return;
-
-            // 拆分为小函数，逻辑更清晰
-            CleanJunkElements(contentNode);
-            ProcessAnchorLinks(contentNode);
-            ProcessAudioTags(contentNode);
-            ProcessImages(contentNode, writer);
-
             var wikiPage = new WikiPage
             {
                 Title = pageInfo.Title,
-                Content = contentNode.OuterHtml,
+                Content = parsed.CleanHtml,
                 LastModified = pageInfo.LastModified
             };
             await App.ContentDb.SaveItemAsync(wikiPage);
             AppService.InvalidatePageCache();
-            var plainContent = ExtractSearchableText(contentNode);
-            await App.ContentDb.SaveSearchIndexAsync(pageInfo.Title, plainContent);
+            await App.ContentDb.SaveSearchIndexAsync(pageInfo.Title, parsed.PlainText ?? string.Empty);
 
         }
 

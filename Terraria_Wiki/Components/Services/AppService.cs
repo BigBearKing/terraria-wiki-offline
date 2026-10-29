@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 using Terraria_Wiki.Models;
@@ -111,7 +111,8 @@ namespace Terraria_Wiki.Services
                 {
                     try
                     {
-                        Directory.Delete(oldRoot, true);
+                        // 递归删整份旧数据：文件多时要几百毫秒，别压在 UI 线程上。
+                        await Task.Run(() => Directory.Delete(oldRoot, true));
                     }
                     catch (Exception deleteException)
                     {
@@ -478,11 +479,16 @@ namespace Terraria_Wiki.Services
 
         public static async Task WikiRefreshAsync()
         {
-            App.AppStateManager.TabHistory.Clear();
-            if (Application.Current?.Windows.FirstOrDefault()?.Page is MainPage mainPage)
-                await mainPage.ClearWebViewCacheAsync();
-            await IframeBridge.CallJsAsync("ClearPage", "");
-            await IframeBridge.CallJsAsync("BackHome", "");
+            // 任务体现在跑在线程池上（见 AppTaskRunner），而这里要动 MainPage 的原生 WebView
+            // 并且通过 JS 通知 iframe —— 都必须在主线程。
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                App.AppStateManager.TabHistory.Clear();
+                if (Application.Current?.Windows.FirstOrDefault()?.Page is MainPage mainPage)
+                    await mainPage.ClearWebViewCacheAsync();
+                await IframeBridge.CallJsAsync("ClearPage", "");
+                await IframeBridge.CallJsAsync("BackHome", "");
+            });
         }
 
         public static async Task SwitchToTabAsync(string tabId)

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -317,12 +317,16 @@ public sealed class PackageService
     {
         if (meta.AppVersion is null || !Version.TryParse(meta.AppVersion, out var version) || version >= new Version(0, 4))
             return false;
-        var page = Application.Current?.Windows[0].Page;
-        return page is null || await page.DisplayAlertAsync(
-            _loc.Get("DataService.Log.ImportOldVersionTitle"),
-            _loc.Get("DataService.Log.ImportOldVersionDesc", meta.AppVersion, AppInfo.Current.VersionString),
-            _loc.Get("Common.OK"),
-            _loc.Get("Common.Cancel"));
+        // 导入任务跑在线程池上（见 AppTaskRunner），原生确认框要回主线程弹。
+        return await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            var page = Application.Current?.Windows[0].Page;
+            return page is null || await page.DisplayAlertAsync(
+                _loc.Get("DataService.Log.ImportOldVersionTitle"),
+                _loc.Get("DataService.Log.ImportOldVersionDesc", meta.AppVersion, AppInfo.Current.VersionString),
+                _loc.Get("Common.OK"),
+                _loc.Get("Common.Cancel"));
+        });
     }
 
     private async Task ExtractAndVerifyAsync(Func<Task<Stream>> openStream, WikiPackageInfo meta, string importDirectory)

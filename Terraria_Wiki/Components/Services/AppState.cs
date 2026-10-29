@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.JSInterop;
@@ -22,7 +22,19 @@ public class AppState : INotifyPropertyChanged
     public event Action? OnWikiBookSwitched;
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    {
+        var handler = PropertyChanged;
+        if (handler is null) return;
+
+        // ★ 状态现在会被线程池上的任务改（下载 / 导入 / 导出都跑在池线程上），
+        //   而订阅方里既有 InvokeAsync(StateHasChanged) 也有直接调 StateHasChanged 的组件 ——
+        //   后者要求必须在 UI 线程。所以统一在通知源头切回主线程，订阅方不用各自防守。
+        if (MainThread.IsMainThread)
+            handler(this, new PropertyChangedEventArgs(propertyName));
+        else
+            MainThread.BeginInvokeOnMainThread(
+                () => handler(this, new PropertyChangedEventArgs(propertyName)));
+    }
 
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

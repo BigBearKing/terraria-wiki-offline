@@ -16,32 +16,23 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// <returns>返回可读取的本地绝对路径。如果用户取消则返回 null。</returns>
         public static async Task<string> ImportFileAsync(string title = null, FilePickerFileType types = null)
         {
-            var titleText = title ?? App.Localization?.Get("FileHelper.SelectFile") ?? "请选择文件";
-
-            var options = new PickOptions
-            {
-                PickerTitle = titleText,
-                FileTypes = types
-            };
-
-            var result = await FilePicker.Default.PickAsync(options);
-            if (result == null) return null;
-
-
+            var result = await PickFileAsync(title, types);
 
             // 桌面端：直接返回绝对路径
-            return result.FullPath;
-
+            return result?.FullPath;
         }
 
         public static async Task<FileResult> PickFileAsync(string title = null, FilePickerFileType types = null)
         {
             var titleText = title ?? App.Localization?.Get("FileHelper.SelectFile") ?? "请选择文件";
-            return await FilePicker.Default.PickAsync(new PickOptions
-            {
-                PickerTitle = titleText,
-                FileTypes = types
-            });
+
+            // 任务体现在跑在线程池上（AppTaskRunner），而选择框是原生弹窗 —— 必须回主线程去 present。
+            return await MainThread.InvokeOnMainThreadAsync(
+                () => FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = titleText,
+                    FileTypes = types
+                }));
         }
 
         /// <summary>
@@ -58,14 +49,14 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
 
 #if MACCATALYST
             // Mac Catalyst 不能用 UIActivityViewController（见 ExportWithSaveDialogAsync 的说明）
-            await ExportWithSaveDialogAsync(sourceFilePath);
+            await MainThread.InvokeOnMainThreadAsync(() => ExportWithSaveDialogAsync(sourceFilePath));
 #else
             // iOS：系统分享面板里"存储到文件"就能保存
-            await Share.Default.RequestAsync(new ShareFileRequest
+            await MainThread.InvokeOnMainThreadAsync(() => Share.Default.RequestAsync(new ShareFileRequest
             {
                 Title = App.Localization?.Get("FileHelper.ExportFile") ?? "导出文件",
                 File = new ShareFile(sourceFilePath)
-            });
+            }));
 #endif
         }
 
@@ -132,20 +123,23 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         /// </summary>
         public static async Task<string> PickFolderWindowsAsync()
         {
+            // 任务体现在跑在线程池上（见 AppTaskRunner），而文件夹选择器需要在 UI 线程上
+            // 拿窗口句柄并初始化 —— 所以整段回到主线程执行。
+            return await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+                folderPicker.FileTypeFilter.Add("*");
 
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-            folderPicker.FileTypeFilter.Add("*");
+                // 获取 Windows 原生窗口句柄
+                var window = Application.Current?.Windows?[0]?.Handler?.PlatformView as MauiWinUIWindow;
+                if (window == null) return null;
 
-            // 获取 Windows 原生窗口句柄
-            var window = Application.Current?.Windows?[0]?.Handler?.PlatformView as MauiWinUIWindow;
-            if (window == null) return null;
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            return folder?.Path;
-
+                var folder = await folderPicker.PickSingleFolderAsync();
+                return folder?.Path;
+            });
         }
 #endif
 

@@ -118,7 +118,14 @@ public sealed class AppTaskRunner
             _appState.AddActiveTask(new ActiveTaskInfo { Task = task, StartedTime = task.CreatedTime, CanCancel = true });
             taskCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _taskCancellation[task.Id] = taskCancellation;
-            await action(taskCancellation.Token);
+            // ★ 动作体统一丢到线程池执行。任务里的活（HTML 解析清洗、zip 压缩解压、
+            //   sqlite 读写）都是同步的 CPU / IO 重活，之前直接 await 在 UI 线程上跑，
+            //   表现就是下载/导入时界面卡顿。需要 UI 的调用点（加载遮罩、提示框、
+            //   文件选择器、保存对话框）各自负责切回主线程，见 MainPage / FileHelper /
+            //   AndroidFilePicker / PackageService 里的 MainThread 包装。
+            // 注意：这一句之后的所有代码（含 catch / finally 里的回调）仍回到 UI 线程，
+            //      因为 RunCoreAsync 本身是从 UI 线程发起的。
+            await Task.Run(() => action(taskCancellation.Token), taskCancellation.Token);
             if (task.Status is not AppTaskStatus.Paused and not AppTaskStatus.Interrupted)
             {
                 task.Status = AppTaskStatus.Completed;
@@ -159,7 +166,9 @@ public sealed class AppTaskRunner
             {
                 try
                 {
-                    await options.OnCancelled();
+                    // 回调多半在改界面状态，统一回主线程执行（RunCoreAsync 的续体本来就在主线程，
+                    // 但 RunExistingAsync 等入口可能从池线程进来，这层保险不能省）。
+                    await MainThread.InvokeOnMainThreadAsync(() => options.OnCancelled());
                 }
                 catch (Exception callbackError)
                 {
@@ -182,7 +191,7 @@ public sealed class AppTaskRunner
             {
                 try
                 {
-                    await options.OnError(error);
+                    await MainThread.InvokeOnMainThreadAsync(() => options.OnError(error));
                 }
                 catch (Exception callbackError)
                 {
