@@ -17,26 +17,38 @@
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Common.Language")</span>
                 </div>
-                <CustomSelect TValue="string"
-                              Options="LanguageOptions"
-                              @bind-Value="SelectedLanguage" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetLanguage"
+                                       Modified="SelectedLanguage != DefaultLanguage" />
+                    <CustomSelect TValue="string"
+                                  Options="LanguageOptions"
+                                  @bind-Value="SelectedLanguage" />
+                </div>
             </div>
 
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.DefaultColorTheme")</span>
                 </div>
-                <CustomSelect TValue="string"
-                              Options="AppThemeOptions"
-                              @bind-Value="AppTheme" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetAppTheme"
+                                       Modified="AppTheme != DefaultTheme" />
+                    <CustomSelect TValue="string"
+                                  Options="AppThemeOptions"
+                                  @bind-Value="AppTheme" />
+                </div>
             </div>
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.ContentColorTheme")</span>
                 </div>
-                <CustomSelect TValue="string"
-                              Options="ContentThemeOptions"
-                              @bind-Value="ContentTheme" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetContentTheme"
+                                       Modified="ContentTheme != DefaultTheme" />
+                    <CustomSelect TValue="string"
+                                  Options="ContentThemeOptions"
+                                  @bind-Value="ContentTheme" />
+                </div>
             </div>
         </div>
 
@@ -88,7 +100,11 @@
                         <span class="setting-name">@Loc.Get("Settings.SideButtonBack")</span>
                         <span class="setting-desc">@Loc.Get("Settings.SideButtonBackDesc")</span>
                     </div>
-                    <SwitchToggle @bind-Checked="IsSideButtonBack" />
+                    <div class="setting-controls">
+                        <SettingResetButton OnClick="ResetSideButtonBack"
+                                           Modified="IsSideButtonBack != DefaultSideButtonBack" />
+                        <SwitchToggle @bind-Checked="IsSideButtonBack" />
+                    </div>
                 </div>
             </div>
         }
@@ -98,9 +114,13 @@
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.MaxSearchCount")</span>
                 </div>
-                <CustomSelect TValue="int"
-                              Options="MaxSearchItemCountOptions"
-                              @bind-Value="MaxSearchItemCount" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetMaxSearchItemCount"
+                                       Modified="MaxSearchItemCount != DefaultMaxSearchItemCount" />
+                    <CustomSelect TValue="int"
+                                  Options="MaxSearchItemCountOptions"
+                                  @bind-Value="MaxSearchItemCount" />
+                </div>
             </div>
         </div>
 
@@ -111,33 +131,49 @@
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.PageDownloadThreads")</span>
                 </div>
-                <CustomSelect TValue="int"
-                              Options="PageConcurrencyOptions"
-                              @bind-Value="PageConcurrency" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetPageConcurrency"
+                                       Modified="PageConcurrency != DefaultPageConcurrency" />
+                    <CustomSelect TValue="int"
+                                  Options="PageConcurrencyOptions"
+                                  @bind-Value="PageConcurrency" />
+                </div>
             </div>
 
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.AssetDownloadThreads")</span>
                 </div>
-                <CustomSelect TValue="int"
-                              Options="ResConcurrencyOptions"
-                              @bind-Value="ResConcurrency" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetResConcurrency"
+                                       Modified="ResConcurrency != DefaultResConcurrency" />
+                    <CustomSelect TValue="int"
+                                  Options="ResConcurrencyOptions"
+                                  @bind-Value="ResConcurrency" />
+                </div>
             </div>
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.ErrorRetryCount")</span>
                 </div>
-                <CustomSelect TValue="int"
-                              Options="MaxRetryAttemptsOptions"
-                              @bind-Value="MaxRetryAttempts" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetMaxRetryAttempts"
+                                       Modified="MaxRetryAttempts != DefaultMaxRetryAttempts" />
+                    <CustomSelect TValue="int"
+                                  Options="MaxRetryAttemptsOptions"
+                                  @bind-Value="MaxRetryAttempts" />
+                </div>
             </div>
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-name">@Loc.Get("Settings.AutoUpdatePages")</span>
                     <span class="setting-desc">@Loc.Get("Settings.AutoUpdatePagesDesc")</span>
                 </div>
-                <SwitchToggle @bind-Checked="AutoUpdatePages" />
+                <div class="setting-controls">
+                    <SettingResetButton OnClick="ResetAutoUpdatePages"
+                                       Modified="AutoUpdatePages != DefaultAutoUpdatePages" />
+                    <SwitchToggle @bind-Checked="AutoUpdatePages" />
+                </div>
             </div>
             <div class="setting-item">
                 <div class="setting-info">
@@ -182,9 +218,13 @@
                         <span class="setting-name">@Loc.Get("Settings.DataLocationMode")</span>
                         <span class="setting-desc">@Loc.Get("Settings.DataLocationDesc")</span>
                     </div>
-                    <CustomSelect TValue="StorageLocationMode"
-                                  Options="StorageLocationOptions"
-                                  @bind-Value="PendingStorageMode" />
+                    <div class="setting-controls">
+                        <SettingResetButton OnClick="ResetStorageMode"
+                                           Modified="PendingStorageMode != StorageLocationMode.Default" />
+                        <CustomSelect TValue="StorageLocationMode"
+                                      Options="StorageLocationOptions"
+                                      @bind-Value="PendingStorageMode" />
+                    </div>
                 </div>
 
                 <div class="setting-item">
@@ -483,10 +523,19 @@
         }
     }
 
+    // ---- 各项设置的默认值：Preferences 的 getter 与「恢复默认」按钮共用同一份，改默认值只动这里 ----
+    private const bool DefaultSideButtonBack = true;
+    private const int DefaultPageConcurrency = 2;
+    private const int DefaultResConcurrency = 10;
+    private const int DefaultMaxRetryAttempts = 5;
+    private const int DefaultMaxSearchItemCount = 50;
+    private const bool DefaultAutoUpdatePages = false;
+    private const string DefaultTheme = "auto";
+    private const string DefaultLanguage = LocalizationService.AutoLanguageCode;
+
     private bool IsSideButtonBack
     {
-        // 页面一加载，就会执行 get，从存储中读取状态。如果之前没存过，默认返回 false（关）吗
-        get => Preferences.Default.Get("IsSideButtonBack", true);
+        get => Preferences.Default.Get("IsSideButtonBack", DefaultSideButtonBack);
 
         // 当用户点击开关时，会自动执行 set，把新的状态存入手机存储
         set
@@ -496,7 +545,7 @@
     }
     private int PageConcurrency
     {
-        get => Preferences.Default.Get("PageConcurrency", 2);
+        get => Preferences.Default.Get("PageConcurrency", DefaultPageConcurrency);
         set
         {
 
@@ -505,7 +554,7 @@
     }
     private int ResConcurrency
     {
-        get => Preferences.Default.Get("ResConcurrency", 10);
+        get => Preferences.Default.Get("ResConcurrency", DefaultResConcurrency);
         set
         {
 
@@ -514,7 +563,7 @@
     }
     private int MaxRetryAttempts
     {
-        get => Preferences.Default.Get("MaxRetryAttempts", 5);
+        get => Preferences.Default.Get("MaxRetryAttempts", DefaultMaxRetryAttempts);
         set
         {
 
@@ -524,13 +573,13 @@
 
     private bool AutoUpdatePages
     {
-        get => Preferences.Default.Get("AutoUpdatePages", false);
+        get => Preferences.Default.Get("AutoUpdatePages", DefaultAutoUpdatePages);
         set => Preferences.Default.Set("AutoUpdatePages", value);
     }
 
     private int MaxSearchItemCount
     {
-        get => Preferences.Default.Get("MaxSearchItemCount", 50);
+        get => Preferences.Default.Get("MaxSearchItemCount", DefaultMaxSearchItemCount);
         set
         {
 
@@ -544,6 +593,29 @@
         .FirstOrDefault(metadata => metadata.Key == "ApplicationBuildNumber")?.Value
         ?? AppInfo.Current.BuildString;
     private string Author => "BigBearKing";
+    // ---- 「恢复默认」：把对应设置写回默认值。setter 内部已经负责落盘，这里只管赋值 ----
+
+    private void ResetLanguage() => SelectedLanguage = DefaultLanguage;
+
+    private void ResetAppTheme() => AppTheme = DefaultTheme;
+
+    private void ResetContentTheme() => ContentTheme = DefaultTheme;
+
+    private void ResetSideButtonBack() => IsSideButtonBack = DefaultSideButtonBack;
+
+    private void ResetMaxSearchItemCount() => MaxSearchItemCount = DefaultMaxSearchItemCount;
+
+    private void ResetPageConcurrency() => PageConcurrency = DefaultPageConcurrency;
+
+    private void ResetResConcurrency() => ResConcurrency = DefaultResConcurrency;
+
+    private void ResetMaxRetryAttempts() => MaxRetryAttempts = DefaultMaxRetryAttempts;
+
+    private void ResetAutoUpdatePages() => AutoUpdatePages = DefaultAutoUpdatePages;
+
+    /// <summary>存储位置只重置"待应用"的选择，真正迁移仍要用户点「应用」。</summary>
+    private void ResetStorageMode() => PendingStorageMode = StorageLocationMode.Default;
+
     private async Task ImportData()
     {
         await PackageService.ImportDataAsync();

@@ -20,6 +20,7 @@
     "Common.View": "查看",
     "Common.Search": "搜索",
     "Common.Version": "当前版本",
+    "Common.ResetDefault": "恢复默认",
     "Common.Apply": "应用",
     "Common.FindInPage": "页内搜索",
     "WebViewUnavailablePage.WebUnavailableTitle": "无法启动应用",

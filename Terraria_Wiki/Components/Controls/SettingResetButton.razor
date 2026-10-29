@@ -1,0 +1,29 @@
+@* 设置项右侧的「恢复默认」图标键：放在控件（下拉 / 开关）左边。
+   只有"当前值与默认值不同"时才渲染 —— 已经是默认值时它没有任何意义，
+   显示出来只是多一个灰按钮。判断交给调用方传表达式，组件不碰具体设置。
+
+   图标是图标集里的 reset（环形箭头）。 *@
+
+@if (Modified)
+{
+    <IconButton Size="IconButtonSize.Square24"
+                Icon="reset"
+                IconSize="16"
+                Tone="IconButtonTone.Default"
+                Class="setting-reset"
+                Title="@App.Localization!.Get("Common.ResetDefault")"
+                OnClick="OnClick" />
+}
+
+@code {
+    /// <summary>点下去要做的复位动作（把对应设置写回默认值）。</summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// 当前值是否与默认值不同；为 false 时不渲染按钮。
+    /// 调用方直接传比较表达式，例如 <c>Modified="PageConcurrency != DefaultPageConcurrency"</c>。
+    /// </summary>
+    [Parameter]
+    public bool Modified { get; set; }
+}

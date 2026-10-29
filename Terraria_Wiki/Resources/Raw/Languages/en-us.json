@@ -20,6 +20,7 @@
     "Common.View": "View",
     "Common.Search": "Search",
     "Common.Version": "Current Version",
+    "Common.ResetDefault": "Reset to default",
     "Common.Apply": "Apply",
     "Common.FindInPage": "Find in page",
     "WebViewUnavailablePage.WebUnavailableTitle": "Unable to start the app",

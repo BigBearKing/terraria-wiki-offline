@@ -48,3 +48,13 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
+
+/* 右侧控件组：左边「恢复默认」图标键、右边下拉/开关。
+   包一层是为了让 .setting-item 的 space-between 仍然只有"文字 | 控件组"两栏，
+   否则重置键会被摆到中间。 */
+.setting-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
