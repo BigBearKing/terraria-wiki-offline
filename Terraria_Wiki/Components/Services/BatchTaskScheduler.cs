@@ -63,6 +63,11 @@ public sealed class BatchTaskScheduler<T>
                         await processTask(workerId, task, cancellationToken);
                         break;
                     }
+                    catch (DownloadStoppedException)
+                    {
+                        // 整个任务停下（目前只有断网）：当前条目不记失败，也不继续下一条。
+                        throw;
+                    }
                     catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                     {
                         if (onNotFound is not null)
@@ -83,6 +88,14 @@ public sealed class BatchTaskScheduler<T>
                         await Task.Delay(1000, cancellationToken);
                     }
                 }
+            }
+            catch (DownloadStoppedException)
+            {
+                // ★ 必须在这里再放行一次：内层那个 catch 只是让"当前条目"不进失败列表，
+                //   真正让它终止的是这里 —— 否则异常会掉进下面的 catch(Exception)，
+                //   被当成普通失败记一条、然后 worker 继续跑下一条，
+                //   整队条目会在几秒内被静默刷成失败，最后还报"全部完成"。
+                throw;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

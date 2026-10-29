@@ -1,5 +1,6 @@
 using LuYao.TlsClient;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Terraria_Wiki.Services;
@@ -44,6 +45,42 @@ public static class NetworkService
 
     public static Task<bool> IsNetworkAvailableAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(Connectivity.Current.NetworkAccess == NetworkAccess.Internet);
+
+    /// <summary>
+    /// 判断一次失败是不是"连不上"这类网络故障（而不是服务端返回了错误）。
+    ///
+    /// 用异常本身当判据：断网时 .NET 抛的是带
+    /// <see cref="HttpRequestError.ConnectionError"/> / <see cref="HttpRequestError.NameResolutionError"/>
+    /// 的 <see cref="HttpRequestException"/>，或者 <see cref="SocketException"/>、超时；
+    /// 而 404 / 500 / 403 也是 HttpRequestException，但 HttpRequestError 是 Unknown —— 那种只该重试，不该暂停。
+    /// 平台 handler（NSUrlSession / AndroidMessageHandler）偶尔不填 HttpRequestError，
+    /// 所以调用方还会叠加一次 Connectivity 判断兜底。
+    /// </summary>
+    public static bool IsConnectivityFailure(Exception? exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            switch (current)
+            {
+                case HttpRequestException
+                {
+                    HttpRequestError: HttpRequestError.NameResolutionError
+                        or HttpRequestError.ConnectionError
+                        or HttpRequestError.SecureConnectionError
+                        or HttpRequestError.ProxyTunnelError
+                }:
+                case SocketException:
+                case TimeoutException:
+                    return true;
+
+                // 断网时请求常常是"卡到超时"才失败，这类也按网络问题处理
+                case TaskCanceledException:
+                    return true;
+            }
+        }
+
+        return false;
+    }
 
     // ---- 各平台的"自称"必须和该平台真正用的 TLS 栈对得上 ----
     //   Windows：走 LuYao.TlsClient，ClientHello 是 Chrome 131 桌面版 → 桌面 Chrome 的 UA + Client Hints

@@ -296,6 +296,8 @@
     "DataService.Log.RedirectsFetchFailed": "重定向列表获取失败（已重试 {_maxRetryAttempts} 次）：{ex.Message}",
     "DataService.Log.RedirectsFetchError": "获取重定向列表出错，正在重试 ({retry}/{_maxRetryAttempts})...",
     "DataService.Log.ResourceNotFound": "[线程 {workerId}] 资源不存在，已停止重试且不会加入失败列表：{line}",
+    "DataService.Log.NetworkUnavailableStopping": "网络不可用，停止下载：{url}（{reason}）",
+    "DataService.Log.DownloadStoppedNoNetwork": "网络不可用，下载已停止（进度已保留，联网后可继续）",
     "DataService.Log.RetryingFailed": "[线程 {workerId}] 正在重试失败项目（第 {retry}/{_maxRetryAttempts} 次）：{line}",
     "DataService.Log.DownloadPagesStart": "开始下载页面，共 {totalCount} 个",
     "DataService.Log.PageCompleted": "[线程 {workerId}] 页面下载完成（{c}/{totalCount}）：{page.Title}",

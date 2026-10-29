@@ -210,6 +210,7 @@ namespace Terraria_Wiki.Services
                     task,
                     async token =>
                     {
+                        _downloadStopped = false;
                         ConfigureDownloadPaths(task);
                         ConfigurePublicFailedPaths(wikiId);
                         if (task.TaskType == AppTaskType.DownloadResources && !File.Exists(_resListPath) && File.Exists(existingResourceList))
@@ -250,6 +251,11 @@ namespace Terraria_Wiki.Services
 
         private async Task MarkNetworkUnavailableAsync(AppTask task)
         {
+            // 多个 worker 会同时走到这里：只让第一个把状态写库并提示，其余直接返回，
+            // 否则会排队弹好几次"网络不可用"。
+            if (task.Status == AppTaskStatus.Paused)
+                return;
+
             task.Status = task.Phase == AppTaskPhase.FetchingLists
                 ? AppTaskStatus.Failed
                 : AppTaskStatus.Paused;
@@ -262,23 +268,50 @@ namespace Terraria_Wiki.Services
                 _loc.Get("DataService.NetworkUnavailable"));
         }
 
+        /// <summary>
+        /// 本次下载是否已经因为断网停下。第一个 worker 判定断网后置位，
+        /// 其余 worker 随即跟着停（不再各自去发请求、也不各自弹一次提示）。
+        /// </summary>
+        private volatile bool _downloadStopped;
+
         private async Task<bool> CheckNetworkBeforeRetryAsync(
             int workerId, BatchLineItem item, int retry, Exception ex, CancellationToken token)
         {
-            _log.Error(
-                _loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line),
-                ex);
-            if (await NetworkService.IsNetworkAvailableAsync(token))
-                return true;
+            // 用户主动取消：不算网络问题，交给调度器的取消通道
+            token.ThrowIfCancellationRequested();
 
+            // 已经判定过断网：其余 worker 直接跟着停
+            if (_downloadStopped)
+                throw new DownloadStoppedException();
+
+            // ★ 出错先判"是不是网络断了"：
+            //   · 异常本身是连接类故障（DNS / 连不上 / TLS 握手 / 超时）→ 停；
+            //   · 异常看着是服务端错误，但系统报告当前无网络 → 也停；
+            //   · 都不成立 → 只是这一条失败，交给调度器 1 秒后重试。
+            //
+            // 断网这条分支刻意不打异常堆栈：断网时每条失败都带 15 行堆栈，
+            // 8~10 个 worker 同时失败，一秒就能刷出几百行（实测一次断网 4.9 万行，
+            // 系统日志还报了 "QUARANTINED DUE TO HIGH LOGGING VOLUME"）。
+            // 这里只留一行"哪条 URL、什么原因"，堆栈对断网没有诊断价值。
+            if (!NetworkService.IsConnectivityFailure(ex) && await NetworkService.IsNetworkAvailableAsync(token))
+            {
+                _log.Error(
+                    _loc.Get("DataService.Log.RetryingFailed", workerId, retry, _maxRetryAttempts, item.Line),
+                    ex);
+                return true;
+            }
+
+            _log.Error(_loc.Get("DataService.Log.NetworkUnavailableStopping", item.Line, ex.Message));
+
+            _downloadStopped = true;
             if (_activeDownloadTask is not null)
                 await MarkNetworkUnavailableAsync(_activeDownloadTask);
             else
                 App.AppStateManager?.TriggerAlert(
                     _loc.Get("Common.Notice"),
                     _loc.Get("DataService.NetworkUnavailable"));
-            token.ThrowIfCancellationRequested();
-            return false;
+
+            throw new DownloadStoppedException();
         }
 
         private static void MergeAndDeduplicateResourceLists(string targetPath, string additionalPath)
@@ -299,7 +332,24 @@ namespace Terraria_Wiki.Services
                 File.Delete(tempPath);
         }
 
+        /// <summary>
+        /// 下载主体。断网时 <see cref="DownloadStoppedException"/> 会从调度器一路上浮到这里：
+        /// 任务早已被标成 Paused，这里直接返回 —— 不跑后处理、不清理待续清单，
+        /// 用户联网后点继续/重试就能接着下。
+        /// </summary>
         private async Task ExecuteDownloadAsync(AppTask task, CancellationToken token)
+        {
+            try
+            {
+                await ExecuteDownloadCoreAsync(task, token);
+            }
+            catch (DownloadStoppedException)
+            {
+                _log.Info(_loc.Get("DataService.Log.DownloadStoppedNoNetwork"));
+            }
+        }
+
+        private async Task ExecuteDownloadCoreAsync(AppTask task, CancellationToken token)
         {
             var book = App.AppStateManager!.ActiveWikiBook;
             if (task.TaskType != AppTaskType.DownloadResources)

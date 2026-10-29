@@ -296,6 +296,8 @@
     "DataService.Log.RedirectsFetchFailed": "Redirect list fetch failed (retried {_maxRetryAttempts} times): {ex.Message}",
     "DataService.Log.RedirectsFetchError": "Redirect list fetch error, retrying ({retry}/{_maxRetryAttempts})...",
     "DataService.Log.ResourceNotFound": "[Worker {workerId}] Resource not found; retry stopped and item will not be added to the failed list: {line}",
+    "DataService.Log.NetworkUnavailableStopping": "Network unavailable; stopping the download: {url} ({reason})",
+    "DataService.Log.DownloadStoppedNoNetwork": "Network unavailable; download stopped (progress kept, resume when back online)",
     "DataService.Log.RetryingFailed": "[Worker {workerId}] Retrying failed item ({retry}/{_maxRetryAttempts}): {line}",
     "DataService.Log.DownloadPagesStart": "Starting page download, {totalCount} total",
     "DataService.Log.PageCompleted": "[Worker {workerId}] Page downloaded ({c}/{totalCount}): {page.Title}",
