@@ -13,7 +13,7 @@
 
     @* 容器、正文排版、"加载中 / 未找到"两种占位都交给共享的 TextPanel
        （样式见 Components/Shared/TextPanel.razor.css）。 *@
-    <TextPanel Content="_content"
+    <TextPanel Content="@_content"
                Loading="_loading"
                LoadingText="@Loc.Get("Licenses.Loading")"
                EmptyText="@Loc.Get("Licenses.NotFound")" />
