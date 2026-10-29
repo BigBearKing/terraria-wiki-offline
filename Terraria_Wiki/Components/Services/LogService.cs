@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Threading.Channels;
 
 namespace Terraria_Wiki.Services
@@ -94,11 +94,13 @@ namespace Terraria_Wiki.Services
 
         public void Error(string message, Exception ex = null)
         {
-            // 如果有异常对象，把异常类型和简短消息也带上
+            // 只留"异常类型: 消息"，不写堆栈。
+            //   · 批量失败时一秒能打几十条，一条堆栈十几行 —— 实测一次断网就把日志刷到 4.9 万行，
+            //     连系统日志都报 HIGH LOGGING VOLUME；
+            //   · 日志格式是"一条消息一行"（_lineOffsets 每条消息只记一个偏移），
+            //     带换行的堆栈会让偏移与文件物理行错位，日志面板里内容会对不上。
             var errorDetail = ex != null ? $" ({ex.GetType().Name}: {ex.Message})" : "";
-            // ★ AOT 排查：把完整堆栈也落盘，否则 NativeAOT 下的反射/序列化问题无从定位。
-            var stack = ex?.StackTrace;
-            AppendLog($"[ERROR] {message}{errorDetail}{(string.IsNullOrEmpty(stack) ? "" : Environment.NewLine + stack)}");
+            AppendLog($"[ERROR] {message}{errorDetail}");
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-namespace Terraria_Wiki.Services;
+﻿namespace Terraria_Wiki.Services;
 
 public sealed class GlobalExceptionHandler
 {
@@ -51,8 +51,8 @@ public sealed class GlobalExceptionHandler
                 foreach (var inner in agg.InnerExceptions)
                     sb.Append("\n      * inner[").Append(i++).Append("] ").Append(inner.GetType().FullName).Append(": ").Append(inner.Message);
             }
-            if (!string.IsNullOrEmpty(ex.StackTrace))
-                sb.Append("\n      STACK: ").Append(ex.StackTrace);
+            // 不拼堆栈：日志只保留"类型 + 消息 + 内层链"，足够定位是哪一层抛的，
+            // 又不至于把一次崩溃写成几十行。
             ex = ex.InnerException;
             depth++;
         }
