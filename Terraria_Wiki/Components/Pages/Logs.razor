@@ -1,0 +1,155 @@
+@page "/settings/logs"
+@implements IDisposable
+@using Terraria_Wiki.Services
+@inject AppTaskRunner TaskRunner
+
+@* 设置 → 日志 → 查看日志：列出当前会话与 LogHistory 里归档的日志。
+   列表版式与「开源许可」一致（RowButton 卡片），但点开不跳页面 ——
+   直接交给系统查看器（Quick Look / 默认程序）打开，省掉一个自绘详情页。
+   导出与清空都放在页头：「看得见日志、顺手就能处理」，不用回设置里找。 *@
+
+<div class="page-anim page-content">
+
+    <PageHeader Title="@Loc.Get("Settings.ViewLogs")">
+        <div class="log-file-actions">
+            <ActionButton Size="ButtonSize.Text" Tone="ButtonTone.Link" OnClick="ExportLogAsync">
+                @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ExportLog)
+                    ? AppState.Tasks[AppTaskType.ExportLog].GetProcessingText(Loc)
+                    : Loc.Get("Common.Export"))
+            </ActionButton>
+            <ActionButton Size="ButtonSize.Text" Tone="ButtonTone.Link" OnClick="ClearLogsAsync">
+                @Loc.Get("Logs.Clear")
+            </ActionButton>
+        </div>
+    </PageHeader>
+
+    <div class="list-container log-file-list">
+        @if (_files is null)
+        {
+            <div class="log-file-empty">@Loc.Get("Logs.Loading")</div>
+        }
+        else if (_files.Count == 0)
+        {
+            <div class="log-file-empty">@Loc.Get("Logs.Empty")</div>
+        }
+        else
+        {
+            @foreach (var file in _files)
+            {
+                <RowButton Variant="RowVariant.Card" ContentGap="12" Spacing="12"
+                           OnClick="() => OpenAsync(file)">
+                    <div class="log-file-info">
+                        <div class="log-file-title">@GetTitle(file)</div>
+                        <div class="log-file-meta">@GetMeta(file)</div>
+                    </div>
+                    <span class="log-file-action sub-text">@Loc.Get("Logs.Open")</span>
+                </RowButton>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<LogService.LogFileInfo>? _files;
+
+    protected override void OnInitialized() => Loc.OnChange += RefreshUI;
+
+    public void Dispose() => Loc.OnChange -= RefreshUI;
+
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_files is not null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    /// <summary>重新枚举日志文件（清空之后要刷新列表）。</summary>
+    private async Task ReloadAsync()
+    {
+        _files = App.LogManager is null
+            ? []
+            : await App.LogManager.GetLogFilesAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetTitle(LogService.LogFileInfo file)
+        => file.IsCurrent
+            ? Loc.Get("Logs.CurrentSession")
+            : file.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss");
+
+    private string GetMeta(LogService.LogFileInfo file)
+    {
+        var size = FormatSize(file.SizeBytes);
+        return file.IsCurrent
+            ? $"{Loc.Get("Logs.Writing")} · {size}"
+            : $"{file.FileName} · {size}";
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes / (1024.0 * 1024.0):0.#} MB"
+    };
+
+    /// <summary>用系统查看器打开这份日志（iOS/macOS 是 Quick Look，Windows 是默认程序）。</summary>
+    private async Task OpenAsync(LogService.LogFileInfo file)
+    {
+        var path = App.LogManager?.GetLogFilePath(file.FileName);
+        if (path is null)
+        {
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Logs.OpenFailed"));
+            return;
+        }
+
+        try
+        {
+            await Launcher.Default.OpenAsync(new OpenFileRequest(
+                GetTitle(file),
+                new ReadOnlyFile(path)));
+        }
+        catch (Exception ex)
+        {
+            App.LogManager?.Error($"Open log file '{file.FileName}' failed: {ex}");
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Logs.OpenFailed"));
+        }
+    }
+
+    /// <summary>导出日志（打包成 zip）：Mac Catalyst 弹保存对话框，iOS 走系统分享。</summary>
+    private async Task ExportLogAsync()
+    {
+        await TaskRunner.RunAsync(
+            AppTaskType.ExportLog,
+            _ => App.LogManager!.ExportLogsAsync());
+    }
+
+    /// <summary>
+    /// 清空归档日志（当前会话那份正在写入，不动它）。从设置页搬过来的，
+    /// 确认框沿用原来那对文案；删完刷新列表。
+    /// </summary>
+    private async Task ClearLogsAsync()
+    {
+        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(
+            Loc.Get("Settings.ConfirmDeleteLog"),
+            Loc.Get("Settings.ConfirmDeleteLogDesc"),
+            Loc.Get("Common.OK"),
+            Loc.Get("Common.Cancel"));
+
+        if (!confirm)
+            return;
+
+        await TaskRunner.RunAsync(
+            AppTaskType.DeleteLog,
+            _ =>
+            {
+                App.LogManager?.DeleteLogs();
+                return Task.CompletedTask;
+            });
+
+        await ReloadAsync();
+    }
+}

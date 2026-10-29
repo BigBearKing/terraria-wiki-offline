@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Threading.Channels;
 
 namespace Terraria_Wiki.Services
@@ -259,6 +259,78 @@ namespace Terraria_Wiki.Services
             }
 
             return result;
+        }
+
+        /// <summary>一条可查看的日志：当前会话日志，或 LogHistory 里归档的历史日志。</summary>
+        /// <param name="FileName">文件名（详情页路由用）。只暴露名字，不暴露绝对路径。</param>
+        /// <param name="IsCurrent">是否是当前会话（正在写入的那份）。</param>
+        public sealed record LogFileInfo(string FileName, bool IsCurrent, long SizeBytes, DateTime UpdatedAt);
+
+        /// <summary>
+        /// 列出可查看的日志文件：当前会话排在首位，归档的按时间倒序。
+        /// 要枚举目录，放线程池里跑，别卡 UI。
+        /// </summary>
+        public Task<IReadOnlyList<LogFileInfo>> GetLogFilesAsync()
+            => Task.Run<IReadOnlyList<LogFileInfo>>(() =>
+            {
+                var list = new List<LogFileInfo>();
+                try
+                {
+                    if (File.Exists(_activeLogPath))
+                    {
+                        var info = new FileInfo(_activeLogPath);
+                        list.Add(new LogFileInfo(info.Name, true, info.Length, info.LastWriteTime));
+                    }
+
+                    if (Directory.Exists(_archiveFolderPath))
+                    {
+                        foreach (var path in Directory.EnumerateFiles(_archiveFolderPath, "*.txt"))
+                        {
+                            var info = new FileInfo(path);
+                            list.Add(new LogFileInfo(info.Name, false, info.Length, info.LastWriteTime));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Error($"List log files failed: {ex}");
+                }
+
+                return list
+                    .OrderByDescending(x => x.IsCurrent)
+                    .ThenByDescending(x => x.UpdatedAt)
+                    .ToList();
+            });
+
+        /// <summary>
+        /// 把清单里的文件名解析成绝对路径，给"用系统查看器打开"用。
+        /// 只接受 <see cref="GetLogFilesAsync"/> 列得出来的文件名 —— 挡住 "../" 之类的路径穿越。
+        /// 当前会话文件正在被写入，但写入端是以 FileShare.Read 打开的，别处只读打开没问题。
+        /// </summary>
+        public string? GetLogFilePath(string? fileName) => ResolveLogFilePath(fileName);
+
+        /// <summary>把文件名解析成绝对路径；不是"清单里列得出来的文件"就返回 null。</summary>
+        private string? ResolveLogFilePath(string? fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return null;
+
+            // 只允许纯文件名：带目录分隔符的一律拒绝
+            var name = Path.GetFileName(fileName);
+            if (!string.Equals(name, fileName, StringComparison.Ordinal))
+                return null;
+
+            if (string.Equals(name, Path.GetFileName(_activeLogPath), StringComparison.OrdinalIgnoreCase))
+                return File.Exists(_activeLogPath) ? _activeLogPath : null;
+
+            var archivePath = Path.Combine(_archiveFolderPath, name);
+            if (!File.Exists(archivePath))
+                return null;
+
+            // 二次确认：拼出来的路径必须在归档目录里
+            return Path.GetFullPath(archivePath).StartsWith(Path.GetFullPath(_archiveFolderPath), StringComparison.Ordinal)
+                ? archivePath
+                : null;
         }
 
         /// <summary>

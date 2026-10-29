@@ -1,0 +1,54 @@
+/* 日志列表页：与许可列表（Licenses.razor.css）同一套取值，
+   卡片内部的标题 / 副标题样式归本页面作用域。
+
+   行间距用 RowButton 的 Spacing 参数表达（写在 .rb + .rb 的 margin-top 上），
+   容器这里必须 gap: 0 —— 两处都设会叠成 24px，且第一行也会被容器 gap 顶开。 */
+.log-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 0 max(12px, var(--safe-area-bottom));
+}
+
+.log-file-empty {
+    padding: 24px 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* flex: 1 是关键：占满除"打开"之外的宽度，右侧那段才会被推到最右边
+   （许可列表的 .license-card-info 也是这么写的）。 */
+.log-file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.log-file-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.log-file-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 右侧"打开"（文字，不用图标）；字号/颜色沿用全局 .sub-text */
+.log-file-action {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+/* 页头右侧的两个操作（导出 / 清空）*/
+.log-file-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}

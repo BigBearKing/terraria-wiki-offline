@@ -218,22 +218,15 @@
                 <span class="category-title">@Loc.Get("Common.Log")</span>
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">@Loc.Get("Settings.ExportLog")</span>
-                        <span class="setting-desc">@Loc.Get("Settings.ExportLogDesc")</span>
+                        <span class="setting-name">@Loc.Get("Settings.ViewLogs")</span>
+                        <span class="setting-desc">@Loc.Get("Settings.ViewLogsDesc")</span>
                     </div>
-                    <ActionButton OnClick="ExportLog">
-                        @Loc.Get("Common.Export")
+                    <ActionButton OnClick="OpenLogs">
+                        @Loc.Get("Common.View")
                     </ActionButton>
                 </div>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">@Loc.Get("Settings.DeleteLog")</span>
-                        <span class="setting-desc">@Loc.Get("Settings.DeleteLogDesc")</span>
-                    </div>
-                    <ActionButton OnClick="DeleteLog">
-                        @Loc.Get("Settings.DeleteLog")
-                    </ActionButton>
-                </div>
+                @* 导出与清空都在「查看日志」列表页顶部：那里看得到具体是哪几份日志，
+                   顺手就能处理，不必再回设置里找。 *@
             </div>
             <div class="category-card">
                 <span class="category-title">@Loc.Get("Settings.About")</span>
@@ -556,28 +549,6 @@
         await PackageService.ImportDataAsync();
     }
 
-    private async Task ExportLog()
-    {
-        await TaskRunner.RunAsync(
-            AppTaskType.ExportLog,
-            _ => App.LogManager!.ExportLogsAsync());
-    }
-
-    private async Task DeleteLog()
-    {
-        bool confirm = await Application.Current.Windows[0].Page.DisplayAlertAsync(Loc.Get("Settings.ConfirmDeleteLog"), Loc.Get("Settings.ConfirmDeleteLogDesc"), Loc.Get("Common.OK"), Loc.Get("Common.Cancel"));
-        if (confirm)
-        {
-            await TaskRunner.RunAsync(
-                AppTaskType.DeleteLog,
-                _ =>
-                {
-                    App.LogManager?.DeleteLogs();
-                    return Task.CompletedTask;
-                });
-        }
-    }
-
     private async Task CheckUpdateCommand()
     {
         await TaskRunner.RunAsync(
@@ -629,6 +600,12 @@
     private void OpenCloudDriveResources()
     {
         AppService.NavigateTo("settings/drives");
+    }
+
+    /// <summary>设置 → 日志 → 查看日志：进 Logs 列表页。</summary>
+    private void OpenLogs()
+    {
+        AppService.NavigateTo("settings/logs");
     }
 
     private async Task ClearFailedList()
