@@ -1,5 +1,9 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Text;
+#if MACCATALYST
+using Foundation;
+using UIKit;
+#endif
 namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
 {
     public static class FileHelper
@@ -41,7 +45,7 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
         }
 
         /// <summary>
-        /// 导出文件（Windows 弹出文件夹选择，移动端/Mac 调用原生分享保存）
+        /// 导出文件（Windows 弹出文件夹选择，iOS 走系统分享面板，Mac Catalyst 走原生保存对话框）
         /// </summary>
         /// <param name="sourceFilePath">要导出的源文件全路径（必须存在）</param>
         public static async Task ExportFileAppleAsync(string sourceFilePath)
@@ -52,14 +56,74 @@ namespace Terraria_Wiki.Services // 记得改成你项目的命名空间
                 return;
             }
 
-            // iOS 端及 Mac 端：调用系统级的“分享/存储为”功能
+#if MACCATALYST
+            // Mac Catalyst 不能用 UIActivityViewController（见 ExportWithSaveDialogAsync 的说明）
+            await ExportWithSaveDialogAsync(sourceFilePath);
+#else
+            // iOS：系统分享面板里"存储到文件"就能保存
             await Share.Default.RequestAsync(new ShareFileRequest
             {
                 Title = App.Localization?.Get("FileHelper.ExportFile") ?? "导出文件",
                 File = new ShareFile(sourceFilePath)
             });
-
+#endif
         }
+
+#if MACCATALYST
+        /// <summary>
+        /// Mac Catalyst 的导出：弹原生保存对话框（UIDocumentPickerViewController 的导出模式）。
+        ///
+        /// 为什么不用 Share（UIActivityViewController）：
+        ///   · 它的完成回调在 Catalyst 上会把返回项按 NSExtensionItem[] 反序列化，而"存储到文件"
+        ///     这类服务返回的是 NSURL，于是抛 System.InvalidCastException 把整个应用打崩
+        ///     （崩溃栈落在 ShareSheet → UINSShareSheetController → SDUIActivityViewControllerCompletion）；
+        ///   · 而且 Catalyst 的分享面板里本来就没有"存储到文件"这一项，用户根本存不下来。
+        /// 文档选择器的导出模式是原生的"存储为"对话框，既给保存位置，也不碰那个回调。
+        /// </summary>
+        private static async Task ExportWithSaveDialogAsync(string sourceFilePath)
+        {
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            try
+            {
+                var picker = new UIDocumentPickerViewController(
+                    [NSUrl.FromFilename(sourceFilePath)],
+                    asCopy: true);
+
+                picker.DidPickDocumentAtUrls += (_, _) => completion.TrySetResult();
+                picker.WasCancelled += (_, _) => completion.TrySetResult();
+
+                var host = GetTopViewController();
+                if (host is null)
+                {
+                    App.LogManager?.Error("Export failed: no view controller to present the save dialog.");
+                    return;
+                }
+
+                host.PresentViewController(picker, true, null);
+                await completion.Task;
+            }
+            catch (Exception ex)
+            {
+                App.LogManager?.Error($"Export file '{sourceFilePath}' failed: {ex}");
+            }
+        }
+
+        /// <summary>当前窗口最上层的 view controller（保存对话框要挂在它上面）。</summary>
+        private static UIViewController? GetTopViewController()
+        {
+            var keyWindow = UIApplication.SharedApplication.ConnectedScenes
+                .OfType<UIWindowScene>()
+                .SelectMany(scene => scene.Windows)
+                .FirstOrDefault(window => window.IsKeyWindow);
+
+            var controller = keyWindow?.RootViewController;
+            while (controller?.PresentedViewController is not null)
+                controller = controller.PresentedViewController;
+
+            return controller;
+        }
+#endif
 
 
 #if WINDOWS

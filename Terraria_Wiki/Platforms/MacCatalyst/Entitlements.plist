@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <!-- See https://aka.ms/maui-publish-app-store#add-entitlements for more information about adding entitlements.-->
@@ -8,6 +8,14 @@
         <true/>
         <!-- When App Sandbox is enabled, this value is required to open outgoing network connections. -->
         <key>com.apple.security.network.client</key>
+        <true/>
+        <!-- ★ 用户选中的文件权限：沙盒下的 UIDocumentPickerViewController / Powerbox
+             只有在声明了 files.user-selected.* 之后才会把用户选中的文件交给应用。
+               · 导入 .pkg 需要读；
+               · 导出数据包 / 日志（保存对话框）需要写 —— 所以取 read-write 而不是 read-only。
+             缺了它时选择框根本不出现（日志里只有"开始导入数据"就没了下文），
+             导出则会写不进用户选的位置。iOS 不受影响，那边没有沙盒权限这一层。 -->
+        <key>com.apple.security.files.user-selected.read-write</key>
         <true/>
     </dict>
 </plist>

@@ -271,6 +271,8 @@
     "DataService.Log.ExportSuccess": "数据导出成功: {finalPkgPath}",
     "DataService.Log.ExportSuccessShort": "数据导出成功",
     "DataService.Log.ImportDataStart": "开始导入数据",
+    "DataService.Log.WaitingForPackageFile": "等待用户选择数据包文件",
+    "DataService.Log.UserCancelledImport": "用户取消了导入",
     "DataService.Log.SelectImportPackage": "请选择导入包",
     "DataService.Log.ExtractingAndVerifying": "正在提取文件并校验数据完整性",
     "DataService.Log.ReplacingLocalFiles": "正在替换本地文件",

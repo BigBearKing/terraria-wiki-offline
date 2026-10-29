@@ -271,6 +271,8 @@
     "DataService.Log.ExportSuccess": "Data exported successfully: {finalPkgPath}",
     "DataService.Log.ExportSuccessShort": "Data exported successfully",
     "DataService.Log.ImportDataStart": "Starting data import",
+    "DataService.Log.WaitingForPackageFile": "Waiting for the user to pick a package file",
+    "DataService.Log.UserCancelledImport": "User cancelled the import",
     "DataService.Log.SelectImportPackage": "Please select an import package",
     "DataService.Log.ExtractingAndVerifying": "Extracting files and verifying data integrity",
     "DataService.Log.ReplacingLocalFiles": "Replacing local files",

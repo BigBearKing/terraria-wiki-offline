@@ -209,10 +209,17 @@ public sealed class PackageService
             if (packageUri is null) return;
             Func<Task<Stream>> openStream = () => OpenAndroidStreamAsync(packageUri);
 #else
+            // 打开选择框前后各记一条：Mac Catalyst 上如果选择框压根没弹出来，
+            // 日志会停在"等待用户选择"这里，而不是像"用户取消"那样有后续记录。
+            _log.Info(_loc.Get("DataService.Log.WaitingForPackageFile"));
             fileResult = await FileHelper.PickFileAsync(
                 _loc.Get("DataService.Log.SelectImportPackage"),
                 App.AppStateManager?.IsWindows == true ? fileType : null);
-            if (fileResult is null) return;
+            if (fileResult is null)
+            {
+                _log.Info(_loc.Get("DataService.Log.UserCancelledImport"));
+                return;
+            }
             Func<Task<Stream>> openStream = fileResult.OpenReadAsync;
 #endif
 
