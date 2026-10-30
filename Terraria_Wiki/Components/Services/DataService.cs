@@ -1185,9 +1185,11 @@ namespace Terraria_Wiki.Services
                 bool changeData = false;
                 bool processed = false;
                 string fileName = DataService.GetFileNameFromUrl(url);
+                var resumeState = item.DownloadState ??= new DownloadResumeState();
                 try
                 {
-                    changeData = await DownloadAndSaveResourceAsync(url, fileName, token);
+                    changeData = await DownloadAndSaveResourceAsync(url, fileName, resumeState, token);
+                    item.DownloadState = null;
                     item.Complete();
                     processed = true;
                 }
@@ -1441,7 +1443,11 @@ namespace Terraria_Wiki.Services
             return Regex.Replace(plainText, @"\s+", " ").Trim();
         }
 
-        private async Task<bool> DownloadAndSaveResourceAsync(string url, string fileName, CancellationToken cancellationToken = default)
+        private async Task<bool> DownloadAndSaveResourceAsync(
+            string url,
+            string fileName,
+            DownloadResumeState resumeState,
+            CancellationToken cancellationToken = default)
         {
             // 1. 尝试从数据库获取已存在的资源记录
             WikiAsset existingAsset = null;
@@ -1451,11 +1457,13 @@ namespace Terraria_Wiki.Services
             }
 
             // 2. 下载资源，并在已有记录时使用 Last-Modified 进行条件请求
+            //    resumeState 里若有上次中断留下的字节，NetworkService 会自动走 Range 续传。
             var response = await NetworkService.GetBytesResponseAsync(
                 url,
                 useTls: false,
                 ifModifiedSince: existingAsset?.LastModified,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken,
+                resume: resumeState);
 
             if (response.StatusCode == HttpStatusCode.NotModified)
             {

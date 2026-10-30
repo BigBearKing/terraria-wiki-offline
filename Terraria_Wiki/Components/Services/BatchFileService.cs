@@ -82,6 +82,9 @@ public sealed class BatchLineItem
     public string Line { get; }
     internal int LineNumber { get; }
 
+    /// <summary>资源下载的续传状态：重试时保留已收字节，按 HTTP Range 只补剩余部分。</summary>
+    public DownloadResumeState? DownloadState { get; set; }
+
     public void Complete()
     {
         if (Interlocked.Exchange(ref _completed, 1) == 0)
