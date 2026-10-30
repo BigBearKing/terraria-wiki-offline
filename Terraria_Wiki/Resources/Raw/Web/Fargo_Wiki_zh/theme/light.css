@@ -139,3 +139,47 @@ html.light {
 html.light {
     --border-color-base: #aaa
 }
+
+/* =====================================================================
+ * 旧版 .infobox 模板（common.css 后半段）写死了深色 #343031 / #333033，
+ * 不跟随 --theme-* 变量，浅色模式下会保持深底白字。这里按浅色主题覆盖。
+ * ===================================================================== */
+html.light .infobox {
+    background-color: #f6f6f6 !important;
+    border-color: #aaa !important;
+    color: #080a13 !important;
+}
+
+html.light .infobox table th {
+    border-right-color: #aaa !important;
+}
+
+html.light .infobox .title,
+html.light .infobox > .title,
+html.light .infobox .variant,
+html.light .infobox .drops.items li:first-child,
+html.light .infobox .drops.items li.caption {
+    background-color: #dfdfdf !important;
+    color: #080a13 !important;
+}
+
+html.light .infobox > .title span {
+    color: #555 !important;
+}
+
+html.light .infobox .drops.items li.caption {
+    border-top-color: #aaa !important;
+}
+
+html.light .infobox .drops.items li.group_end {
+    border-bottom-color: #aaa !important;
+}
+
+html.light .infobox .drops.items li.group_end::after {
+    background-color: #aaa !important;
+}
+
+html.light .infobox.bordered td,
+html.light .infobox.bordered th {
+    border-color: #aaa !important;
+}
