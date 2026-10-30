@@ -134,8 +134,7 @@ internal sealed class FloatingIconWindow
         if (!PngIconDecoder.TryDecodePng(ReadIconBytes(), out var rgba, out var sourceWidth, out var sourceHeight))
             return null;
 
-        uint dpi = NativeMethods.GetDpiForWindow(NativeMethods.GetDesktopWindow());
-        if (dpi == 0) dpi = 96;
+        uint dpi = GetPrimaryMonitorDpi();
 
         int side = (int)Math.Round(IconSizeDip * dpi / 96.0);
 
@@ -174,6 +173,27 @@ internal sealed class FloatingIconWindow
         window.Paint();
 
         return window;
+    }
+
+    /// <summary>
+    /// 主显示器的有效 DPI。悬浮球固定摆在工作区（主屏）右上角，尺寸与边距都按这块屏的缩放换算。
+    /// 不能用 GetDpiForWindow(GetDesktopWindow())：桌面窗口实测恒为 96，
+    /// 在 125%~200% 缩放下会把球画得比设计值小一半以上。
+    /// </summary>
+    private static uint GetPrimaryMonitorDpi()
+    {
+        nint monitor = NativeMethods.MonitorFromWindow(NativeMethods.GetDesktopWindow(),
+            NativeMethods.MONITOR_DEFAULTTOPRIMARY);
+        if (monitor != 0 &&
+            NativeMethods.GetDpiForMonitor(monitor, NativeMethods.MDT_EFFECTIVE_DPI,
+                out uint dpiX, out _) == 0 &&
+            dpiX != 0)
+        {
+            return dpiX;
+        }
+
+        uint systemDpi = NativeMethods.GetDpiForSystem();
+        return systemDpi != 0 ? systemDpi : 96;
     }
 
     private static byte[] ReadIconBytes()
@@ -583,6 +603,8 @@ internal sealed class FloatingIconWindow
         public const byte AC_SRC_ALPHA = 0x01;
         public const uint ULW_ALPHA = 0x00000002;
         public const int MK_LBUTTON = 0x0001;
+        public const uint MONITOR_DEFAULTTOPRIMARY = 1;
+        public const int MDT_EFFECTIVE_DPI = 0;
 
         public const uint WM_DESTROY = 0x0002;
         public const uint WM_CLOSE = 0x0010;
@@ -732,6 +754,15 @@ internal sealed class FloatingIconWindow
 
         [DllImport("user32.dll")]
         public static extern uint GetDpiForWindow(nint hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern nint MonitorFromWindow(nint hWnd, uint dwFlags);
+
+        [DllImport("shcore.dll")]
+        public static extern int GetDpiForMonitor(nint hmonitor, int dpiType, out uint dpiX, out uint dpiY);
+
+        [DllImport("user32.dll")]
+        public static extern uint GetDpiForSystem();
 
         [DllImport("user32.dll")]
         public static extern nint GetDC(nint hWnd);
