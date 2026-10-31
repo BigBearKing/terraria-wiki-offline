@@ -129,7 +129,10 @@ namespace Terraria_Wiki
                 return;
             }
 
-            await DataManager!.UpdateDataAsync(includeResources: false);
+            // 和数据管理页的"更新"按钮一致：WikiBook 已下载资源时一并检查/下载资源，
+            // 只下载了页面的 Wiki 仍然只更新页面。
+            await DataManager!.UpdateDataAsync(
+                includeResources: AppStateManager?.ActiveWikiBook?.IsResourceDownloaded == true);
         }
 
         private static async Task RestoreDownloadTaskStateAsync()

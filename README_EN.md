@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android%20%7C%20iOS%20%7C%20macOS-informational)
 ![.NET](https://img.shields.io/badge/.NET-11.0-512BD4)
-![Version](https://img.shields.io/badge/version-0.4.0-success)
+![Version](https://img.shields.io/badge/version-0.4.1-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 [简体中文](README.md) | English
@@ -67,7 +67,7 @@ The app stores the full contents of four wikis — vanilla Terraria, Calamity, F
 
 ## Installation
 
-Get the installers from the [Releases](https://github.com/BigBearKing/terraria-wiki-offline/releases) page. Current version is v0.4.0.
+Get the installers from the [Releases](https://github.com/BigBearKing/terraria-wiki-offline/releases) page. Current version is v0.4.1.
 
 - **Windows**: `.zip` archive — no installation needed, extract and run. Requires the Microsoft Edge WebView2 runtime (usually built into Windows 11; on Windows 10 you may need to install it manually).
 - **Android**: `.apk` package. On first use it is recommended to grant network, notification and background execution permissions under "Settings - Permissions", otherwise downloads may be interrupted by the system.

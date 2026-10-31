@@ -143,7 +143,7 @@
     "Settings.ErrorRetryCount": "错误重试次数",
     "Settings.NoRetry": "不重试",
     "Settings.AutoUpdatePages": "自动更新页面",
-    "Settings.AutoUpdatePagesDesc": "打开软件时后台检查并更新页面",
+    "Settings.AutoUpdatePagesDesc": "打开软件时后台检查并更新页面；已下载资源时一并检查资源",
     "Settings.ClearFailedList": "清空失败列表",
     "Settings.ClearFailedListDesc": "删除当前 Wiki 的所有失败记录",
     "Settings.Data": "数据",

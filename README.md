@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android%20%7C%20iOS%20%7C%20macOS-informational)
 ![.NET](https://img.shields.io/badge/.NET-11.0-512BD4)
-![Version](https://img.shields.io/badge/version-0.4.0-success)
+![Version](https://img.shields.io/badge/version-0.4.1-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 简体中文 | [English](README_EN.md)
@@ -67,7 +67,7 @@
 
 ## 安装
 
-安装包请前往 [Releases](https://github.com/BigBearKing/terraria-wiki-offline/releases) 页面获取，当前版本为 v0.4.0。
+安装包请前往 [Releases](https://github.com/BigBearKing/terraria-wiki-offline/releases) 页面获取，当前版本为 v0.4.1。
 
 - **Windows**：`.zip` 压缩包，免安装，解压后直接运行。需要 Microsoft Edge WebView2 运行时（Windows 11 通常已内置，Windows 10 可能需要手动安装）。
 - **Android**：`.apk` 安装包。首次使用建议在"设置 - 权限管理"中开启网络、通知和后台运行权限，否则下载任务可能被系统中断。

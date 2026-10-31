@@ -55,9 +55,9 @@
 		<ApplicationId>com.bigbearking.terrariawiki</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.4.0</ApplicationDisplayVersion>
-		<ApplicationVersion>4</ApplicationVersion>
-		<PackageVersion>0.4.0</PackageVersion>
+		<ApplicationDisplayVersion>0.4.1</ApplicationDisplayVersion>
+		<ApplicationVersion>5</ApplicationVersion>
+		<PackageVersion>0.4.1</PackageVersion>
 		<Company>BigBearKingdom</Company>
 
 		<Authors>BigBearKing</Authors>
