@@ -632,24 +632,34 @@
 
             if (result != null && result.IsUpdateAvailable)
             {
-                // 发现新版本，弹出提示框
+                // 发现新版本，弹出提示框。
+                // ★ 这里在 TaskRunner 的 Task.Run 线程池体里，必须回主线程再碰 UI：
+                //   在 Android 上直接调 DisplayAlertAsync 会走到 UI 线程重入/栈溢出。
                 // 更新日志是整段 Markdown，可能有几千字：按提示框统一的 300 字上限截断，
                 // 完整内容让用户点"前往下载"去 Release 页面看。
-                bool wantsToUpdate = await Application.Current.Windows[0].Page.DisplayAlertAsync(
-                    Loc.Get("Settings.NewVersionFound", result.LatestVersion),
-                    Loc.Get("Settings.ReleaseNotes", Terraria_Wiki.Services.AppState.ClipAlertMessage(result.ReleaseNotes)),
-                    Loc.Get("Settings.GoToDownload"),
-                    Loc.Get("Settings.Later"));
+                bool wantsToUpdate = await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    var page = Application.Current?.Windows[0].Page;
+                    if (page is null) return false;
+
+                    return await page.DisplayAlertAsync(
+                        Loc.Get("Settings.NewVersionFound", result.LatestVersion),
+                        Loc.Get("Settings.ReleaseNotes", Terraria_Wiki.Services.AppState.ClipAlertMessage(result.ReleaseNotes)),
+                        Loc.Get("Settings.GoToDownload"),
+                        Loc.Get("Settings.Later"));
+                });
 
                 if (wantsToUpdate)
                 {
                     // 调用系统默认浏览器打开 GitHub Release 页面
-                    await Browser.Default.OpenAsync(result.DownloadUrl, BrowserLaunchMode.SystemPreferred);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                        Browser.Default.OpenAsync(result.DownloadUrl, BrowserLaunchMode.SystemPreferred));
                 }
             }
             else
             {
-                AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.AlreadyLatest"));
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                    AppState.TriggerAlert(Loc.Get("Common.Notice"), Loc.Get("Settings.AlreadyLatest")));
             }
         },
         new AppTaskOptions { ShowError = false });
