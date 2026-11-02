@@ -2,6 +2,7 @@ using LuYao.TlsClient;
 using System.Buffers;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -87,7 +88,17 @@ public static class NetworkService
     };
 
     public static Task<bool> IsNetworkAvailableAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(Connectivity.Current.NetworkAccess == NetworkAccess.Internet);
+    {
+#if WINDOWS
+        // NativeAOT 下 Microsoft.Maui.Networking.Connectivity 会去调 COM 的
+        // Network List Manager：Marshal.GetTypeFromCLSID -> NotSupportedException
+        // "COM Interop is not supported on this platform."（Win10 22H2 实测）。
+        // Windows 直接用 Win32 的 NetworkInterface，不碰 COM。
+        return Task.FromResult(NetworkInterface.GetIsNetworkAvailable());
+#else
+        return Task.FromResult(Connectivity.Current.NetworkAccess == NetworkAccess.Internet);
+#endif
+    }
 
     /// <summary>
     /// 判断一次失败是不是"连不上"这类网络故障（而不是服务端返回了错误）。
