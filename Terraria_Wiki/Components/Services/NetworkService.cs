@@ -435,12 +435,24 @@ public static class NetworkService
     private static HttpRequestMessage CreateRequest(string url, bool useTls)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, EncodeUrl(url));
+
+#if ANDROID
+        // Android 的 HttpClient 走 AndroidMessageHandler，TLS/HTTP2 指纹并不是 Chrome。
+        // 实测（CalamityProbe）：Crawler UA 的重定向页 / API / 图片全部 200；
+        // 换成 Chrome Android UA + Client Hints 后反而三个入口全 403。
+        // Cloudflare 会把"UA 说自己是 Chrome、TLS 却不是 Chrome"的请求当成伪装拦掉。
+        // 所以 Android 不冒充浏览器，统一用 Crawler UA。
+        _ = useTls;
+        request.Headers.UserAgent.ParseAdd(CrawlerUserAgent);
+#else
         if (useTls)
             AddHttpBrowserHeaders(request);
         else
             // 爬虫自己的 UA 只挂在请求上，不再塞进 HttpClient.DefaultRequestHeaders：
             // 否则带浏览器头的回退请求会同时叠两条 UA，服务器看到的是拼接后的怪串。
             request.Headers.UserAgent.ParseAdd(CrawlerUserAgent);
+#endif
+
         return request;
     }
 
