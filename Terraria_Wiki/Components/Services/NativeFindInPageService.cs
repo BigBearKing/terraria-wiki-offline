@@ -123,7 +123,7 @@ public sealed class NativeFindInPageService : INativeFindInPageService
         {
             _androidSearchCompletion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             await MainThread.InvokeOnMainThreadAsync(() => androidWebView.FindAllAsync(query));
-            return await _androidSearchCompletion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            return await AwaitAndroidFindAsync(FindInPageResult.Empty);
         }
 #endif
 #if WINDOWS
@@ -159,7 +159,7 @@ public sealed class NativeFindInPageService : INativeFindInPageService
             // 因此必须等回调，不能用旧的 _result 直接返回 —— 否则计数不跟着走。
             _androidSearchCompletion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             await MainThread.InvokeOnMainThreadAsync(() => androidWebView.FindNext(true));
-            return await _androidSearchCompletion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            return await AwaitAndroidFindAsync(_result);
         }
 #endif
 #if WINDOWS
@@ -187,7 +187,7 @@ public sealed class NativeFindInPageService : INativeFindInPageService
             // 同上：等 onFindResultReceived 再返回，保证索引是最新的。
             _androidSearchCompletion = new TaskCompletionSource<FindInPageResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             await MainThread.InvokeOnMainThreadAsync(() => androidWebView.FindNext(false));
-            return await _androidSearchCompletion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            return await AwaitAndroidFindAsync(_result);
         }
 #endif
 #if WINDOWS
@@ -221,6 +221,34 @@ public sealed class NativeFindInPageService : INativeFindInPageService
 #endif
         Publish(FindInPageResult.Empty);
     }
+
+#if ANDROID
+    /// <summary>
+    /// 等 Android WebView 的 FindListener 回调。某些页面/输入法场景下
+    /// onFindResultReceived 不会在 2 秒内回来，原来直接 WaitAsync 会抛
+    /// TimeoutException（Release 裁剪后消息就是 Arg_TimeoutException），
+    /// 从 async void 的输入框事件冒到全局异常直接闪退。
+    /// 超时只返回 fallback，并把挂起的 completion 摘掉，不让旧回调影响下一次。
+    /// </summary>
+    private async Task<FindInPageResult> AwaitAndroidFindAsync(FindInPageResult fallback)
+    {
+        var completion = _androidSearchCompletion;
+        if (completion is null)
+            return _result;
+
+        try
+        {
+            return await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Find] Android 等待结果超时：{ex.Message}");
+            if (ReferenceEquals(_androidSearchCompletion, completion))
+                _androidSearchCompletion = null;
+            return fallback;
+        }
+    }
+#endif
 
     private FindInPageResult Publish(FindInPageResult result)
     {
