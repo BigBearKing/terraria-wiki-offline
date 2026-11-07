@@ -15,6 +15,21 @@ namespace Terraria_Wiki
     [Activity(Theme = "@style/Maui.SplashTheme",
               MainLauncher = true,
               ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+    // 接收「用其他应用打开」的 .pkg（QQ 群文件最常见）。按 URI 路径后缀匹配，
+    // 不看 MIME —— 各家 ROM 对 .pkg 的 MIME 判定并不一致，按类型写死反而漏。
+    // 冷启动 / 已在后台两种情况由 OnCreate、OnNewIntent 分别接住。
+    [IntentFilter(
+        new[] { Intent.ActionView },
+        Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+        DataScheme = "content",
+        DataMimeType = "*/*",
+        DataPathPattern = ".*\\.pkg")]
+    [IntentFilter(
+        new[] { Intent.ActionView },
+        Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+        DataScheme = "file",
+        DataMimeType = "*/*",
+        DataPathPattern = ".*\\.pkg")]
     public class MainActivity : MauiAppCompatActivity
     {
 
@@ -33,6 +48,10 @@ namespace Terraria_Wiki
                 // 只关心活动任务集合变化，按属性名过滤
                 _appState.PropertyChanged += OnAppStatePropertyChanged;
             }
+
+            // 由「用其他应用打开」冷启动：Intent 里带着要导入的 .pkg。
+            // 必须在 base.OnCreate 之后调用 —— 那时 Application.Current / DI 才就绪。
+            AndroidFilePicker.HandleExternalViewIntent(Intent, this);
             Window.SetSoftInputMode(SoftInput.AdjustNothing);
             AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, false);
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
@@ -49,6 +68,16 @@ namespace Terraria_Wiki
             ChangeStatusBarColor();
 
 
+        }
+
+        /// <summary>
+        /// App 已在后台、又被「用其他应用打开」唤到前台时走这里（冷启动走 OnCreate）。
+        /// </summary>
+        protected override void OnNewIntent(Intent? intent)
+        {
+            base.OnNewIntent(intent);
+            SetIntent(intent);
+            AndroidFilePicker.HandleExternalViewIntent(intent, this);
         }
 
         protected override void OnResume()
