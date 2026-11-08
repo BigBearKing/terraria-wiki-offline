@@ -101,7 +101,8 @@
 在线抓取整站数据受原站限速影响，完整下载可能需要数小时甚至更久，因此推荐直接导入离线数据包。
 
 1. 下载离线数据包（`.pkg` 文件）。
-   - 夸克网盘：<https://pan.quark.cn/s/9e4116487189>，提取码 `J2zU`
+   - 夸克网盘（国内）：<https://pan.quark.cn/s/9e4116487189>，提取码 `J2zU`
+   - Google Drive（海外）：<https://drive.google.com/drive/folders/17GLW-UM2HSyYN9Ft4jYb4tLrAZ3xR48U>
    - QQ群文件：1134194356
 2. 打开应用，进入"设置 - 数据 - 导入数据"。
 3. 选择 `.pkg` 文件，等待校验与导入完成。
@@ -188,7 +189,12 @@ dotnet build Terraria_Wiki/Terraria_Wiki.csproj -f net11.0-windows10.0.19041.0 -
 
 ## 开源致谢
 
-- [泰拉瑞亚中文维基](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki) 及各模组 Wiki 社区：本应用的全部内容与数据结构来自社区贡献者的编辑与维护。
+- 以下 Wiki 社区：本应用的全部内容与数据结构来自社区贡献者的编辑与维护。
+  - [泰拉瑞亚 Wiki](https://terraria.wiki.gg)（中文 / English）
+  - [灾厄模组 Wiki](https://calamitymod.wiki.gg)（English）
+  - [灾厄中文 Wiki](https://calamity.huijiwiki.com)（中文）
+  - [Fargo's Mods Wiki](https://fargosmods.wiki.gg)（中文 / English）
+  - [瑟银模组 Wiki](https://thoriummod.wiki.gg)（中文 / English）
 - [.NET MAUI](https://github.com/dotnet/maui) 与 [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)（11.0.0-rc.2）：跨平台 UI 与前端组件框架。
 - [Microsoft.Web.WebView2](https://learn.microsoft.com/microsoft-edge/webview2/)（1.0.4191.47）：Windows 端 WebView 内核。
 - [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack)（1.12.4）：页面数据清洗与解析。

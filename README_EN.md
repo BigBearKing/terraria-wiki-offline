@@ -102,6 +102,7 @@ Crawling the whole site online is rate-limited by the source sites, and a full d
 
 1. Download the offline data package (`.pkg` file).
    - Quark cloud drive (China): <https://pan.quark.cn/s/9e4116487189>, extraction code `J2zU`
+   - Google Drive (international): <https://drive.google.com/drive/folders/17GLW-UM2HSyYN9Ft4jYb4tLrAZ3xR48U>
 2. Open the app and go to "Settings - Data - Import data".
 3. Select the `.pkg` file and wait for verification and import to finish.
 4. Once the import completes you can browse offline.
@@ -186,7 +187,12 @@ The other target frameworks are `net11.0-android`, `net11.0-ios` and `net11.0-ma
 
 ## Credits
 
-- [Terraria Chinese Wiki](https://terraria.wiki.gg/zh/wiki/Terraria_Wiki) and the mod wiki communities: all content and data structures in this app come from community contributors' editing and maintenance.
+- The wiki communities below: all content and data structures in this app come from their contributors' editing and maintenance.
+  - [Terraria Wiki](https://terraria.wiki.gg) (Chinese / English)
+  - [Calamity Mod Wiki](https://calamitymod.wiki.gg) (English)
+  - [Calamity Chinese Wiki](https://calamity.huijiwiki.com) (Chinese)
+  - [Fargo's Mods Wiki](https://fargosmods.wiki.gg) (Chinese / English)
+  - [Thorium Mod Wiki](https://thoriummod.wiki.gg) (Chinese / English)
 - [.NET MAUI](https://github.com/dotnet/maui) and [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor) (11.0.0-rc.2): cross-platform UI and frontend component frameworks.
 - [Microsoft.Web.WebView2](https://learn.microsoft.com/microsoft-edge/webview2/) (1.0.4191.47): WebView engine on Windows.
 - [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack) (1.12.4): page data cleaning and parsing.

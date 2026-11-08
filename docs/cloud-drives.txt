@@ -1,13 +1,15 @@
 第三方网盘资源（社区整理，非官方）
 
 数据包 .pkg（泰拉瑞亚原版 / 灾厄 / 法狗 / 瑟银，中英双语）
-网盘地址：https://pan.quark.cn/s/9e4116487189
-提取码：J2zU
+· 夸克网盘（国内）：https://pan.quark.cn/s/9e4116487189
+  提取码：J2zU
+· Google Drive（海外）：https://drive.google.com/drive/folders/17GLW-UM2HSyYN9Ft4jYb4tLrAZ3xR48U
 
 
 使用步骤
 
-1. 在浏览器中打开上面的网盘地址，输入提取码，下载 .pkg 文件；
+1. 在浏览器中打开上面的网盘地址（国内用夸克，海外用 Google Drive），
+   输入提取码（如有），下载 .pkg 文件；
 2. 回到应用：设置 → 数据 → 选择文件，选中刚下载的 .pkg；
 3. 等待校验与导入完成，之后即可离线阅读。
 
@@ -18,4 +20,34 @@
   直接更新该文件即可，无需发布新版本。
 · 网盘资源由社区维护，与应用本身无关；下载后请自行核对文件大小。
 · 若链接失效、内容有误或涉及侵权，请在 GitHub Issues 中反馈：
+  https://github.com/BigBearKing/terraria-wiki-offline/issues
+
+
+--------------------------
+English
+--------------------------
+
+Third-party cloud drive resources (community-maintained, unofficial)
+
+Data package .pkg (Terraria vanilla / Calamity / Fargo / Thorium, Chinese and English)
+· Quark cloud drive (China): https://pan.quark.cn/s/9e4116487189
+  Extraction code: J2zU
+· Google Drive (international): https://drive.google.com/drive/folders/17GLW-UM2HSyYN9Ft4jYb4tLrAZ3xR48U
+
+
+How to use
+
+1. Open one of the cloud drive links above in a browser (Quark for mainland China,
+   Google Drive elsewhere), enter the extraction code if required, and download the .pkg file.
+2. Back in the app: Settings → Data → Select file, then pick the downloaded .pkg.
+3. Wait for verification and import to finish; the wiki is then readable offline.
+
+
+Notes
+
+· This page is served from docs/cloud-drives.txt in the project repository, so changes to
+  the links or extraction codes take effect without shipping a new release.
+· The cloud drive resources are maintained by the community and are not affiliated with the
+  app; please verify the file size yourself after downloading.
+· If a link is broken, or the content is wrong or infringing, please report it in GitHub Issues:
   https://github.com/BigBearKing/terraria-wiki-offline/issues
