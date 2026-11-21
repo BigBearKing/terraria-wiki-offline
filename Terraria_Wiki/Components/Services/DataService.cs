@@ -216,6 +216,7 @@ namespace Terraria_Wiki.Services
                         if (task.TaskType == AppTaskType.DownloadResources && !File.Exists(_resListPath) && File.Exists(existingResourceList))
                             File.Copy(existingResourceList, _resListPath, true);
                         await SaveAppTaskAsync();
+                        await CleanupBrokenNodeCountLimitPagesOnceAsync(wikiBook);
                         await ExecuteDownloadAsync(task, token);
                     },
                     showError: true);
@@ -520,6 +521,7 @@ namespace Terraria_Wiki.Services
                 await FetchWikiRedirectsListAsync(cancellationToken);
                 await FetchWikiPagesListAsync(cancellationToken);
 
+                await CleanupBrokenNodeCountLimitPagesOnceAsync(App.AppStateManager?.ActiveWikiBook);
                 var updateCount = await CheckForPageUpdatesAsync(cancellationToken);
                 _log.Success(_loc.Get("DataService.Log.UpdateListReady", updateCount));
                 if (updateCount == 0)
@@ -1276,16 +1278,17 @@ namespace Terraria_Wiki.Services
 
             // ★ 标题必须转义：Wiki 标题里带 & 的（例如 Thorium 的 "Song of Ice & Fire"）不转义会把查询串切断——
             //   服务端只收到 page=Song of Ice，返回 missingtitle、响应里没有 <text> 节点，这页就永远下不下来。
+            bool useTls = App.AppStateManager?.ActiveWikiBook?.UseTls == true;
             var pageUrl = _baseApiUrl + $"?action=parse&page={Uri.EscapeDataString(pageInfo.Title)}&prop=text&format=xml";
 
-            string xml = await NetworkService.GetStringAsync(pageUrl, useTls: App.AppStateManager?.ActiveWikiBook?.UseTls == true, cancellationToken: cancellationToken);
+            string xml = await NetworkService.GetStringAsync(pageUrl, useTls: useTls, cancellationToken: cancellationToken);
 
             // ★ 解析与清洗全是同步的 CPU 活：XDocument.Parse 要把整页 XML 读成树，
             //   HtmlAgilityPack 的 LoadHtml + 四条 XPath + OuterHtml 又是几遍全树遍历。
             //   这些代码跑在调用方所在的线程上 —— 下载是从 UI 线程发起的，于是每处理一页
             //   就卡一次界面。整段丢进线程池，只把结果（清洗后的 HTML、搜索索引文本）拿回来。
             //   writer（BatchLineWriter）的 Add 内部有锁，跨线程写没问题。
-            var parsed = await Task.Run<(string? Error, string? CleanHtml, string? PlainText)>(() =>
+            var parsed = await Task.Run<(string? Error, string? CleanHtml, string? PlainText, string? RawHtml, bool NeedsWebFallback)>(() =>
             {
                 var xmldoc = XDocument.Parse(xml);
 
@@ -1298,21 +1301,52 @@ namespace Terraria_Wiki.Services
                     // 以前这里把 null 直接丢给 LoadHtml → ArgumentNullException：重试 5 次全白跑，还会永久留在失败列表里。
                     // 现在借用调度器已有的"404 = 不存在"通道（见 BatchTaskScheduler 的 onNotFound）：只记一条日志、不再重试。
                     var errorCode = xmldoc.Descendants("error").FirstOrDefault()?.Attribute("code")?.Value;
-                    return (errorCode ?? "missing <text>", null, null);
+                    return (errorCode ?? "missing <text>", null, null, null, false);
                 }
 
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-                var contentNode = doc.DocumentNode;
+                if (html.Contains("Node-count limit exceeded", StringComparison.Ordinal))
+                {
+                    return (null, null, null, html, true);
+                }
 
-                // 拆分为小函数，逻辑更清晰
-                CleanJunkElements(contentNode);
-                ProcessAnchorLinks(contentNode);
-                ProcessAudioTags(contentNode);
-                ProcessImages(contentNode, writer);
-
-                return (null, contentNode.OuterHtml, ExtractSearchableText(contentNode));
+                var (cleanHtml, plainText) = ParseCleanPageHtml(html, writer);
+                return (null, cleanHtml, plainText, null, false);
             }, cancellationToken);
+
+            // 仅当 action=parse 触发 MediaWiki 预处理器节点上限时，回退抓取网页端缓存正文
+            if (parsed.NeedsWebFallback)
+            {
+                string? fallbackHtml = null;
+                try
+                {
+                    var webUrl = BuildWikiPageUrl(pageInfo.Title);
+                    var pageHtml = await NetworkService.GetStringAsync(webUrl, useTls: useTls, cancellationToken: cancellationToken);
+                    fallbackHtml = await Task.Run(() =>
+                    {
+                        var pageDoc = new HtmlDocument();
+                        pageDoc.LoadHtml(pageHtml);
+                        var parserNode = pageDoc.DocumentNode.SelectSingleNode(
+                            "//div[@id='mw-content-text']//div[contains(concat(' ', @class, ' '), ' mw-parser-output ')]")
+                            ?? pageDoc.DocumentNode.SelectSingleNode("//div[contains(concat(' ', @class, ' '), ' mw-parser-output ')]");
+                        if (parserNode is null)
+                            return null;
+
+                        var outer = parserNode.OuterHtml;
+                        return outer.Contains("Node-count limit exceeded", StringComparison.Ordinal) ? null : outer;
+                    }, cancellationToken);
+                }
+                catch
+                {
+                    // 网页端回退失败（如被网关拦截）时沿用原 API 结果，避免整页下载失败
+                }
+
+                var finalHtml = fallbackHtml ?? parsed.RawHtml!;
+                parsed = await Task.Run(() =>
+                {
+                    var (cleanHtml, plainText) = ParseCleanPageHtml(finalHtml, writer);
+                    return ((string?)null, cleanHtml, plainText, (string?)null, false);
+                }, cancellationToken);
+            }
 
             if (parsed.CleanHtml is null)
             {
@@ -1332,6 +1366,57 @@ namespace Terraria_Wiki.Services
             AppService.InvalidatePageCache();
             await App.ContentDb.SaveSearchIndexAsync(pageInfo.Title, parsed.PlainText ?? string.Empty);
 
+        }
+
+        private (string CleanHtml, string PlainText) ParseCleanPageHtml(string html, BatchLineWriter writer)
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+            var contentNode = doc.DocumentNode;
+
+            CleanJunkElements(contentNode);
+            ProcessAnchorLinks(contentNode);
+            ProcessAudioTags(contentNode);
+            ProcessImages(contentNode, writer);
+
+            return (contentNode.OuterHtml, ExtractSearchableText(contentNode));
+        }
+
+        private string BuildWikiPageUrl(string title)
+        {
+            var encodedTitle = Uri.EscapeDataString(title.Replace(' ', '_'));
+            if (!string.IsNullOrEmpty(_baseApiUrl) &&
+                _baseApiUrl.EndsWith("/api.php", StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix = _baseApiUrl.Substring(0, _baseApiUrl.Length - "/api.php".Length);
+                return $"{prefix}/wiki/{encodedTitle}";
+            }
+            return $"{_baseUrl.TrimEnd('/')}/wiki/{encodedTitle}";
+        }
+
+        /// <summary>
+        /// 一次性清理旧库中因 MediaWiki 预处理器超限（Node-count limit exceeded）而存下的坏页面，
+        /// 以便接下来的增量更新自动重抓，此后通过 Preferences 标记跳过，保持零额外扫描开销。
+        /// </summary>
+        private static async Task CleanupBrokenNodeCountLimitPagesOnceAsync(WikiBook? wikiBook)
+        {
+            if (wikiBook is null || string.IsNullOrEmpty(wikiBook.DataFolder))
+                return;
+
+            var prefKey = $"CleanedNodeCountLimit_v1_{wikiBook.DataFolder}";
+            if (Preferences.Default.Get(prefKey, false))
+                return;
+
+            try
+            {
+                await App.ContentDb!.GetConnection()
+                    .ExecuteAsync("DELETE FROM WikiPage WHERE Content LIKE ?", "%Node-count limit exceeded%");
+                Preferences.Default.Set(prefKey, true);
+            }
+            catch
+            {
+                // 清理失败时不写标记，下次更新再试
+            }
         }
 
         private void CleanJunkElements(HtmlNode node)
