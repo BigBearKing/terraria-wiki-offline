@@ -1,4 +1,5 @@
 ﻿using Foundation;
+using UIKit;
 
 namespace Terraria_Wiki
 {
@@ -6,5 +7,11 @@ namespace Terraria_Wiki
     public class AppDelegate : MauiUIApplicationDelegate
     {
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+
+        public override bool OpenUrl(UIApplication application, NSUrl url, NSDictionary options)
+        {
+            IosFilePicker.HandleExternalOpenUrl(url);
+            return base.OpenUrl(application, url, options);
+        }
     }
 }

@@ -63,5 +63,41 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Terraria Wiki Package</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.bigbearking.terrariawiki.pkg</string>
+                <string>com.apple.installer-package-archive</string>
+            </array>
+        </dict>
+    </array>
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.bigbearking.terrariawiki.pkg</string>
+            <key>UTTypeDescription</key>
+            <string>Terraria Wiki Data Package</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>pkg</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
 </dict>
 </plist>
