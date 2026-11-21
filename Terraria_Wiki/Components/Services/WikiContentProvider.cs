@@ -283,7 +283,7 @@ namespace Terraria_Wiki.Services
             // ★ 改动 iframe-bridge.js（页内搜索等逻辑在里面）时把这里 +1。
             // 该脚本以前按 immutable 缓存一年，URL 不变的话旧脚本会一直生效，
             // 新方法在 iframe 里根本不存在；加上 v= 让新版本强制换 URL。
-            const string bridgeVersion = "2";
+            const string bridgeVersion = "3";
 
             // ★ 同上，改动 wiki-app-common.js（公共注入样式、右键菜单、缩放等）时把这里 +1。
             // 它同样在 /_common/ 下、按 immutable 缓存一年，不加 v= 的话真机上跑的还是旧脚本

@@ -31,6 +31,7 @@ namespace Terraria_Wiki.Services
         private TaskCompletionSource _queueDrained = CompletedSource();
 
         public event Action OnLogAdded;
+        public event Action<string>? OnErrorLogged;
 
         public LogService(LocalizationService localizationService, StoragePathService storagePath)
         {
@@ -100,7 +101,9 @@ namespace Terraria_Wiki.Services
             //   · 日志格式是"一条消息一行"（_lineOffsets 每条消息只记一个偏移），
             //     带换行的堆栈会让偏移与文件物理行错位，日志面板里内容会对不上。
             var errorDetail = ex != null ? $" ({ex.GetType().Name}: {ex.Message})" : "";
-            AppendLog($"[ERROR] {message}{errorDetail}");
+            var fullMessage = $"{message}{errorDetail}";
+            AppendLog($"[ERROR] {fullMessage}");
+            OnErrorLogged?.Invoke(fullMessage);
         }
 
         /// <summary>

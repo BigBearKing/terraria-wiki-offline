@@ -634,7 +634,14 @@ namespace Terraria_Wiki.Services
             public override void OnReceivedError(
                 Android.Webkit.WebView? view, Android.Webkit.IWebResourceRequest? request,
                 Android.Webkit.WebResourceError? error)
-                => _inner?.OnReceivedError(view, request, error);
+            {
+                if (request?.IsForMainFrame == true ||
+                    string.Equals(request?.Url?.Host, Host, StringComparison.OrdinalIgnoreCase))
+                {
+                    _log.Error($"[VHost] WebView 加载失败：{request?.Url} ({error?.ErrorCode}: {error?.Description})");
+                }
+                _inner?.OnReceivedError(view, request, error);
+            }
 
             /// <summary>
             /// ★ 必须接管：渲染进程被 OOM 杀掉时，如果没有任何 WebViewClient 处理这个回调，

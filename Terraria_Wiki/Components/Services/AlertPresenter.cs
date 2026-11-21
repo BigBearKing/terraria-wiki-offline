@@ -20,6 +20,7 @@ public sealed class AlertPresenter : IDisposable
 {
     private readonly AppState _appState;
     private readonly LocalizationService _loc;
+    private readonly LogService _log;
 
     /// <summary>保证同一时间只有一个提示框在显示；等用户点掉才放行下一条。</summary>
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -29,13 +30,42 @@ public sealed class AlertPresenter : IDisposable
     private string? _lastKey;
     private DateTime _lastAt;
 
-    public AlertPresenter(AppState appState, LocalizationService loc)
+    /// <summary>启动窗口期：打开软件后的前 20 秒内若 WebView 报错误日志，弹窗提示（最多 3 次防刷屏）。</summary>
+    private readonly DateTime _startupUtc = DateTime.UtcNow;
+    private int _startupWebViewAlertCount;
+    private static readonly TimeSpan StartupAlertWindow = TimeSpan.FromSeconds(20);
+    private const int MaxStartupWebViewAlerts = 3;
+
+    public AlertPresenter(AppState appState, LocalizationService loc, LogService log)
     {
         _appState = appState;
         _loc = loc;
+        _log = log;
 
         // 单例构造即订阅：全进程只有这一份
         _appState.OnShowAlert += OnShowAlert;
+        _log.OnErrorLogged += OnErrorLogged;
+    }
+
+    private void OnErrorLogged(string errorMessage)
+    {
+        if (DateTime.UtcNow - _startupUtc > StartupAlertWindow)
+            return;
+
+        if (!errorMessage.StartsWith("[WebView", StringComparison.Ordinal) &&
+            !errorMessage.StartsWith("[VHost]", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        lock (_dedupeLock)
+        {
+            if (_startupWebViewAlertCount >= MaxStartupWebViewAlerts)
+                return;
+            _startupWebViewAlertCount++;
+        }
+
+        OnShowAlert("WebView 错误", errorMessage);
     }
 
     private void OnShowAlert(string title, string message)
@@ -81,6 +111,7 @@ public sealed class AlertPresenter : IDisposable
     public void Dispose()
     {
         _appState.OnShowAlert -= OnShowAlert;
+        _log.OnErrorLogged -= OnErrorLogged;
         _gate.Dispose();
     }
 }

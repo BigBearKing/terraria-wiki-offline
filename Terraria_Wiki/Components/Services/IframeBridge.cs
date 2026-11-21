@@ -91,4 +91,12 @@ public static class IframeBridge
         return 0;
     }
 
+    /// <summary>接收 WebView（宿主页或 iframe）上报的 JS 错误与 console.error。</summary>
+    [JSInvokable]
+    public static void ReportWebViewError(string source, string message)
+    {
+        var tag = string.IsNullOrWhiteSpace(source) ? "js" : source;
+        App.LogManager?.Error($"[WebView:{tag}] {message}");
+    }
+
 }

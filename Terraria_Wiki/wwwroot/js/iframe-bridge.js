@@ -4,6 +4,114 @@
  */
 
 // ============================================================
+// WebView 错误捕获与上报（宿主页 + iframe 共用）
+// 捕获 JS 运行时异常、未处理的 Promise 异常、关键资源加载失败及 console.error，
+// 汇总到宿主窗口后转发给 C# LogService（启动期报错会触发弹窗提示）。
+// ============================================================
+(function () {
+    if (window.__webViewErrorHookInstalled) return;
+    window.__webViewErrorHookInstalled = true;
+
+    const isIframe = window.parent && window.parent !== window;
+    const seen = new Set();
+    const pendingErrors = [];
+    let flushTimer = null;
+    let flushAttempts = 0;
+
+    function formatValue(val) {
+        if (val instanceof Error) {
+            return val.message ? `${val.name}: ${val.message}` : String(val);
+        }
+        if (typeof val === 'string') return val;
+        try {
+            return JSON.stringify(val);
+        } catch {
+            return String(val);
+        }
+    }
+
+    function formatArgs(args) {
+        const text = Array.prototype.map.call(args, formatValue).join(' ').trim();
+        return text.length > 500 ? text.slice(0, 500) + '...' : text;
+    }
+
+    function flushErrors() {
+        flushTimer = null;
+        if (typeof DotNet === 'undefined') {
+            if (flushAttempts < 40 && pendingErrors.length > 0) {
+                flushAttempts++;
+                flushTimer = setTimeout(flushErrors, 250);
+            }
+            return;
+        }
+        while (pendingErrors.length > 0) {
+            const item = pendingErrors.shift();
+            try {
+                DotNet.invokeMethodAsync('Terraria_Wiki', 'ReportWebViewError', item.source, item.message);
+            } catch {
+                // 忽略上报本身的异常，避免死循环
+            }
+        }
+    }
+
+    function reportWebViewError(source, message) {
+        if (!message) return;
+        const normalized = String(message).trim();
+        if (!normalized) return;
+
+        const key = `${source}:${normalized}`;
+        if (seen.has(key)) return;
+        if (seen.size > 30) seen.clear();
+        seen.add(key);
+
+        if (isIframe) {
+            try {
+                window.parent.postMessage({ type: 'webview-error', source: source || 'iframe', message: normalized }, '*');
+            } catch {
+                // 忽略 postMessage 异常
+            }
+            return;
+        }
+
+        pendingErrors.push({ source: source || 'host', message: normalized });
+        if (!flushTimer) flushErrors();
+    }
+
+    window.__reportWebViewError = reportWebViewError;
+
+    window.addEventListener('error', function (e) {
+        if (e && typeof e.message === 'string' && e.message) {
+            const loc = e.filename ? ` (${e.filename}:${e.lineno || 0})` : '';
+            reportWebViewError(isIframe ? 'iframe' : 'host', `${e.message}${loc}`);
+            return;
+        }
+        const target = e && e.target;
+        if (target && target.tagName) {
+            const tag = target.tagName.toLowerCase();
+            // 仅上报脚本/样式/框架加载失败，跳过正常缺失的 wiki 图标与媒体资源
+            if (tag === 'script' || tag === 'link' || tag === 'iframe') {
+                const url = target.src || target.href || '';
+                reportWebViewError(isIframe ? 'iframe' : 'host', `<${tag}> 加载失败: ${url}`);
+            }
+        }
+    }, true);
+
+    window.addEventListener('unhandledrejection', function (e) {
+        const reason = e ? e.reason : null;
+        const msg = reason ? formatValue(reason) : 'Unhandled promise rejection';
+        reportWebViewError(isIframe ? 'iframe' : 'host', msg);
+    });
+
+    const origConsoleError = console.error;
+    console.error = function () {
+        if (typeof origConsoleError === 'function') {
+            origConsoleError.apply(console, arguments);
+        }
+        reportWebViewError(isIframe ? 'iframe' : 'host', formatArgs(arguments));
+    };
+})();
+
+// ============================================================
 // 主窗口端 (Main Window / Host) - 用于 MAUI Blazor
 // ============================================================
 
@@ -54,6 +162,14 @@ window.hostBridge = window.hostBridge || {
 window.addEventListener('message', function (e) {
     // 原始字符串消息由宿主页面的专用监听器处理，不属于 C# 请求/响应协议。
     if (typeof e.data === 'string') {
+        return;
+    }
+
+    // iframe 上报的 WebView 错误：转交宿主统一上报 C#
+    if (e.data?.type === 'webview-error') {
+        if (typeof window.__reportWebViewError === 'function') {
+            window.__reportWebViewError(e.data.source || 'iframe', e.data.message || 'Unknown WebView error');
+        }
         return;
     }
 
