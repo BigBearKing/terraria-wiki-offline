@@ -1,0 +1,95 @@
+.import-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+.import-dropzone {
+    position: relative;
+    width: 100%;
+    min-height: 260px;
+    border: 2px dashed rgba(128, 128, 128, 0.45);
+    border-radius: 16px;
+    background-color: var(--bg-color-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+.import-dropzone:hover {
+    border-color: var(--blue-primary);
+    background-color: var(--hover-bg);
+}
+
+.import-dropzone:active {
+    background-color: var(--pressed-bg);
+}
+
+.import-dropzone.drag-over {
+    border-color: var(--blue-primary);
+    background-color: var(--blue-tertiary);
+}
+
+.import-dropzone.is-busy {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.dropzone-input-wrap {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.dropzone-input-wrap ::deep .dropzone-input {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.dropzone-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: var(--blue-tertiary);
+    color: var(--blue-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropzone-icon ::deep svg {
+    width: 24px;
+    height: 24px;
+}
+
+.dropzone-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dropzone-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 420px;
+    line-height: 1.5;
+}

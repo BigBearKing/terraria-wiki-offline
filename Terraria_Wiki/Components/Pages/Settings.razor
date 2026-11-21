@@ -194,7 +194,7 @@
                     <span class="setting-name">@Loc.Get("Settings.ImportData")</span>
                     <span class="setting-desc">@Loc.Get("Settings.ImportDataDesc")</span>
                 </div>
-                <ActionButton Icon="open-file" OnClick="ImportData">
+                <ActionButton OnClick="ImportData">
                     @(AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData) ? AppState.Tasks[AppTaskType.ImportData].GetProcessingText(Loc) : Loc.Get("Settings.SelectFile"))
                 </ActionButton>
             </div>
@@ -616,9 +616,9 @@
     /// <summary>存储位置只重置"待应用"的选择，真正迁移仍要用户点「应用」。</summary>
     private void ResetStorageMode() => PendingStorageMode = StorageLocationMode.Default;
 
-    private async Task ImportData()
+    private void ImportData()
     {
-        await PackageService.ImportDataAsync();
+        AppService.NavigateTo("settings/import");
     }
 
     private async Task CheckUpdateCommand()

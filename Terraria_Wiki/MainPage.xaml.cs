@@ -828,6 +828,7 @@ namespace Terraria_Wiki
             if (!_windowsIntegrationInitialized)
             {
                 webView.SizeChanged += (s, e) => UpdateTabBarDragRectangle();
+                ConfigureWindowsFileDrop(webView);
                 _windowsIntegrationInitialized = true;
             }
 
@@ -927,6 +928,131 @@ namespace Terraria_Wiki
                 // 某些环境会在这里抛参数异常——不能让尺寸变化回调把它甩到未处理异常里。
                 System.Diagnostics.Debug.WriteLine($"SetDragRectangles failed: {ex}");
             }
+        }
+
+        /// <summary>
+        /// WinUI 3 下 WebView2 使用合成控制器承载，系统外部拖拽必须由 XAML 层显式开启 AllowDrop
+        /// 并接管 DragOver/Drop，否则光标直接显示禁止图标。仅在导入页（settings/import）接收 .pkg。
+        /// </summary>
+        private static void ConfigureWindowsFileDrop(Microsoft.UI.Xaml.Controls.WebView2 webView)
+        {
+            static bool IsImportPage() =>
+                string.Equals(App.AppStateManager?.CurrentPage, "settings/import", StringComparison.Ordinal);
+
+            webView.AllowDrop = IsImportPage();
+
+            if (App.AppStateManager is not null)
+            {
+                App.AppStateManager.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName != nameof(AppState.CurrentPage))
+                        return;
+
+                    var allow = IsImportPage();
+                    webView.DispatcherQueue?.TryEnqueue(() => webView.AllowDrop = allow);
+                };
+            }
+
+            webView.DragEnter += (_, e) =>
+            {
+                if (!IsImportPage() ||
+                    !e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+                {
+                    e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
+                    e.Handled = true;
+                    return;
+                }
+
+                e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+                e.Handled = true;
+                _ = webView.CoreWebView2?.ExecuteScriptAsync("window.setImportDropzoneDragOver?.(true)");
+            };
+
+            webView.DragOver += (_, e) =>
+            {
+                if (!IsImportPage() ||
+                    !e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+                {
+                    e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
+                    e.Handled = true;
+                    return;
+                }
+
+                e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+                e.Handled = true;
+            };
+
+            webView.DragLeave += (_, _) =>
+            {
+                if (IsImportPage())
+                    _ = webView.CoreWebView2?.ExecuteScriptAsync("window.setImportDropzoneDragOver?.(false)");
+            };
+
+            webView.Drop += async (_, e) =>
+            {
+                if (!IsImportPage() ||
+                    !e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+                {
+                    e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
+                    e.Handled = true;
+                    return;
+                }
+
+                e.Handled = true;
+                _ = webView.CoreWebView2?.ExecuteScriptAsync("window.setImportDropzoneDragOver?.(false)");
+                string? droppedFilePath = null;
+                Func<Task<Stream>>? streamOpener = null;
+
+                var deferral = e.GetDeferral();
+                try
+                {
+                    var items = await e.DataView.GetStorageItemsAsync();
+                    var file = items.OfType<Windows.Storage.StorageFile>().FirstOrDefault();
+                    if (file is null)
+                        return;
+
+                    if (!file.Name.EndsWith(".pkg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        App.AppStateManager?.TriggerAlert(
+                            App.Localization?.Get("Common.Notice") ?? "提示",
+                            "请选择或拖入有效的 .pkg 数据包文件。");
+                        return;
+                    }
+
+                    droppedFilePath = file.Path;
+                    if (!string.IsNullOrEmpty(droppedFilePath))
+                    {
+                        var path = droppedFilePath;
+                        streamOpener = () => Task.FromResult<Stream>(File.OpenRead(path));
+                    }
+                    else
+                    {
+                        streamOpener = () => file.OpenStreamForReadAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    App.LogManager?.Error("Windows 拖拽导入失败", ex);
+                    App.AppStateManager?.TriggerAlert(
+                        App.Localization?.Get("Common.Error") ?? "错误",
+                        ex.Message);
+                }
+                finally
+                {
+                    // 必须先完成拖放 Deferral 让系统结束 OLE 拖拽会话、消掉文件缩略图，再弹确认框
+                    deferral.Complete();
+                }
+
+                if (streamOpener is not null)
+                {
+                    var packageService = IPlatformApplication.Current?.Services.GetService<PackageService>();
+                    if (packageService is not null)
+                    {
+                        await Task.Delay(50);
+                        await packageService.ImportFromFileAsync(streamOpener);
+                    }
+                }
+            };
         }
 
         private void RegisterDragBridge(Microsoft.Web.WebView2.Core.CoreWebView2 core)

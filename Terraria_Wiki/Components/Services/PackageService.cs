@@ -61,6 +61,12 @@ public sealed class PackageService
             _ => ImportDataCoreAsync(),
             access: AppTaskAccess.Exclusive);
 
+    public Task ImportFromFileAsync(Func<Task<Stream>> openStream) =>
+        _taskRunner.RunAsync(
+            AppTaskType.ImportData,
+            _ => ImportDataCoreAsync(openStream),
+            access: AppTaskAccess.Exclusive);
+
     private async Task ExportDataCoreAsync(int selectedWikiId)
     {
         _log.Info(_loc.Get("DataService.Log.ExportDataStart"));
@@ -189,7 +195,7 @@ public sealed class PackageService
         }
     }
 
-    private async Task ImportDataCoreAsync()
+    private async Task ImportDataCoreAsync(Func<Task<Stream>>? customOpenStream = null)
     {
         _log.Info(_loc.Get("DataService.Log.ImportDataStart"));
 #if ANDROID
@@ -200,41 +206,57 @@ public sealed class PackageService
         string? importDirectory = null;
         try
         {
-            var fileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+            Func<Task<Stream>>? openStream = customOpenStream;
+            if (openStream is null)
             {
-                [DevicePlatform.WinUI] = [".pkg"]
-            });
+                var fileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    [DevicePlatform.WinUI] = [".pkg"]
+                });
 #if ANDROID
-            packageUri = await AndroidFilePicker.PickPackageAsync();
-            if (packageUri is null) return;
-            Func<Task<Stream>> openStream = () => OpenAndroidStreamAsync(packageUri);
+                packageUri = await AndroidFilePicker.PickPackageAsync();
+                if (packageUri is null) return;
+                openStream = () => OpenAndroidStreamAsync(packageUri);
 #else
-            // 打开选择框前后各记一条：Mac Catalyst 上如果选择框压根没弹出来，
-            // 日志会停在"等待用户选择"这里，而不是像"用户取消"那样有后续记录。
-            _log.Info(_loc.Get("DataService.Log.WaitingForPackageFile"));
-            fileResult = await FileHelper.PickFileAsync(
-                _loc.Get("DataService.Log.SelectImportPackage"),
-                App.AppStateManager?.IsWindows == true ? fileType : null);
-            if (fileResult is null)
+#if IOS
+                openStream = IosFilePicker.ConsumePendingStreamOpener();
+#endif
+                if (openStream is null)
+                {
+                    // 打开选择框前后各记一条：Mac Catalyst 上如果选择框压根没弹出来，
+                    // 日志会停在"等待用户选择"这里，而不是像"用户取消"那样有后续记录。
+                    _log.Info(_loc.Get("DataService.Log.WaitingForPackageFile"));
+                    fileResult = await FileHelper.PickFileAsync(
+                        _loc.Get("DataService.Log.SelectImportPackage"),
+                        App.AppStateManager?.IsWindows == true ? fileType : null);
+                    if (fileResult is null)
+                    {
+                        _log.Info(_loc.Get("DataService.Log.UserCancelledImport"));
+                        return;
+                    }
+                    openStream = fileResult.OpenReadAsync;
+                }
+#endif
+            }
+
+            WikiPackageInfo meta = await ReadMetadataAsync(openStream);
+            var wikiBook = await App.ManagerDb!.GetItemAsync<WikiBook>(meta.Id)
+                ?? throw new InvalidDataException("导入包中的 Wiki 不存在于当前应用配置中。");
+            bool needMigration = meta.AppVersion is not null &&
+                                 Version.TryParse(meta.AppVersion, out var version) &&
+                                 version < new Version(0, 4);
+
+            if (!await ConfirmImportAsync(meta, wikiBook, needMigration))
             {
                 _log.Info(_loc.Get("DataService.Log.UserCancelledImport"));
                 return;
             }
-            Func<Task<Stream>> openStream = fileResult.OpenReadAsync;
-#endif
 
             if (Application.Current?.Windows[0].Page is MainPage mainPage)
                 mainPage.ShowLoadingPopup("导入数据", "正在导入数据，请稍候...");
 
-            WikiPackageInfo meta = await ReadMetadataAsync(openStream);
-            bool needMigration = await ConfirmMigrationAsync(meta);
-            if (meta.AppVersion is not null && Version.TryParse(meta.AppVersion, out var version) && version < new Version(0, 4) && !needMigration)
-                return;
-
             importDirectory = CreateImportDirectory();
             await ExtractAndVerifyAsync(openStream, meta, importDirectory);
-            var wikiBook = await App.ManagerDb!.GetItemAsync<WikiBook>(meta.Id)
-                ?? throw new InvalidDataException("导入包中的 Wiki 不存在于当前应用配置中。");
             bool isActive = meta.Id == App.AppStateManager!.ActiveWikiBookId;
             string targetDirectory = Path.Combine(_storagePath.RootPath, wikiBook.DataFolder);
 
@@ -313,18 +335,38 @@ public sealed class PackageService
         });
     }
 
-    private async Task<bool> ConfirmMigrationAsync(WikiPackageInfo meta)
+    private async Task<bool> ConfirmImportAsync(WikiPackageInfo meta, WikiBook localBook, bool needMigration)
     {
-        if (meta.AppVersion is null || !Version.TryParse(meta.AppVersion, out var version) || version >= new Version(0, 4))
-            return false;
+        long totalBytes = meta.Files?.Sum(f => f.Size) ?? 0;
+        int fileCount = meta.Files?.Count ?? 0;
+        string contentSummary = meta.IsResourceDownloaded
+            ? "页面数据 + 图片/音频资源"
+            : (meta.IsPageDownloaded ? "仅基础页面数据（不含图片与音频）" : "未包含页面数据");
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"目标百科：{meta.Title}");
+        sb.AppendLine($"包含内容：{contentSummary}");
+        sb.AppendLine($"包大小：{FileHelper.GetSizeString(totalBytes)}（{fileCount} 个文件）");
+        sb.AppendLine($"更新时间：{meta.UpdateTime:yyyy-MM-dd HH:mm}");
+        if (!string.IsNullOrWhiteSpace(meta.AppVersion))
+            sb.AppendLine($"导出版本：v{meta.AppVersion}");
+
+        if (localBook.IsPageDownloaded)
+            sb.AppendLine($"\n注意：将覆盖本地现有数据（本地更新时间：{localBook.UpdateTime:yyyy-MM-dd HH:mm}）。");
+
+        if (needMigration)
+            sb.AppendLine($"\n提示：{_loc.Get("DataService.Log.ImportOldVersionDesc", meta.AppVersion, AppInfo.Current.VersionString)}");
+
+        string message = sb.ToString().TrimEnd();
+
         // 导入任务跑在线程池上（见 AppTaskRunner），原生确认框要回主线程弹。
         return await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             var page = Application.Current?.Windows[0].Page;
             return page is null || await page.DisplayAlertAsync(
-                _loc.Get("DataService.Log.ImportOldVersionTitle"),
-                _loc.Get("DataService.Log.ImportOldVersionDesc", meta.AppVersion, AppInfo.Current.VersionString),
-                _loc.Get("Common.OK"),
+                "确认导入数据包",
+                message,
+                "确认导入",
                 _loc.Get("Common.Cancel"));
         });
     }

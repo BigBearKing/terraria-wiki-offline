@@ -29,6 +29,43 @@
             return document.documentElement.classList.contains('dark-theme');
         };
 
+        window.setImportDropzoneDragOver = function (active) {
+            const el = document.querySelector('.import-dropzone');
+            if (el) el.classList.toggle('drag-over', !!active);
+        };
+
+        window.initImportDropzone = function (dropzoneEl, inputWrapEl) {
+            if (!dropzoneEl || dropzoneEl.__importDropBound) return;
+            dropzoneEl.__importDropBound = true;
+            let dragDepth = 0;
+
+            dropzoneEl.addEventListener('dragenter', function (e) {
+                e.preventDefault();
+                dragDepth++;
+                dropzoneEl.classList.add('drag-over');
+            });
+            dropzoneEl.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+            });
+            dropzoneEl.addEventListener('dragleave', function () {
+                dragDepth = Math.max(0, dragDepth - 1);
+                if (dragDepth === 0) dropzoneEl.classList.remove('drag-over');
+            });
+            dropzoneEl.addEventListener('drop', function (e) {
+                e.preventDefault();
+                dragDepth = 0;
+                dropzoneEl.classList.remove('drag-over');
+                const input = inputWrapEl && inputWrapEl.querySelector('input[type="file"]');
+                if (!input || !e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+
+                const dt = new DataTransfer();
+                dt.items.add(e.dataTransfer.files[0]);
+                input.files = dt.files;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        };
+
         window.initTheme = function (isDark) {
             if (isDark === "True") {
                 document.documentElement.classList.add('dark-theme');

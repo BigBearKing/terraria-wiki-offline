@@ -1,0 +1,150 @@
+@page "/settings/import"
+@implements IDisposable
+@using System.ComponentModel
+@using Terraria_Wiki.Models
+@using Terraria_Wiki.Services
+@inject PackageService PackageService
+@inject IJSRuntime JS
+
+<div class="page-anim page-content">
+    <PageHeader Title="@Loc.Get("Settings.ImportData")" />
+
+    <div class="list-container import-container">
+        <div @ref="_dropzoneRef"
+             class="import-dropzone @(IsImporting ? "is-busy" : "")"
+             @onclick="OnDropzoneClickAsync">
+            @if (SupportsDragDrop)
+            {
+                <div @ref="_inputWrapRef" class="dropzone-input-wrap">
+                    <InputFile OnChange="OnFileDroppedAsync"
+                               accept=".pkg"
+                               class="dropzone-input"
+                               disabled="@IsImporting" />
+                </div>
+            }
+
+            <div class="dropzone-content">
+                <div class="dropzone-icon">
+                    <Icon Name="open-file" />
+                </div>
+                <div class="dropzone-title">@GetDropzoneTitle()</div>
+                <div class="dropzone-desc">@Loc.Get("Settings.ImportDataDesc")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ElementReference _dropzoneRef;
+    private ElementReference _inputWrapRef;
+    private bool _copyingDroppedFile;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && SupportsDragDrop)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initImportDropzone", _dropzoneRef, _inputWrapRef);
+            }
+            catch
+            {
+                // 忽略页面快速切换时的 JS 互操作异常
+            }
+        }
+    }
+
+    private bool SupportsDragDrop => AppState.IsWindows || AppState.IsMacCatalyst;
+
+    private bool IsImporting =>
+        _copyingDroppedFile ||
+        AppState.ActiveTasks.Any(x => x.Task.TaskType == AppTaskType.ImportData);
+
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += RefreshUI;
+        AppState.PropertyChanged += OnAppStateChanged;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= RefreshUI;
+        AppState.PropertyChanged -= OnAppStateChanged;
+    }
+
+    private void RefreshUI() => InvokeAsync(StateHasChanged);
+
+    private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AppState.ActiveTasks))
+            InvokeAsync(StateHasChanged);
+    }
+
+    private string GetDropzoneTitle()
+    {
+        if (IsImporting)
+        {
+            return AppState.Tasks.TryGetValue(AppTaskType.ImportData, out var task)
+                ? task.GetProcessingText(Loc)
+                : "正在导入数据...";
+        }
+
+        return SupportsDragDrop
+            ? "点击或拖动 .pkg 文件到此处导入"
+            : "点击此处选择 .pkg 文件导入";
+    }
+
+    private async Task OnDropzoneClickAsync()
+    {
+        if (IsImporting)
+            return;
+
+        await PackageService.ImportDataAsync();
+    }
+
+    private async Task OnFileDroppedAsync(InputFileChangeEventArgs e)
+    {
+        if (IsImporting)
+            return;
+
+        var file = e.File;
+        if (file is null)
+            return;
+
+        if (!file.Name.EndsWith(".pkg", StringComparison.OrdinalIgnoreCase))
+        {
+            AppState.TriggerAlert(Loc.Get("Common.Notice"), "请选择或拖入有效的 .pkg 数据包文件。");
+            return;
+        }
+
+        string tempPath = Path.Combine(FileSystem.CacheDirectory, $"drop_import_{Guid.NewGuid():N}.pkg");
+        _copyingDroppedFile = true;
+
+        try
+        {
+            if (Application.Current?.Windows[0].Page is MainPage mainPage)
+                mainPage.ShowLoadingPopup("导入数据", "正在读取导入包，请稍候...");
+
+            await using (var input = file.OpenReadStream(maxAllowedSize: long.MaxValue))
+            await using (var output = File.Create(tempPath))
+            {
+                await input.CopyToAsync(output);
+            }
+
+            _copyingDroppedFile = false;
+            await PackageService.ImportFromFileAsync(() => Task.FromResult<Stream>(File.OpenRead(tempPath)));
+        }
+        catch (Exception ex)
+        {
+            AppState.TriggerAlert(Loc.Get("Common.Error"), ex.Message);
+        }
+        finally
+        {
+            _copyingDroppedFile = false;
+            if (Application.Current?.Windows[0].Page is MainPage mainPage)
+                mainPage.HideLoadingPopup();
+            try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}
