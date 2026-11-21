@@ -43,6 +43,11 @@ public static class AndroidFilePicker
         return await completion.Task;
     }
 
+    public static void Complete(Android.Net.Uri? uri)
+    {
+        CompletionSource?.TrySetResult(uri);
+    }
+
     /// <summary>
     /// 处理 ACTION_VIEW（QQ 群文件 →「用其他应用打开」）。必须在 base.OnCreate 之后调用，
     /// 那时 Application.Current / DI 容器才就绪。

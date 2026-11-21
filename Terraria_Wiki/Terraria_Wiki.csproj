@@ -14,7 +14,7 @@
 		       maccatalyst  27.0.12212-net11-rc.2 → 同上，TFM 必须写 maccatalyst27.0
 		     ★ 换工作负载版本时必须回到这里核对：TFM 的版本号对不上会直接构建失败。 -->
 		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == ''">net11.0-android37.0</TargetFrameworks>
-		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == '' and !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios27.0;net11.0-maccatalyst27.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == '' and !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios27.2;net11.0-maccatalyst27.2</TargetFrameworks>
 		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' != ''">$(TerrariaLocalFramework)</TargetFrameworks>
 		<TargetFrameworks Condition="'$(TerrariaLocalFramework)' == '' and $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
 		<SupportedCultures>zh-CN;en-US</SupportedCultures>
@@ -55,9 +55,9 @@
 		<ApplicationId>com.bigbearking.terrariawiki</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.4.1</ApplicationDisplayVersion>
-		<ApplicationVersion>5</ApplicationVersion>
-		<PackageVersion>0.4.1</PackageVersion>
+		<ApplicationDisplayVersion>0.4.2</ApplicationDisplayVersion>
+		<ApplicationVersion>6</ApplicationVersion>
+		<PackageVersion>0.4.2</PackageVersion>
 		<Company>BigBearKingdom</Company>
 
 		<Authors>BigBearKing</Authors>
@@ -114,7 +114,7 @@
 	     ★ 还原时附带 RuntimeIdentifier 的命令（CI 的 -p:RuntimeIdentifier=ios-arm64）不受影响：
 	       那种情况下 SDK 自己就会下载设备包，这里再加会重复。 -->
 	<PropertyGroup Condition="'$(ExcludeRestorePackageImports)' == 'true' And '$(RuntimeIdentifier)' == '' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
-		<RuntimeIdentifiers>ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers>ios-arm64;iossimulator-arm64;iossimulator-x64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) AND '$(Configuration)' == 'Release'">
@@ -161,13 +161,13 @@
 		<AssemblyMetadata Include="ApplicationBuildNumber" Value="$(ApplicationVersion)" />
 	</ItemGroup>
 
-	<!-- 下面三段的条件原本写的是 net11.0-ios26.5；RC.2 起 iOS TFM 是 ios27.0，
+	<!-- 下面三段的条件原本写的是 net11.0-ios26.5 / 27.0；.NET 11 GA 起 iOS TFM 是 ios27.2，
 	     条件对不上就等于失效（ProvisioningType / CodesignKey 不会生效）。 -->
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net11.0-ios27.0|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net11.0-ios27.2|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-ios27.0|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-ios27.2|AnyCPU'" />
 
-	<PropertyGroup Condition="'$(TargetFramework)'=='net11.0-ios27.0'">
+	<PropertyGroup Condition="'$(TargetFramework)'=='net11.0-ios27.2'">
 	  <ProvisioningType>automatic</ProvisioningType>
 	  <CodesignKey>iPhone Developer</CodesignKey>
 	</PropertyGroup>
@@ -242,11 +242,11 @@
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
 
 		<PackageReference Include="LuYao.TlsClient" Version="1.2.0" />
-		<!-- .NET 11 / MAUI 11（当前为 RC.2，GA 后需改为正式版本号） -->
-		<PackageReference Include="Microsoft.Maui.Controls" Version="11.0.0-rc.2.26505.5" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="11.0.0-rc.2.26505.5" />
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" Condition="$(TargetFramework.Contains('-windows'))" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.3.26522.148" />
+		<!-- .NET 11 / MAUI 11 正式版 -->
+		<PackageReference Include="Microsoft.Maui.Controls" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="11.0.0" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" Condition="$(TargetFramework.Contains('-windows'))" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
 
 	</ItemGroup>

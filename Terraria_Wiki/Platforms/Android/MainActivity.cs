@@ -76,7 +76,7 @@ namespace Terraria_Wiki
         protected override void OnNewIntent(Intent? intent)
         {
             base.OnNewIntent(intent);
-            SetIntent(intent);
+            Intent = intent;
             AndroidFilePicker.HandleExternalViewIntent(intent, this);
         }
 
