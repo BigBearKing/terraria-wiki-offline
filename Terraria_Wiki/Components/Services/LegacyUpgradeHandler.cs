@@ -172,9 +172,12 @@ public class LegacyUpgradeHandler
 
             mainPage?.ShowLoadingPopup("更新旧版数据库", $"更新完成，共处理 {processed} 个页面");
             await Task.Delay(1500);
-            // 迁移改写了页面正文：先作废词条缓存，否则下面的刷新渲染出来的还是迁移前的旧内容
+            // 迁移改写了页面正文：作废词条缓存并清理 WebView 缓存；
+            // 本方法在 MainLayout 挂载 iframe 之前运行，不能调用依赖 iframe 回复的 WikiRefreshAsync，
+            // 否则 CallJsAsync 会永久挂起导致 finally 里的 HideLoadingPopup 永远无法执行。
             AppService.InvalidatePageCache();
-            await AppService.WikiRefreshAsync();
+            if (mainPage != null)
+                await MainThread.InvokeOnMainThreadAsync(mainPage.ClearWebViewCacheAsync);
         }
         finally
         {

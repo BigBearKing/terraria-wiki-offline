@@ -486,8 +486,9 @@ namespace Terraria_Wiki.Services
                 App.AppStateManager.TabHistory.Clear();
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is MainPage mainPage)
                     await mainPage.ClearWebViewCacheAsync();
-                await IframeBridge.CallJsAsync("ClearPage", "");
-                await IframeBridge.CallJsAsync("BackHome", "");
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                await IframeBridge.CallJsAsync("ClearPage", "", cts.Token);
+                await IframeBridge.CallJsAsync("BackHome", "", cts.Token);
             });
         }
 

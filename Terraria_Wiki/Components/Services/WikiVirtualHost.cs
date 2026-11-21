@@ -434,6 +434,7 @@ namespace Terraria_Wiki.Services
 
                 var contentPath = ToContentPath(parsed.AbsolutePath);
                 var ifNoneMatch = GetHeader(request!, "If-None-Match");
+                var rangeHeader = GetHeader(request!, "Range");
 
                 WikiContentResponse? content;
                 try
@@ -471,6 +472,7 @@ namespace Terraria_Wiki.Services
                 var headers = new Dictionary<string, string>
                 {
                     ["Access-Control-Allow-Origin"] = "*",
+                    ["Accept-Ranges"] = "bytes",
                     ["ETag"] = content.ETag,
                     ["Cache-Control"] = content.CacheControl,
                     ["Content-Length"] = content.Body.Length.ToString()
@@ -488,6 +490,30 @@ namespace Terraria_Wiki.Services
                         new MemoryStream(Array.Empty<byte>(), writable: false));
                 }
 
+                // ★ 分片请求：Android WebView 的 <audio>/<video> 管线常带 Range 请求头；
+                //   若无视 Range 直接回 200 整包，部分机型/内核的媒体解码器会报错或无法播放。
+                if (!string.IsNullOrEmpty(rangeHeader))
+                {
+                    if (TryParseByteRange(rangeHeader, content.Body.Length, out var start, out var end, out var unsatisfiable))
+                    {
+                        var length = end - start + 1;
+                        headers["Content-Range"] = $"bytes {start}-{end}/{content.Body.Length}";
+                        headers["Content-Length"] = length.ToString();
+                        return new Android.Webkit.WebResourceResponse(
+                            content.ContentType, null, 206, "Partial Content", headers,
+                            new MemoryStream(content.Body, start, length, writable: false));
+                    }
+
+                    if (unsatisfiable)
+                    {
+                        headers["Content-Range"] = $"bytes */{content.Body.Length}";
+                        headers["Content-Length"] = "0";
+                        return new Android.Webkit.WebResourceResponse(
+                            content.ContentType, null, 416, "Range Not Satisfiable", headers,
+                            new MemoryStream(Array.Empty<byte>(), writable: false));
+                    }
+                }
+
                 // 末尾参数是 System.IO.Stream —— .NET for Android 的绑定会自己转成 Java 流，
                 // 不要手动构造 Java.IO.ByteArrayInputStream（编译器会报 CS1503）。
                 return new Android.Webkit.WebResourceResponse(
@@ -502,6 +528,77 @@ namespace Terraria_Wiki.Services
                 => new("text/plain", null, 500, "Internal Server Error",
                        new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
                        new MemoryStream(Array.Empty<byte>(), writable: false));
+
+            private static bool TryParseByteRange(
+                string rangeHeader, int totalLength, out int start, out int end, out bool unsatisfiable)
+            {
+                start = 0;
+                end = 0;
+                unsatisfiable = false;
+
+                var trimmed = rangeHeader.Trim();
+                if (!trimmed.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                var spec = trimmed.Substring(6).Trim();
+                if (spec.Contains(','))
+                    return false; // 多段范围（multipart/byteranges）不常见，回退到 200 整包
+
+                if (totalLength <= 0)
+                {
+                    unsatisfiable = true;
+                    return false;
+                }
+
+                var dashIndex = spec.IndexOf('-');
+                if (dashIndex < 0 || spec.IndexOf('-', dashIndex + 1) >= 0)
+                    return false;
+
+                var startStr = spec.Substring(0, dashIndex).Trim();
+                var endStr = spec.Substring(dashIndex + 1).Trim();
+
+                if (startStr.Length == 0)
+                {
+                    // 后缀范围：bytes=-N
+                    if (endStr.Length == 0 ||
+                        !long.TryParse(endStr, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var suffixLength) ||
+                        suffixLength <= 0)
+                    {
+                        return false;
+                    }
+
+                    start = (int)Math.Max(0, totalLength - suffixLength);
+                    end = totalLength - 1;
+                    return true;
+                }
+
+                if (!long.TryParse(startStr, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var startLong))
+                    return false;
+
+                if (startLong >= totalLength)
+                {
+                    unsatisfiable = true;
+                    return false;
+                }
+
+                if (endStr.Length == 0)
+                {
+                    // 开放结尾：bytes=M-
+                    start = (int)startLong;
+                    end = totalLength - 1;
+                    return true;
+                }
+
+                if (!long.TryParse(endStr, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var endLong) ||
+                    endLong < startLong)
+                {
+                    return false;
+                }
+
+                start = (int)startLong;
+                end = (int)Math.Min(endLong, totalLength - 1);
+                return true;
+            }
 
             private static string? GetHeader(Android.Webkit.IWebResourceRequest request, string name)
             {
