@@ -590,14 +590,53 @@ namespace Terraria_Wiki.Services
         public static void NavigateTo(string pageName)
         {
             pageName = pageName.Trim('/');
-            if (App.AppStateManager.CurrentPage == pageName)
+            var previousPage = App.AppStateManager.CurrentPage ?? string.Empty;
+            if (previousPage == pageName)
                 return;
+
+            if (_js is not null)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(previousPage) &&
+                        pageName.StartsWith(previousPage + "/", StringComparison.Ordinal))
+                    {
+                        _ = _js.InvokeVoidAsync("pageScrollState.save", previousPage);
+                    }
+                    else if (!string.IsNullOrEmpty(pageName) &&
+                             previousPage.StartsWith(pageName + "/", StringComparison.Ordinal))
+                    {
+                        // 返回上级页面：先切路由，再恢复保存的滚动位置与标题栏位移
+                    }
+                    else
+                    {
+                        _ = _js.InvokeVoidAsync("pageScrollState.clear");
+                    }
+                }
+                catch
+                {
+                }
+            }
+
             if (App.AppStateManager.IsSmallScreen)
             {
                 App.AppStateManager.SidebarIsExpanded = false;
             }
             App.AppStateManager.CurrentPage = pageName;
             _navManager.NavigateTo($"/{pageName}", false, true);
+
+            if (_js is not null &&
+                !string.IsNullOrEmpty(pageName) &&
+                previousPage.StartsWith(pageName + "/", StringComparison.Ordinal))
+            {
+                try
+                {
+                    _ = _js.InvokeVoidAsync("pageScrollState.restore", pageName);
+                }
+                catch
+                {
+                }
+            }
         }
 
         public static async Task<bool> SwitchWikiBookAsync(int wikiBookId)

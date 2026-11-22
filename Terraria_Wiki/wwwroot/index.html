@@ -485,12 +485,18 @@
             const HEADER_CLASS = 'page-header';
 
             const states = new WeakMap();   // 滚动容器 → { last, offset, height }
+            const savedPageStates = new Map(); // pageKey → { scrollTop, offset }
+            let liveState = { scrollTop: 0, offset: 0 };
+            let restoreToken = 0;
+            let isApplyingRestore = false;
 
             const render = (header, state) => {
                 const next = state.offset > 0.01 ? `translateY(${-state.offset}px)` : '';
                 if (header.style.transform === next) return;   // 没变就别写，省掉无谓的样式失效
                 header.style.transform = next;
             };
+
+            const getActiveScroller = () => document.querySelector('.content-container .list-container');
 
             const process = (scroller) => {
                 // 标题头是列表在 DOM 上的前一个兄弟元素（各页都是 <PageHeader/> 紧跟 .list-container）
@@ -506,6 +512,7 @@
                     states.set(scroller, state);
                     state.offset = Math.min(top, state.height);
                     render(header, state);
+                    liveState = { scrollTop: top, offset: state.offset };
                     return;
                 }
 
@@ -514,6 +521,78 @@
                     Math.min(state.height, top));
                 state.last = top;
                 render(header, state);
+                liveState = { scrollTop: top, offset: state.offset };
+            };
+
+            const applySavedState = (saved, token, attemptsLeft, lastHeight = -1, stableFrames = 0) => {
+                if (token !== restoreToken) return;
+                const scroller = getActiveScroller();
+                if (!scroller) {
+                    if (attemptsLeft > 0) {
+                        requestAnimationFrame(() => applySavedState(saved, token, attemptsLeft - 1));
+                    }
+                    return;
+                }
+
+                const curHeight = scroller.scrollHeight;
+                const maxScroll = Math.max(0, curHeight - scroller.clientHeight);
+                if (maxScroll < saved.scrollTop - 2 && attemptsLeft > 0) {
+                    const nextStable = (curHeight === lastHeight && curHeight > 0) ? stableFrames + 1 : 0;
+                    if (nextStable < 3) {
+                        requestAnimationFrame(() => applySavedState(saved, token, attemptsLeft - 1, curHeight, nextStable));
+                        return;
+                    }
+                }
+
+                const targetTop = Math.min(saved.scrollTop, maxScroll);
+                isApplyingRestore = true;
+                scroller.scrollTop = targetTop;
+                isApplyingRestore = false;
+
+                const header = scroller.previousElementSibling;
+                if (header && header.classList.contains(HEADER_CLASS)) {
+                    const height = header.offsetHeight || 0;
+                    const offset = Math.min(Math.max(saved.offset, 0), Math.min(height, targetTop));
+                    const state = { last: targetTop, offset, height };
+                    states.set(scroller, state);
+                    render(header, state);
+                    liveState = { scrollTop: targetTop, offset };
+                } else {
+                    liveState = { scrollTop: targetTop, offset: 0 };
+                }
+            };
+
+            window.pageScrollState = {
+                save(pageKey) {
+                    restoreToken++;
+                    if (!pageKey) return;
+                    const scroller = getActiveScroller();
+                    if (scroller) {
+                        const top = Math.max(0, scroller.scrollTop);
+                        const state = states.get(scroller);
+                        const header = scroller.previousElementSibling;
+                        const height = header?.offsetHeight || 0;
+                        const offset = state ? state.offset : Math.min(top, height);
+                        savedPageStates.set(pageKey, { scrollTop: top, offset });
+                    } else {
+                        savedPageStates.set(pageKey, { ...liveState });
+                    }
+                    liveState = { scrollTop: 0, offset: 0 };
+                },
+                restore(pageKey) {
+                    restoreToken++;
+                    const saved = pageKey ? savedPageStates.get(pageKey) : null;
+                    if (pageKey) savedPageStates.delete(pageKey);
+                    liveState = { scrollTop: 0, offset: 0 };
+                    if (!saved || (saved.scrollTop <= 0 && saved.offset <= 0)) return;
+                    const token = restoreToken;
+                    requestAnimationFrame(() => applySavedState(saved, token, 30));
+                },
+                clear() {
+                    restoreToken++;
+                    savedPageStates.clear();
+                    liveState = { scrollTop: 0, offset: 0 };
+                }
             };
 
             document.addEventListener('scroll', (event) => {
@@ -521,6 +600,7 @@
                 if (!scroller || scroller.nodeType !== 1) return;
                 if (!scroller.classList.contains(SCROLLER_CLASS)) return;
                 if (!scroller.isConnected) return;
+                if (!isApplyingRestore) restoreToken++;
                 process(scroller);
             }, { capture: true, passive: true });
         })();
