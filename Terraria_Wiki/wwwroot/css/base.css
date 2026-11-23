@@ -59,10 +59,11 @@ body.is-mouse-down iframe {
     background-color: var(--pressed-bg);
 }
 
-/* 窄屏（≤768px）下调小宿主基准字号，使除主页（独立 iframe）外的页面内容文字等比例紧凑显示 */
+/* 窄屏（≤768px）下调小宿主基准字号，使除主页（独立 iframe）外的页面内容文字等比例紧凑显示；
+   苹果设备（iOS / iPadOS / MacCatalyst）保持 16px 不缩放 */
 @media (max-width: 768px) {
-    html,
-    body {
+    html:not(.is-apple),
+    html:not(.is-apple) body {
         font-size: 14px;
     }
 }

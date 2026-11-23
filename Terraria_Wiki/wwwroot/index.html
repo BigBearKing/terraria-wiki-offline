@@ -13,6 +13,11 @@
     <!-- Iframe 通信桥接库 -->
     <script src="js/iframe-bridge.js"></script>
     <script>
+        if (/iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+            document.documentElement.classList.add('is-apple');
+        }
+
         // hostBridge 已由 iframe-bridge.js 提供
         // 添加获取 iframe 当前位置的便捷函数
         window.getCurrentIframePosition = async function () {
