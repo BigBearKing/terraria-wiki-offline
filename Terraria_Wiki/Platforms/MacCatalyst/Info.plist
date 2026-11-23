@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -15,10 +15,9 @@
     <array>
         <integer>2</integer>
     </array>
-    <key>UIRequiredDeviceCapabilities</key>
-    <array>
-        <string>arm64</string>
-    </array>
+    <!-- 这里本来有 UIRequiredDeviceCapabilities = arm64（MAUI 模板自带）。
+         那是 iOS 的键，macOS 不看它；而 Catalyst 同时出 arm64 和 x64 两个包，
+         在 x64 包里声明"需要 arm64"是自相矛盾的，所以去掉。 -->
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
