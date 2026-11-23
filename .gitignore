@@ -381,3 +381,5 @@ FodyWeavers.xsd
 Release/
 # 本机 TFM 覆盖（只保留 macOS 目标）
 Terraria_Wiki/Local.props
+# 本地版本开发计划（不纳入版本管理）
+/docs/plan-0.5-wiki-dom-perf.md
