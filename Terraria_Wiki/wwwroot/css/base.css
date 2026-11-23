@@ -58,3 +58,11 @@ body.is-mouse-down iframe {
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--pressed-bg);
 }
+
+/* 窄屏（≤768px）下调小宿主基准字号，使除主页（独立 iframe）外的页面内容文字等比例紧凑显示 */
+@media (max-width: 768px) {
+    html,
+    body {
+        font-size: 14px;
+    }
+}

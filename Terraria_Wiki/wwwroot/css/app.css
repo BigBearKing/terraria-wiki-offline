@@ -75,7 +75,7 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 8px 0 12px;
+    padding: 8px calc(var(--page-gutter) - var(--page-gutter-right)) 12px 0;
     position: relative;
     /* ★ 必须压过页面里所有带 z-index 的浮层，否则列表往回滚、标题头重新盖到内容上时，
        落在标题头区域里的东西会画在它上面（典型的就是设置页的下拉选择框：
@@ -105,6 +105,7 @@
     display: flex;
     flex-direction: column;
     scrollbar-gutter: stable;
+    padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
 /* ===== 列表页标题头：随滚动方向自动收起 =====

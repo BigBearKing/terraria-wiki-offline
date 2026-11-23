@@ -14,7 +14,7 @@
    否则会叠成 24px、且第一张卡会贴到筛选行上。 */
 .wiki-card-list {
     gap: 12px;
-    padding: 12px 0 max(12px, var(--safe-area-bottom));
+    padding-top: 12px;
 }
 
 .manage-card-icon {

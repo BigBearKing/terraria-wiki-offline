@@ -20,8 +20,8 @@
          · WebKit（iOS / Mac Catalyst）滚动条是浮层、不占宽，所以右边也要 24。
        ★ 顶栏标题要跟页面大标题左对齐，它的内边距也是从这里派生的
          （TopBar.razor.css 的 .topbar-title-without-actions），两处别再各写各的数字。 */
-    --page-gutter: 24px;
-    --page-gutter-right: 12px;
+    --page-gutter: 16px;
+    --page-gutter-right: 4px;
     --bg-color: #ffffff;
     --bg-color-secondary: #f6f6f6;
     --text-primary: #111827;
@@ -108,9 +108,9 @@ html.dark-theme {
 }
 
 /* WebKit（iOS / Mac Catalyst）：滚动条浮在内容上方、不占宽度，右边不用再留那 12px，
-   左右都按 --page-gutter 的 24 来。 */
+   左右都按 --page-gutter 的 16 来。 */
 @supports (-webkit-touch-callout: none) {
     :root {
-        --page-gutter-right: 24px;
+        --page-gutter-right: 16px;
     }
 }

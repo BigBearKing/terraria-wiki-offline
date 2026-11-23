@@ -4,7 +4,7 @@
 
 .license-list {
     gap: 0;
-    padding: 12px 0 max(12px, var(--safe-area-bottom));
+    padding-top: 12px;
 }
 
 .license-card-info {

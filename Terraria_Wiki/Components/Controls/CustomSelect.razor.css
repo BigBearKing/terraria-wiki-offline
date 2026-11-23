@@ -86,3 +86,25 @@
     --btn-fg: var(--blue-primary);
     font-weight: 600;
 }
+
+@media (max-width: 768px) {
+    .custom-select-container {
+        width: 108px;
+        flex: 0 1 108px;
+    }
+
+    .custom-select-trigger {
+        min-height: 32px;
+        padding: 6px 26px 6px 12px;
+    }
+
+    .custom-select-arrow {
+        right: 10px;
+        width: 7px;
+        height: 7px;
+    }
+
+    .custom-select-option {
+        padding: 7px 10px;
+    }
+}

@@ -8,7 +8,6 @@
    （不能用 :first-child —— 占着那个位置的是 spacer）。 */
 .history-list {
     gap: 0;
-    padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
 .history-list > .timeline-row + .timeline-row {

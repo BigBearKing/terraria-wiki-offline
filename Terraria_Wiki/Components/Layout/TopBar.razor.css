@@ -18,7 +18,7 @@
     height: calc(var(--topbar-top-padding) + var(--topbar-content-height));
     display: flex;
     align-items: center;
-    gap: 16px; /* 元素之间的最小间距 */
+    gap: 6px; /* 元素之间的最小间距 */
     background-color: var(--bg-color);
     border-bottom: 0px;
     flex-shrink: 0;
@@ -116,11 +116,6 @@
 }
 
 @media (max-width: 768px) {
-
-    .top-bar {
-        padding-right: 16px;
-        padding-left: 16px;
-    }
 
     .search-wrapper {
         position: absolute;

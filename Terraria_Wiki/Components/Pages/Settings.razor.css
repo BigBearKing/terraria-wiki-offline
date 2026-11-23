@@ -5,7 +5,7 @@
 
 .setting-list {
     gap: 12px;
-    padding: 12px 0 max(12px, var(--safe-area-bottom));
+    padding-top: 12px;
 }
 
 .category-card {
@@ -29,6 +29,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     margin-left: 6px;
 }
 
@@ -36,6 +37,8 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
+    min-width: 0;
 }
 
 .setting-name {
@@ -47,6 +50,7 @@
 .setting-desc {
     font-size: 0.8rem;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 /* 右侧控件组：左边「恢复默认」图标键、右边下拉/开关。

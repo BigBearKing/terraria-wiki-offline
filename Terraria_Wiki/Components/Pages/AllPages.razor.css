@@ -3,7 +3,6 @@
 
 .all-pages-list {
     gap: 0;
-    padding: 0 0 max(12px, var(--safe-area-bottom));
 }
 
 .page-name {
