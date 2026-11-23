@@ -57,6 +57,7 @@
    写成 calc 是为了以后调 .page-content 的留白时标题能自动跟过去。 */
 .topbar-title-without-actions {
     padding-left: calc(var(--page-gutter) - 24px);
+    padding-right: 6px;
 }
 /* --- 3. 右侧搜索框 (核心改动) --- */
 .search-wrapper {
